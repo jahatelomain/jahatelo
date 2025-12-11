@@ -1,0 +1,368 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum MotelStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AmenityType {
+  MOTEL
+  ROOM
+  BOTH
+}
+
+enum PhotoKind {
+  FACADE
+  ROOM
+  FOOD
+  OTHER
+}
+
+// ============================================
+// MOTEL
+// ============================================
+
+model Motel {
+  id               String          @id @default(cuid())
+  name             String
+  slug             String          @unique
+  description      String?
+  city             String
+  neighborhood     String
+  address          String
+  mapUrl           String?
+  latitude         Float?
+  longitude        Float?
+  phone            String?
+  whatsapp         String?
+  website          String?
+  instagram        String?
+  status           MotelStatus     @default(PENDING)
+  isActive         Boolean         @default(false)
+  contactName      String?
+  contactEmail     String?
+  contactPhone     String?
+  adminContactName   String?
+  adminContactEmail  String?
+  adminContactPhone  String?
+  operationsContactName  String?
+  operationsContactEmail String?
+  operationsContactPhone String?
+  plan             String?
+  nextBillingAt    DateTime?
+  isFeatured       Boolean         @default(false)
+  ratingAvg        Float           @default(0)
+  ratingCount      Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  // Relations
+  rooms            RoomType[]
+  menuCategories   MenuCategory[]
+  photos           Photo[]
+  motelAmenities   MotelAmenity[]
+  reviews          Review[]
+  schedules        Schedule[]
+  paymentMethods   PaymentMethod[]
+  socialLinks      SocialLink[]
+  promos           Promo[]
+}
+
+// ============================================
+// ROOM TYPE
+// ============================================
+
+model RoomType {
+  id                String        @id @default(cuid())
+  motel             Motel         @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId           String
+  name              String
+  slug              String?
+  description       String?
+
+  // Precios por tiempo
+  price1h           Int?
+  price1_5h         Int?
+  price2h           Int?
+  price3h           Int?
+  price12h          Int?
+  price24h          Int?
+  priceNight        Int?
+  customPrices      String?       // JSON para variantes futuras
+
+  // Características
+  maxPersons        Int?
+  hasJacuzzi        Boolean       @default(false)
+  hasPrivateGarage  Boolean       @default(false)
+  isFeatured        Boolean       @default(false)
+  isActive          Boolean       @default(true)
+
+  // Legacy (mantener compatibilidad)
+  basePrice         Int?
+  priceLabel        String?
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime?     @updatedAt
+
+  // Relations
+  amenities         RoomAmenity[]
+  photos            Photo[]
+  reviews           Review[]
+}
+
+// ============================================
+// AMENITY
+// ============================================
+
+model Amenity {
+  id              String          @id @default(cuid())
+  name            String          @unique
+  type            AmenityType?
+  icon            String?
+  description     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime?       @updatedAt
+
+  // Relations
+  motelAmenities  MotelAmenity[]
+  roomAmenities   RoomAmenity[]
+}
+
+// Motel Amenity (join table)
+model MotelAmenity {
+  id          String   @id @default(cuid())
+  motel       Motel    @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId     String
+  amenity     Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  amenityId   String
+
+  @@unique([motelId, amenityId])
+}
+
+// Room Amenity (join table)
+model RoomAmenity {
+  id          String    @id @default(cuid())
+  roomType    RoomType  @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  roomTypeId  String
+  amenity     Amenity   @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  amenityId   String
+
+  @@unique([roomTypeId, amenityId])
+}
+
+// ============================================
+// PHOTOS
+// ============================================
+
+model Photo {
+  id          String     @id @default(cuid())
+  url         String
+  kind        PhotoKind  @default(OTHER)
+  order       Int        @default(0)
+  motel       Motel?     @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId     String?
+  roomType    RoomType?  @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  roomTypeId  String?
+  createdAt   DateTime?  @default(now())
+  updatedAt   DateTime?  @updatedAt
+}
+
+// ============================================
+// MENU
+// ============================================
+
+model MenuCategory {
+  id          String      @id @default(cuid())
+  motel       Motel       @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId     String
+  name        String?
+  slug        String?
+  order       Int         @default(0)
+  createdAt   DateTime?   @default(now())
+  updatedAt   DateTime?   @updatedAt
+
+  // Relations
+  items       MenuItem[]
+
+  // Legacy
+  title       String?
+  sortOrder   Int?
+}
+
+model MenuItem {
+  id          String        @id @default(cuid())
+  category    MenuCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId  String
+  product     Product?      @relation(fields: [productId], references: [id])
+  productId   String?
+  name        String
+  slug        String?
+  description String?
+  price       Int
+  photoUrl    String?
+  createdAt   DateTime?     @default(now())
+  updatedAt   DateTime?     @updatedAt
+}
+
+// ============================================
+// PRODUCTS (catálogo global)
+// ============================================
+
+model Product {
+  id              String      @id @default(cuid())
+  name            String
+  slug            String      @unique
+  description     String?
+  defaultPrice    Int
+  defaultPhotoUrl String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  menuItems       MenuItem[]
+}
+
+// ============================================
+// REVIEWS / RATINGS
+// ============================================
+
+model Review {
+  id          String     @id @default(cuid())
+  motel       Motel?     @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId     String?
+  roomType    RoomType?  @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  roomTypeId  String?
+  user        User?      @relation(fields: [userId], references: [id])
+  userId      String?
+  score       Int        // 1-5
+  comment     String?
+  createdAt   DateTime   @default(now())
+}
+
+// ============================================
+// USERS (a futuro)
+// ============================================
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String?
+  name         String?
+  birthDate    DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  // Relations
+  reviews      Review[]
+  favorites    Favorite[]
+}
+
+// ============================================
+// FAVORITES (a futuro)
+// ============================================
+
+model Favorite {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  motelId    String?
+  roomTypeId String?
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, motelId])
+}
+
+// ============================================
+// SCHEDULES (horarios del motel)
+// ============================================
+
+model Schedule {
+  id          String   @id @default(cuid())
+  motel       Motel    @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId     String
+  dayOfWeek   Int      // 0=Sunday, 1=Monday, etc.
+  openTime    String?  // "09:00"
+  closeTime   String?  // "22:00"
+  is24Hours   Boolean  @default(false)
+  isClosed    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ============================================
+// PAYMENT METHODS
+// ============================================
+
+model PaymentMethod {
+  id          String   @id @default(cuid())
+  motel       Motel    @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId     String
+  method      String   // "CASH", "CARD", "TRANSFER", etc.
+  createdAt   DateTime @default(now())
+}
+
+// ============================================
+// SOCIAL LINKS
+// ============================================
+
+model SocialLink {
+  id          String   @id @default(cuid())
+  motel       Motel    @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId     String
+  platform    String   // "FACEBOOK", "INSTAGRAM", "TIKTOK", "TWITTER", etc.
+  url         String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ============================================
+// PROMOS (promociones especiales)
+// ============================================
+
+model Promo {
+  id          String    @id @default(cuid())
+  motel       Motel     @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId     String
+  title       String
+  description String?
+  imageUrl    String?
+  validFrom   DateTime?
+  validUntil  DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// ============================================
+// HOME BANNERS (carrusel de la home)
+// ============================================
+
+model HomeBanner {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  linkUrl     String?
+  motelId     String?   // Opcional, si el banner es específico de un motel
+  order       Int       @default(0)
+  isActive    Boolean   @default(true)
+  validFrom   DateTime?
+  validUntil  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}

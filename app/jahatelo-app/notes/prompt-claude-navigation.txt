@@ -1,0 +1,46 @@
+Estoy desarrollando una app en Expo React Native y quiero que generes el sistema completo de navegación para mi app llamada “Jahatelo”.
+
+La estructura del proyecto ya existe, con estas carpetas:
+- screens/
+- components/
+- navigation/
+- services/
+- hooks/
+- assets/
+
+Ya existen estas pantallas vacías:
+- SplashScreen
+- AgeGateScreen
+- HomeScreen
+- SearchScreen
+- MotelDetailScreen
+- FavoritesScreen
+- ProfileScreen
+
+Necesito que generes el código completo para estos archivos dentro de navigation/:
+- navigation/RootNavigation.js
+- navigation/BottomTabs.js
+- navigation/HomeTabs.js
+
+Requisitos:
+1. RootNavigation debe usar createNativeStackNavigator.
+2. La app debe iniciar en SplashScreen → luego AgeGateScreen → luego BottomTabs.
+3. BottomTabs debe tener 4 tabs:
+   - Home → usa HomeTabs
+   - Buscar → usa SearchScreen
+   - Favoritos → usa FavoritesScreen
+   - Perfil → usa ProfileScreen
+4. HomeTabs debe usar createMaterialTopTabNavigator con estas pestañas:
+   - Cerca
+   - Promos
+   - Populares
+   - Premium
+   Por ahora todas renderizan HomeScreen.
+5. Asegurate de importar correctamente:
+   - createBottomTabNavigator
+   - createMaterialTopTabNavigator
+   - createNativeStackNavigator
+   - NavigationContainer si hace falta.
+6. Usá nombres de funciones y exports por default claros.
+7. No agregues estilos complejos, solo lo mínimo para que funcione.
+8. Entregá el código final para cada archivo y decime exactamente en qué archivo va cada bloque.

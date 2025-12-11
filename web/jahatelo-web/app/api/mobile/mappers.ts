@@ -1,0 +1,198 @@
+import { Motel, RoomType, Photo, Amenity, MotelAmenity, RoomAmenity, Promo } from '@prisma/client';
+
+// Types for mappers
+type MotelWithRelations = Motel & {
+  photos: Photo[];
+  motelAmenities: (MotelAmenity & { amenity: Amenity })[];
+  rooms?: (RoomType & {
+    photos: Photo[];
+    amenities: (RoomAmenity & { amenity: Amenity })[];
+  })[];
+  promos?: Promo[];
+};
+
+type RoomWithRelations = RoomType & {
+  photos: Photo[];
+  amenities: (RoomAmenity & { amenity: Amenity })[];
+};
+
+/**
+ * Calcula el precio inicial (mínimo) de las habitaciones activas de un motel
+ */
+export function getStartingPrice(rooms?: RoomWithRelations[]): number | null {
+  if (!rooms || rooms.length === 0) return null;
+
+  const activeRooms = rooms.filter((r) => r.isActive);
+  if (activeRooms.length === 0) return null;
+
+  const allPrices: number[] = [];
+  activeRooms.forEach((room) => {
+    if (room.price1h) allPrices.push(room.price1h);
+    if (room.price1_5h) allPrices.push(room.price1_5h);
+    if (room.price2h) allPrices.push(room.price2h);
+    if (room.price3h) allPrices.push(room.price3h);
+    if (room.price12h) allPrices.push(room.price12h);
+    if (room.price24h) allPrices.push(room.price24h);
+    if (room.priceNight) allPrices.push(room.priceNight);
+  });
+
+  return allPrices.length > 0 ? Math.min(...allPrices) : null;
+}
+
+/**
+ * Obtiene el thumbnail (primera foto FACADE o primera foto disponible)
+ */
+export function getThumbnail(photos: Photo[]): string | null {
+  if (!photos || photos.length === 0) return null;
+
+  const facadePhoto = photos.find((p) => p.kind === 'FACADE');
+  if (facadePhoto) return facadePhoto.url;
+
+  return photos[0]?.url || null;
+}
+
+/**
+ * Obtiene hasta 3 URLs de fotos para el listado
+ */
+export function getListPhotos(photos: Photo[]): string[] {
+  if (!photos || photos.length === 0) return [];
+  return photos.slice(0, 3).map((p) => p.url);
+}
+
+/**
+ * Verifica si hay promos activas
+ */
+export function hasActivePromos(promos?: Promo[]): boolean {
+  if (!promos || promos.length === 0) return false;
+
+  const now = new Date();
+  return promos.some((promo) => {
+    if (!promo.isActive) return false;
+    if (promo.validFrom && promo.validFrom > now) return false;
+    if (promo.validUntil && promo.validUntil < now) return false;
+    return true;
+  });
+}
+
+/**
+ * Mapea un Motel con relaciones al formato de listado para mobile
+ */
+export function mapMotelToListItem(motel: MotelWithRelations) {
+  return {
+    id: motel.id,
+    slug: motel.slug,
+    name: motel.name,
+    description: motel.description,
+    city: motel.city,
+    neighborhood: motel.neighborhood,
+    address: motel.address,
+    location:
+      motel.latitude && motel.longitude
+        ? { lat: motel.latitude, lng: motel.longitude }
+        : null,
+    rating: {
+      average: motel.ratingAvg,
+      count: motel.ratingCount,
+    },
+    isFeatured: motel.isFeatured,
+    hasPromo: hasActivePromos(motel.promos),
+    startingPrice: getStartingPrice(motel.rooms),
+    amenities: motel.motelAmenities.map((ma) => ma.amenity.name),
+    thumbnail: getThumbnail(motel.photos),
+    photos: getListPhotos(motel.photos),
+  };
+}
+
+/**
+ * Genera el priceLabel basado en los precios disponibles
+ */
+export function generatePriceLabel(room: RoomType): string {
+  const prices = [
+    { value: room.price1h, label: '1h' },
+    { value: room.price1_5h, label: '1.5h' },
+    { value: room.price2h, label: '2h' },
+    { value: room.price3h, label: '3h' },
+    { value: room.price12h, label: '12h' },
+    { value: room.price24h, label: '24h' },
+    { value: room.priceNight, label: 'noche' },
+  ].filter((p) => p.value !== null);
+
+  if (prices.length === 0) return 'Precio no disponible';
+
+  const minPrice = Math.min(...prices.map((p) => p.value!));
+  return `Desde $${minPrice.toLocaleString('es-CO')}`;
+}
+
+/**
+ * Mapea un RoomType al formato para mobile (detalle)
+ */
+export function mapRoomForMobile(room: RoomWithRelations) {
+  const basePrice = room.basePrice || room.price1h || room.price2h || 0;
+
+  return {
+    id: room.id,
+    name: room.name,
+    description: room.description,
+    basePrice,
+    priceLabel: room.priceLabel || generatePriceLabel(room),
+    prices: {
+      price1h: room.price1h,
+      price1_5h: room.price1_5h,
+      price2h: room.price2h,
+      price3h: room.price3h,
+      price12h: room.price12h,
+      price24h: room.price24h,
+      priceNight: room.priceNight,
+    },
+    amenities: room.amenities.map((ra) => ra.amenity.name),
+    photos: room.photos.map((p) => p.url),
+    maxPersons: room.maxPersons,
+    hasJacuzzi: room.hasJacuzzi,
+    hasPrivateGarage: room.hasPrivateGarage,
+    isFeatured: room.isFeatured,
+  };
+}
+
+/**
+ * Mapea un Motel completo al formato de detalle para mobile
+ */
+export function mapMotelToDetail(
+  motel: MotelWithRelations & {
+    schedules?: { dayOfWeek: number; openTime: string | null; closeTime: string | null; is24Hours: boolean; isClosed: boolean }[];
+    menuCategories?: { id: string; name: string | null; items: { id: string; name: string; price: number; description: string | null; photoUrl: string | null }[] }[];
+    paymentMethods?: { method: string }[];
+  }
+) {
+  const listItem = mapMotelToListItem(motel);
+
+  return {
+    ...listItem,
+    contact: {
+      phone: motel.phone,
+      whatsapp: motel.whatsapp,
+      website: motel.website,
+      instagram: motel.instagram,
+      contactEmail: motel.contactEmail,
+      contactPhone: motel.contactPhone,
+    },
+    plan: motel.plan,
+    nextBillingAt: motel.nextBillingAt,
+    schedules: motel.schedules || [],
+    menu:
+      motel.menuCategories?.map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        items: cat.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          description: item.description,
+          photoUrl: item.photoUrl,
+        })),
+      })) || [],
+    rooms: motel.rooms?.filter((r) => r.isActive).map(mapRoomForMobile) || [],
+    paymentMethods: motel.paymentMethods?.map((pm) => pm.method) || [],
+    allPhotos: motel.photos.map((p) => p.url),
+    hasPhotos: motel.photos.length > 0,
+  };
+}
