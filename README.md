@@ -45,3 +45,4 @@ Asegurate de que `EXPO_PUBLIC_API_URL` apunte a la IP LAN/mac que sirve el backe
 1. **Base de datos gestionada**: migrar SQLite a un servicio (p.e. Supabase Postgres o PlanetScale). Actualizar `DATABASE_URL` en producción.
 2. **Deploy web**: conectar `web/jahatelo-web` a Vercel, definir variables `.env` (API URL pública, credenciales DB). Configurar comando `npx prisma migrate deploy && npm run build`.
 3. **App Expo**: una vez que el backend esté publicado, actualizar `.env.production` con el dominio HTTPS y generar builds con EAS cuando sea necesario.
+SUPABASE 
