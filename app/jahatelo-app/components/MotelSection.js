@@ -1,12 +1,12 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import MotelCardSmall from './MotelCardSmall';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MotelCard from './MotelCard';
+import MotelCardSmall from './MotelCardSmall';
 
 const COLORS = {
-  white: '#FFFFFF',
+  card: '#FFFFFF',
   primary: '#FF2E93',
+  text: '#2E0338',
 };
 
 export default function MotelSection({
@@ -30,12 +30,12 @@ export default function MotelSection({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, type === 'small' && styles.cardBackground]}>
       <View style={styles.header}>
         <Text style={styles.title}>{title}</Text>
         {ctaText && (
-          <TouchableOpacity onPress={ctaOnPress}>
-            <Text style={styles.cta}>{ctaText}</Text>
+          <TouchableOpacity onPress={ctaOnPress} style={styles.ctaButton}>
+            <Text style={styles.ctaText}>{ctaText}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -49,11 +49,11 @@ export default function MotelSection({
           )}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20 }}
+          contentContainerStyle={{ paddingHorizontal: 12 }}
         />
       ) : (
         <View style={{ paddingHorizontal: 20 }}>
-          {data.map((item) => (
+          {data.slice(0, 3).map((item) => ( // Mostrar solo 3 en la home
             <View key={item.id || item.slug} style={{ marginBottom: 16 }}>
               <MotelCard motel={item} onPress={() => handleCardPress(item)} />
             </View>
@@ -68,19 +68,31 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 24,
   },
+  cardBackground: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    paddingVertical: 20,
+    marginHorizontal: 20,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   title: {
-    color: COLORS.white,
-    fontSize: 20,
+    color: COLORS.text,
+    fontSize: 22,
     fontWeight: '700',
   },
-  cta: {
+  ctaButton: {
+    backgroundColor: '#FCE8EE',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  ctaText: {
     color: COLORS.primary,
     fontSize: 14,
     fontWeight: '600',

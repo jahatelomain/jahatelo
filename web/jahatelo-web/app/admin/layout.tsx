@@ -73,10 +73,10 @@ export default function AdminLayout({
   };
 
   const navItems = [
-    { href: '/admin', label: 'Dashboard', icon: '🏠', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
-    { href: '/admin/motels', label: 'Moteles', icon: '🏨', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
-    { href: '/admin/amenities', label: 'Amenities', icon: '✨', roles: ['SUPERADMIN'] },
-    { href: '/admin/users', label: 'Usuarios', icon: '👥', roles: ['SUPERADMIN'] },
+    { href: '/admin', label: 'Dashboard', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
+    { href: '/admin/motels', label: 'Moteles', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
+    { href: '/admin/amenities', label: 'Amenities', roles: ['SUPERADMIN'] },
+    { href: '/admin/users', label: 'Usuarios', roles: ['SUPERADMIN'] },
   ];
 
   // Filtrar items según el rol del usuario
@@ -117,13 +117,6 @@ export default function AdminLayout({
               <p className="text-xs text-slate-500">Panel de administración</p>
             </div>
 
-            {/* Center: Breadcrumb */}
-            <div className="hidden md:flex items-center gap-2 text-sm">
-              <span className="text-slate-400">Admin</span>
-              <span className="text-slate-300">/</span>
-              <span className="text-purple-600 font-medium">{getBreadcrumb()}</span>
-            </div>
-
             {/* Right: Actions & Avatar */}
             <div className="flex items-center gap-4">
               <div className="hidden md:flex flex-col text-right">
@@ -135,15 +128,11 @@ export default function AdminLayout({
 
               <button
                 onClick={handleLogout}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-50 border border-purple-100 text-sm font-medium text-purple-700 hover:bg-purple-100 transition"
+                className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center text-white text-sm font-semibold hover:shadow-lg transition-all cursor-pointer"
+                title="Cerrar sesión"
               >
-                Cerrar sesión
-                <span>↩</span>
-              </button>
-
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center text-white text-sm font-semibold">
                 {profileInitials}
-              </div>
+              </button>
             </div>
           </div>
         </div>
@@ -158,13 +147,12 @@ export default function AdminLayout({
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`group flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                    className={`group flex items-center px-4 py-3 rounded-lg transition-all ${
                       isActive(item.href)
                         ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
                         : 'text-slate-600 hover:bg-white hover:shadow-sm'
                     }`}
                   >
-                    <span className="text-xl">{item.icon}</span>
                     <span className={`font-medium ${isActive(item.href) ? 'text-white' : 'group-hover:text-slate-900'}`}>
                       {item.label}
                     </span>
@@ -172,17 +160,6 @@ export default function AdminLayout({
                 </li>
               ))}
             </ul>
-
-            {/* Divider */}
-            <div className="my-6 border-t border-slate-200"></div>
-
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-lg bg-white border border-slate-200 text-sm font-medium text-slate-600 hover:text-slate-900 transition"
-            >
-              Cerrar sesión
-              <span className="text-lg">↩</span>
-            </button>
           </nav>
         </aside>
 

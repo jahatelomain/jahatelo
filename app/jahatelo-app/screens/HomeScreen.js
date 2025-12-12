@@ -1,28 +1,20 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  View,
-  Text,
-  StyleSheet,
   ActivityIndicator,
   RefreshControl,
-  TouchableOpacity,
-  ImageBackground,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { fetchMotels } from '../services/motelsApi';
 
+import HomeCategoriesGrid from '../components/HomeCategoriesGrid';
 import HomeHeader from '../components/HomeHeader';
 import PromoCarousel from '../components/PromoCarousel';
-import MotelSection from '../components/MotelSection';
-
-const COLORS = {
-  background: '#0F0019',
-  white: '#FFFFFF',
-  muted: '#C5C5C5',
-  primary: '#FF2E93',
-};
+import { COLORS } from '../constants/theme';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -55,46 +47,24 @@ export default function HomeScreen() {
     loadMotels(true);
   };
 
-  const promos = useMemo(
-    () => motels.filter((motel) => motel.tienePromo),
-    [motels]
-  );
-
-  const populares = useMemo(() => {
-    return [...motels]
-      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-      .slice(0, 6);
-  }, [motels]);
-
-  const premium = useMemo(
-    () => motels.filter((motel) => motel.isFeatured),
-    [motels]
-  );
-
-  const navigateList = (title) => {
-    navigation.navigate('MotelList', { title });
+  const navigateList = (title, list) => {
+    navigation.navigate('MotelList', { title, motels: list });
   };
 
-  const renderBanner = () => (
-    <TouchableOpacity
-      style={styles.bannerContainer}
-      activeOpacity={0.85}
-      onPress={() => navigateList('Promociones')}
-    >
-      <ImageBackground
-        source={{
-          uri: 'https://images.unsplash.com/photo-1559599238-4b9b034d4e9e?auto=format&fit=crop&w=1400&q=80',
-        }}
-        style={styles.bannerImage}
-      >
-        <View style={styles.bannerOverlay} />
-        <View style={styles.bannerText}>
-          <Text style={styles.bannerTitle}>Promo destacada</Text>
-          <Text style={styles.bannerSubtitle}>¡Escapate hoy y ahorrá!</Text>
-        </View>
-      </ImageBackground>
-    </TouchableOpacity>
-  );
+  const handleCitiesPress = () => {
+    navigation.navigate('CitySelector', { motels });
+  };
+
+  const handleMotelPress = (motel) => {
+    navigation.navigate('MotelDetail', { motelId: motel.id });
+  };
+
+  const categories = [
+    { id: 'cities', label: 'Moteles por ciudad', iconName: 'location-outline', onPress: handleCitiesPress },
+    { id: 'popular', label: 'Populares', iconName: 'flame-outline', onPress: () => navigateList('Populares', motels) },
+  ];
+
+  const promos = useMemo(() => motels.filter((motel) => motel.tienePromo), [motels]);
 
   if (loading && !refreshing) {
     return (
@@ -109,45 +79,22 @@ export default function HomeScreen() {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.centerText}>⚠️ {error}</Text>
-        <Text style={[styles.centerText, { color: COLORS.muted }]}>
-          Verifica tu conexión a internet
-        </Text>
+        <Text style={[styles.centerText, { color: COLORS.muted }]}>Verifica tu conexión a internet</Text>
       </View>
     );
   }
 
   return (
     <SafeAreaView style={styles.screen}>
-      <HomeHeader />
+      <HomeHeader motels={motels} onMotelPress={handleMotelPress} />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={COLORS.primary}
-          />
-        }
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />}
       >
-        <PromoCarousel promos={promos} />
-
-        <MotelSection
-          title="Populares"
-          data={populares}
-          ctaText="Ver todos"
-          ctaOnPress={() => navigateList('Populares')}
-          type="small"
-        />
-
-        <MotelSection
-          title="Premium"
-          data={premium}
-          ctaText="Ver todos"
-          ctaOnPress={() => navigateList('Premium')}
-          type="large"
-        />
-
-        {renderBanner()}
+        <PromoCarousel promos={promos.length ? promos : motels.slice(0, 5)} />
+        <HomeCategoriesGrid categories={categories} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -156,43 +103,21 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.white,
+  },
+  content: {
+    backgroundColor: COLORS.white,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.white,
   },
   centerText: {
-    color: COLORS.white,
+    color: COLORS.primary,
     marginTop: 12,
-  },
-  bannerContainer: {
-    height: 160,
-    marginHorizontal: 20,
-    marginBottom: 32,
-    borderRadius: 18,
-    overflow: 'hidden',
-  },
-  bannerImage: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  bannerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
-  bannerText: {
-    padding: 16,
-  },
-  bannerTitle: {
-    color: COLORS.white,
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  bannerSubtitle: {
-    color: COLORS.muted,
-    marginTop: 4,
   },
 });

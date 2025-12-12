@@ -5,16 +5,16 @@ import Link from 'next/link';
 export default async function AdminDashboard() {
   // Obtener métricas de la base de datos
   const [
-    totalMotels,
+    totalViews,
     pendingMotels,
     activeMotels,
-    totalRooms,
+    activePromotions,
     recentMotelsRaw,
   ] = await Promise.all([
-    prisma.motel.count(),
+    Promise.resolve(0), // Placeholder para vistas - implementar más adelante
     prisma.motel.count({ where: { status: MotelStatus.PENDING } }),
     prisma.motel.count({ where: { isActive: true } }),
-    prisma.roomType.count(),
+    Promise.resolve(0), // Placeholder para promociones - implementar más adelante
     prisma.motel.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
@@ -32,9 +32,9 @@ export default async function AdminDashboard() {
 
   const kpis = [
     {
-      title: 'Total de Moteles',
-      value: totalMotels,
-      icon: '🏨',
+      title: 'Cantidad de Vistas',
+      value: totalViews,
+      icon: '👁️',
       color: 'purple',
       change: null,
     },
@@ -53,9 +53,9 @@ export default async function AdminDashboard() {
       change: null,
     },
     {
-      title: 'Habitaciones',
-      value: totalRooms,
-      icon: '🛏️',
+      title: 'Promociones Activas',
+      value: activePromotions,
+      icon: '🎁',
       color: 'blue',
       change: null,
     },
@@ -107,10 +107,6 @@ export default async function AdminDashboard() {
 
               {/* Mini resumen inline */}
               <div className="mt-6 flex flex-wrap gap-4 text-sm">
-                <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
-                  <span className="text-white font-semibold">{totalMotels}</span>
-                  <span className="text-purple-100">Moteles totales</span>
-                </div>
                 {pendingMotels > 0 && (
                   <div className="flex items-center gap-2 bg-yellow-400/90 px-4 py-2 rounded-full">
                     <span className="text-yellow-900 font-semibold">{pendingMotels}</span>
@@ -119,7 +115,11 @@ export default async function AdminDashboard() {
                 )}
                 <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
                   <span className="text-white font-semibold">{activeMotels}</span>
-                  <span className="text-purple-100">Activos</span>
+                  <span className="text-purple-100">Moteles Activos</span>
+                </div>
+                <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                  <span className="text-white font-semibold">{totalViews}</span>
+                  <span className="text-purple-100">Vistas este mes</span>
                 </div>
               </div>
             </div>
@@ -169,27 +169,19 @@ export default async function AdminDashboard() {
               Actualizado ahora
             </span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="text-center p-4 bg-slate-50 rounded-lg">
               <p className="text-sm text-slate-600 mb-1">Moteles Aprobados</p>
               <p className="text-3xl font-bold text-slate-900">
-                {totalMotels - pendingMotels}
+                {activeMotels}
               </p>
             </div>
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <p className="text-sm text-purple-700 mb-1">Tasa de Activación</p>
               <p className="text-3xl font-bold text-purple-700">
-                {totalMotels > 0
-                  ? Math.round((activeMotels / totalMotels) * 100)
+                {activeMotels > 0
+                  ? Math.round((activeMotels / (activeMotels + pendingMotels)) * 100)
                   : 0}%
-              </p>
-            </div>
-            <div className="text-center p-4 bg-slate-50 rounded-lg">
-              <p className="text-sm text-slate-600 mb-1">Habitaciones por Motel</p>
-              <p className="text-3xl font-bold text-slate-900">
-                {totalMotels > 0
-                  ? (totalRooms / totalMotels).toFixed(1)
-                  : '0'}
               </p>
             </div>
           </div>

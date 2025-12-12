@@ -6,6 +6,8 @@ import BottomTabs from './BottomTabs';
 import MotelDetailScreen from '../screens/MotelDetailScreen';
 import RegisterMotelScreen from '../screens/RegisterMotelScreen';
 import LegalScreen from '../screens/LegalScreen';
+import CitySelectorScreen from '../screens/CitySelectorScreen';
+import CityMotelsScreen from '../screens/CityMotelsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -21,6 +23,8 @@ export default function RootNavigation() {
       <Stack.Screen name="MotelDetail" component={MotelDetailScreen} />
       <Stack.Screen name="RegisterMotel" component={RegisterMotelScreen} />
       <Stack.Screen name="Legal" component={LegalScreen} />
+      <Stack.Screen name="CitySelector" component={CitySelectorScreen} />
+      <Stack.Screen name="CityMotels" component={CityMotelsScreen} />
     </Stack.Navigator>
   );
 }

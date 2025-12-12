@@ -68,6 +68,52 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
+## Funcionalidades Principales
+
+### Búsqueda por Ubicación GPS
+
+La app incluye funcionalidad para encontrar moteles cercanos usando la ubicación del dispositivo:
+
+1. **Botón "Cerca mío"**: En el header de la pantalla principal, el usuario puede tocar el botón de ubicación
+2. **Solicitud de permisos**: La app solicita permisos de ubicación (ACCESS_FINE_LOCATION en Android, NSLocationWhenInUseUsageDescription en iOS)
+3. **Filtrado por distancia**: Utiliza la fórmula de Haversine para calcular distancias y mostrar solo moteles dentro de un radio de 10km
+4. **Resultados**: Se muestra un modal con los moteles cercanos ordenados por distancia
+
+**Dependencias**: `expo-location`
+
+**Implementación**:
+- Utilidad de cálculo de distancias: `utils/location.js`
+- Componente principal: `components/HomeHeader.js`
+
+### Exploración por Ciudad
+
+Los usuarios pueden explorar moteles agrupados por ciudad:
+
+1. **Categoría "Moteles por ciudad"**: Tarjeta en la pantalla principal
+2. **Lista de ciudades**: Se agrupan automáticamente todos los moteles por ciudad
+3. **Vista de moteles por ciudad**: Al seleccionar una ciudad, se muestran todos los moteles disponibles en esa ubicación
+
+**Navegación**:
+- `CitySelectorScreen`: Lista de ciudades con conteo de moteles
+- `CityMotelsScreen`: Lista de moteles filtrados por ciudad seleccionada
+
+### Tema Visual
+
+La aplicación utiliza un sistema de diseño centralizado mediante `constants/theme.js`, que define:
+
+- **Color principal**: `#2A0038` (morado oscuro del splash screen)
+- **Colores semánticos**: success, warning, error, info
+- **Escalas de espaciado**: xs, sm, md, lg, xl, xxl, xxxl
+- **Tamaños de fuente**: xs (12px) hasta huge (32px)
+- **Border radius**: sm (8px) hasta round (9999px)
+
+**Implementación**: Todas las pantallas y componentes importan `{ COLORS }` desde `../constants/theme` para mantener consistencia visual. Esto permite actualizar la paleta de colores globalmente desde un solo archivo.
+
+**Ventajas**:
+- Consistencia visual en toda la aplicación
+- Fácil mantenimiento y actualización de colores
+- Escalabilidad para futuras pantallas
+
 ## Get a fresh project
 
 When you're ready, run:

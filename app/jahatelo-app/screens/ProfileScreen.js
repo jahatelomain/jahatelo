@@ -4,14 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../hooks/useFavorites';
+import { COLORS } from '../constants/theme';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
   const { favorites } = useFavorites();
-
-  const handleNavigateToFavorites = () => {
-    navigation.navigate('Favoritos');
-  };
 
   const handleRegisterMotel = () => {
     navigation.navigate('RegisterMotel');
@@ -52,11 +49,6 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Explora Jahatelo</Text>
           <View style={styles.optionsContainer}>
             <OptionRow
-              icon="heart"
-              title="Ver favoritos"
-              onPress={handleNavigateToFavorites}
-            />
-            <OptionRow
               icon="business"
               title="Registrar tu motel"
               onPress={handleRegisterMotel}
@@ -68,6 +60,14 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Legal y ayuda</Text>
           <View style={styles.optionsContainer}>
+            <OptionRow
+              icon="mail-outline"
+              title="Contáctanos"
+              onPress={() => handleLegalPress(
+                'Contáctanos',
+                'Estamos aquí para ayudarte.\n\nPróximamente compartiremos nuestros canales de contacto para que puedas comunicarte con nosotros.'
+              )}
+            />
             <OptionRow
               icon="document-text-outline"
               title="Bases y condiciones"
@@ -111,10 +111,10 @@ function OptionRow({ icon, title, onPress }) {
       activeOpacity={0.7}
     >
       <View style={styles.optionLeft}>
-        <Ionicons name={icon} size={24} color="#FF2E93" />
+        <Ionicons name={icon} size={24} color={COLORS.primary} />
         <Text style={styles.optionTitle}>{title}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#CCC" />
+      <Ionicons name="chevron-forward" size={20} color={COLORS.gray} />
     </TouchableOpacity>
   );
 }
@@ -122,24 +122,24 @@ function OptionRow({ icon, title, onPress }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.backgroundDark,
   },
   scrollView: {
     flex: 1,
   },
   header: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     alignItems: 'center',
     paddingVertical: 32,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: COLORS.border,
   },
   avatarContainer: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#FF2E93',
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -147,12 +147,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#2A0038',
+    color: COLORS.text,
     marginBottom: 8,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#666',
+    color: COLORS.textLight,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -162,29 +162,29 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2A0038',
+    color: COLORS.text,
     marginBottom: 12,
     paddingHorizontal: 16,
   },
   infoBox: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     marginHorizontal: 16,
     borderRadius: 8,
     borderLeftWidth: 3,
-    borderLeftColor: '#FF2E93',
+    borderLeftColor: COLORS.primary,
   },
   infoText: {
     fontSize: 14,
-    color: '#666',
+    color: COLORS.textLight,
     marginLeft: 12,
     flex: 1,
     lineHeight: 20,
   },
   optionsContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     marginHorizontal: 16,
     borderRadius: 8,
     overflow: 'hidden',
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: COLORS.divider,
   },
   optionLeft: {
     flexDirection: 'row',
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   },
   optionTitle: {
     fontSize: 16,
-    color: '#2A0038',
+    color: COLORS.text,
     marginLeft: 12,
   },
   footer: {
