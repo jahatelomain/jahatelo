@@ -1,25 +1,41 @@
 import { Motel, RoomType, Photo, Amenity, MotelAmenity, RoomAmenity, Promo } from '@prisma/client';
 
-// Types for mappers
-type MotelWithRelations = Motel & {
+type RoomPricingInfo = Pick<
+  RoomType,
+  | 'isActive'
+  | 'price1h'
+  | 'price1_5h'
+  | 'price2h'
+  | 'price3h'
+  | 'price12h'
+  | 'price24h'
+  | 'priceNight'
+>;
+
+type MotelForList = Motel & {
   photos: Photo[];
   motelAmenities: (MotelAmenity & { amenity: Amenity })[];
-  rooms?: (RoomType & {
-    photos: Photo[];
-    amenities: (RoomAmenity & { amenity: Amenity })[];
-  })[];
+  rooms?: RoomPricingInfo[];
   promos?: Promo[];
 };
 
+// Types for detail mappers
 type RoomWithRelations = RoomType & {
   photos: Photo[];
   amenities: (RoomAmenity & { amenity: Amenity })[];
 };
 
+type MotelWithRelations = Motel & {
+  photos: Photo[];
+  motelAmenities: (MotelAmenity & { amenity: Amenity })[];
+  rooms?: RoomWithRelations[];
+  promos?: Promo[];
+};
+
 /**
  * Calcula el precio inicial (mínimo) de las habitaciones activas de un motel
  */
-export function getStartingPrice(rooms?: RoomWithRelations[]): number | null {
+export function getStartingPrice(rooms?: RoomPricingInfo[]): number | null {
   if (!rooms || rooms.length === 0) return null;
 
   const activeRooms = rooms.filter((r) => r.isActive);
@@ -77,7 +93,7 @@ export function hasActivePromos(promos?: Promo[]): boolean {
 /**
  * Mapea un Motel con relaciones al formato de listado para mobile
  */
-export function mapMotelToListItem(motel: MotelWithRelations) {
+export function mapMotelToListItem(motel: MotelForList) {
   return {
     id: motel.id,
     slug: motel.slug,
