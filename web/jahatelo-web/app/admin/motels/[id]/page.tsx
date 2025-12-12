@@ -94,6 +94,7 @@ export default function MotelDetailPage({
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'details' | 'rooms' | 'menu' | 'commercial'>('details');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
 
   const [editingMotel, setEditingMotel] = useState(false);
   const [editingCommercial, setEditingCommercial] = useState(false);
@@ -217,6 +218,8 @@ export default function MotelDetailPage({
         fetchMotel();
         setEditingMotel(false);
         setEditingCommercial(false);
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
         alert('Error al actualizar motel');
       }
@@ -265,6 +268,8 @@ export default function MotelDetailPage({
           isFeatured: false,
           amenityIds: []
         });
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
         alert('Error al guardar habitación');
       }
@@ -307,6 +312,8 @@ export default function MotelDetailPage({
 
       if (res.ok) {
         fetchMotel();
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
         alert('Error al eliminar habitación');
       }
@@ -332,6 +339,8 @@ export default function MotelDetailPage({
         fetchMotel();
         setShowCategoryForm(false);
         setCategoryForm({ title: '', sortOrder: 0 });
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
         alert('Error al crear categoría');
       }
@@ -351,6 +360,8 @@ export default function MotelDetailPage({
 
       if (res.ok) {
         fetchMotel();
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
         alert('Error al eliminar categoría');
       }
@@ -379,6 +390,8 @@ export default function MotelDetailPage({
         setShowItemForm(false);
         setItemCategoryId(null);
         setItemForm({ name: '', price: '', description: '' });
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
         alert('Error al crear item');
       }
@@ -398,6 +411,8 @@ export default function MotelDetailPage({
 
       if (res.ok) {
         fetchMotel();
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
         alert('Error al eliminar item');
       }
@@ -440,6 +455,12 @@ export default function MotelDetailPage({
 
   return (
     <div className="space-y-6">
+      {saveStatus === 'success' && (
+        <div className="fixed top-4 right-4 bg-emerald-600 text-white px-4 py-2 rounded-full shadow-xl text-sm flex items-center gap-2 z-50">
+          <span>✓</span>
+          Cambios guardados
+        </div>
+      )}
       {/* Cabecera de la página */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
