@@ -67,9 +67,16 @@ export async function PATCH(
   try {
     const body = await request.json();
 
+    const data = { ...body };
+    if (!data.nextBillingAt) {
+      data.nextBillingAt = null;
+    } else {
+      data.nextBillingAt = new Date(data.nextBillingAt).toISOString();
+    }
+
     const motel = await prisma.motel.update({
       where: { id },
-      data: body,
+      data,
     });
 
     return NextResponse.json(motel);
