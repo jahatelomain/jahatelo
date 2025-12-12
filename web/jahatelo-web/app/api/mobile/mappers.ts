@@ -12,17 +12,18 @@ type RoomPricingInfo = Pick<
   | 'priceNight'
 >;
 
-type MotelForList = Motel & {
-  photos: Photo[];
-  motelAmenities: (MotelAmenity & { amenity: Amenity })[];
-  rooms?: RoomPricingInfo[];
-  promos?: Promo[];
-};
-
 // Types for detail mappers
 type RoomWithRelations = RoomType & {
   photos: Photo[];
   amenities: (RoomAmenity & { amenity: Amenity })[];
+};
+
+// Base type for list items - accepts both pricing info and full room data
+type MotelForList = Motel & {
+  photos: Photo[];
+  motelAmenities: (MotelAmenity & { amenity: Amenity })[];
+  rooms?: (RoomPricingInfo | RoomWithRelations)[];
+  promos?: Promo[];
 };
 
 type MotelWithRelations = Motel & {
@@ -35,7 +36,7 @@ type MotelWithRelations = Motel & {
 /**
  * Calcula el precio inicial (mínimo) de las habitaciones activas de un motel
  */
-export function getStartingPrice(rooms?: RoomPricingInfo[]): number | null {
+export function getStartingPrice(rooms?: (RoomPricingInfo | RoomWithRelations)[]): number | null {
   if (!rooms || rooms.length === 0) return null;
 
   const activeRooms = rooms.filter((r) => r.isActive);

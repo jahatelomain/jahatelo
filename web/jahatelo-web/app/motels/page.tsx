@@ -3,6 +3,7 @@ import Footer from '@/components/public/Footer';
 import MotelCard from '@/components/public/MotelCard';
 import MotelFilters from '@/components/public/MotelFilters';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 interface MotelsPageProps {
   searchParams: Promise<{ city?: string; neighborhood?: string; search?: string }>;
@@ -13,7 +14,7 @@ export default async function MotelsPage({ searchParams }: MotelsPageProps) {
   const { city, neighborhood, search } = params;
 
   // Build where clause based on filters
-  const whereClause: any = {
+  const whereClause: Prisma.MotelWhereInput = {
     status: 'APPROVED',
     isActive: true,
   };
