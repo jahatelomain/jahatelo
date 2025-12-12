@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { UserPayload } from '@/lib/auth';
 
 export default function AdminLayout({
@@ -15,6 +15,8 @@ export default function AdminLayout({
   const isLoginPage = pathname === '/admin/login';
   const [user, setUser] = useState<UserPayload | null>(null);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (isLoginPage) {
@@ -56,6 +58,16 @@ export default function AdminLayout({
       console.error('Error al cerrar sesión:', error);
     }
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuOpen && menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
 
   const isActive = (path: string) => {
     if (path === '/admin') {
@@ -126,13 +138,28 @@ export default function AdminLayout({
                 <span className="text-xs text-slate-500">{user?.role}</span>
               </div>
 
-              <button
-                onClick={handleLogout}
-                className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center text-white text-sm font-semibold hover:shadow-lg transition-all cursor-pointer"
-                title="Cerrar sesión"
-              >
-                {profileInitials}
-              </button>
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setMenuOpen((prev) => !prev)}
+                  className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center text-white text-sm font-semibold hover:shadow-lg transition-all cursor-pointer"
+                  title="Opciones de usuario"
+                >
+                  {profileInitials}
+                </button>
+                {menuOpen && (
+                  <div className="absolute right-0 mt-2 w-40 rounded-lg bg-white shadow-xl border border-slate-200 overflow-hidden z-30">
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      Cerrar sesión
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
