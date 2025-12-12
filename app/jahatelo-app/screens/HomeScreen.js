@@ -1,8 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList, RefreshControl, Text, ActivityIndicator } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  SafeAreaView,
+  ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
+  TouchableOpacity,
+  ImageBackground,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { fetchFeaturedMotels, fetchMotels } from '../services/motelsApi';
-import MotelCard from '../components/MotelCard';
+import { fetchMotels } from '../services/motelsApi';
+
+import HomeHeader from '../components/HomeHeader';
+import PromoCarousel from '../components/PromoCarousel';
+import MotelSection from '../components/MotelSection';
+
+const COLORS = {
+  background: '#0F0019',
+  white: '#FFFFFF',
+  muted: '#C5C5C5',
+  primary: '#FF2E93',
+};
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -13,28 +33,16 @@ export default function HomeScreen() {
 
   const loadMotels = async (isRefreshing = false) => {
     try {
-      if (!isRefreshing) {
-        setLoading(true);
-      }
+      if (!isRefreshing) setLoading(true);
       setError(null);
-
-      // Intentar primero con moteles destacados
-      let data = await fetchFeaturedMotels();
-
-      // Si no hay destacados, cargar todos
-      if (!data || data.length === 0) {
-        data = await fetchMotels();
-      }
-
-      setMotels(data);
+      const data = await fetchMotels();
+      setMotels(data || []);
     } catch (err) {
       console.error('Error al cargar moteles:', err);
       setError(err.message || 'Error al cargar moteles');
     } finally {
       setLoading(false);
-      if (isRefreshing) {
-        setRefreshing(false);
-      }
+      if (isRefreshing) setRefreshing(false);
     }
   };
 
@@ -47,104 +55,144 @@ export default function HomeScreen() {
     loadMotels(true);
   };
 
-  const handleMotelPress = (motel) => {
-    navigation.navigate('MotelDetail', {
-      motelSlug: motel.slug,
-      motelId: motel.id, // Mantener compatibilidad
-    });
-  };
-
-  const renderMotelCard = ({ item }) => (
-    <MotelCard
-      motel={item}
-      onPress={() => handleMotelPress(item)}
-    />
+  const promos = useMemo(
+    () => motels.filter((motel) => motel.tienePromo),
+    [motels]
   );
 
-  // Mostrar loading inicial
+  const populares = useMemo(() => {
+    return [...motels]
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, 6);
+  }, [motels]);
+
+  const premium = useMemo(
+    () => motels.filter((motel) => motel.isFeatured),
+    [motels]
+  );
+
+  const navigateList = (title) => {
+    navigation.navigate('MotelList', { title });
+  };
+
+  const renderBanner = () => (
+    <TouchableOpacity
+      style={styles.bannerContainer}
+      activeOpacity={0.85}
+      onPress={() => navigateList('Promociones')}
+    >
+      <ImageBackground
+        source={{
+          uri: 'https://images.unsplash.com/photo-1559599238-4b9b034d4e9e?auto=format&fit=crop&w=1400&q=80',
+        }}
+        style={styles.bannerImage}
+      >
+        <View style={styles.bannerOverlay} />
+        <View style={styles.bannerText}>
+          <Text style={styles.bannerTitle}>Promo destacada</Text>
+          <Text style={styles.bannerSubtitle}>¡Escapate hoy y ahorrá!</Text>
+        </View>
+      </ImageBackground>
+    </TouchableOpacity>
+  );
+
   if (loading && !refreshing) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#FF2E93" />
-        <Text style={styles.loadingText}>Cargando moteles...</Text>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.centerText}>Cargando moteles...</Text>
       </View>
     );
   }
 
-  // Mostrar error
   if (error && !refreshing) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>⚠️ {error}</Text>
-        <Text style={styles.errorHint}>Verifica tu conexión a internet</Text>
+        <Text style={styles.centerText}>⚠️ {error}</Text>
+        <Text style={[styles.centerText, { color: COLORS.muted }]}>
+          Verifica tu conexión a internet
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={motels}
-        renderItem={renderMotelCard}
-        keyExtractor={item => item.slug || item.id}
-        contentContainerStyle={styles.listContent}
+    <SafeAreaView style={styles.screen}>
+      <HomeHeader />
+      <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={['#FF2E93']}
-            tintColor="#FF2E93"
+            tintColor={COLORS.primary}
           />
         }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No hay moteles disponibles</Text>
-          </View>
-        }
-      />
-    </View>
+      >
+        <PromoCarousel promos={promos} />
+
+        <MotelSection
+          title="Populares"
+          data={populares}
+          ctaText="Ver todos"
+          ctaOnPress={() => navigateList('Populares')}
+          type="small"
+        />
+
+        <MotelSection
+          title="Premium"
+          data={premium}
+          ctaText="Ver todos"
+          ctaOnPress={() => navigateList('Premium')}
+          type="large"
+        />
+
+        {renderBanner()}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
-  listContent: {
-    padding: 16,
+    backgroundColor: COLORS.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    padding: 32,
+    backgroundColor: COLORS.background,
   },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
+  centerText: {
+    color: COLORS.white,
+    marginTop: 12,
   },
-  errorText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FF2E93',
-    textAlign: 'center',
-    marginBottom: 8,
+  bannerContainer: {
+    height: 160,
+    marginHorizontal: 20,
+    marginBottom: 32,
+    borderRadius: 18,
+    overflow: 'hidden',
   },
-  errorHint: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
+  bannerImage: {
+    flex: 1,
+    justifyContent: 'flex-end',
   },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 64,
+  bannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
-  emptyText: {
-    fontSize: 16,
-    color: '#999',
+  bannerText: {
+    padding: 16,
+  },
+  bannerTitle: {
+    color: COLORS.white,
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  bannerSubtitle: {
+    color: COLORS.muted,
+    marginTop: 4,
   },
 });
