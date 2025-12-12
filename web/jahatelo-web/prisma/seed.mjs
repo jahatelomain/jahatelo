@@ -354,16 +354,20 @@ async function main() {
       isActive: true,
     },
   });
-  console.log(`✅ Usuario SUPERADMIN creado: ${superAdmin.email}`);
+  console.log(`✅ [SUPERADMIN] ${superAdmin.name} - ${superAdmin.email}`);
 
-  // Obtener el primer motel para asociar un MOTEL_ADMIN
+  // Obtener moteles para asociar MOTEL_ADMIN
   const firstMotel = await prisma.motel.findFirst({
     where: { slug: 'maximus-motel' },
   });
 
+  const secondMotel = await prisma.motel.findFirst({
+    where: { slug: 'pausa-motel' },
+  });
+
   if (firstMotel) {
     // Crear MOTEL_ADMIN para Maximus Motel
-    const motelAdmin = await prisma.user.create({
+    const motelAdmin1 = await prisma.user.create({
       data: {
         email: 'admin@maximus.com',
         passwordHash: adminPasswordHash,
@@ -373,11 +377,26 @@ async function main() {
         isActive: true,
       },
     });
-    console.log(`✅ Usuario MOTEL_ADMIN creado: ${motelAdmin.email} (${firstMotel.name})`);
+    console.log(`✅ [MOTEL_ADMIN] ${motelAdmin1.name} - ${motelAdmin1.email} (${firstMotel.name})`);
   }
 
-  // Crear usuario regular de prueba
-  const regularUser = await prisma.user.create({
+  if (secondMotel) {
+    // Crear MOTEL_ADMIN para Pausa Motel
+    const motelAdmin2 = await prisma.user.create({
+      data: {
+        email: 'admin@pausa.com',
+        passwordHash: adminPasswordHash,
+        name: 'Admin Pausa Motel',
+        role: 'MOTEL_ADMIN',
+        motelId: secondMotel.id,
+        isActive: true,
+      },
+    });
+    console.log(`✅ [MOTEL_ADMIN] ${motelAdmin2.name} - ${motelAdmin2.email} (${secondMotel.name})`);
+  }
+
+  // Crear usuarios regulares de prueba
+  const regularUser1 = await prisma.user.create({
     data: {
       email: 'user@example.com',
       passwordHash: adminPasswordHash,
@@ -386,13 +405,26 @@ async function main() {
       isActive: true,
     },
   });
-  console.log(`✅ Usuario USER creado: ${regularUser.email}`);
+  console.log(`✅ [USER] ${regularUser1.name} - ${regularUser1.email}`);
 
-  console.log(`\n🌟 Seed completado: ${motelsData.length} moteles y 3 usuarios registrados`);
-  console.log(`\n🔑 Credenciales de acceso:`);
-  console.log(`   SUPERADMIN: admin@jahatelo.com / Admin123!`);
-  console.log(`   MOTEL_ADMIN: admin@maximus.com / Admin123!`);
-  console.log(`   USER: user@example.com / Admin123!`);
+  const regularUser2 = await prisma.user.create({
+    data: {
+      email: 'user2@example.com',
+      passwordHash: adminPasswordHash,
+      name: 'María González',
+      role: 'USER',
+      isActive: true,
+    },
+  });
+  console.log(`✅ [USER] ${regularUser2.name} - ${regularUser2.email}`);
+
+  console.log(`\n🌟 Seed completado: ${motelsData.length} moteles y 5 usuarios registrados`);
+  console.log(`\n🔑 Credenciales de acceso (todas con password: Admin123!):`);
+  console.log(`   [SUPERADMIN]   admin@jahatelo.com`);
+  console.log(`   [MOTEL_ADMIN]  admin@maximus.com`);
+  console.log(`   [MOTEL_ADMIN]  admin@pausa.com`);
+  console.log(`   [USER]         user@example.com`);
+  console.log(`   [USER]         user2@example.com`);
 }
 
 main()

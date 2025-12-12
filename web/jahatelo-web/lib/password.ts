@@ -49,3 +49,29 @@ export function validatePassword(password: string): {
     errors,
   };
 }
+
+/**
+ * Genera una contraseña aleatoria de 8 caracteres
+ * Incluye mayúsculas, minúsculas y números
+ */
+export function generateRandomPassword(): string {
+  const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijkmnopqrstuvwxyz';
+  const numbers = '23456789';
+  const allChars = uppercase + lowercase + numbers;
+
+  let password = '';
+
+  // Garantizar al menos una de cada tipo
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+
+  // Completar hasta 8 caracteres
+  for (let i = 3; i < 8; i++) {
+    password += allChars[Math.floor(Math.random() * allChars.length)];
+  }
+
+  // Mezclar los caracteres
+  return password.split('').sort(() => Math.random() - 0.5).join('');
+}

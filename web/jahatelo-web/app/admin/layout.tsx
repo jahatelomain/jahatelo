@@ -68,14 +68,21 @@ export default function AdminLayout({
     if (pathname === '/admin') return 'Dashboard';
     if (pathname.startsWith('/admin/motels')) return 'Moteles';
     if (pathname.startsWith('/admin/amenities')) return 'Amenities';
+    if (pathname.startsWith('/admin/users')) return 'Usuarios';
     return 'Admin';
   };
 
   const navItems = [
-    { href: '/admin', label: 'Dashboard', icon: '🏠' },
-    { href: '/admin/motels', label: 'Moteles', icon: '🏨' },
-    { href: '/admin/amenities', label: 'Amenities', icon: '✨' },
+    { href: '/admin', label: 'Dashboard', icon: '🏠', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
+    { href: '/admin/motels', label: 'Moteles', icon: '🏨', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
+    { href: '/admin/amenities', label: 'Amenities', icon: '✨', roles: ['SUPERADMIN'] },
+    { href: '/admin/users', label: 'Usuarios', icon: '👥', roles: ['SUPERADMIN'] },
   ];
+
+  // Filtrar items según el rol del usuario
+  const filteredNavItems = navItems.filter(item =>
+    !user?.role || item.roles.includes(user.role as 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER')
+  );
 
   if (isLoginPage) {
     return <>{children}</>;
@@ -147,7 +154,7 @@ export default function AdminLayout({
         <aside className="w-64 bg-slate-50 border-r border-slate-200 min-h-[calc(100vh-57px)] sticky top-[57px] hidden md:block">
           <nav className="p-4">
             <ul className="space-y-1">
-              {navItems.map((item) => (
+              {filteredNavItems.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}

@@ -45,21 +45,47 @@ El panel administrativo está protegido por middleware en `/admin`. Para acceder
 
 ### Credenciales de Prueba
 
-Después de ejecutar el seed, puedes usar estas credenciales:
+Después de ejecutar el seed, puedes usar estas credenciales (todas con password: `Admin123!`):
 
 ```
 SUPERADMIN:
   Email: admin@jahatelo.com
-  Password: Admin123!
 
-MOTEL_ADMIN (Maximus Motel):
-  Email: admin@maximus.com
-  Password: Admin123!
+MOTEL_ADMIN:
+  Email: admin@maximus.com (Maximus Motel)
+  Email: admin@pausa.com (Pausa Motel)
 
-USER Regular:
+USER:
   Email: user@example.com
-  Password: Admin123!
+  Email: user2@example.com
 ```
+
+### Gestión de Usuarios (Solo SUPERADMIN)
+
+El panel admin incluye una sección completa para gestionar usuarios, accesible solo para usuarios con rol SUPERADMIN en `/admin/users`.
+
+**Funcionalidades:**
+
+- **Listar usuarios**: Ver todos los usuarios con su rol, estado y motel asignado
+- **Crear usuarios**: Agregar nuevos usuarios con cualquier rol (SUPERADMIN, MOTEL_ADMIN, USER)
+- **Editar usuarios**: Modificar nombre, rol, motel asignado y estado activo/inactivo
+- **Reset password**: Generar contraseña temporal automática para cualquier usuario
+- **Activar/Desactivar**: Cambiar el estado de un usuario sin eliminarlo
+- **Eliminar usuarios**: Borrar usuarios del sistema (no puedes eliminar tu propio usuario)
+
+**Endpoints API:**
+
+- `GET /api/admin/users` - Listar todos los usuarios (requiere SUPERADMIN)
+- `POST /api/admin/users` - Crear nuevo usuario (requiere SUPERADMIN)
+- `PATCH /api/admin/users/:id` - Actualizar usuario (requiere SUPERADMIN)
+- `DELETE /api/admin/users/:id` - Eliminar usuario (requiere SUPERADMIN)
+
+**Notas:**
+
+- Al crear un usuario, se genera una contraseña temporal automáticamente si no se proporciona una
+- Los usuarios MOTEL_ADMIN deben tener un motel asignado
+- Las contraseñas generadas cumplen con requisitos de seguridad (8 chars, mayúsculas, minúsculas, números)
+- El reset de password genera una nueva contraseña temporal que se muestra una sola vez
 
 ## Base de Datos y Datos Demo
 
@@ -80,7 +106,7 @@ El seed creará:
 - Habitaciones con diferentes tipos y precios
 - Amenities (Jacuzzi, Piscina climatizada, Garage privado, etc.)
 - Fotos, datos de contacto y ubicación
-- **3 usuarios de prueba** (SUPERADMIN, MOTEL_ADMIN, USER) con password: Admin123!
+- **5 usuarios de prueba** (1 SUPERADMIN, 2 MOTEL_ADMIN, 2 USER) con password: Admin123!
 
 ### Ver datos en Prisma Studio
 
