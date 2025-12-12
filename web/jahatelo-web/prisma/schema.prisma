@@ -34,6 +34,12 @@ enum PhotoKind {
   OTHER
 }
 
+enum UserRole {
+  SUPERADMIN
+  MOTEL_ADMIN
+  USER
+}
+
 // ============================================
 // MOTEL
 // ============================================
@@ -82,6 +88,7 @@ model Motel {
   paymentMethods   PaymentMethod[]
   socialLinks      SocialLink[]
   promos           Promo[]
+  users            User[]         // Usuarios administradores del motel
 }
 
 // ============================================
@@ -256,15 +263,22 @@ model Review {
 }
 
 // ============================================
-// USERS (a futuro)
+// USERS
 // ============================================
 
 model User {
   id           String     @id @default(cuid())
   email        String     @unique
-  passwordHash String?
+  passwordHash String
   name         String?
   birthDate    DateTime?
+  role         UserRole   @default(USER)
+  isActive     Boolean    @default(true)
+
+  // Relación con motel (para MOTEL_ADMIN)
+  motel        Motel?     @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId      String?
+
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 

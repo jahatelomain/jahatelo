@@ -1,0 +1,10 @@
+-- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('SUPERADMIN', 'MOTEL_ADMIN', 'USER');
+
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN "role" "UserRole" NOT NULL DEFAULT 'USER',
+ADD COLUMN "isActive" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN "motelId" TEXT;
+
+-- AddForeignKey
+ALTER TABLE "User" ADD CONSTRAINT "User_motelId_fkey" FOREIGN KEY ("motelId") REFERENCES "Motel"("id") ON DELETE CASCADE ON UPDATE CASCADE;
