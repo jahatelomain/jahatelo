@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -213,6 +214,7 @@ const getPhoneInfo = (value) => {
 async function main() {
   console.log('🌱 Iniciando seed para moteles de Paraguay...');
 
+  // Limpiar datos existentes
   await prisma.photo.deleteMany();
   await prisma.roomAmenity.deleteMany();
   await prisma.motelAmenity.deleteMany();
@@ -223,6 +225,9 @@ async function main() {
   await prisma.socialLink.deleteMany();
   await prisma.menuItem.deleteMany();
   await prisma.menuCategory.deleteMany();
+  await prisma.review.deleteMany();
+  await prisma.favorite.deleteMany();
+  await prisma.user.deleteMany();
   await prisma.amenity.deleteMany();
   await prisma.motel.deleteMany();
 
@@ -334,7 +339,60 @@ async function main() {
     console.log(`✅ ${motelData.name} creado`);
   }
 
-  console.log(`\n🌟 Seed completado: ${motelsData.length} moteles registrados`);
+  console.log(`\n👤 Creando usuarios de prueba...`);
+
+  // Hash para password "Admin123!"
+  const adminPasswordHash = await bcrypt.hash('Admin123!', 10);
+
+  // Crear SUPERADMIN
+  const superAdmin = await prisma.user.create({
+    data: {
+      email: 'admin@jahatelo.com',
+      passwordHash: adminPasswordHash,
+      name: 'Super Administrador',
+      role: 'SUPERADMIN',
+      isActive: true,
+    },
+  });
+  console.log(`✅ Usuario SUPERADMIN creado: ${superAdmin.email}`);
+
+  // Obtener el primer motel para asociar un MOTEL_ADMIN
+  const firstMotel = await prisma.motel.findFirst({
+    where: { slug: 'maximus-motel' },
+  });
+
+  if (firstMotel) {
+    // Crear MOTEL_ADMIN para Maximus Motel
+    const motelAdmin = await prisma.user.create({
+      data: {
+        email: 'admin@maximus.com',
+        passwordHash: adminPasswordHash,
+        name: 'Admin Maximus Motel',
+        role: 'MOTEL_ADMIN',
+        motelId: firstMotel.id,
+        isActive: true,
+      },
+    });
+    console.log(`✅ Usuario MOTEL_ADMIN creado: ${motelAdmin.email} (${firstMotel.name})`);
+  }
+
+  // Crear usuario regular de prueba
+  const regularUser = await prisma.user.create({
+    data: {
+      email: 'user@example.com',
+      passwordHash: adminPasswordHash,
+      name: 'Usuario Regular',
+      role: 'USER',
+      isActive: true,
+    },
+  });
+  console.log(`✅ Usuario USER creado: ${regularUser.email}`);
+
+  console.log(`\n🌟 Seed completado: ${motelsData.length} moteles y 3 usuarios registrados`);
+  console.log(`\n🔑 Credenciales de acceso:`);
+  console.log(`   SUPERADMIN: admin@jahatelo.com / Admin123!`);
+  console.log(`   MOTEL_ADMIN: admin@maximus.com / Admin123!`);
+  console.log(`   USER: user@example.com / Admin123!`);
 }
 
 main()

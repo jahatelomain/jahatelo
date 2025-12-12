@@ -4,11 +4,12 @@ Plataforma web para la gestión y visualización de moteles en Colombia. Incluye
 
 ## Stack Tecnológico
 
-- **Framework:** Next.js 14 (App Router)
-- **Base de Datos:** SQLite (desarrollo) / PostgreSQL (producción)
+- **Framework:** Next.js 16 (App Router)
+- **Base de Datos:** PostgreSQL (Supabase)
 - **ORM:** Prisma
 - **Estilos:** Tailwind CSS
 - **Lenguaje:** TypeScript
+- **Autenticación:** JWT con cookies httpOnly (jose + bcryptjs)
 
 ## API Móvil
 
@@ -18,9 +19,51 @@ Este proyecto expone un API público RESTful para la aplicación móvil de Jahat
 - `GET /api/mobile/motels` - Listado paginado de moteles con filtros
 - `GET /api/mobile/motels/:slug` - Detalle completo de un motel
 
+## Autenticación y Roles
+
+El sistema implementa autenticación JWT con tres roles de usuario:
+
+### Roles
+
+- **SUPERADMIN**: Acceso completo a todos los moteles y configuraciones del sistema
+- **MOTEL_ADMIN**: Acceso restringido a la gestión de su propio motel
+- **USER**: Usuario regular sin acceso al panel administrativo
+
+### Endpoints de Autenticación
+
+- `POST /api/auth/login` - Iniciar sesión (devuelve cookie httpOnly con JWT)
+- `POST /api/auth/logout` - Cerrar sesión
+- `POST /api/auth/register` - Registrar nuevo usuario (MOTEL_ADMIN o USER)
+
+### Panel Administrativo
+
+El panel administrativo está protegido por middleware en `/admin`. Para acceder:
+
+1. Navega a `/admin/login`
+2. Usa las credenciales de prueba (ver sección de seed)
+3. Serás redirigido al dashboard según tu rol
+
+### Credenciales de Prueba
+
+Después de ejecutar el seed, puedes usar estas credenciales:
+
+```
+SUPERADMIN:
+  Email: admin@jahatelo.com
+  Password: Admin123!
+
+MOTEL_ADMIN (Maximus Motel):
+  Email: admin@maximus.com
+  Password: Admin123!
+
+USER Regular:
+  Email: user@example.com
+  Password: Admin123!
+```
+
 ## Base de Datos y Datos Demo
 
-El proyecto usa Prisma como ORM con SQLite en desarrollo. Para poblar la base de datos con datos demo para pruebas locales:
+El proyecto usa Prisma como ORM con PostgreSQL (Supabase) en producción. Para poblar la base de datos con datos demo:
 
 ### Primera vez / Reset completo
 
@@ -33,10 +76,11 @@ npx prisma db seed
 ```
 
 El seed creará:
-- 3 moteles de ejemplo (2 destacados, 1 con promoción activa)
-- 6 habitaciones activas con diferentes precios
-- 8 amenities (Jacuzzi, WiFi, Garage privado, etc.)
-- Fotos, menús, y datos de contacto completos
+- 30 moteles de Paraguay con datos reales
+- Habitaciones con diferentes tipos y precios
+- Amenities (Jacuzzi, Piscina climatizada, Garage privado, etc.)
+- Fotos, datos de contacto y ubicación
+- **3 usuarios de prueba** (SUPERADMIN, MOTEL_ADMIN, USER) con password: Admin123!
 
 ### Ver datos en Prisma Studio
 
