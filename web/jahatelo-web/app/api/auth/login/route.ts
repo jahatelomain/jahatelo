@@ -18,9 +18,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar usuario activo
+    const normalizedEmail = email.toLowerCase().trim();
+    console.log('[LOGIN] Attempt:', normalizedEmail);
+
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+      where: { email: normalizedEmail },
     });
+
+    console.log('[LOGIN] User found?', !!user, 'isActive?', user?.isActive);
 
     if (!user || !user.isActive) {
       return NextResponse.json(
@@ -31,6 +36,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar password
     const isValid = await verifyPassword(password, user.passwordHash);
+    console.log('[LOGIN] Password valid?', isValid);
     if (!isValid) {
       return NextResponse.json(
         { error: 'Credenciales inválidas' },
