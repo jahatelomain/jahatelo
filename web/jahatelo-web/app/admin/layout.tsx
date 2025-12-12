@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import type { UserPayload } from '@/lib/auth';
 
 export default function AdminLayout({
   children,
@@ -9,7 +11,51 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const isLoginPage = pathname === '/admin/login';
+  const [user, setUser] = useState<UserPayload | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isLoginPage) {
+      setLoading(false);
+      setUser(null);
+      return;
+    }
+
+    let mounted = true;
+
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me', { cache: 'no-store' });
+        const data = await response.json();
+        if (!mounted) return;
+        setUser(data.user || null);
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        if (!mounted) return;
+        setUser(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchUser();
+
+    return () => {
+      mounted = false;
+    };
+  }, [isLoginPage, pathname]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push('/admin/login');
+      router.refresh();
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
 
   const isActive = (path: string) => {
     if (path === '/admin') {
@@ -35,6 +81,23 @@ export default function AdminLayout({
     return <>{children}</>;
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="text-slate-500">Cargando panel...</div>
+      </div>
+    );
+  }
+
+  const profileInitials = user?.name
+    ? user.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+    : 'AD';
+
   return (
     <div className="min-h-screen bg-slate-100 admin-theme text-slate-900">
       {/* Topbar Moderno */}
@@ -56,19 +119,23 @@ export default function AdminLayout({
 
             {/* Right: Actions & Avatar */}
             <div className="flex items-center gap-4">
-              {/* Notifications */}
-              <button className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <span className="absolute top-1 right-1 w-2 h-2 bg-purple-500 rounded-full"></span>
+              <div className="hidden md:flex flex-col text-right">
+                <span className="text-sm font-medium text-slate-900">
+                  {user?.name || 'Administrador'}
+                </span>
+                <span className="text-xs text-slate-500">{user?.role}</span>
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-50 border border-purple-100 text-sm font-medium text-purple-700 hover:bg-purple-100 transition"
+              >
+                Cerrar sesión
+                <span>↩</span>
               </button>
 
-              {/* Avatar */}
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center text-white text-sm font-semibold">
-                  N
-                </div>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center text-white text-sm font-semibold">
+                {profileInitials}
               </div>
             </div>
           </div>
@@ -102,18 +169,13 @@ export default function AdminLayout({
             {/* Divider */}
             <div className="my-6 border-t border-slate-200"></div>
 
-            {/* Quick Stats en Sidebar */}
-            <div className="px-4 py-3 bg-white rounded-lg shadow-sm border border-slate-200">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                Acceso Rápido
-              </p>
-              <Link
-                href="/admin/motels"
-                className="block text-sm text-purple-600 hover:text-purple-700 font-medium"
-              >
-                → Ver Moteles
-              </Link>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-lg bg-white border border-slate-200 text-sm font-medium text-slate-600 hover:text-slate-900 transition"
+            >
+              Cerrar sesión
+              <span className="text-lg">↩</span>
+            </button>
           </nav>
         </aside>
 
