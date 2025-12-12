@@ -37,7 +37,8 @@ function LoginForm() {
       }
 
       // Login exitoso - redirigir
-      router.push(redirect);
+      const target = redirect || '/admin';
+      router.replace(target);
       router.refresh();
     } catch (err) {
       console.error('Login error:', err);

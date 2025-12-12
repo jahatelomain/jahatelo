@@ -9,6 +9,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const isLoginPage = pathname === '/admin/login';
 
   const isActive = (path: string) => {
     if (path === '/admin') {
@@ -29,6 +30,10 @@ export default function AdminLayout({
     { href: '/admin/motels', label: 'Moteles', icon: '🏨' },
     { href: '/admin/amenities', label: 'Amenities', icon: '✨' },
   ];
+
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 admin-theme text-slate-900">
