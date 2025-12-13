@@ -22,6 +22,11 @@ export async function GET(
                 amenity: true,
               },
             },
+            roomPhotos: {
+              orderBy: {
+                order: 'asc',
+              },
+            },
           },
         },
         menuCategories: {

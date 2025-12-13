@@ -60,6 +60,7 @@ model Motel {
   whatsapp         String?
   website          String?
   instagram        String?
+  featuredPhoto    String?         // Foto principal/portada del motel
   status           MotelStatus     @default(PENDING)
   isActive         Boolean         @default(false)
   contactName      String?
@@ -132,6 +133,7 @@ model RoomType {
   amenities         RoomAmenity[]
   photos            Photo[]
   reviews           Review[]
+  roomPhotos        RoomPhoto[]
 }
 
 // ============================================
@@ -189,6 +191,17 @@ model Photo {
   roomTypeId  String?
   createdAt   DateTime?  @default(now())
   updatedAt   DateTime?  @updatedAt
+}
+
+// Room Photo (galería de fotos de habitación)
+model RoomPhoto {
+  id          String    @id @default(cuid())
+  roomType    RoomType  @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  roomTypeId  String
+  url         String
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 // ============================================

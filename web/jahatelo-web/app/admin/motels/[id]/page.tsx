@@ -33,6 +33,7 @@ type Motel = {
   plan: string | null;
   nextBillingAt: string | null;
   isFeatured: boolean;
+  featuredPhoto: string | null;
   ratingAvg: number | null;
   ratingCount: number | null;
   rooms?: RoomType[];
@@ -62,6 +63,11 @@ type RoomType = {
       id: string;
       name: string;
     };
+  }>;
+  roomPhotos?: Array<{
+    id: string;
+    url: string;
+    order: number;
   }>;
 };
 
@@ -123,6 +129,7 @@ export default function MotelDetailPage({
     plan: '',
     nextBillingAt: '',
     isFeatured: false,
+    featuredPhoto: '',
   });
 
   const [showRoomForm, setShowRoomForm] = useState(false);
@@ -196,6 +203,7 @@ export default function MotelDetailPage({
         plan: data.plan || '',
         nextBillingAt: data.nextBillingAt || '',
         isFeatured: data.isFeatured || false,
+        featuredPhoto: data.featuredPhoto || '',
       });
     } catch (error) {
       console.error('Error fetching motel:', error);
@@ -440,6 +448,54 @@ export default function MotelDetailPage({
     }));
   };
 
+  const handleAddRoomPhoto = async (roomId: string, url: string) => {
+    if (!url.trim()) return;
+
+    try {
+      const res = await fetch('/api/admin/room-photos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomTypeId: roomId,
+          url: url.trim(),
+          order: 0,
+        }),
+      });
+
+      if (res.ok) {
+        fetchMotel();
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus('idle'), 2500);
+      } else {
+        alert('Error al agregar foto');
+      }
+    } catch (error) {
+      console.error('Error adding room photo:', error);
+      alert('Error al agregar foto');
+    }
+  };
+
+  const handleDeleteRoomPhoto = async (photoId: string) => {
+    if (!confirm('¿Eliminar esta foto?')) return;
+
+    try {
+      const res = await fetch(`/api/admin/room-photos/${photoId}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        fetchMotel();
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus('idle'), 2500);
+      } else {
+        alert('Error al eliminar foto');
+      }
+    } catch (error) {
+      console.error('Error deleting room photo:', error);
+      alert('Error al eliminar foto');
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-8">Cargando...</div>;
   }
@@ -627,6 +683,21 @@ export default function MotelDetailPage({
                       {safeRatingAvg.toFixed(1)} ⭐ {safeRatingCount === 0 ? '(Sin reseñas aún)' : `(${safeRatingCount} ${safeRatingCount === 1 ? 'reseña' : 'reseñas'})`}
                     </p>
                   </div>
+                  <div className="md:col-span-2">
+                    <label className="text-xs font-medium text-slate-500 uppercase">Foto Principal</label>
+                    {motel.featuredPhoto ? (
+                      <div className="mt-2">
+                        <img
+                          src={motel.featuredPhoto}
+                          alt={motel.name}
+                          className="w-full max-w-md h-48 object-cover rounded-lg border border-slate-200"
+                        />
+                        <p className="mt-1 text-xs text-slate-500 truncate">{motel.featuredPhoto}</p>
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-slate-400">Sin foto principal</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -709,6 +780,28 @@ export default function MotelDetailPage({
                       className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       rows={3}
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">URL Foto Principal</label>
+                    <input
+                      type="text"
+                      value={motelForm.featuredPhoto}
+                      onChange={(e) => setMotelForm({ ...motelForm, featuredPhoto: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      placeholder="https://ejemplo.com/foto.jpg"
+                    />
+                    {motelForm.featuredPhoto && (
+                      <div className="mt-3">
+                        <img
+                          src={motelForm.featuredPhoto}
+                          alt="Preview"
+                          className="w-full max-w-md h-48 object-cover rounded-lg border border-slate-200"
+                          onError={(e) => {
+                            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f1f5f9" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
@@ -1545,6 +1638,61 @@ export default function MotelDetailPage({
                       </div>
                     </div>
                   )}
+
+                  {/* Fotos de la habitación */}
+                  <div className="pt-4 border-t border-slate-200">
+                    <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Fotos</h4>
+                    <div className="space-y-3">
+                      {(room.roomPhotos?.length ?? 0) > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+                          {(room.roomPhotos ?? []).map((photo) => (
+                            <div key={photo.id} className="relative group">
+                              <img
+                                src={photo.url}
+                                alt="Room photo"
+                                className="w-full h-32 object-cover rounded-lg border border-slate-200"
+                                onError={(e) => {
+                                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="150"%3E%3Crect fill="%23f1f5f9" width="200" height="150"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8" font-size="12"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
+                                }}
+                              />
+                              <button
+                                onClick={() => handleDeleteRoomPhoto(photo.id)}
+                                className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                                title="Eliminar foto"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          id={`photo-url-${room.id}`}
+                          placeholder="URL de la foto"
+                          className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        />
+                        <button
+                          onClick={() => {
+                            const input = document.getElementById(`photo-url-${room.id}`) as HTMLInputElement;
+                            if (input?.value) {
+                              handleAddRoomPhoto(room.id, input.value);
+                              input.value = '';
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm font-medium transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Agregar Foto
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))
             )}

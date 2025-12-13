@@ -10,6 +10,7 @@ export async function GET() {
         neighborhood: true,
         city: true,
         isActive: true,
+        featuredPhoto: true,
       },
       orderBy: {
         name: 'asc',

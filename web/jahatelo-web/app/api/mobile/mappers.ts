@@ -1,4 +1,4 @@
-import { Motel, RoomType, Photo, Amenity, MotelAmenity, RoomAmenity, Promo } from '@prisma/client';
+import { Motel, RoomType, Photo, Amenity, MotelAmenity, RoomAmenity, Promo, RoomPhoto } from '@prisma/client';
 
 type RoomPricingInfo = Pick<
   RoomType,
@@ -16,6 +16,7 @@ type RoomPricingInfo = Pick<
 type RoomWithRelations = RoomType & {
   photos: Photo[];
   amenities: (RoomAmenity & { amenity: Amenity })[];
+  roomPhotos?: RoomPhoto[];
 };
 
 // Base type for list items - accepts both pricing info and full room data
@@ -57,14 +58,19 @@ export function getStartingPrice(rooms?: (RoomPricingInfo | RoomWithRelations)[]
 }
 
 /**
- * Obtiene el thumbnail (primera foto FACADE o primera foto disponible)
+ * Obtiene el thumbnail (featuredPhoto > primera foto FACADE > primera foto disponible)
  */
-export function getThumbnail(photos: Photo[]): string | null {
+export function getThumbnail(photos: Photo[], featuredPhoto?: string | null): string | null {
+  // Prioridad 1: featuredPhoto
+  if (featuredPhoto) return featuredPhoto;
+
+  // Prioridad 2: primera foto FACADE
   if (!photos || photos.length === 0) return null;
 
   const facadePhoto = photos.find((p) => p.kind === 'FACADE');
   if (facadePhoto) return facadePhoto.url;
 
+  // Prioridad 3: primera foto disponible
   return photos[0]?.url || null;
 }
 
@@ -115,8 +121,9 @@ export function mapMotelToListItem(motel: MotelForList) {
     hasPromo: hasActivePromos(motel.promos),
     startingPrice: getStartingPrice(motel.rooms),
     amenities: motel.motelAmenities.map((ma) => ma.amenity.name),
-    thumbnail: getThumbnail(motel.photos),
+    thumbnail: getThumbnail(motel.photos, motel.featuredPhoto),
     photos: getListPhotos(motel.photos),
+    featuredPhoto: motel.featuredPhoto,
   };
 }
 
@@ -146,6 +153,11 @@ export function generatePriceLabel(room: RoomType): string {
 export function mapRoomForMobile(room: RoomWithRelations) {
   const basePrice = room.basePrice || room.price1h || room.price2h || 0;
 
+  // Priorizar roomPhotos sobre photos (legacy)
+  const photoUrls = room.roomPhotos && room.roomPhotos.length > 0
+    ? room.roomPhotos.map((p) => p.url)
+    : room.photos.map((p) => p.url);
+
   return {
     id: room.id,
     name: room.name,
@@ -162,7 +174,7 @@ export function mapRoomForMobile(room: RoomWithRelations) {
       priceNight: room.priceNight,
     },
     amenities: room.amenities.map((ra) => ra.amenity.name),
-    photos: room.photos.map((p) => p.url),
+    photos: photoUrls,
     maxPersons: room.maxPersons,
     hasJacuzzi: room.hasJacuzzi,
     hasPrivateGarage: room.hasPrivateGarage,

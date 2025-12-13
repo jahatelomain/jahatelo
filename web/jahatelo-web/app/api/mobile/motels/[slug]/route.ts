@@ -33,6 +33,9 @@ export async function GET(
           photos: {
             orderBy: { order: 'asc' as const },
           },
+          roomPhotos: {
+            orderBy: { order: 'asc' as const },
+          },
           amenities: {
             include: {
               amenity: true,
