@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ChangeEvent } from 'react';
 import { use } from 'react';
 
 type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -159,6 +159,8 @@ export default function MotelDetailPage({
   const [showItemForm, setShowItemForm] = useState(false);
   const [itemCategoryId, setItemCategoryId] = useState<string | null>(null);
   const [itemForm, setItemForm] = useState({ name: '', price: '', description: '' });
+  const [uploadingFeatured, setUploadingFeatured] = useState(false);
+  const [uploadingRoomId, setUploadingRoomId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMotel();
@@ -496,6 +498,62 @@ export default function MotelDetailPage({
     }
   };
 
+  const uploadFileToS3 = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch('/api/upload/s3', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      throw new Error('No se pudo subir la imagen');
+    }
+
+    const data = await res.json();
+    return data.url as string;
+  };
+
+  const handleFeaturedFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFeatured(true);
+    try {
+      const url = await uploadFileToS3(file);
+      setMotelForm((prev) => ({ ...prev, featuredPhoto: url }));
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus('idle'), 2500);
+    } catch (error) {
+      console.error('Error uploading featured photo:', error);
+      alert('No se pudo subir la imagen. Intenta nuevamente.');
+    } finally {
+      setUploadingFeatured(false);
+      event.target.value = '';
+    }
+  };
+
+  const handleRoomPhotoFileChange = async (
+    roomId: string,
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingRoomId(roomId);
+    try {
+      const url = await uploadFileToS3(file);
+      await handleAddRoomPhoto(roomId, url);
+    } catch (error) {
+      console.error('Error uploading room photo:', error);
+      alert('No se pudo subir la imagen. Intenta nuevamente.');
+    } finally {
+      setUploadingRoomId(null);
+      event.target.value = '';
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-8">Cargando...</div>;
   }
@@ -790,6 +848,37 @@ export default function MotelDetailPage({
                       className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       placeholder="https://ejemplo.com/foto.jpg"
                     />
+                    <div className="flex flex-wrap items-center gap-3 mt-3">
+                      <label
+                        className={`inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg cursor-pointer font-medium hover:bg-slate-200 transition ${
+                          uploadingFeatured ? 'opacity-70 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFeaturedFileChange}
+                          disabled={uploadingFeatured}
+                        />
+                        {uploadingFeatured ? (
+                          <>
+                            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l3 3" />
+                            </svg>
+                            Subiendo...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4-4 4 4m-4-4v9" />
+                            </svg>
+                            Subir desde archivo
+                          </>
+                        )}
+                      </label>
+                      <p className="text-xs text-slate-500">Formatos sugeridos: JPG o PNG.</p>
+                    </div>
                     {motelForm.featuredPhoto && (
                       <div className="mt-3">
                         <img
@@ -1668,7 +1757,7 @@ export default function MotelDetailPage({
                           ))}
                         </div>
                       )}
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <input
                           type="text"
                           id={`photo-url-${room.id}`}
@@ -1690,6 +1779,34 @@ export default function MotelDetailPage({
                           </svg>
                           Agregar Foto
                         </button>
+                        <label
+                          className={`inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg cursor-pointer text-sm font-medium hover:bg-slate-200 transition ${
+                            uploadingRoomId === room.id ? 'opacity-70 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(event) => handleRoomPhotoFileChange(room.id, event)}
+                            disabled={uploadingRoomId === room.id}
+                          />
+                          {uploadingRoomId === room.id ? (
+                            <>
+                              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l3 3" />
+                              </svg>
+                              Subiendo...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4-4 4 4m-4-4v9" />
+                              </svg>
+                              Subir archivo
+                            </>
+                          )}
+                        </label>
                       </div>
                     </div>
                   </div>
