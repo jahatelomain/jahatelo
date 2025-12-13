@@ -52,6 +52,7 @@ model Motel {
   city             String
   neighborhood     String
   address          String
+  country          String?
   mapUrl           String?
   latitude         Float?
   longitude        Float?

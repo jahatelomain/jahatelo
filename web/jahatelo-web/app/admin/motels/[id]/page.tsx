@@ -101,6 +101,10 @@ export default function MotelDetailPage({
   const [motelForm, setMotelForm] = useState({
     name: '',
     description: '',
+    country: '',
+    city: '',
+    neighborhood: '',
+    address: '',
     mapUrl: '',
     phone: '',
     whatsapp: '',
@@ -170,6 +174,10 @@ export default function MotelDetailPage({
       setMotelForm({
         name: data.name,
         description: data.description || '',
+        country: data.country || '',
+        city: data.city || '',
+        neighborhood: data.neighborhood || '',
+        address: data.address || '',
         mapUrl: data.mapUrl || '',
         phone: data.phone || '',
         whatsapp: data.whatsapp || '',
@@ -466,17 +474,23 @@ export default function MotelDetailPage({
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div className="flex-1">
             <h1 className="text-2xl font-semibold text-slate-900 mb-2">{motel.name}</h1>
-            <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-              <span>{motel.city}</span>
-              <span className="text-slate-300">•</span>
-              <span>{motel.neighborhood}</span>
-              {motel.address && (
-                <>
-                  <span className="text-slate-300">•</span>
-                  <span>{motel.address}</span>
-                </>
-              )}
-            </div>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+            {motel.country && (
+              <>
+                <span>{motel.country}</span>
+                <span className="text-slate-300">•</span>
+              </>
+            )}
+            <span>{motel.city}</span>
+            <span className="text-slate-300">•</span>
+            <span>{motel.neighborhood}</span>
+            {motel.address && (
+              <>
+                <span className="text-slate-300">•</span>
+                <span>{motel.address}</span>
+              </>
+            )}
+          </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -622,6 +636,10 @@ export default function MotelDetailPage({
                 </h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
+                    <label className="text-xs font-medium text-slate-500 uppercase">País</label>
+                    <p className="mt-1 text-slate-900">{motel.country || '-'}</p>
+                  </div>
+                  <div>
                     <label className="text-xs font-medium text-slate-500 uppercase">Ciudad</label>
                     <p className="mt-1 text-slate-900">{motel.city}</p>
                   </div>
@@ -752,15 +770,53 @@ export default function MotelDetailPage({
                 <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
                   Ubicación
                 </h3>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">URL de Mapa</label>
-                  <input
-                    type="text"
-                    value={motelForm.mapUrl}
-                    onChange={(e) => setMotelForm({ ...motelForm, mapUrl: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="https://maps.google.com/..."
-                  />
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">País</label>
+                    <input
+                      type="text"
+                      value={motelForm.country}
+                      onChange={(e) => setMotelForm({ ...motelForm, country: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Ciudad</label>
+                    <input
+                      type="text"
+                      value={motelForm.city}
+                      onChange={(e) => setMotelForm({ ...motelForm, city: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Barrio</label>
+                    <input
+                      type="text"
+                      value={motelForm.neighborhood}
+                      onChange={(e) => setMotelForm({ ...motelForm, neighborhood: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Dirección</label>
+                    <input
+                      type="text"
+                      value={motelForm.address}
+                      onChange={(e) => setMotelForm({ ...motelForm, address: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">URL de Mapa</label>
+                    <input
+                      type="text"
+                      value={motelForm.mapUrl}
+                      onChange={(e) => setMotelForm({ ...motelForm, mapUrl: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      placeholder="https://maps.google.com/..."
+                    />
+                  </div>
                 </div>
               </div>
 
