@@ -10,6 +10,7 @@ type Motel = {
   name: string;
   slug: string;
   description: string | null;
+  country: string | null;
   city: string;
   neighborhood: string;
   address: string;
