@@ -173,7 +173,10 @@ export function mapRoomForMobile(room: RoomWithRelations) {
       price24h: room.price24h,
       priceNight: room.priceNight,
     },
-    amenities: room.amenities.map((ra) => ra.amenity.name),
+    amenities: room.amenities.map((ra) => ({
+      name: ra.amenity.name,
+      icon: ra.amenity.icon,
+    })),
     photos: photoUrls,
     maxPersons: room.maxPersons,
     hasJacuzzi: room.hasJacuzzi,

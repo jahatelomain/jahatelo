@@ -23,25 +23,6 @@ export default function RoomsTab({ route }) {
             <Text style={styles.roomDescription}>{room.description}</Text>
           )}
 
-          <View style={styles.roomPriceRow}>
-            <Text style={styles.roomPriceLabel}>Desde</Text>
-            <Text style={styles.roomPrice}>{formatPrice(room.basePrice)}</Text>
-            {room.priceLabel && (
-              <Text style={styles.roomPriceLabel}> {room.priceLabel}</Text>
-            )}
-          </View>
-
-          {/* Amenities de la habitación */}
-          {room.amenities && room.amenities.length > 0 && (
-            <View style={styles.amenitiesContainer}>
-              {room.amenities.map((amenity, index) => (
-                <View key={index} style={styles.amenityPill}>
-                  <Text style={styles.amenityText}>{amenity}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
           {/* Fotos de la habitación */}
           {room.photos && room.photos.length > 0 && (
             <ScrollView
@@ -59,6 +40,28 @@ export default function RoomsTab({ route }) {
                 />
               ))}
             </ScrollView>
+          )}
+
+          <View style={styles.roomPriceRow}>
+            <Text style={styles.roomPriceLabel}>DESDE</Text>
+            <Text style={styles.roomPrice}>{formatPrice(room.basePrice)}</Text>
+            {room.priceLabel && (
+              <Text style={styles.roomPriceLabel}> {room.priceLabel}</Text>
+            )}
+          </View>
+
+          {/* Amenities de la habitación */}
+          {room.amenities && room.amenities.length > 0 && (
+            <View style={styles.amenitiesContainer}>
+              {room.amenities.map((amenity, index) => {
+                const amenityName = typeof amenity === 'string' ? amenity : amenity.name;
+                return (
+                  <View key={index} style={styles.amenityPill}>
+                    <Text style={styles.amenityText}>{amenityName}</Text>
+                  </View>
+                );
+              })}
+            </View>
           )}
         </View>
       ))}
@@ -97,6 +100,7 @@ const styles = StyleSheet.create({
   roomPriceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
+    marginTop: 12,
     marginBottom: 12,
   },
   roomPriceLabel: {
@@ -127,7 +131,8 @@ const styles = StyleSheet.create({
     color: '#2A0038',
   },
   photosScroll: {
-    marginTop: 8,
+    marginTop: 12,
+    marginBottom: 0,
   },
   photosScrollContent: {
     paddingRight: 8,

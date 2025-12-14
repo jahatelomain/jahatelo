@@ -4,30 +4,6 @@ import crypto from 'crypto';
 
 export const runtime = 'nodejs';
 
-const requiredEnv = [
-  'AWS_ACCESS_KEY_ID',
-  'AWS_SECRET_ACCESS_KEY',
-  'AWS_S3_BUCKET',
-  'AWS_S3_REGION',
-];
-
-const missing = requiredEnv.filter((key) => !process.env[key]);
-if (missing.length > 0) {
-  throw new Error(
-    `Missing AWS config: ${missing.join(
-      ', ',
-    )}. Please set env vars before calling the upload endpoint.`,
-  );
-}
-
-const s3 = new S3Client({
-  region: process.env.AWS_S3_REGION!,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
-
 function createObjectKey(filename?: string | null) {
   const ext = filename?.includes('.') ? filename.split('.').pop() : undefined;
   const unique = crypto.randomBytes(8).toString('hex');
@@ -37,6 +13,31 @@ function createObjectKey(filename?: string | null) {
 
 export async function POST(request: Request) {
   try {
+    // Validate AWS env vars
+    const requiredEnv = [
+      'AWS_ACCESS_KEY_ID',
+      'AWS_SECRET_ACCESS_KEY',
+      'AWS_S3_BUCKET',
+      'AWS_S3_REGION',
+    ];
+
+    const missing = requiredEnv.filter((key) => !process.env[key]);
+    if (missing.length > 0) {
+      return NextResponse.json(
+        { error: `Missing AWS config: ${missing.join(', ')}` },
+        { status: 500 },
+      );
+    }
+
+    // Initialize S3 client
+    const s3 = new S3Client({
+      region: process.env.AWS_S3_REGION!,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      },
+    });
+
     const formData = await request.formData();
     const file = formData.get('file');
     if (!(file instanceof Blob)) {
