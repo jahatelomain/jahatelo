@@ -56,7 +56,6 @@ export async function POST(request: Request) {
         Bucket: process.env.AWS_S3_BUCKET!,
         Key: key,
         Body: buffer,
-        ACL: 'public-read',
         ContentType: file.type || 'application/octet-stream',
       }),
     );
