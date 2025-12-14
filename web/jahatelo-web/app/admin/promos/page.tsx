@@ -85,8 +85,12 @@ export default function AdminPromosPage() {
     }
   };
 
-  const handleInputChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type, checked } = event.target;
+  const handleInputChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) => {
+    const { name, value, type } = event.target;
+    const checked = 'checked' in event.target ? event.target.checked : undefined;
+
     setForm((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
