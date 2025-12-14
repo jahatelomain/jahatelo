@@ -87,6 +87,7 @@ export default function AdminLayout({
   const navItems = [
     { href: '/admin', label: 'Dashboard', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
     { href: '/admin/motels', label: 'Moteles', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
+    { href: '/admin/promos', label: 'Promos', roles: ['SUPERADMIN'] },
     { href: '/admin/amenities', label: 'Amenities', roles: ['SUPERADMIN'] },
     { href: '/admin/users', label: 'Usuarios', roles: ['SUPERADMIN'] },
   ];

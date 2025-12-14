@@ -7,13 +7,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const motelId = searchParams.get('motelId');
 
-    if (!motelId) {
-      return NextResponse.json({ error: 'motelId es requerido' }, { status: 400 });
-    }
-
     const promos = await prisma.promo.findMany({
-      where: { motelId },
+      where: motelId ? { motelId } : undefined,
       orderBy: { createdAt: 'desc' },
+      include: {
+        motel: {
+          select: {
+            id: true,
+            name: true,
+            city: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json(promos);
