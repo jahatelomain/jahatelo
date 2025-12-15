@@ -175,15 +175,17 @@ export default function MotelDetailPage({
   const [itemForm, setItemForm] = useState({ name: '', price: '', description: '' });
 
   // Promos state
-  const [promos, setPromos] = useState<Promo[]>([]);
-  const [showPromoForm, setShowPromoForm] = useState(false);
-  const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
-  const [promoForm, setPromoForm] = useState({
+  const createInitialPromoForm = () => ({
     title: '',
     description: '',
     imageUrl: '',
     isGlobal: false,
   });
+
+  const [promos, setPromos] = useState<Promo[]>([]);
+  const [showPromoForm, setShowPromoForm] = useState(false);
+  const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
+  const [promoForm, setPromoForm] = useState(createInitialPromoForm());
   const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
   const [uploadingFeatured, setUploadingFeatured] = useState(false);
   const [uploadingRoomId, setUploadingRoomId] = useState<string | null>(null);
@@ -289,7 +291,7 @@ export default function MotelDetailPage({
           fetchPromos();
           setShowPromoForm(false);
           setEditingPromoId(null);
-          setPromoForm({ title: '', description: '', imageUrl: '' });
+          setPromoForm(createInitialPromoForm());
         }
       } else {
         // Create new promo
@@ -301,7 +303,7 @@ export default function MotelDetailPage({
         if (res.ok) {
           fetchPromos();
           setShowPromoForm(false);
-          setPromoForm({ title: '', description: '', imageUrl: '' });
+          setPromoForm(createInitialPromoForm());
         }
       }
     } catch (error) {
