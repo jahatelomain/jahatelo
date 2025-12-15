@@ -128,7 +128,10 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
           <Ionicons name="arrow-forward" size={16} color="#fff" />
         </TouchableOpacity>
         {!searchValue && (
-          <Animated.Text style={[styles.animatedPlaceholder, { opacity: placeholderOpacity }]}>
+          <Animated.Text
+            style={[styles.animatedPlaceholder, { opacity: placeholderOpacity }]}
+            pointerEvents="none"
+          >
             Buscar moteles, barrios o amenities
           </Animated.Text>
         )}
@@ -252,13 +255,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  animatedPlaceholder: {
-    position: 'absolute',
-    left: 40,
-    right: 60,
-    color: COLORS.muted,
-    fontSize: 13,
   },
   animatedPlaceholder: {
     position: 'absolute',
