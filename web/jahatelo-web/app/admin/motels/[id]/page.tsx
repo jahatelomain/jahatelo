@@ -2050,7 +2050,8 @@ export default function MotelDetailPage({
                       <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Amenities</h4>
                       <div className="flex flex-wrap gap-2">
                         {(room.amenities ?? []).map((a) => {
-                          const IconComponent = a.amenity.icon && (LucideIcons as Record<string, React.ComponentType<{ size?: number }>>)[a.amenity.icon];
+                          const iconMap = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>;
+                          const IconComponent = a.amenity.icon ? iconMap[a.amenity.icon] : undefined;
                           return (
                             <span
                               key={a.amenity.id}
