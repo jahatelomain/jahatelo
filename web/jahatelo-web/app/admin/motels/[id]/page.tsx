@@ -102,6 +102,7 @@ type Promo = {
   validFrom: string | null;
   validUntil: string | null;
   isActive: boolean;
+  isGlobal: boolean;
 };
 
 export default function MotelDetailPage({
@@ -181,7 +182,9 @@ export default function MotelDetailPage({
     title: '',
     description: '',
     imageUrl: '',
+    isGlobal: false,
   });
+  const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
   const [uploadingFeatured, setUploadingFeatured] = useState(false);
   const [uploadingRoomId, setUploadingRoomId] = useState<string | null>(null);
   const [uploadingPromo, setUploadingPromo] = useState(false);
@@ -190,6 +193,7 @@ export default function MotelDetailPage({
     fetchMotel();
     fetchAmenities();
     fetchPromos();
+    fetchCurrentUser();
   }, [id]);
 
   useEffect(() => {
@@ -259,6 +263,18 @@ export default function MotelDetailPage({
     }
   };
 
+  const fetchCurrentUser = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentUser(data);
+      }
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
+
   const handleSavePromo = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -311,6 +327,7 @@ export default function MotelDetailPage({
       title: promo.title,
       description: promo.description || '',
       imageUrl: promo.imageUrl || '',
+      isGlobal: promo.isGlobal || false,
     });
     setShowPromoForm(true);
   };
@@ -823,7 +840,7 @@ export default function MotelDetailPage({
                   onClick={() => {
                     setShowPromoForm(false);
                     setEditingPromoId(null);
-                    setPromoForm({ title: '', description: '', imageUrl: '' });
+                    setPromoForm({ title: '', description: '', imageUrl: '', isGlobal: false });
                   }}
                   className="text-slate-400 hover:text-slate-600 transition-colors"
                 >
@@ -907,6 +924,22 @@ export default function MotelDetailPage({
                     </div>
                   )}
                 </div>
+                {currentUser?.role === 'SUPERADMIN' && (
+                  <div className="border-t border-slate-200 pt-4">
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={promoForm.isGlobal}
+                        onChange={(e) => setPromoForm({ ...promoForm, isGlobal: e.target.checked })}
+                        className="rounded text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className="text-sm text-slate-700">
+                        <span className="font-medium">Mostrar en Home</span>
+                        <span className="text-xs text-slate-500 block">Esta promo aparecerá en la sección de promociones del Home de la app</span>
+                      </span>
+                    </label>
+                  </div>
+                )}
                 <div className="flex gap-3 pt-4">
                   <button
                     type="submit"
@@ -919,7 +952,7 @@ export default function MotelDetailPage({
                     onClick={() => {
                       setShowPromoForm(false);
                       setEditingPromoId(null);
-                      setPromoForm({ title: '', description: '', imageUrl: '' });
+                      setPromoForm({ title: '', description: '', imageUrl: '', isGlobal: false });
                     }}
                     className="bg-slate-100 text-slate-700 px-6 py-2.5 rounded-lg hover:bg-slate-200 font-medium transition-colors"
                   >
@@ -953,7 +986,14 @@ export default function MotelDetailPage({
                     />
                   )}
                   <div className="p-4">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-2">{promo.title}</h3>
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="text-lg font-semibold text-slate-900 flex-1">{promo.title}</h3>
+                      {currentUser?.role === 'SUPERADMIN' && promo.isGlobal && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-semibold">
+                          🏠 Home
+                        </span>
+                      )}
+                    </div>
                     {promo.description && (
                       <p className="text-sm text-slate-600 mb-3">{promo.description}</p>
                     )}
@@ -2008,7 +2048,7 @@ export default function MotelDetailPage({
                       <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Amenities</h4>
                       <div className="flex flex-wrap gap-2">
                         {(room.amenities ?? []).map((a) => {
-                          const IconComponent = a.amenity.icon && (LucideIcons as any)[a.amenity.icon];
+                          const IconComponent = a.amenity.icon && (LucideIcons as Record<string, React.ComponentType<{ size?: number }>>)[a.amenity.icon];
                           return (
                             <span
                               key={a.amenity.id}

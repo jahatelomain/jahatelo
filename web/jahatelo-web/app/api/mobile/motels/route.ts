@@ -114,7 +114,10 @@ export async function GET(request: NextRequest) {
             },
           },
           promos: {
-            where: { isActive: true },
+            where: {
+              isActive: true,
+              isGlobal: true,
+            },
           },
         },
         orderBy: [

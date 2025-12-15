@@ -9,7 +9,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { title, description, imageUrl, validFrom, validUntil, isActive } = body;
+    const { title, description, imageUrl, validFrom, validUntil, isActive, isGlobal } = body;
 
     const promo = await prisma.promo.update({
       where: { id },
@@ -20,6 +20,7 @@ export async function PATCH(
         ...(validFrom !== undefined && { validFrom: validFrom ? new Date(validFrom) : null }),
         ...(validUntil !== undefined && { validUntil: validUntil ? new Date(validUntil) : null }),
         ...(isActive !== undefined && { isActive }),
+        ...(isGlobal !== undefined && { isGlobal }),
       },
     });
 

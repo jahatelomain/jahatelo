@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { motelId, title, description, imageUrl, validFrom, validUntil, isActive } = body;
+    const { motelId, title, description, imageUrl, validFrom, validUntil, isActive, isGlobal } = body;
 
     if (!motelId || !title) {
       return NextResponse.json(
@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
         validFrom: validFrom ? new Date(validFrom) : null,
         validUntil: validUntil ? new Date(validUntil) : null,
         isActive: isActive ?? true,
+        isGlobal: isGlobal ?? false,
       },
     });
 
