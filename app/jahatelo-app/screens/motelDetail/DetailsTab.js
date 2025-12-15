@@ -21,16 +21,6 @@ export default function DetailsTab({ route }) {
     }
   };
 
-  const handleCall = () => {
-    console.log('Llamar a:', motel.nombre);
-    // TODO: Implementar funcionalidad de llamada
-  };
-
-  const handleWhatsApp = () => {
-    console.log('WhatsApp a:', motel.nombre);
-    // TODO: Implementar funcionalidad de WhatsApp
-  };
-
   const hasLocation = motel.location && motel.location.lat && motel.location.lng;
 
   return (
@@ -86,28 +76,6 @@ export default function DetailsTab({ route }) {
           </View>
         </View>
       )}
-
-      {/* Botones de acción */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Contacto</Text>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={handleCall}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="call" size={24} color="#FFFFFF" />
-          <Text style={styles.actionButtonText}>Llamar</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.whatsappButton]}
-          onPress={handleWhatsApp}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="logo-whatsapp" size={24} color="#FFFFFF" />
-          <Text style={styles.actionButtonText}>WhatsApp</Text>
-        </TouchableOpacity>
-      </View>
     </ScrollView>
   );
 }

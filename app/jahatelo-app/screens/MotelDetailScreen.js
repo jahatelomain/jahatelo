@@ -206,26 +206,49 @@ export default function MotelDetailScreen({ route, navigation }) {
           tabBarInactiveTintColor: '#666',
         }}
       >
-        <Tab.Screen
-          name="Promos"
-          component={PromosTab}
-          initialParams={{ motel }}
-        />
-        <Tab.Screen
-          name="Detalles"
-          component={DetailsTab}
-          initialParams={{ motel }}
-        />
-        <Tab.Screen
-          name="Habitaciones"
-          component={RoomsTab}
-          initialParams={{ motel }}
-        />
-        <Tab.Screen
-          name="Menú"
-          component={MenuTab}
-          initialParams={{ motel }}
-        />
+        {/* Construir tabs dinámicamente según contenido disponible */}
+        {(() => {
+          const availableTabs = [];
+
+          // Incluir Promos solo si hay promos
+          if (motel.promos && motel.promos.length > 0) {
+            availableTabs.push({
+              name: 'Promos',
+              component: PromosTab,
+            });
+          }
+
+          // Detalles siempre se muestra
+          availableTabs.push({
+            name: 'Detalles',
+            component: DetailsTab,
+          });
+
+          // Habitaciones solo si hay rooms
+          if (motel.rooms && motel.rooms.length > 0) {
+            availableTabs.push({
+              name: 'Habitaciones',
+              component: RoomsTab,
+            });
+          }
+
+          // Menú solo si hay categorías de menú
+          if (motel.menu && motel.menu.length > 0) {
+            availableTabs.push({
+              name: 'Menú',
+              component: MenuTab,
+            });
+          }
+
+          return availableTabs.map((tab) => (
+            <Tab.Screen
+              key={tab.name}
+              name={tab.name}
+              component={tab.component}
+              initialParams={{ motel }}
+            />
+          ));
+        })()}
       </Tab.Navigator>
     </SafeAreaView>
   );

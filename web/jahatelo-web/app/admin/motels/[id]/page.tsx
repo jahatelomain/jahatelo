@@ -843,7 +843,7 @@ export default function MotelDetailPage({
                   onClick={() => {
                     setShowPromoForm(false);
                     setEditingPromoId(null);
-                    setPromoForm({ title: '', description: '', imageUrl: '', isGlobal: false });
+                    setPromoForm(createInitialPromoForm());
                   }}
                   className="text-slate-400 hover:text-slate-600 transition-colors"
                 >
@@ -955,7 +955,7 @@ export default function MotelDetailPage({
                     onClick={() => {
                       setShowPromoForm(false);
                       setEditingPromoId(null);
-                      setPromoForm({ title: '', description: '', imageUrl: '', isGlobal: false });
+                      setPromoForm(createInitialPromoForm());
                     }}
                     className="bg-slate-100 text-slate-700 px-6 py-2.5 rounded-lg hover:bg-slate-200 font-medium transition-colors"
                   >
