@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dimensions, FlatList, ImageBackground, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, FlatList, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -10,7 +10,7 @@ const COLORS = {
   overlay: 'rgba(0,0,0,0.55)',
 };
 
-const PromoCard = ({ motel }) => {
+const PromoCard = ({ motel, onPress }) => {
   const image =
     motel.photos?.[0]?.url ||
     motel.fotos?.[0] ||
@@ -18,15 +18,17 @@ const PromoCard = ({ motel }) => {
     'https://images.unsplash.com/photo-1559599238-4b9b034d4e9e?auto=format&fit=crop&w=1400&q=80';
 
   return (
-    <ImageBackground source={{ uri: image }} style={styles.card} imageStyle={styles.cardImage}>
-      <View style={styles.cardOverlay} />
-      <Text style={styles.cardTitle} numberOfLines={1}>{motel.nombre}</Text>
-      <Text style={styles.cardSubtitle}>Ver promoción</Text>
-    </ImageBackground>
+    <TouchableOpacity activeOpacity={0.85} style={styles.cardWrapper} onPress={() => onPress?.(motel)}>
+      <ImageBackground source={{ uri: image }} style={styles.card} imageStyle={styles.cardImage}>
+        <View style={styles.cardOverlay} />
+        <Text style={styles.cardTitle} numberOfLines={1}>{motel.nombre}</Text>
+        <Text style={styles.cardSubtitle}>Ver promoción</Text>
+      </ImageBackground>
+    </TouchableOpacity>
   );
 };
 
-export default function PromoCarousel({ promos = [] }) {
+export default function PromoCarousel({ promos = [], onPromoPress }) {
   if (!promos.length) return null;
 
   return (
@@ -37,7 +39,7 @@ export default function PromoCarousel({ promos = [] }) {
         <FlatList
           data={promos}
           keyExtractor={(item) => item.id?.toString()}
-          renderItem={({ item }) => <PromoCard motel={item} />}
+          renderItem={({ item }) => <PromoCard motel={item} onPress={onPromoPress} />}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
@@ -76,10 +78,12 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 20,
   },
+  cardWrapper: {
+    marginRight: 16,
+  },
   card: {
     width: width * 0.6,
     height: width * 0.4,
-    marginRight: 16,
     borderRadius: 16,
     overflow: 'hidden',
     justifyContent: 'flex-end',

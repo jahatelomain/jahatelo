@@ -3,12 +3,10 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFavorites } from '../hooks/useFavorites';
 import { COLORS } from '../constants/theme';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
-  const { favorites } = useFavorites();
 
   const handleRegisterMotel = () => {
     navigation.navigate('RegisterMotel');
@@ -28,20 +26,8 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.headerTitle}>Modo invitado</Text>
           <Text style={styles.headerSubtitle}>
-            Tus favoritos se guardan en este dispositivo.{'\n'}
-            Más adelante podrás crear una cuenta.
+            Más adelante podrás crear una cuenta y sincronizar tus datos.
           </Text>
-        </View>
-
-        {/* Tu cuenta Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tu cuenta</Text>
-          <View style={styles.infoBox}>
-            <Ionicons name="information-circle-outline" size={20} color="#666" />
-            <Text style={styles.infoText}>
-              Actualmente tienes {favorites.length} {favorites.length === 1 ? 'motel guardado' : 'moteles guardados'} en favoritos.
-            </Text>
-          </View>
         </View>
 
         {/* Explora Jahatelo Section */}
@@ -165,23 +151,6 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: 12,
     paddingHorizontal: 16,
-  },
-  infoBox: {
-    backgroundColor: COLORS.white,
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    marginHorizontal: 16,
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.primary,
-  },
-  infoText: {
-    fontSize: 14,
-    color: COLORS.textLight,
-    marginLeft: 12,
-    flex: 1,
-    lineHeight: 20,
   },
   optionsContainer: {
     backgroundColor: COLORS.white,

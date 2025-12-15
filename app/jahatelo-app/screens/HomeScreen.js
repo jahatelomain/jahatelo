@@ -56,7 +56,14 @@ export default function HomeScreen() {
   };
 
   const handleMotelPress = (motel) => {
-    navigation.navigate('MotelDetail', { motelId: motel.id });
+    navigation.navigate('MotelDetail', {
+      motelSlug: motel.slug,
+      motelId: motel.id,
+    });
+  };
+
+  const handleSearch = (query = '') => {
+    navigation.navigate('Search', { initialQuery: query });
   };
 
   const categories = [
@@ -86,14 +93,14 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <HomeHeader motels={motels} onMotelPress={handleMotelPress} />
+      <HomeHeader motels={motels} onMotelPress={handleMotelPress} onSearch={handleSearch} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />}
       >
-        <PromoCarousel promos={promos.length ? promos : motels.slice(0, 5)} />
+        <PromoCarousel promos={promos.length ? promos : motels.slice(0, 5)} onPromoPress={handleMotelPress} />
         <HomeCategoriesGrid categories={categories} />
       </ScrollView>
     </SafeAreaView>

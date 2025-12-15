@@ -15,9 +15,10 @@ const QUICK_FILTERS = [
   'A/C',
 ];
 
-export default function SearchScreen() {
+export default function SearchScreen({ route }) {
   const navigation = useNavigation();
-  const [searchQuery, setSearchQuery] = useState('');
+  const initialQuery = route?.params?.initialQuery ?? '';
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [selectedAmenity, setSelectedAmenity] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -39,6 +40,12 @@ export default function SearchScreen() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (route?.params?.initialQuery !== undefined) {
+      setSearchQuery(route.params.initialQuery);
+    }
+  }, [route?.params?.initialQuery]);
 
   // Effect con debounce para búsqueda
   useEffect(() => {

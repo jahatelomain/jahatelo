@@ -5,7 +5,7 @@ import * as Location from 'expo-location';
 import { filterMotelsByDistance } from '../utils/location';
 import { COLORS } from '../constants/theme';
 
-export default function HomeHeader({ motels = [], onMotelPress }) {
+export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [nearbyMotels, setNearbyMotels] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -80,6 +80,12 @@ export default function HomeHeader({ motels = [], onMotelPress }) {
     }
   };
 
+  const triggerSearch = () => {
+    const trimmed = searchValue.trim();
+    onSearch?.(trimmed);
+    setSearchValue(trimmed);
+  };
+
   return (
     <View style={styles.wrapper}>
       <View style={styles.topRow}>
@@ -115,8 +121,10 @@ export default function HomeHeader({ motels = [], onMotelPress }) {
           style={styles.searchInput}
           value={searchValue}
           onChangeText={setSearchValue}
+          returnKeyType="search"
+          onSubmitEditing={triggerSearch}
         />
-        <TouchableOpacity style={styles.searchAction}>
+        <TouchableOpacity style={styles.searchAction} onPress={triggerSearch}>
           <Ionicons name="arrow-forward" size={16} color="#fff" />
         </TouchableOpacity>
         {!searchValue && (
