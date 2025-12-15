@@ -101,6 +101,8 @@ export function hasActivePromos(promos?: Promo[]): boolean {
  * Mapea un Motel con relaciones al formato de listado para mobile
  */
 export function mapMotelToListItem(motel: MotelForList) {
+  const hasPromotions = hasActivePromos(motel.promos);
+
   return {
     id: motel.id,
     slug: motel.slug,
@@ -118,7 +120,8 @@ export function mapMotelToListItem(motel: MotelForList) {
       count: motel.ratingCount,
     },
     isFeatured: motel.isFeatured,
-    hasPromo: hasActivePromos(motel.promos),
+    hasPromo: hasPromotions,
+    tienePromo: hasPromotions,
     startingPrice: getStartingPrice(motel.rooms),
     amenities: motel.motelAmenities.map((ma) => ma.amenity.name),
     thumbnail: getThumbnail(motel.photos, motel.featuredPhoto),
@@ -199,6 +202,24 @@ export function mapMotelToDetail(
 
   return {
     ...listItem,
+    promos:
+      motel.promos
+        ?.filter((promo) => {
+          if (!promo.isActive) return false;
+          const now = new Date();
+          if (promo.validFrom && promo.validFrom > now) return false;
+          if (promo.validUntil && promo.validUntil < now) return false;
+          return true;
+        })
+        .map((promo) => ({
+          id: promo.id,
+          title: promo.title,
+          description: promo.description,
+          imageUrl: promo.imageUrl,
+          isGlobal: promo.isGlobal,
+          validFrom: promo.validFrom,
+          validUntil: promo.validUntil,
+        })) || [],
     contact: {
       phone: motel.phone,
       whatsapp: motel.whatsapp,

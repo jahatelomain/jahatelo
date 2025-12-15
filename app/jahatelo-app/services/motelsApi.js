@@ -48,7 +48,7 @@ const mapMotelSummary = (apiMotel) => {
     amenities: apiMotel.amenities || [],
     rating: apiMotel.rating?.average || 0,
     isFeatured: apiMotel.isFeatured || false,
-    tienePromo: apiMotel.hasPromo || false,
+    tienePromo: typeof apiMotel.tienePromo === 'boolean' ? apiMotel.tienePromo : (apiMotel.hasPromo || false),
     location: apiMotel.location || null,
     photos: apiMotel.photos || [],
     thumbnail: apiMotel.thumbnail || null,
@@ -71,6 +71,7 @@ const mapMotelDetail = (apiMotel) => {
     paymentMethods: apiMotel.paymentMethods || [],
     allPhotos: apiMotel.allPhotos || apiMotel.photos || [],
     hasPhotos: apiMotel.hasPhotos || false,
+    promos: apiMotel.promos || [],
   };
 };
 

@@ -5,6 +5,7 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import { fetchMotelBySlug } from '../services/motelsApi';
 import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../hooks/useFavorites';
+import PromosTab from './motelDetail/PromosTab';
 import DetailsTab from './motelDetail/DetailsTab';
 import RoomsTab from './motelDetail/RoomsTab';
 import MenuTab from './motelDetail/MenuTab';
@@ -205,6 +206,11 @@ export default function MotelDetailScreen({ route, navigation }) {
           tabBarInactiveTintColor: '#666',
         }}
       >
+        <Tab.Screen
+          name="Promos"
+          component={PromosTab}
+          initialParams={{ motel }}
+        />
         <Tab.Screen
           name="Detalles"
           component={DetailsTab}

@@ -267,13 +267,14 @@ export default function MotelDetailPage({
 
   const fetchCurrentUser = async () => {
     try {
-      const res = await fetch('/api/auth/me');
+      const res = await fetch('/api/auth/me', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        setCurrentUser(data);
+        setCurrentUser(data.user || null);
       }
     } catch (error) {
       console.error('Error fetching current user:', error);
+      setCurrentUser(null);
     }
   };
 
