@@ -3,6 +3,8 @@
 import { Fragment, useEffect, useState } from 'react';
 import * as LucideIcons from 'lucide-react';
 import { AMENITY_ICONS, ICON_CATEGORIES } from '@/lib/amenityIcons';
+import { useToast } from '@/contexts/ToastContext';
+import { TableSkeleton } from '@/components/SkeletonLoader';
 
 type Amenity = {
   id: string;
@@ -22,7 +24,17 @@ type Amenity = {
   }[];
 };
 
+type ConfirmAction = {
+  title: string;
+  message: string;
+  confirmText: string;
+  cancelText: string;
+  onConfirm: () => void;
+  danger?: boolean;
+} | null;
+
 export default function AmenitiesPage() {
+  const toast = useToast();
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>;
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,13 +42,17 @@ export default function AmenitiesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', type: '', icon: '' });
   const [expandedAmenity, setExpandedAmenity] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
+
+  // Filtros
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('ALL');
 
   const fetchAmenities = async () => {
     try {
       const res = await fetch('/api/admin/amenities');
       const data = await res.json();
 
-      // Validar que la respuesta sea un array
       if (Array.isArray(data)) {
         setAmenities(data);
         setExpandedAmenity(null);
@@ -47,6 +63,7 @@ export default function AmenitiesPage() {
     } catch (error) {
       console.error('Error fetching amenities:', error);
       setAmenities([]);
+      toast.error('Error al cargar amenities');
     } finally {
       setLoading(false);
     }
@@ -72,17 +89,16 @@ export default function AmenitiesPage() {
       });
 
       if (res.ok) {
+        toast.success(editingId ? 'Amenity actualizado exitosamente' : 'Amenity creado exitosamente');
         fetchAmenities();
-        setShowForm(false);
-        setEditingId(null);
-        setFormData({ name: '', type: '', icon: '' });
+        handleCancel();
       } else {
         const error = await res.json();
-        alert(error.error || 'Error al guardar');
+        toast.error(error.error || 'Error al guardar amenity');
       }
     } catch (error) {
       console.error('Error saving amenity:', error);
-      alert('Error al guardar amenity');
+      toast.error('Error al guardar amenity');
     }
   };
 
@@ -92,24 +108,33 @@ export default function AmenitiesPage() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Está seguro de eliminar este amenity?')) return;
+  const handleDelete = (id: string, name: string) => {
+    setConfirmAction({
+      title: 'Eliminar Amenity',
+      message: `¿Estás seguro de eliminar "${name}"? Esta acción no se puede deshacer.`,
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/amenities/${id}`, {
+            method: 'DELETE',
+          });
 
-    try {
-      const res = await fetch(`/api/admin/amenities/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        fetchAmenities();
-      } else {
-        const error = await res.json();
-        alert(error.error || 'Error al eliminar');
-      }
-    } catch (error) {
-      console.error('Error deleting amenity:', error);
-      alert('Error al eliminar amenity');
-    }
+          if (res.ok) {
+            toast.success('Amenity eliminado exitosamente');
+            fetchAmenities();
+          } else {
+            const error = await res.json();
+            toast.error(error.error || 'Error al eliminar amenity');
+          }
+        } catch (error) {
+          console.error('Error deleting amenity:', error);
+          toast.error('Error al eliminar amenity');
+        }
+        setConfirmAction(null);
+      },
+    });
   };
 
   const handleCancel = () => {
@@ -132,13 +157,45 @@ export default function AmenitiesPage() {
     return labels[type] || type;
   };
 
+  // Filtrado de amenities
+  const filteredAmenities = amenities.filter((amenity) => {
+    // Filtro por tipo
+    if (typeFilter !== 'ALL' && amenity.type !== typeFilter) return false;
+
+    // Búsqueda por nombre
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchName = amenity.name.toLowerCase().includes(query);
+      if (!matchName) return false;
+    }
+
+    return true;
+  });
+
   if (loading) {
-    return <div className="text-center py-8">Cargando...</div>;
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="space-y-2">
+            <div className="h-8 bg-slate-200 rounded animate-pulse w-32" />
+            <div className="h-4 bg-slate-100 rounded animate-pulse w-64" />
+          </div>
+          <div className="h-10 w-36 bg-slate-200 rounded animate-pulse" />
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+          <div className="space-y-3">
+            <div className="h-10 bg-slate-100 rounded animate-pulse" />
+            <div className="flex gap-3">
+              <div className="h-10 bg-slate-50 rounded animate-pulse flex-1" />
+            </div>
+          </div>
+        </div>
+        <TableSkeleton rows={8} columns={5} />
+      </div>
+    );
   }
 
-  // Validación de seguridad adicional
   if (!Array.isArray(amenities)) {
-    console.error('Amenities is not an array:', amenities);
     return (
       <div className="text-center py-8 text-red-600">
         Error: No se pudieron cargar los amenities correctamente
@@ -167,6 +224,7 @@ export default function AmenitiesPage() {
         )}
       </div>
 
+      {/* Formulario */}
       {showForm && (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
           <div className="flex items-center justify-between mb-6">
@@ -214,44 +272,49 @@ export default function AmenitiesPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Ícono <span className="text-slate-400">(opcional)</span>
-              </label>
-              <select
-                value={formData.icon}
-                onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
-              >
-                <option value="">Sin ícono</option>
-                {Object.entries(ICON_CATEGORIES).map(([category, label]) => (
-                  <optgroup key={category} label={label}>
-                    {AMENITY_ICONS.filter((icon) => icon.category === category).map((icon) => (
-                      <option key={icon.value} value={icon.value}>
-                        {icon.label}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-              {formData.icon && (
-                <div className="flex items-center gap-2 mt-2 text-sm text-slate-600">
-                  {(() => {
-                    const IconPreview = iconLibrary[formData.icon];
-                    if (!IconPreview) return null;
-                    return <IconPreview size={18} />;
-                  })()}
-                  <span>
-                    {AMENITY_ICONS.find((icon) => icon.value === formData.icon)?.label || formData.icon}
-                  </span>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-slate-700">
+                  Ícono <span className="text-slate-400">(opcional)</span>
+                </label>
+                {formData.icon && (
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, icon: '' })}
                     className="text-xs text-slate-400 hover:text-slate-600"
                   >
-                    Quitar
+                    Quitar selección
                   </button>
-                </div>
-              )}
+                )}
+              </div>
+              <div className="space-y-4 border border-slate-200 rounded-xl p-4 max-h-80 overflow-y-auto bg-slate-50">
+                {Object.entries(ICON_CATEGORIES).map(([category, label]) => (
+                  <div key={category} className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{label}</p>
+                    <div className="grid grid-cols-5 gap-3 sm:grid-cols-8">
+                      {AMENITY_ICONS.filter((icon) => icon.category === category).map((icon) => {
+                        const IconComponent = iconLibrary[icon.value];
+                        if (!IconComponent) return null;
+                        const isSelected = formData.icon === icon.value;
+                        return (
+                          <button
+                            key={icon.value}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, icon: icon.value })}
+                            className={`aspect-square flex items-center justify-center rounded-lg border transition-all ${
+                              isSelected
+                                ? 'bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-200'
+                                : 'bg-white border-slate-200 text-slate-500 hover:border-purple-300 hover:text-purple-600'
+                            }`}
+                            title={icon.label}
+                          >
+                            <IconComponent size={20} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="flex gap-3 pt-4">
               <button
@@ -272,6 +335,127 @@ export default function AmenitiesPage() {
         </div>
       )}
 
+      {/* Filtros y búsqueda */}
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          {/* Barra de búsqueda */}
+          <div className="md:col-span-3">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar por nombre..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              <svg
+                className="w-5 h-5 text-slate-400 absolute left-3 top-2.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Filtros tipo pill */}
+        <div className="space-y-3">
+          {/* Tipo */}
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Tipo</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setTypeFilter('ALL')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  typeFilter === 'ALL'
+                    ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:border-purple-300'
+                }`}
+              >
+                Todos <span className="ml-1 opacity-75">({amenities.length})</span>
+              </button>
+              <button
+                onClick={() => setTypeFilter('ROOM')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  typeFilter === 'ROOM'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:border-blue-300'
+                }`}
+              >
+                Habitación <span className="ml-1 opacity-75">({amenities.filter((a) => a.type === 'ROOM').length})</span>
+              </button>
+              <button
+                onClick={() => setTypeFilter('MOTEL')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  typeFilter === 'MOTEL'
+                    ? 'bg-green-600 text-white shadow-md shadow-green-200'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:border-green-300'
+                }`}
+              >
+                Motel <span className="ml-1 opacity-75">({amenities.filter((a) => a.type === 'MOTEL').length})</span>
+              </button>
+              <button
+                onClick={() => setTypeFilter('BOTH')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  typeFilter === 'BOTH'
+                    ? 'bg-amber-600 text-white shadow-md shadow-amber-200'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:border-amber-300'
+                }`}
+              >
+                Ambos <span className="ml-1 opacity-75">({amenities.filter((a) => a.type === 'BOTH').length})</span>
+              </button>
+              <button
+                onClick={() => setTypeFilter('NULL')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  typeFilter === 'NULL'
+                    ? 'bg-slate-600 text-white shadow-md shadow-slate-200'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400'
+                }`}
+              >
+                Sin especificar <span className="ml-1 opacity-75">({amenities.filter((a) => !a.type).length})</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Resultados */}
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
+          <p className="text-sm text-slate-600">
+            Mostrando <span className="font-semibold text-slate-900">{filteredAmenities.length}</span> de{' '}
+            <span className="font-semibold text-slate-900">{amenities.length}</span> amenities
+          </p>
+          {(searchQuery || typeFilter !== 'ALL') && (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setTypeFilter('ALL');
+              }}
+              className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Tabla */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
@@ -294,18 +478,26 @@ export default function AmenitiesPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
-            {amenities.length === 0 ? (
+            {filteredAmenities.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-4xl text-slate-300">✨</span>
-                    <p className="text-slate-500 font-medium">No hay amenities registrados</p>
-                    <p className="text-sm text-slate-400">Creá el primero usando el botón de arriba</p>
+                    <p className="text-slate-500 font-medium">
+                      {searchQuery || typeFilter !== 'ALL'
+                        ? 'No se encontraron amenities con estos filtros'
+                        : 'No hay amenities registrados'}
+                    </p>
+                    <p className="text-sm text-slate-400">
+                      {searchQuery || typeFilter !== 'ALL'
+                        ? 'Intentá con otros criterios de búsqueda'
+                        : 'Creá el primero usando el botón de arriba'}
+                    </p>
                   </div>
                 </td>
               </tr>
             ) : (
-              amenities.map((amenity) => {
+              filteredAmenities.map((amenity) => {
                 const motelCount = amenity._count.motelAmenities;
                 const roomCount = amenity._count.roomAmenities;
                 const motels = amenity.motelAmenities ?? [];
@@ -345,7 +537,7 @@ export default function AmenitiesPage() {
                             type="button"
                             onClick={() => (motelCount > 0 ? toggleExpanded(amenity.id) : undefined)}
                             className={`inline-flex items-center gap-1.5 ${
-                              motelCount > 0 ? 'text-purple-600 hover:text-purple-700' : 'text-slate-500'
+                              motelCount > 0 ? 'text-purple-600 hover:text-purple-700 cursor-pointer' : 'text-slate-500 cursor-default'
                             }`}
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -369,7 +561,7 @@ export default function AmenitiesPage() {
                           Editar
                         </button>
                         <button
-                          onClick={() => handleDelete(amenity.id)}
+                          onClick={() => handleDelete(amenity.id, amenity.name)}
                           className="inline-flex items-center gap-1 text-red-600 hover:text-red-700 font-medium"
                         >
                           Eliminar
@@ -403,6 +595,34 @@ export default function AmenitiesPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Modal de Confirmación */}
+      {confirmAction && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <h2 className="text-xl font-bold text-slate-900 mb-2">{confirmAction.title}</h2>
+            <p className="text-slate-600 mb-6">{confirmAction.message}</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmAction(null)}
+                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition"
+              >
+                {confirmAction.cancelText}
+              </button>
+              <button
+                onClick={confirmAction.onConfirm}
+                className={`flex-1 px-4 py-2 text-white rounded-lg transition ${
+                  confirmAction.danger
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-purple-600 hover:bg-purple-700'
+                }`}
+              >
+                {confirmAction.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
