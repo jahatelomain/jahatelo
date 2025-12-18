@@ -123,7 +123,10 @@ export function mapMotelToListItem(motel: MotelForList) {
     hasPromo: hasPromotions,
     tienePromo: hasPromotions,
     startingPrice: getStartingPrice(motel.rooms),
-    amenities: motel.motelAmenities.map((ma) => ma.amenity.name),
+    amenities: motel.motelAmenities.map((ma) => ({
+      name: ma.amenity.name,
+      icon: ma.amenity.icon,
+    })),
     thumbnail: getThumbnail(motel.photos, motel.featuredPhoto),
     photos: getListPhotos(motel.photos),
     featuredPhoto: motel.featuredPhoto,

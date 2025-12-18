@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { AMENITY_ICONS } from '@/lib/amenityIcons';
 
 // GET all amenities
 export async function GET() {
@@ -38,7 +39,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, type } = body;
+    const { name, type, icon } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -59,10 +60,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (icon && !AMENITY_ICONS.some((item) => item.value === icon)) {
+      return NextResponse.json(
+        { error: 'Ícono inválido' },
+        { status: 400 }
+      );
+    }
+
     const amenity = await prisma.amenity.create({
       data: {
         name,
         type: type || null,
+        icon: icon || null,
       },
     });
 

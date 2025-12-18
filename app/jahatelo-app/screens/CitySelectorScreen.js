@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,107 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  FadeIn,
+  FadeInRight,
+  SlideInLeft,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withRepeat,
+  withSequence,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { COLORS } from '../constants/theme';
+
+// Componente de city card animada
+const AnimatedCityCard = ({ item, index, onPress }) => {
+  const scale = useSharedValue(1);
+
+  const handlePressIn = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    scale.value = withSpring(0.96, { damping: 15, stiffness: 400 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 12, stiffness: 300 });
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View entering={FadeInRight.delay(index * 80).duration(500).springify()}>
+      <TouchableOpacity
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          onPress(item);
+        }}
+        activeOpacity={1}
+      >
+        <Animated.View style={[styles.cityCard, animatedStyle]}>
+          <View style={styles.iconContainer}>
+            <Ionicons name="location" size={28} color={COLORS.primary} />
+          </View>
+          <View style={styles.cityInfo}>
+            <Text style={styles.cityName}>{item.name}</Text>
+            <Text style={styles.cityCount}>
+              {item.count} {item.count === 1 ? 'motel' : 'moteles'}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={COLORS.muted} />
+        </Animated.View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+// Empty state animado
+const AnimatedEmptyState = () => {
+  const iconScale = useSharedValue(1);
+  const iconRotation = useSharedValue(0);
+
+  useEffect(() => {
+    iconScale.value = withRepeat(
+      withSequence(
+        withTiming(1.15, { duration: 1500 }),
+        withTiming(1, { duration: 1500 })
+      ),
+      -1,
+      false
+    );
+
+    iconRotation.value = withRepeat(
+      withSequence(
+        withTiming(-10, { duration: 1000 }),
+        withTiming(10, { duration: 2000 }),
+        withTiming(0, { duration: 1000 })
+      ),
+      -1,
+      false
+    );
+  }, []);
+
+  const animatedIconStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: iconScale.value },
+      { rotate: `${iconRotation.value}deg` },
+    ],
+  }));
+
+  return (
+    <View style={styles.emptyContainer}>
+      <Animated.View style={animatedIconStyle}>
+        <Ionicons name="earth-outline" size={64} color={COLORS.muted} />
+      </Animated.View>
+      <Text style={styles.emptyText}>No hay ciudades disponibles</Text>
+    </View>
+  );
+};
 
 export default function CitySelectorScreen({ route, navigation }) {
   const { motels = [] } = route.params;
@@ -44,8 +144,8 @@ export default function CitySelectorScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header personalizado */}
-      <View style={styles.header}>
+      {/* Header personalizado con animación */}
+      <Animated.View entering={SlideInLeft.duration(400).springify()} style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -54,43 +154,25 @@ export default function CitySelectorScreen({ route, navigation }) {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Moteles por ciudad</Text>
         <View style={styles.placeholder} />
-      </View>
+      </Animated.View>
 
       {/* Contenido */}
       <View style={styles.content}>
-        <Text style={styles.subtitle}>
-          {citiesData.length} {citiesData.length === 1 ? 'ciudad disponible' : 'ciudades disponibles'}
-        </Text>
+        <Animated.View entering={FadeIn.delay(200).duration(500)}>
+          <Text style={styles.subtitle}>
+            {citiesData.length} {citiesData.length === 1 ? 'ciudad disponible' : 'ciudades disponibles'}
+          </Text>
+        </Animated.View>
 
         <FlatList
           data={citiesData}
           keyExtractor={(item) => item.name}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.cityCard}
-              onPress={() => handleCityPress(item)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.iconContainer}>
-                <Ionicons name="location" size={28} color={COLORS.primary} />
-              </View>
-              <View style={styles.cityInfo}>
-                <Text style={styles.cityName}>{item.name}</Text>
-                <Text style={styles.cityCount}>
-                  {item.count} {item.count === 1 ? 'motel' : 'moteles'}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={COLORS.muted} />
-            </TouchableOpacity>
+          renderItem={({ item, index }) => (
+        <AnimatedCityCard item={item} index={index} onPress={handleCityPress} />
           )}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="earth-outline" size={64} color={COLORS.muted} />
-              <Text style={styles.emptyText}>No hay ciudades disponibles</Text>
-            </View>
-          }
+          ListEmptyComponent={<AnimatedEmptyState />}
         />
       </View>
     </SafeAreaView>
@@ -140,7 +222,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textLight,
     marginTop: 12,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   listContent: {
     paddingBottom: 24,
@@ -150,34 +232,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.backgroundDark,
     borderRadius: 16,
-    padding: 16,
-    marginVertical: 6,
+    padding: 12,
+    marginVertical: 4,
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
   },
   iconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: COLORS.accentLight,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: 12,
   },
   cityInfo: {
     flex: 1,
   },
   cityName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: COLORS.text,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   cityCount: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textLight,
   },
   emptyContainer: {

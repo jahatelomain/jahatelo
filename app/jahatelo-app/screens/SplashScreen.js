@@ -1,23 +1,20 @@
 import React, { useEffect } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AnimatedSplash from '../components/AnimatedSplash';
 
 export default function SplashScreen({ navigation }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       navigation.replace('AgeGate');
-    }, 1500);
+    }, 3000); // 3 segundos para que se vea toda la animación
 
     return () => clearTimeout(timer);
   }, [navigation]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Jahatelo</Text>
-        <ActivityIndicator size="large" color="#FFFFFF" />
-        <Text style={styles.subtitle}>Buscando moteles cerca tuyo...</Text>
-      </View>
+      <AnimatedSplash />
     </SafeAreaView>
   );
 }
@@ -25,21 +22,5 @@ export default function SplashScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#2A0038',
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    color: '#FFFFFF',
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  subtitle: {
-    color: '#FFFFFF',
-    marginTop: 12,
   },
 });

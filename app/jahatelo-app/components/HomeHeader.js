@@ -1,26 +1,42 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, FlatList, ActivityIndicator, Alert, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, FlatList, ActivityIndicator, Alert, Animated as RNAnimated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { filterMotelsByDistance } from '../utils/location';
 import { COLORS } from '../constants/theme';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withSpring,
+  withTiming,
+  withDelay,
+} from 'react-native-reanimated';
 
 export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [nearbyMotels, setNearbyMotels] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-  const placeholderOpacity = useRef(new Animated.Value(1)).current;
+  const placeholderOpacity = useRef(new RNAnimated.Value(1)).current;
+
+  // Valores animados para los íconos
+  const searchIconScale = useSharedValue(1);
+  const searchIconRotate = useSharedValue(0);
+  const arrowIconScale = useSharedValue(1);
+  const arrowIconRotate = useSharedValue(0);
+  const bellIconScale = useSharedValue(1);
+  const intervalRef = useRef(null);
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(placeholderOpacity, {
+    const loop = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(placeholderOpacity, {
           toValue: 0.25,
           duration: 1400,
           useNativeDriver: true,
         }),
-        Animated.timing(placeholderOpacity, {
+        RNAnimated.timing(placeholderOpacity, {
           toValue: 1,
           duration: 1400,
           useNativeDriver: true,
@@ -31,6 +47,69 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
     loop.start();
     return () => loop.stop();
   }, [placeholderOpacity]);
+
+  // Animación de pulse para los íconos
+  const triggerIconsPulse = () => {
+    // Lupa (search) - pulso con rotación
+    searchIconScale.value = withSequence(
+      withSpring(1.15, { damping: 8, stiffness: 200 }),
+      withSpring(1.08, { damping: 10 }),
+      withSpring(1, { damping: 12 })
+    );
+
+    searchIconRotate.value = withSequence(
+      withTiming(5, { duration: 200 }),
+      withTiming(-5, { duration: 300 }),
+      withTiming(0, { duration: 200 })
+    );
+
+    // Flecha (arrow) - pulso con rotación y delay
+    arrowIconScale.value = withDelay(
+      100,
+      withSequence(
+        withSpring(1.2, { damping: 8, stiffness: 200 }),
+        withSpring(1.1, { damping: 10 }),
+        withSpring(1, { damping: 12 })
+      )
+    );
+
+    arrowIconRotate.value = withDelay(
+      100,
+      withSequence(
+        withTiming(8, { duration: 200 }),
+        withTiming(-8, { duration: 300 }),
+        withTiming(0, { duration: 200 })
+      )
+    );
+
+    // Campanita (bell) - con delay
+    bellIconScale.value = withDelay(
+      200,
+      withSequence(
+        withSpring(1.25, { damping: 8, stiffness: 200 }),
+        withSpring(1, { damping: 12 })
+      )
+    );
+  };
+
+  useEffect(() => {
+    // Animación inicial al montar
+    const initialTimeout = setTimeout(() => {
+      triggerIconsPulse();
+    }, 800);
+
+    // Animación cada 20 segundos
+    intervalRef.current = setInterval(() => {
+      triggerIconsPulse();
+    }, 20000);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   const handleNearbyPress = async () => {
     setLoading(true);
@@ -49,11 +128,14 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
       }
 
       // Obtener ubicación actual
+      console.log('📍 Obteniendo ubicación del usuario...');
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
 
       const { latitude, longitude } = location.coords;
+      console.log(`📍 Ubicación del usuario: [${latitude}, ${longitude}]`);
+      console.log(`📊 Total de moteles disponibles: ${motels.length}`);
 
       // Filtrar moteles cercanos (dentro de 10km)
       const filtered = filterMotelsByDistance(motels, latitude, longitude, 10);
@@ -65,11 +147,12 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
           [{ text: 'OK' }]
         );
       } else {
+        console.log(`🎯 Mostrando ${filtered.length} moteles cercanos`);
         setNearbyMotels(filtered);
         setModalVisible(true);
       }
     } catch (error) {
-      console.error('Error al obtener ubicación:', error);
+      console.error('❌ Error al obtener ubicación:', error);
       Alert.alert(
         'Error',
         'No pudimos obtener tu ubicación. Verifica que el GPS esté activado.',
@@ -85,6 +168,25 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
     onSearch?.(trimmed);
     setSearchValue(trimmed);
   };
+
+  // Estilos animados para los íconos
+  const animatedSearchIconStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: searchIconScale.value },
+      { rotate: `${searchIconRotate.value}deg` },
+    ],
+  }));
+
+  const animatedArrowIconStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: arrowIconScale.value },
+      { rotate: `${arrowIconRotate.value}deg` },
+    ],
+  }));
+
+  const animatedBellIconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: bellIconScale.value }],
+  }));
 
   return (
     <View style={styles.wrapper}>
@@ -105,7 +207,9 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
           )}
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="notifications-outline" size={18} color={COLORS.text} />
+          <Animated.View style={animatedBellIconStyle}>
+            <Ionicons name="notifications-outline" size={18} color={COLORS.text} />
+          </Animated.View>
         </TouchableOpacity>
       </View>
 
@@ -115,7 +219,9 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
       </View>
 
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={18} color={COLORS.muted} />
+        <Animated.View style={animatedSearchIconStyle}>
+          <Ionicons name="search" size={18} color={COLORS.muted} />
+        </Animated.View>
         <TextInput
           placeholder=""
           style={styles.searchInput}
@@ -125,15 +231,17 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
           onSubmitEditing={triggerSearch}
         />
         <TouchableOpacity style={styles.searchAction} onPress={triggerSearch}>
-          <Ionicons name="arrow-forward" size={16} color="#fff" />
+          <Animated.View style={animatedArrowIconStyle}>
+            <Ionicons name="arrow-forward" size={16} color="#fff" />
+          </Animated.View>
         </TouchableOpacity>
         {!searchValue && (
-          <Animated.Text
+          <RNAnimated.Text
             style={[styles.animatedPlaceholder, { opacity: placeholderOpacity }]}
             pointerEvents="none"
           >
             Buscar moteles, barrios o amenities
-          </Animated.Text>
+          </RNAnimated.Text>
         )}
       </View>
 
@@ -190,11 +298,11 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
 const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: 16,
-    paddingTop: 28,
-    paddingBottom: 14,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    paddingTop: 8,
+    paddingBottom: 15,
     backgroundColor: COLORS.primary,
+    zIndex: 10,
+    elevation: 5,
   },
   topRow: {
     flexDirection: 'row',

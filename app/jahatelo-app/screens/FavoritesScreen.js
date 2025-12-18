@@ -3,6 +3,13 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { useFavorites } from '../hooks/useFavorites';
 import { fetchMotelBySlug } from '../services/motelsApi';
 import MotelCard from '../components/MotelCard';
@@ -13,6 +20,21 @@ export default function FavoritesScreen() {
   const { favorites, toggleFavorite } = useFavorites();
   const [favoriteMotels, setFavoriteMotels] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Animación del corazón en empty state
+  const heartScale = useSharedValue(1);
+
+  useEffect(() => {
+    // Beating heart animation
+    heartScale.value = withRepeat(
+      withSequence(
+        withTiming(1.15, { duration: 750 }),
+        withTiming(1, { duration: 750 })
+      ),
+      -1, // Infinite
+      false
+    );
+  }, []);
 
   // Cargar datos completos de favoritos si faltan campos
   useEffect(() => {
@@ -71,6 +93,12 @@ export default function FavoritesScreen() {
     />
   );
 
+  const animatedHeartStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: heartScale.value }],
+    };
+  });
+
   // Mostrar loading mientras completa favoritos
   if (loading) {
     return (
@@ -88,7 +116,9 @@ export default function FavoritesScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.emptyContainer}>
-          <Ionicons name="heart-outline" size={80} color={COLORS.gray} />
+          <Animated.View style={animatedHeartStyle}>
+            <Ionicons name="heart-outline" size={80} color={COLORS.gray} />
+          </Animated.View>
           <Text style={styles.emptyTitle}>Sin favoritos aún</Text>
           <Text style={styles.emptyText}>
             Todavía no agregaste moteles a favoritos.{'\n'}

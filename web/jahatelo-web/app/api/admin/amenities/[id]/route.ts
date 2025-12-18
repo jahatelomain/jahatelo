@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { AMENITY_ICONS } from '@/lib/amenityIcons';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -51,7 +52,7 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const { name, type } = body;
+    const { name, type, icon } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -75,11 +76,19 @@ export async function PATCH(
       );
     }
 
+    if (icon && !AMENITY_ICONS.some((item) => item.value === icon)) {
+      return NextResponse.json(
+        { error: 'Ícono inválido' },
+        { status: 400 }
+      );
+    }
+
     const amenity = await prisma.amenity.update({
       where: { id },
       data: {
         name,
         type: type || null,
+        icon: icon || null,
       },
     });
 

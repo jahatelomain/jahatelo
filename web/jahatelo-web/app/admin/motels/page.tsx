@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { TableSkeleton } from '@/components/SkeletonLoader';
 
 type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -21,6 +22,8 @@ export default function MotelsAdminPage() {
   const [motels, setMotels] = useState<Motel[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<MotelStatus | 'ALL'>('ALL');
+  const [activeFilter, setActiveFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchMotels();
@@ -50,9 +53,32 @@ export default function MotelsAdminPage() {
   // Asegurarse de que motels sea siempre un array
   const motelsArray = Array.isArray(motels) ? motels : [];
 
-  const filteredMotels = statusFilter === 'ALL'
-    ? motelsArray
-    : motelsArray.filter((m) => m.status === statusFilter);
+  const filteredMotels = motelsArray.filter((motel) => {
+    // Filtro por estado (PENDING, APPROVED, REJECTED)
+    if (statusFilter !== 'ALL' && motel.status !== statusFilter) return false;
+
+    // Filtro por activo/inactivo
+    if (activeFilter === 'ACTIVE' && !motel.isActive) return false;
+    if (activeFilter === 'INACTIVE' && motel.isActive) return false;
+
+    // Búsqueda por nombre, ciudad, barrio o contacto
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchName = motel.name.toLowerCase().includes(query);
+      const matchCity = motel.city.toLowerCase().includes(query);
+      const matchNeighborhood = motel.neighborhood.toLowerCase().includes(query);
+      const matchContact =
+        (motel.contactName && motel.contactName.toLowerCase().includes(query)) ||
+        (motel.contactEmail && motel.contactEmail.toLowerCase().includes(query)) ||
+        (motel.contactPhone && motel.contactPhone.toLowerCase().includes(query));
+
+      if (!matchName && !matchCity && !matchNeighborhood && !matchContact) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   const getStatusBadge = (status: MotelStatus) => {
     const styles = {
@@ -77,7 +103,23 @@ export default function MotelsAdminPage() {
   const pendingCount = motelsArray.filter((m) => m.status === 'PENDING').length;
 
   if (loading) {
-    return <div className="text-center py-8">Cargando...</div>;
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="space-y-2">
+            <div className="h-8 bg-slate-200 rounded animate-pulse w-32" />
+            <div className="h-4 bg-slate-100 rounded animate-pulse w-64" />
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+          <div className="space-y-3">
+            <div className="h-10 bg-slate-100 rounded animate-pulse" />
+            <div className="h-32 bg-slate-50 rounded animate-pulse" />
+          </div>
+        </div>
+        <TableSkeleton rows={8} columns={6} />
+      </div>
+    );
   }
 
   return (
@@ -98,48 +140,152 @@ export default function MotelsAdminPage() {
         )}
       </div>
 
-      {/* Filtros tipo pill */}
-      <div className="flex flex-wrap gap-2">
-        <button
-          onClick={() => setStatusFilter('ALL')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-            statusFilter === 'ALL'
-              ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
-              : 'bg-white text-slate-700 border border-slate-300 hover:border-purple-300'
-          }`}
-        >
-          Todos <span className="ml-1 opacity-75">({motelsArray.length})</span>
-        </button>
-        <button
-          onClick={() => setStatusFilter('PENDING')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-            statusFilter === 'PENDING'
-              ? 'bg-yellow-600 text-white shadow-md shadow-yellow-200'
-              : 'bg-white text-slate-700 border border-slate-300 hover:border-yellow-300'
-          }`}
-        >
-          Pendientes <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.status === 'PENDING').length})</span>
-        </button>
-        <button
-          onClick={() => setStatusFilter('APPROVED')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-            statusFilter === 'APPROVED'
-              ? 'bg-green-600 text-white shadow-md shadow-green-200'
-              : 'bg-white text-slate-700 border border-slate-300 hover:border-green-300'
-          }`}
-        >
-          Aprobados <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.status === 'APPROVED').length})</span>
-        </button>
-        <button
-          onClick={() => setStatusFilter('REJECTED')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-            statusFilter === 'REJECTED'
-              ? 'bg-red-600 text-white shadow-md shadow-red-200'
-              : 'bg-white text-slate-700 border border-slate-300 hover:border-red-300'
-          }`}
-        >
-          Rechazados <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.status === 'REJECTED').length})</span>
-        </button>
+      {/* Búsqueda */}
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          {/* Barra de búsqueda */}
+          <div className="md:col-span-3">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar por nombre, ciudad, barrio o contacto..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              <svg
+                className="w-5 h-5 text-slate-400 absolute left-3 top-2.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Filtros tipo pill */}
+        <div className="space-y-3">
+          {/* Estado (PENDING, APPROVED, REJECTED) */}
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Estado</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setStatusFilter('ALL')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  statusFilter === 'ALL'
+                    ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:border-purple-300'
+                }`}
+              >
+                Todos <span className="ml-1 opacity-75">({motelsArray.length})</span>
+              </button>
+              <button
+                onClick={() => setStatusFilter('PENDING')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  statusFilter === 'PENDING'
+                    ? 'bg-yellow-600 text-white shadow-md shadow-yellow-200'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:border-yellow-300'
+                }`}
+              >
+                Pendientes <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.status === 'PENDING').length})</span>
+              </button>
+              <button
+                onClick={() => setStatusFilter('APPROVED')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  statusFilter === 'APPROVED'
+                    ? 'bg-green-600 text-white shadow-md shadow-green-200'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:border-green-300'
+                }`}
+              >
+                Aprobados <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.status === 'APPROVED').length})</span>
+              </button>
+              <button
+                onClick={() => setStatusFilter('REJECTED')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  statusFilter === 'REJECTED'
+                    ? 'bg-red-600 text-white shadow-md shadow-red-200'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:border-red-300'
+                }`}
+              >
+                Rechazados <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.status === 'REJECTED').length})</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Activo/Inactivo */}
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Visibilidad</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setActiveFilter('ALL')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  activeFilter === 'ALL'
+                    ? 'bg-slate-700 text-white shadow-md shadow-slate-200'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400'
+                }`}
+              >
+                Todos
+              </button>
+              <button
+                onClick={() => setActiveFilter('ACTIVE')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  activeFilter === 'ACTIVE'
+                    ? 'bg-green-600 text-white shadow-md shadow-green-200'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:border-green-300'
+                }`}
+              >
+                Activos <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.isActive).length})</span>
+              </button>
+              <button
+                onClick={() => setActiveFilter('INACTIVE')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  activeFilter === 'INACTIVE'
+                    ? 'bg-slate-600 text-white shadow-md shadow-slate-200'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400'
+                }`}
+              >
+                Inactivos <span className="ml-1 opacity-75">({motelsArray.filter((m) => !m.isActive).length})</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Resultados */}
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
+          <p className="text-sm text-slate-600">
+            Mostrando <span className="font-semibold text-slate-900">{filteredMotels.length}</span> de{' '}
+            <span className="font-semibold text-slate-900">{motelsArray.length}</span> moteles
+          </p>
+          {(searchQuery || statusFilter !== 'ALL' || activeFilter !== 'ALL') && (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setStatusFilter('ALL');
+                setActiveFilter('ALL');
+              }}
+              className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -172,8 +318,16 @@ export default function MotelsAdminPage() {
                 <td colSpan={6} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-4xl text-slate-300">🔍</span>
-                    <p className="text-slate-500 font-medium">No hay moteles con este filtro</p>
-                    <p className="text-sm text-slate-400">Intentá con otro filtro</p>
+                    <p className="text-slate-500 font-medium">
+                      {searchQuery || statusFilter !== 'ALL' || activeFilter !== 'ALL'
+                        ? 'No se encontraron moteles con estos filtros'
+                        : 'No hay moteles registrados'}
+                    </p>
+                    <p className="text-sm text-slate-400">
+                      {searchQuery || statusFilter !== 'ALL' || activeFilter !== 'ALL'
+                        ? 'Intentá con otros criterios de búsqueda'
+                        : 'Los moteles aparecerán aquí cuando sean creados'}
+                    </p>
                   </div>
                 </td>
               </tr>

@@ -1,26 +1,129 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withRepeat,
+  withSequence,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { formatPrice, formatDistance } from '../services/motelsApi';
 import { useFavorites } from '../hooks/useFavorites';
+import { prefetchMotelDetails } from '../services/prefetchService';
+import { getAmenityIconConfig } from '../constants/amenityIcons';
 
 export default function MotelCard({ motel, onPress }) {
   const { isFavorite, toggleFavorite } = useFavorites();
 
+  // Valores animados para la card
+  const scale = useSharedValue(1);
+  const elevation = useSharedValue(3);
+
+  // Valores animados para el corazón
+  const heartScale = useSharedValue(1);
+  const heartRotation = useSharedValue(0);
+
+  // Valor animado para badge PROMO
+  const promoBadgeScale = useSharedValue(1);
+
   if (!motel) return null;
+
+  // Animación loop del badge PROMO
+  useEffect(() => {
+    if (motel.tienePromo) {
+      promoBadgeScale.value = withRepeat(
+        withSequence(
+          withTiming(1.08, { duration: 1000 }),
+          withTiming(1, { duration: 1000 })
+        ),
+        -1, // Infinite
+        false
+      );
+    }
+  }, [motel.tienePromo]);
 
   const handleFavoritePress = (e) => {
     // Prevenir que se dispare el onPress de la card
     e.stopPropagation();
+
+    // Haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Animación del corazón
+    heartScale.value = withSpring(1.5, { damping: 10, stiffness: 300 }, () => {
+      heartScale.value = withSpring(1.2, { damping: 8 }, () => {
+        heartScale.value = withSpring(1, { damping: 10 });
+      });
+    });
+
+    heartRotation.value = withTiming(360, { duration: 500 }, () => {
+      heartRotation.value = 0;
+    });
+
     toggleFavorite(motel);
   };
 
+  const handlePress = () => {
+    // Prefetch en background sin bloquear navegación
+    prefetchMotelDetails([motel]);
+
+    // Navegar inmediatamente
+    onPress?.();
+  };
+
+  const handlePressIn = () => {
+    // Haptic feedback ligero
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    scale.value = withSpring(0.98, {
+      damping: 15,
+      stiffness: 300,
+    });
+    elevation.value = withTiming(1, { duration: 150 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, {
+      damping: 12,
+      stiffness: 200,
+    });
+    elevation.value = withTiming(3, { duration: 200 });
+  };
+
+  // Estilos animados
+  const animatedCardStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+      elevation: elevation.value,
+      shadowOpacity: elevation.value === 3 ? 0.1 : 0.05,
+    };
+  });
+
+  const animatedHeartStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { scale: heartScale.value },
+        { rotate: `${heartRotation.value}deg` },
+      ],
+    };
+  });
+
+  const animatedPromoBadgeStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: promoBadgeScale.value }],
+    };
+  });
+
   return (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.7}
-      onPress={onPress}
+    <Pressable
+      onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
     >
+      <Animated.View style={[styles.card, animatedCardStyle]}>
       <View style={styles.cardHeader}>
         <Text style={styles.motelName}>{motel.nombre}</Text>
         <View style={styles.headerRight}>
@@ -32,11 +135,13 @@ export default function MotelCard({ motel, onPress }) {
             style={styles.favoriteButton}
             activeOpacity={0.7}
           >
-            <Ionicons
-              name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
-              size={24}
-              color="#FF2E93"
-            />
+            <Animated.View style={animatedHeartStyle}>
+              <Ionicons
+                name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
+                size={24}
+                color="#FF2E93"
+              />
+            </Animated.View>
           </TouchableOpacity>
         </View>
       </View>
@@ -50,11 +155,24 @@ export default function MotelCard({ motel, onPress }) {
 
       {motel.amenities && motel.amenities.length > 0 && (
         <View style={styles.amenitiesContainer}>
-          {motel.amenities.slice(0, 3).map((amenity, index) => (
-            <View key={index} style={styles.amenityPill}>
-              <Text style={styles.amenityText}>{amenity}</Text>
-            </View>
-          ))}
+          {motel.amenities.slice(0, 3).map((amenity, index) => {
+            const amenityData = typeof amenity === 'string' ? { name: amenity } : amenity;
+            const iconConfig = getAmenityIconConfig(amenityData.icon);
+
+            return (
+              <View key={index} style={styles.amenityPill}>
+                {iconConfig && (
+                  <MaterialCommunityIcons
+                    name={iconConfig.name}
+                    size={14}
+                    color={iconConfig.color}
+                    style={styles.amenityIcon}
+                  />
+                )}
+                <Text style={styles.amenityText}>{amenityData.name}</Text>
+              </View>
+            );
+          })}
         </View>
       )}
 
@@ -63,9 +181,9 @@ export default function MotelCard({ motel, onPress }) {
           <Text style={styles.ratingText}>⭐ {motel.rating}</Text>
         )}
         {motel.tienePromo && (
-          <View style={styles.promoBadge}>
+          <Animated.View style={[styles.promoBadge, animatedPromoBadgeStyle]}>
             <Text style={styles.promoText}>PROMO</Text>
-          </View>
+          </Animated.View>
         )}
         {motel.isFeatured && (
           <View style={styles.featuredBadge}>
@@ -73,7 +191,8 @@ export default function MotelCard({ motel, onPress }) {
           </View>
         )}
       </View>
-    </TouchableOpacity>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -150,6 +269,9 @@ const styles = StyleSheet.create({
   amenityText: {
     fontSize: 12,
     color: '#2A0038',
+  },
+  amenityIcon: {
+    marginRight: 4,
   },
   ratingRow: {
     flexDirection: 'row',

@@ -1,68 +1,115 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
+import HeartLogo from './HeartLogo';
 
 const COLORS = {
-  background: '#F4EFFB',
-  heart: '#8E2DE2',
-  heartDark: '#6A1FB5',
-  pin: '#FFFFFF',
+  background: '#FFFFFF',
+  title: '#2A0038',
+  subtitle: '#705B85',
 };
 
 export default function AnimatedSplash() {
-  const pinTranslate = useRef(new Animated.Value(0)).current;
-  const heartScale = useRef(new Animated.Value(1)).current;
+  // Valores de animación
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.5)).current;
+  const heartPulseAnim = useRef(new Animated.Value(1)).current;
+  const pinDropAnim = useRef(new Animated.Value(-50)).current;
+  const textFadeAnim = useRef(new Animated.Value(0)).current;
+  const textSlideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(pinTranslate, {
-            toValue: -12,
-            duration: 500,
+    // Secuencia de entrada del logo
+    Animated.sequence([
+      // 1. Fade in + Scale up del corazón
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 40,
+          friction: 6,
+          useNativeDriver: true,
+        }),
+      ]),
+      // 2. Pin drop (caída del pin desde arriba)
+      Animated.spring(pinDropAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+      // 3. Delay pequeño
+      Animated.delay(150),
+      // 4. Fade in del texto
+      Animated.parallel([
+        Animated.timing(textFadeAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.spring(textSlideAnim, {
+          toValue: 0,
+          tension: 35,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start(() => {
+      // 5. Iniciar animación de pulso del corazón
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(heartPulseAnim, {
+            toValue: 1.05,
+            duration: 800,
             useNativeDriver: true,
           }),
-          Animated.timing(heartScale, {
-            toValue: 1.04,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(pinTranslate, {
-            toValue: 0,
-            duration: 450,
-            useNativeDriver: true,
-          }),
-          Animated.spring(heartScale, {
+          Animated.timing(heartPulseAnim, {
             toValue: 1,
-            damping: 6,
-            stiffness: 90,
+            duration: 800,
             useNativeDriver: true,
           }),
-        ]),
-      ])
-    ).start();
-  }, [heartScale, pinTranslate]);
+        ])
+      ).start();
+    });
+  }, []);
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.heartContainer, { transform: [{ scale: heartScale }] }]}>
-        <View style={styles.leftCircle} />
-        <View style={styles.rightCircle} />
-        <View style={styles.bottomSquare} />
-        <Animated.View style={[styles.pinWrapper, { transform: [{ translateY: pinTranslate }] }]}>
-          <View style={styles.pinOuter}>
-            <View style={styles.pinInner} />
-          </View>
-        </Animated.View>
+      {/* Logo animado con efecto de pulso en el corazón */}
+      <Animated.View
+        style={[
+          styles.logoContainer,
+          {
+            opacity: fadeAnim,
+            transform: [
+              { scale: Animated.multiply(scaleAnim, heartPulseAnim) },
+              { translateY: pinDropAnim },
+            ],
+          },
+        ]}
+      >
+        <HeartLogo size={180} />
       </Animated.View>
-      <Text style={styles.title}>Jahatelo</Text>
-      <Text style={styles.subtitle}>Moteles cerca tuyo, al instante</Text>
+
+      {/* Textos animados */}
+      <Animated.View
+        style={[
+          styles.textContainer,
+          {
+            opacity: textFadeAnim,
+            transform: [{ translateY: textSlideAnim }],
+          },
+        ]}
+      >
+        <Text style={styles.title}>Jahatelo</Text>
+        <Text style={styles.subtitle}>Moteles cerca tuyo, al instante</Text>
+      </Animated.View>
     </View>
   );
 }
-
-const HEART_SIZE = 140;
 
 const styles = StyleSheet.create({
   container: {
@@ -71,72 +118,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: COLORS.background,
   },
-  heartContainer: {
-    width: HEART_SIZE,
-    height: HEART_SIZE,
-    position: 'relative',
+  logoContainer: {
+    width: 200,
+    height: 200,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  leftCircle: {
-    position: 'absolute',
-    width: HEART_SIZE * 0.58,
-    height: HEART_SIZE * 0.58,
-    borderRadius: HEART_SIZE * 0.29,
-    backgroundColor: COLORS.heart,
-    left: HEART_SIZE * 0.05,
-    top: HEART_SIZE * 0.08,
-  },
-  rightCircle: {
-    position: 'absolute',
-    width: HEART_SIZE * 0.58,
-    height: HEART_SIZE * 0.58,
-    borderRadius: HEART_SIZE * 0.29,
-    backgroundColor: COLORS.heart,
-    right: HEART_SIZE * 0.05,
-    top: HEART_SIZE * 0.08,
-  },
-  bottomSquare: {
-    position: 'absolute',
-    width: HEART_SIZE * 0.7,
-    height: HEART_SIZE * 0.7,
-    backgroundColor: COLORS.heartDark,
-    bottom: HEART_SIZE * 0.08,
-    transform: [{ rotate: '45deg' }],
-    borderBottomLeftRadius: HEART_SIZE * 0.2,
-  },
-  pinWrapper: {
-    position: 'absolute',
-    width: HEART_SIZE * 0.4,
-    height: HEART_SIZE * 0.4,
-    borderRadius: HEART_SIZE * 0.2,
+  textContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pinOuter: {
-    width: '100%',
-    height: '100%',
-    borderRadius: HEART_SIZE * 0.2,
-    backgroundColor: COLORS.pin,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  pinInner: {
-    width: '45%',
-    height: '45%',
-    borderRadius: HEART_SIZE * 0.1,
-    borderWidth: 3,
-    borderColor: COLORS.heart,
+    marginTop: 24,
   },
   title: {
-    marginTop: 32,
-    fontSize: 26,
+    fontSize: 32,
     fontWeight: '700',
-    color: '#3C205B',
+    color: COLORS.title,
+    letterSpacing: 0.5,
   },
   subtitle: {
     marginTop: 8,
-    fontSize: 14,
-    color: '#705B85',
+    fontSize: 15,
+    color: COLORS.subtitle,
+    fontWeight: '400',
   },
 });

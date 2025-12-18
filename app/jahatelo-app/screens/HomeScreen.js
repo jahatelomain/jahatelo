@@ -2,9 +2,10 @@ import { useNavigation } from '@react-navigation/native';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -75,56 +76,98 @@ export default function HomeScreen() {
 
   if (loading && !refreshing) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.centerText}>Cargando moteles...</Text>
-      </View>
+      <>
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor={COLORS.primary}
+          translucent={Platform.OS === 'android'}
+        />
+        <View style={styles.screen}>
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={COLORS.white} />
+            <Text style={styles.centerText}>Cargando moteles...</Text>
+          </View>
+        </View>
+      </>
     );
   }
 
   if (error && !refreshing) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.centerText}>⚠️ {error}</Text>
-        <Text style={[styles.centerText, { color: COLORS.muted }]}>Verifica tu conexión a internet</Text>
-      </View>
+      <>
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor={COLORS.primary}
+          translucent={Platform.OS === 'android'}
+        />
+        <View style={styles.screen}>
+          <View style={styles.centerContainer}>
+            <Text style={styles.centerText}>⚠️ {error}</Text>
+            <Text style={[styles.centerText, { opacity: 0.8 }]}>Verifica tu conexión a internet</Text>
+          </View>
+        </View>
+      </>
     );
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <HomeHeader motels={motels} onMotelPress={handleMotelPress} onSearch={handleSearch} />
+    <>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={COLORS.primary}
+        translucent={Platform.OS === 'android'}
+      />
+      <View style={styles.screen}>
+        {/* Header */}
+        <View style={styles.headerWrapper}>
+          <HomeHeader motels={motels} onMotelPress={handleMotelPress} onSearch={handleSearch} />
+        </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />}
-      >
-        <PromoCarousel promos={promos.length ? promos : motels.slice(0, 5)} onPromoPress={handleMotelPress} />
-        <HomeCategoriesGrid categories={categories} />
-      </ScrollView>
-    </SafeAreaView>
+        {/* ScrollView con contenido */}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={COLORS.primary}
+              colors={[COLORS.primary]}
+            />
+          }
+        >
+          <PromoCarousel promos={promos.length ? promos : motels.slice(0, 5)} onPromoPress={handleMotelPress} />
+          <HomeCategoriesGrid categories={categories} />
+        </ScrollView>
+      </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.primary,
+  },
+  headerWrapper: {
+    backgroundColor: COLORS.primary,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    overflow: 'hidden',
   },
   content: {
     backgroundColor: COLORS.white,
-    paddingTop: 12,
+    paddingTop: 0,
     paddingBottom: 24,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.primary,
   },
   centerText: {
-    color: COLORS.primary,
+    color: COLORS.white,
     marginTop: 12,
   },
 });

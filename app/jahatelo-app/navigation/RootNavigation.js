@@ -9,6 +9,7 @@ import LegalScreen from '../screens/LegalScreen';
 import CitySelectorScreen from '../screens/CitySelectorScreen';
 import CityMotelsScreen from '../screens/CityMotelsScreen';
 import SearchScreen from '../screens/SearchScreen';
+import MotelListScreen from '../screens/MotelListScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -22,6 +23,7 @@ export default function RootNavigation() {
       <Stack.Screen name="AgeGate" component={AgeGateScreen} />
       <Stack.Screen name="Main" component={BottomTabs} />
       <Stack.Screen name="Search" component={SearchScreen} />
+      <Stack.Screen name="MotelList" component={MotelListScreen} />
       <Stack.Screen name="MotelDetail" component={MotelDetailScreen} />
       <Stack.Screen name="RegisterMotel" component={RegisterMotelScreen} />
       <Stack.Screen name="Legal" component={LegalScreen} />

@@ -5,6 +5,16 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import { fetchMotelBySlug } from '../services/motelsApi';
 import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../hooks/useFavorites';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  FadeIn,
+  FadeInDown,
+  SlideInUp,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import PromosTab from './motelDetail/PromosTab';
 import DetailsTab from './motelDetail/DetailsTab';
 import RoomsTab from './motelDetail/RoomsTab';
@@ -18,6 +28,10 @@ export default function MotelDetailScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { isFavorite, toggleFavorite } = useFavorites();
+
+  // Valores animados para favorito
+  const heartScale = useSharedValue(1);
+  const heartRotation = useSharedValue(0);
 
   // Priorizar slug, caer a ID si no hay slug
   const identifier = motelSlug || motelId;
@@ -46,9 +60,10 @@ export default function MotelDetailScreen({ route, navigation }) {
     loadMotel();
   }, [identifier]);
 
-  // Handler para llamada telefónica
+  // Handler para llamada telefónica con haptic
   const handleCall = (phoneNumber) => {
     if (!phoneNumber) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const url = `tel:${phoneNumber}`;
     Linking.canOpenURL(url)
       .then((supported) => {
@@ -61,9 +76,10 @@ export default function MotelDetailScreen({ route, navigation }) {
       .catch((err) => console.error('Error al intentar llamar:', err));
   };
 
-  // Handler para WhatsApp
+  // Handler para WhatsApp con haptic
   const handleWhatsApp = (whatsappNumber) => {
     if (!whatsappNumber) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     // Remover caracteres no numéricos
     const cleanNumber = whatsappNumber.replace(/\D/g, '');
     const url = `https://wa.me/${cleanNumber}`;
@@ -77,6 +93,32 @@ export default function MotelDetailScreen({ route, navigation }) {
       })
       .catch((err) => console.error('Error al abrir WhatsApp:', err));
   };
+
+  // Handler para favorito con animación
+  const handleFavoritePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Animación del corazón
+    heartScale.value = withSpring(1.5, { damping: 10, stiffness: 300 }, () => {
+      heartScale.value = withSpring(1.2, { damping: 8 }, () => {
+        heartScale.value = withSpring(1, { damping: 10 });
+      });
+    });
+
+    heartRotation.value = withTiming(360, { duration: 500 }, () => {
+      heartRotation.value = 0;
+    });
+
+    toggleFavorite(motel);
+  };
+
+  // Estilos animados
+  const animatedHeartStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: heartScale.value },
+      { rotate: `${heartRotation.value}deg` },
+    ],
+  }));
 
   // Mostrar loading
   if (loading) {
@@ -122,36 +164,42 @@ export default function MotelDetailScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Foto grande del motel */}
-      <View style={styles.photoContainer}>
+      {/* Foto grande del motel con animación de entrada */}
+      <Animated.View entering={FadeIn.duration(400)} style={styles.photoContainer}>
         <Image
           source={{ uri: mainPhoto }}
           style={styles.motelPhoto}
           resizeMode="cover"
         />
         {/* Botón volver posicionado sobre la foto */}
-        <TouchableOpacity
-          style={styles.backIconButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+        <Animated.View entering={FadeInDown.delay(200).duration(400)}>
+          <TouchableOpacity
+            style={styles.backIconButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        </Animated.View>
         {/* Botón favorito posicionado sobre la foto */}
-        <TouchableOpacity
-          style={styles.favoriteIconButton}
-          onPress={() => toggleFavorite(motel)}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
-            size={28}
-            color="#FF2E93"
-          />
-        </TouchableOpacity>
-      </View>
+        <Animated.View entering={FadeInDown.delay(300).duration(400)}>
+          <TouchableOpacity
+            style={styles.favoriteIconButton}
+            onPress={handleFavoritePress}
+            activeOpacity={0.7}
+          >
+            <Animated.View style={animatedHeartStyle}>
+              <Ionicons
+                name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
+                size={28}
+                color="#FF2E93"
+              />
+            </Animated.View>
+          </TouchableOpacity>
+        </Animated.View>
+      </Animated.View>
 
       {/* Header con nombre del motel */}
-      <View style={styles.header}>
+      <Animated.View entering={SlideInUp.delay(100).duration(500).springify()} style={styles.header}>
         <View style={styles.headerInfo}>
           <Text style={styles.motelName} numberOfLines={1}>{motel.nombre}</Text>
           <Text style={styles.motelLocation} numberOfLines={1}>
@@ -164,6 +212,7 @@ export default function MotelDetailScreen({ route, navigation }) {
             <TouchableOpacity
               style={styles.contactButton}
               onPress={() => handleCall(motel.contact.phone)}
+              activeOpacity={0.7}
             >
               <Ionicons name="call" size={20} color="#FF2E93" />
             </TouchableOpacity>
@@ -172,12 +221,13 @@ export default function MotelDetailScreen({ route, navigation }) {
             <TouchableOpacity
               style={styles.contactButton}
               onPress={() => handleWhatsApp(motel.contact.whatsapp)}
+              activeOpacity={0.7}
             >
               <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
             </TouchableOpacity>
           )}
         </View>
-      </View>
+      </Animated.View>
 
       {/* Material Top Tab Navigator */}
       <Tab.Navigator

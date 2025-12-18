@@ -1,4 +1,12 @@
 // API Client para consumir el backend de Jahatelo
+import {
+  cacheMotelsList,
+  getCachedMotelsList,
+  cacheMotelDetail,
+  getCachedMotelDetail,
+  addToRecentViews,
+  updateLastSync,
+} from './cacheService';
 
 /**
  * Obtiene la URL base del API desde las variables de entorno
@@ -37,6 +45,14 @@ const fetchJson = async (url, options = {}) => {
  * Mapea un motel del API al formato que usan los componentes
  */
 const mapMotelSummary = (apiMotel) => {
+  // Extraer coordenadas del backend (pueden venir como latitude/longitude o en objeto location)
+  const lat = apiMotel.latitude || apiMotel.location?.lat || apiMotel.location?.latitude || null;
+  const lng = apiMotel.longitude || apiMotel.location?.lng || apiMotel.location?.longitude || null;
+
+  // Normalizar a números (por si vienen como strings)
+  const latitude = lat !== null ? parseFloat(lat) : null;
+  const longitude = lng !== null ? parseFloat(lng) : null;
+
   return {
     id: apiMotel.id,
     slug: apiMotel.slug,
@@ -49,7 +65,13 @@ const mapMotelSummary = (apiMotel) => {
     rating: apiMotel.rating?.average || 0,
     isFeatured: apiMotel.isFeatured || false,
     tienePromo: typeof apiMotel.tienePromo === 'boolean' ? apiMotel.tienePromo : (apiMotel.hasPromo || false),
-    location: apiMotel.location || null,
+    // Coordenadas en el nivel raíz para fácil acceso
+    latitude,
+    longitude,
+    // También mantener el objeto location para compatibilidad
+    location: (latitude !== null && longitude !== null)
+      ? { lat: latitude, lng: longitude }
+      : null,
     photos: apiMotel.photos || [],
     thumbnail: apiMotel.thumbnail || null,
   };
@@ -115,9 +137,10 @@ const mapMenuCategory = (apiCategory) => {
 /**
  * Obtiene moteles con parámetros opcionales
  * @param {Object} params - Parámetros de búsqueda/filtro
+ * @param {boolean} useCache - Si debe intentar usar el caché (default: true)
  * @returns {Promise<Array>} Array de moteles
  */
-export const fetchMotels = async (params = {}) => {
+export const fetchMotels = async (params = {}, useCache = true) => {
   const baseUrl = getApiBaseUrl();
   const queryParams = new URLSearchParams();
 
@@ -133,8 +156,37 @@ export const fetchMotels = async (params = {}) => {
 
   const url = `${baseUrl}/motels${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
-  const response = await fetchJson(url);
-  return response.data.map(mapMotelSummary);
+  // Si no hay filtros y useCache es true, intentar obtener del caché primero
+  const hasFilters = Object.keys(params).length > 0;
+  if (!hasFilters && useCache) {
+    const cached = await getCachedMotelsList();
+    if (cached) {
+      console.log('✅ Usando moteles del caché');
+      return cached;
+    }
+  }
+
+  try {
+    const response = await fetchJson(url);
+    const motels = response.data.map(mapMotelSummary);
+
+    // Cachear solo si no hay filtros
+    if (!hasFilters) {
+      await cacheMotelsList(motels);
+      await updateLastSync();
+    }
+
+    return motels;
+  } catch (error) {
+    // Si falla el fetch, intentar devolver del caché
+    console.log('⚠️ Error al obtener moteles, intentando caché...');
+    const cached = await getCachedMotelsList();
+    if (cached) {
+      console.log('✅ Usando moteles del caché (offline)');
+      return cached;
+    }
+    throw error;
+  }
 };
 
 /**
@@ -162,14 +214,53 @@ export const fetchMotelsByFilters = async ({ search, amenity, city }) => {
 /**
  * Obtiene el detalle de un motel por slug o ID
  * @param {string} slugOrId - Slug o ID del motel
+ * @param {boolean} useCache - Si debe intentar usar el caché (default: true)
  * @returns {Promise<Object>} Motel completo
  */
-export const fetchMotelBySlug = async (slugOrId) => {
+export const fetchMotelBySlug = async (slugOrId, useCache = true) => {
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}/motels/${slugOrId}`;
 
-  const apiMotel = await fetchJson(url);
-  return mapMotelDetail(apiMotel);
+  // Intentar obtener del caché primero
+  if (useCache) {
+    const cached = await getCachedMotelDetail(slugOrId);
+    if (cached) {
+      console.log(`✅ Usando detalle de motel del caché: ${slugOrId}`);
+      return cached;
+    }
+  }
+
+  try {
+    const apiMotel = await fetchJson(url);
+    const motelDetail = mapMotelDetail(apiMotel);
+
+    // Cachear el detalle
+    await cacheMotelDetail(slugOrId, motelDetail);
+
+    // Agregar a vistos recientemente (formato resumido)
+    await addToRecentViews({
+      id: motelDetail.id,
+      slug: motelDetail.slug,
+      nombre: motelDetail.nombre,
+      barrio: motelDetail.barrio,
+      ciudad: motelDetail.ciudad,
+      precioDesde: motelDetail.precioDesde,
+      rating: motelDetail.rating,
+      thumbnail: motelDetail.thumbnail,
+      photos: motelDetail.photos || [],
+    });
+
+    return motelDetail;
+  } catch (error) {
+    // Si falla el fetch, intentar devolver del caché
+    console.log(`⚠️ Error al obtener motel ${slugOrId}, intentando caché...`);
+    const cached = await getCachedMotelDetail(slugOrId);
+    if (cached) {
+      console.log(`✅ Usando detalle de motel del caché (offline): ${slugOrId}`);
+      return cached;
+    }
+    throw error;
+  }
 };
 
 /**

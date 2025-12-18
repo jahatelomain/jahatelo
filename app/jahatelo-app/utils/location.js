@@ -38,23 +38,50 @@ function toRad(degrees) {
  * @returns {Array} Moteles filtrados y ordenados por distancia
  */
 export function filterMotelsByDistance(motels, userLat, userLon, maxDistance = 10) {
-  return motels
-    .map(motel => {
-      // Asumiendo que los moteles tienen propiedades lat/lng o latitude/longitude
-      const motelLat = motel.lat || motel.latitude;
-      const motelLon = motel.lng || motel.lon || motel.longitude;
+  console.log(`🔍 Filtrando ${motels.length} moteles cerca de [${userLat}, ${userLon}] - radio: ${maxDistance}km`);
 
-      if (!motelLat || !motelLon) {
+  const results = motels
+    .map((motel, index) => {
+      // Buscar coordenadas en múltiples ubicaciones posibles
+      let motelLat = motel.latitude || motel.lat || motel.location?.latitude || motel.location?.lat;
+      let motelLon = motel.longitude || motel.lng || motel.lon || motel.location?.longitude || motel.location?.lng;
+
+      // Normalizar a números (por si vienen como strings)
+      motelLat = motelLat !== null && motelLat !== undefined ? parseFloat(motelLat) : null;
+      motelLon = motelLon !== null && motelLon !== undefined ? parseFloat(motelLon) : null;
+
+      // Validar que son números válidos
+      if (!motelLat || !motelLon || isNaN(motelLat) || isNaN(motelLon)) {
+        if (index < 3) { // Solo logear los primeros 3 para no saturar
+          console.log(`⚠️ Motel "${motel.nombre}" sin coordenadas válidas:`, {
+            lat: motelLat,
+            lon: motelLon,
+            rawLat: motel.latitude || motel.lat,
+            rawLon: motel.longitude || motel.lng
+          });
+        }
         return null;
       }
 
       const distance = calculateDistance(userLat, userLon, motelLat, motelLon);
+
+      if (index < 3) { // Log de los primeros 3 moteles procesados
+        console.log(`✓ Motel "${motel.nombre}": ${distance.toFixed(1)}km - [${motelLat}, ${motelLon}]`);
+      }
 
       return {
         ...motel,
         distance: distance.toFixed(1)
       };
     })
-    .filter(motel => motel !== null && parseFloat(motel.distance) <= maxDistance)
+    .filter(motel => {
+      if (motel === null) return false;
+      const dist = parseFloat(motel.distance);
+      return !isNaN(dist) && dist <= maxDistance;
+    })
     .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+
+  console.log(`✅ Encontrados ${results.length} moteles dentro de ${maxDistance}km`);
+
+  return results;
 }

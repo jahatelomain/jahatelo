@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { formatPrice } from '../../services/motelsApi';
+import { getAmenityIconConfig } from '../../constants/amenityIcons';
 
 export default function RoomsTab({ route }) {
   const { motel } = route.params || {};
@@ -43,10 +45,17 @@ export default function RoomsTab({ route }) {
           )}
 
           <View style={styles.roomPriceRow}>
-            <Text style={styles.roomPriceLabel}>DESDE</Text>
-            <Text style={styles.roomPrice}>{formatPrice(room.basePrice)}</Text>
-            {room.priceLabel && (
-              <Text style={styles.roomPriceLabel}> {room.priceLabel}</Text>
+            {room.priceLabel && room.priceLabel.trim().length > 0 ? (
+              <Text style={[styles.roomPriceLabel, { fontWeight: '600' }]}>{room.priceLabel}</Text>
+            ) : (
+              <>
+                <Text style={styles.roomPriceLabel}>DESDE</Text>
+                <Text style={styles.roomPrice}>
+                  {room.basePrice && room.basePrice > 0
+                    ? formatPrice(room.basePrice)
+                    : 'CONSULTAR'}
+                </Text>
+              </>
             )}
           </View>
 
@@ -54,10 +63,20 @@ export default function RoomsTab({ route }) {
           {room.amenities && room.amenities.length > 0 && (
             <View style={styles.amenitiesContainer}>
               {room.amenities.map((amenity, index) => {
-                const amenityName = typeof amenity === 'string' ? amenity : amenity.name;
+                const amenityData = typeof amenity === 'string' ? { name: amenity } : amenity;
+                const iconConfig = getAmenityIconConfig(amenityData.icon);
+
                 return (
                   <View key={index} style={styles.amenityPill}>
-                    <Text style={styles.amenityText}>{amenityName}</Text>
+                    {iconConfig && (
+                      <MaterialCommunityIcons
+                        name={iconConfig.name}
+                        size={14}
+                        color={iconConfig.color}
+                        style={styles.amenityIcon}
+                      />
+                    )}
+                    <Text style={styles.amenityText}>{amenityData.name}</Text>
                   </View>
                 );
               })}
@@ -125,10 +144,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginRight: 6,
     marginBottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   amenityText: {
     fontSize: 12,
     color: '#2A0038',
+  },
+  amenityIcon: {
+    marginRight: 4,
   },
   photosScroll: {
     marginTop: 12,

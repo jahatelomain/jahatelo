@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import HomeCategoryCard from './HomeCategoryCard';
 
 const COLORS = {
@@ -8,7 +10,15 @@ const COLORS = {
   shadow: '#000000',
 };
 
-const PartnerLogo = () => <View style={styles.logoCircle} />;
+const SOCIAL_ICONS = ['logo-instagram', 'logo-facebook', 'logo-whatsapp', 'logo-tiktok'];
+
+const PartnerLogo = ({ iconName, index }) => (
+  <Animated.View entering={FadeInDown.delay(400 + index * 100).duration(600).springify()}>
+    <View style={styles.logoCircle}>
+      <Ionicons name={iconName} size={20} color={COLORS.text} />
+    </View>
+  </Animated.View>
+);
 
 export default function HomeCategoriesGrid({ categories = [] }) {
   return (
@@ -16,20 +26,22 @@ export default function HomeCategoriesGrid({ categories = [] }) {
       <FlatList
         data={categories}
         renderItem={({ item }) => (
-          <HomeCategoryCard label={item.label} iconName={item.iconName} onPress={item.onPress} />
+          <View style={styles.cardWrapper}>
+            <HomeCategoryCard label={item.label} iconName={item.iconName} onPress={item.onPress} />
+          </View>
         )}
         keyExtractor={(item) => item.id}
         numColumns={2}
         scrollEnabled={false}
         contentContainerStyle={styles.grid}
+        columnWrapperStyle={styles.row}
       />
       <View style={styles.partnersContainer}>
-        <Text style={styles.partnersTitle}>Aceptamos</Text>
+        <Text style={styles.partnersTitle}>¡Encontranos!</Text>
         <View style={styles.logosRow}>
-          <PartnerLogo />
-          <PartnerLogo />
-          <PartnerLogo />
-          <PartnerLogo />
+          {SOCIAL_ICONS.map((icon, index) => (
+            <PartnerLogo key={icon} iconName={icon} index={index} />
+          ))}
         </View>
       </View>
     </View>
@@ -38,11 +50,18 @@ export default function HomeCategoriesGrid({ categories = [] }) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     marginBottom: 24,
   },
   grid: {
-    paddingBottom: 16,
+    paddingBottom: 20,
+  },
+  row: {
+    justifyContent: 'space-between',
+  },
+  cardWrapper: {
+    flex: 1,
+    maxWidth: '48%',
   },
   partnersContainer: {
     marginTop: 8,
@@ -70,5 +89,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

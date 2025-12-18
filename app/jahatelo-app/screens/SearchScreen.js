@@ -1,10 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withRepeat,
+  withSequence,
+} from 'react-native-reanimated';
 import { searchAndFilterMotels } from '../services/motelsApi';
 import MotelCard from '../components/MotelCard';
+import { prefetchMotelDetails, prefetchThumbnails } from '../services/prefetchService';
 
 // Filtros rápidos por amenities comunes
 const QUICK_FILTERS = [
@@ -26,6 +35,36 @@ export default function SearchScreen({ route }) {
 
   const debounceTimerRef = useRef(null);
 
+  // Valores animados para SearchBar
+  const searchBarScale = useSharedValue(1);
+  const searchBarBorderWidth = useSharedValue(1);
+  const searchBarShadowRadius = useSharedValue(4);
+
+  // Animación para empty state icon
+  const emptyIconScale = useSharedValue(1);
+  const emptyIconOpacity = useSharedValue(0.5);
+
+  useEffect(() => {
+    // Pulsating search icon animation
+    emptyIconScale.value = withRepeat(
+      withSequence(
+        withTiming(1.1, { duration: 1200 }),
+        withTiming(1, { duration: 1200 })
+      ),
+      -1,
+      false
+    );
+
+    emptyIconOpacity.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1200 }),
+        withTiming(0.5, { duration: 1200 })
+      ),
+      -1,
+      false
+    );
+  }, []);
+
   // Función para cargar resultados
   const loadResults = async (query, amenity) => {
     try {
@@ -33,6 +72,15 @@ export default function SearchScreen({ route }) {
       setError(null);
       const data = await searchAndFilterMotels(query, amenity);
       setResults(data);
+
+      // Prefetch de los primeros 5 resultados en background
+      if (data && data.length > 0) {
+        setTimeout(() => {
+          const topResults = data.slice(0, 5);
+          prefetchMotelDetails(topResults);
+          prefetchThumbnails(topResults);
+        }, 300);
+      }
     } catch (err) {
       console.error('Error al buscar moteles:', err);
       setError(err.message || 'Error al buscar');
@@ -88,6 +136,59 @@ export default function SearchScreen({ route }) {
     setSelectedAmenity('');
   };
 
+  // Handlers de focus/blur para animación
+  const handleSearchFocus = () => {
+    searchBarScale.value = withSpring(1.02, { damping: 15 });
+    searchBarBorderWidth.value = withTiming(2, { duration: 250 });
+    searchBarShadowRadius.value = withTiming(8, { duration: 250 });
+  };
+
+  const handleSearchBlur = () => {
+    searchBarScale.value = withSpring(1, { damping: 15 });
+    searchBarBorderWidth.value = withTiming(1, { duration: 250 });
+    searchBarShadowRadius.value = withTiming(4, { duration: 250 });
+  };
+
+  // Estilo animado para SearchBar
+  const animatedSearchBarStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: searchBarScale.value }],
+      borderWidth: searchBarBorderWidth.value,
+      borderColor: searchBarBorderWidth.value > 1 ? '#FF2E93' : '#E0E0E0',
+      shadowRadius: searchBarShadowRadius.value,
+      shadowOpacity: searchBarShadowRadius.value > 4 ? 0.15 : 0.05,
+    };
+  });
+
+  // Estilo animado para empty state icon
+  const animatedEmptyIconStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: emptyIconScale.value }],
+      opacity: emptyIconOpacity.value,
+    };
+  });
+
+  // Prefetch al hacer scroll
+  const viewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 50,
+  });
+
+  const onViewableItemsChanged = useRef(({ viewableItems }) => {
+    if (viewableItems.length > 0) {
+      // Obtener índice del último item visible
+      const lastVisibleIndex = Math.max(...viewableItems.map(item => item.index || 0));
+
+      // Prefetch los próximos 3 items
+      const nextItems = results.slice(lastVisibleIndex + 1, lastVisibleIndex + 4);
+      if (nextItems.length > 0) {
+        setTimeout(() => {
+          prefetchMotelDetails(nextItems);
+          prefetchThumbnails(nextItems);
+        }, 100);
+      }
+    }
+  }).current;
+
   const renderMotelCard = ({ item }) => (
     <MotelCard
       motel={item}
@@ -101,13 +202,15 @@ export default function SearchScreen({ route }) {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Barra de búsqueda */}
       <View style={styles.searchSection}>
-        <View style={styles.searchBar}>
+        <Animated.View style={[styles.searchBar, animatedSearchBarStyle]}>
           <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Buscar por nombre, barrio o ciudad..."
             value={searchQuery}
             onChangeText={setSearchQuery}
+            onFocus={handleSearchFocus}
+            onBlur={handleSearchBlur}
             placeholderTextColor="#999"
           />
           {searchQuery.length > 0 && (
@@ -115,7 +218,7 @@ export default function SearchScreen({ route }) {
               <Ionicons name="close-circle" size={20} color="#666" />
             </TouchableOpacity>
           )}
-        </View>
+        </Animated.View>
       </View>
 
       {/* Filtros rápidos por amenity */}
@@ -180,10 +283,14 @@ export default function SearchScreen({ route }) {
           keyExtractor={item => item.slug || item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig.current}
           ListEmptyComponent={
             !loading && (
               <View style={styles.emptyContainer}>
-                <Ionicons name="search-outline" size={64} color="#CCC" />
+                <Animated.View style={animatedEmptyIconStyle}>
+                  <Ionicons name="search-outline" size={64} color="#CCC" />
+                </Animated.View>
                 <Text style={styles.emptyTitle}>No se encontraron moteles</Text>
                 <Text style={styles.emptyText}>
                   Intenta con otros términos de búsqueda o filtros

@@ -2,6 +2,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AnimatedSplash from './components/AnimatedSplash';
+import OfflineIndicator from './components/OfflineIndicator';
 import { FavoritesProvider } from './hooks/useFavorites';
 import RootNavigation from './navigation/RootNavigation';
 
@@ -21,6 +22,7 @@ export default function App() {
         <FavoritesProvider>
           <NavigationContainer>
             <RootNavigation />
+            <OfflineIndicator />
           </NavigationContainer>
         </FavoritesProvider>
       )}

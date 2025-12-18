@@ -1,11 +1,14 @@
 'use client';
 
 import { Fragment, useEffect, useState } from 'react';
+import * as LucideIcons from 'lucide-react';
+import { AMENITY_ICONS, ICON_CATEGORIES } from '@/lib/amenityIcons';
 
 type Amenity = {
   id: string;
   name: string;
   type: string | null;
+  icon: string | null;
   _count: {
     roomAmenities: number;
     motelAmenities: number;
@@ -20,11 +23,12 @@ type Amenity = {
 };
 
 export default function AmenitiesPage() {
+  const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>;
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', type: '' });
+  const [formData, setFormData] = useState({ name: '', type: '', icon: '' });
   const [expandedAmenity, setExpandedAmenity] = useState<string | null>(null);
 
   const fetchAmenities = async () => {
@@ -71,7 +75,7 @@ export default function AmenitiesPage() {
         fetchAmenities();
         setShowForm(false);
         setEditingId(null);
-        setFormData({ name: '', type: '' });
+        setFormData({ name: '', type: '', icon: '' });
       } else {
         const error = await res.json();
         alert(error.error || 'Error al guardar');
@@ -84,7 +88,7 @@ export default function AmenitiesPage() {
 
   const handleEdit = (amenity: Amenity) => {
     setEditingId(amenity.id);
-    setFormData({ name: amenity.name, type: amenity.type || '' });
+    setFormData({ name: amenity.name, type: amenity.type || '', icon: amenity.icon || '' });
     setShowForm(true);
   };
 
@@ -111,7 +115,7 @@ export default function AmenitiesPage() {
   const handleCancel = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormData({ name: '', type: '' });
+    setFormData({ name: '', type: '', icon: '' });
   };
 
   const toggleExpanded = (id: string) => {
@@ -179,33 +183,75 @@ export default function AmenitiesPage() {
             </button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Nombre *
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Ej: WiFi, Aire acondicionado"
-                required
-              />
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Nombre *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Ej: WiFi, Aire acondicionado"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Tipo <span className="text-slate-400">(opcional)</span>
+                </label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+                >
+                  <option value="">Sin especificar</option>
+                  <option value="ROOM">Habitación</option>
+                  <option value="MOTEL">Motel</option>
+                  <option value="BOTH">Ambos</option>
+                </select>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Tipo <span className="text-slate-400">(opcional)</span>
+                Ícono <span className="text-slate-400">(opcional)</span>
               </label>
               <select
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                value={formData.icon}
+                onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
               >
-                <option value="">Sin especificar</option>
-                <option value="ROOM">Habitación</option>
-                <option value="MOTEL">Motel</option>
-                <option value="BOTH">Ambos</option>
+                <option value="">Sin ícono</option>
+                {Object.entries(ICON_CATEGORIES).map(([category, label]) => (
+                  <optgroup key={category} label={label}>
+                    {AMENITY_ICONS.filter((icon) => icon.category === category).map((icon) => (
+                      <option key={icon.value} value={icon.value}>
+                        {icon.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
               </select>
+              {formData.icon && (
+                <div className="flex items-center gap-2 mt-2 text-sm text-slate-600">
+                  {(() => {
+                    const IconPreview = iconLibrary[formData.icon];
+                    if (!IconPreview) return null;
+                    return <IconPreview size={18} />;
+                  })()}
+                  <span>
+                    {AMENITY_ICONS.find((icon) => icon.value === formData.icon)?.label || formData.icon}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, icon: '' })}
+                    className="text-xs text-slate-400 hover:text-slate-600"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              )}
             </div>
             <div className="flex gap-3 pt-4">
               <button
@@ -234,6 +280,9 @@ export default function AmenitiesPage() {
                 Nombre
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Ícono
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Tipo
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -247,7 +296,7 @@ export default function AmenitiesPage() {
           <tbody className="bg-white divide-y divide-slate-200">
             {amenities.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-12 text-center">
+                <td colSpan={5} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-4xl text-slate-300">✨</span>
                     <p className="text-slate-500 font-medium">No hay amenities registrados</p>
@@ -265,6 +314,22 @@ export default function AmenitiesPage() {
                   <Fragment key={amenity.id}>
                     <tr className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-900">{amenity.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {amenity.icon ? (
+                          <div className="inline-flex items-center gap-2 text-slate-600">
+                            {(() => {
+                              const IconComponent = iconLibrary[amenity.icon];
+                              if (!IconComponent) return null;
+                              return <IconComponent size={18} />;
+                            })()}
+                            <span className="text-xs font-medium">
+                              {AMENITY_ICONS.find((icon) => icon.value === amenity.icon)?.label || amenity.icon}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-xs">Sin ícono</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {amenity.type ? (
                           <span className="px-3 py-1 text-xs font-medium bg-purple-50 text-purple-700 rounded-full">
@@ -313,7 +378,7 @@ export default function AmenitiesPage() {
                     </tr>
                     {expandedAmenity === amenity.id && motels.length > 0 && (
                       <tr className="bg-slate-50">
-                        <td colSpan={4} className="px-6 py-4">
+                        <td colSpan={5} className="px-6 py-4">
                           <div className="mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                             Moteles que utilizan este amenity
                           </div>

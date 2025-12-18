@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { formatPrice } from '../../services/motelsApi';
+import { getAmenityIconConfig } from '../../constants/amenityIcons';
 
 export default function DetailsTab({ route }) {
   const { motel } = route.params || {};
@@ -67,12 +68,25 @@ export default function DetailsTab({ route }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Comodidades generales</Text>
           <View style={styles.amenitiesGrid}>
-            {motel.amenities.map((amenity, index) => (
-              <View key={index} style={styles.amenityItem}>
-                <Ionicons name="checkmark-circle" size={20} color="#2A0038" />
-                <Text style={styles.amenityText}>{amenity}</Text>
-              </View>
-            ))}
+            {motel.amenities.map((amenity, index) => {
+              const amenityData = typeof amenity === 'string' ? { name: amenity } : amenity;
+              const iconConfig = getAmenityIconConfig(amenityData.icon);
+
+              return (
+                <View key={index} style={styles.amenityItem}>
+                  {iconConfig ? (
+                    <MaterialCommunityIcons
+                      name={iconConfig.name}
+                      size={20}
+                      color={iconConfig.color}
+                    />
+                  ) : (
+                    <Ionicons name="checkmark-circle" size={20} color="#2A0038" />
+                  )}
+                  <Text style={styles.amenityText}>{amenityData.name}</Text>
+                </View>
+              );
+            })}
           </View>
         </View>
       )}
