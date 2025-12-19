@@ -41,6 +41,16 @@ export default function Navbar() {
             >
               Moteles
             </Link>
+            <Link
+              href="/mapa"
+              className={`font-medium transition-colors ${
+                isActive('/mapa')
+                  ? 'text-purple-600'
+                  : 'text-gray-600 hover:text-purple-600'
+              }`}
+            >
+              Mapa
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}

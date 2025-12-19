@@ -298,7 +298,7 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
 const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 13,
     paddingBottom: 15,
     backgroundColor: COLORS.primary,
     zIndex: 10,

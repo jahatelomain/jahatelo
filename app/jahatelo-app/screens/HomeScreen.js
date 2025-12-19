@@ -67,8 +67,13 @@ export default function HomeScreen() {
     navigation.navigate('Search', { initialQuery: query });
   };
 
+  const handleMapPress = () => {
+    navigation.navigate('Map');
+  };
+
   const categories = [
     { id: 'cities', label: 'Moteles por ciudad', iconName: 'location-outline', onPress: handleCitiesPress },
+    { id: 'map', label: 'Ver mapa', iconName: 'map-outline', onPress: handleMapPress },
     { id: 'popular', label: 'Populares', iconName: 'flame-outline', onPress: () => navigateList('Populares', motels) },
   ];
 
