@@ -14,6 +14,7 @@ import { formatPrice, formatDistance } from '../services/motelsApi';
 import { useFavorites } from '../hooks/useFavorites';
 import { prefetchMotelDetails } from '../services/prefetchService';
 import { getAmenityIconConfig } from '../constants/amenityIcons';
+import { COLORS } from '../constants/theme';
 
 export default function MotelCard({ motel, onPress }) {
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -141,7 +142,7 @@ export default function MotelCard({ motel, onPress }) {
               <Ionicons
                 name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
                 size={20}
-                color="#FF2E93"
+                color={COLORS.primary}
               />
             </Animated.View>
           </TouchableOpacity>
@@ -251,7 +252,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: '#FF2E93',
+    color: COLORS.primary,
     marginBottom: 2,
   },
   distance: {
@@ -287,7 +288,7 @@ const styles = StyleSheet.create({
   featuredBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FF2E93',
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
