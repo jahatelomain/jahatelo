@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  SafeAreaView,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import MotelCard from '../components/MotelCard';
 import { COLORS } from '../constants/theme';
@@ -15,7 +15,7 @@ export default function CityMotelsScreen({ route, navigation }) {
   const { cityName, motels = [] } = route.params;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header personalizado */}
       <View style={styles.header}>
         <TouchableOpacity

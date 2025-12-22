@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  SafeAreaView,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   FadeIn,
@@ -143,7 +143,7 @@ export default function CitySelectorScreen({ route, navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header personalizado con animación */}
       <Animated.View entering={SlideInLeft.duration(400).springify()} style={styles.header}>
         <TouchableOpacity
