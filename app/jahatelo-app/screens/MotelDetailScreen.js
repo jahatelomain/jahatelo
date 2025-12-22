@@ -29,6 +29,7 @@ export default function MotelDetailScreen({ route, navigation }) {
   const [motel, setMotel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const { isFavorite, toggleFavorite } = useFavorites();
 
   // Valores animados para favorito
@@ -161,9 +162,12 @@ export default function MotelDetailScreen({ route, navigation }) {
     );
   }
 
+  useEffect(() => {
+    setCurrentPhotoIndex(0);
+  }, [motel?.slug]);
+
   // Obtener foto principal del motel o usar placeholder
   const mainPhoto = motel.thumbnail || motel.photos?.[0] || 'https://picsum.photos/800/600?random=999';
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const photoGallery = motel.photos && motel.photos.length > 0 ? motel.photos : [mainPhoto];
 
   return (
