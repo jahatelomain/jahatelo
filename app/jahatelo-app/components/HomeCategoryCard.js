@@ -46,7 +46,7 @@ const GRADIENT_THEMES = {
   },
 };
 
-export default function HomeCategoryCard({ label, iconName = 'ellipse', onPress }) {
+export default function HomeCategoryCard({ label, iconName = 'ellipse', onPress, isHorizontal = false }) {
   // Valores animados
   const iconScale = useSharedValue(1);
   const iconRotate = useSharedValue(0);
@@ -134,25 +134,34 @@ export default function HomeCategoryCard({ label, iconName = 'ellipse', onPress 
       onPressOut={handlePressOut}
       onPress={handlePress}
     >
-      <Animated.View style={[styles.container, animatedCardStyle]}>
+      <Animated.View style={[
+        isHorizontal ? styles.containerHorizontal : styles.container,
+        animatedCardStyle
+      ]}>
        <LinearGradient
          colors={theme.colors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.gradient}
+          style={isHorizontal ? styles.gradientHorizontal : styles.gradient}
         >
           {/* Glow effect overlay */}
           <Animated.View style={[styles.glowOverlay, animatedGlowStyle]} />
 
-          {/* Contenido centrado */}
-          <View style={styles.content}>
+          {/* Contenido */}
+          <View style={isHorizontal ? styles.contentHorizontal : styles.content}>
             {/* Ícono animado */}
-            <Animated.View style={[styles.iconCircle, animatedIconStyle]}>
-              <Ionicons name={iconName} size={32} color={theme.iconColor} />
+            <Animated.View style={[
+              isHorizontal ? styles.iconCircleHorizontal : styles.iconCircle,
+              animatedIconStyle
+            ]}>
+              <Ionicons name={iconName} size={isHorizontal ? 28 : 32} color={theme.iconColor} />
             </Animated.View>
 
             {/* Texto */}
-            <Text style={[styles.label, { color: theme.textColor }]}>
+            <Text style={[
+              isHorizontal ? styles.labelHorizontal : styles.label,
+              { color: theme.textColor }
+            ]}>
               {label}
             </Text>
           </View>
@@ -175,7 +184,22 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
   },
+  containerHorizontal: {
+    height: 80,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
   gradient: {
+    flex: 1,
+    borderRadius: 20,
+    position: 'relative',
+  },
+  gradientHorizontal: {
     flex: 1,
     borderRadius: 20,
     position: 'relative',
@@ -192,6 +216,14 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 12,
   },
+  contentHorizontal: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    gap: 12,
+  },
   iconCircle: {
     width: 60,
     height: 60,
@@ -203,11 +235,29 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.4)',
   },
+  iconCircleHorizontal: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
   label: {
     fontSize: 15,
     fontWeight: '700',
     textAlign: 'center',
     lineHeight: 20,
+    textShadowColor: 'rgba(0, 0, 0, 0.15)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  labelHorizontal: {
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.15)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,

@@ -21,10 +21,27 @@ const PartnerLogo = ({ iconName, index }) => (
 );
 
 export default function HomeCategoriesGrid({ categories = [] }) {
+  // Separar el botón de mapa de los demás
+  const mapCategory = categories.find(cat => cat.id === 'map');
+  const otherCategories = categories.filter(cat => cat.id !== 'map');
+
   return (
     <View style={styles.container}>
+      {/* Botón de mapa horizontal */}
+      {mapCategory && (
+        <View style={styles.mapButtonWrapper}>
+          <HomeCategoryCard
+            label={mapCategory.label}
+            iconName={mapCategory.iconName}
+            onPress={mapCategory.onPress}
+            isHorizontal={true}
+          />
+        </View>
+      )}
+
+      {/* Otros botones en grid 2 columnas */}
       <FlatList
-        data={categories}
+        data={otherCategories}
         renderItem={({ item }) => (
           <View style={styles.cardWrapper}>
             <HomeCategoryCard label={item.label} iconName={item.iconName} onPress={item.onPress} />
@@ -36,6 +53,7 @@ export default function HomeCategoriesGrid({ categories = [] }) {
         contentContainerStyle={styles.grid}
         columnWrapperStyle={styles.row}
       />
+
       <View style={styles.partnersContainer}>
         <Text style={styles.partnersTitle}>¡Encontranos!</Text>
         <View style={styles.logosRow}>
@@ -52,6 +70,10 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 8,
     marginBottom: 24,
+  },
+  mapButtonWrapper: {
+    marginBottom: 16,
+    paddingHorizontal: 8,
   },
   grid: {
     paddingBottom: 20,
