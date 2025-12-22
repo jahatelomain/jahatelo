@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Linking, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { fetchMotelBySlug } from '../services/motelsApi';
 import { Ionicons } from '@expo/vector-icons';
@@ -161,16 +163,63 @@ export default function MotelDetailScreen({ route, navigation }) {
 
   // Obtener foto principal del motel o usar placeholder
   const mainPhoto = motel.thumbnail || motel.photos?.[0] || 'https://picsum.photos/800/600?random=999';
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const photoGallery = motel.photos && motel.photos.length > 0 ? motel.photos : [mainPhoto];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Foto grande del motel con animación de entrada */}
+      {/* Galería de fotos con indicador */}
       <Animated.View entering={FadeIn.duration(400)} style={styles.photoContainer}>
-        <Image
-          source={{ uri: mainPhoto }}
-          style={styles.motelPhoto}
-          resizeMode="cover"
+        <Animated.FlatList
+          data={photoGallery}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={(event) => {
+            const index = Math.round(event.nativeEvent.contentOffset.x / event.nativeEvent.layoutMeasurement.width);
+            setCurrentPhotoIndex(index);
+          }}
+          renderItem={({ item }) => (
+            <Image
+              source={{ uri: typeof item === 'string' ? item : item }}
+              style={styles.motelPhoto}
+              resizeMode="cover"
+            />
+          )}
+          keyExtractor={(item, index) => index.toString()}
         />
+
+        {/* Indicador de fotos */}
+        {photoGallery.length > 1 && (
+          <View style={styles.photoIndicatorContainer}>
+            {photoGallery.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.photoIndicator,
+                  index === currentPhotoIndex && styles.photoIndicatorActive
+                ]}
+              />
+            ))}
+          </View>
+        )}
+
+        {/* Badges informativos */}
+        <View style={styles.badgesContainer}>
+          {motel.hasPromo && (
+            <View style={styles.promoBadge}>
+              <Ionicons name="pricetag" size={12} color="#FFFFFF" />
+              <Text style={styles.badgeText}>PROMO</Text>
+            </View>
+          )}
+          {motel.isFeatured && (
+            <View style={styles.featuredBadge}>
+              <Ionicons name="star" size={12} color="#FFFFFF" />
+              <Text style={styles.badgeText}>DESTACADO</Text>
+            </View>
+          )}
+        </View>
+
         {/* Botón volver posicionado sobre la foto */}
         <Animated.View entering={FadeInDown.delay(200).duration(400)}>
           <TouchableOpacity
@@ -326,10 +375,69 @@ const styles = StyleSheet.create({
     height: 240,
   },
   motelPhoto: {
-    width: '100%',
-    height: '100%',
+    width: SCREEN_WIDTH,
+    height: 240,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
+  },
+  photoIndicatorContainer: {
+    position: 'absolute',
+    bottom: 12,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  photoIndicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  photoIndicatorActive: {
+    backgroundColor: '#FFFFFF',
+    width: 20,
+  },
+  badgesContainer: {
+    position: 'absolute',
+    top: 70,
+    right: 16,
+    gap: 8,
+  },
+  promoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF2E93',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+  featuredBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFA500',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   backIconButton: {
     position: 'absolute',

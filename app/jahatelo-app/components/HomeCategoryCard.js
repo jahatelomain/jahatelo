@@ -26,6 +26,12 @@ const GRADIENT_THEMES = {
     textColor: '#FFFFFF',
     height: 160,
   },
+  'map-outline': {
+    colors: ['#00B4DB', '#0083B0', '#00D2FF'],
+    iconColor: '#FFFFFF',
+    textColor: '#FFFFFF',
+    height: 160,
+  },
   'flame-outline': {
     colors: ['#FF6B35', '#F7931E', '#FDC830'],
     iconColor: '#FFFFFF',

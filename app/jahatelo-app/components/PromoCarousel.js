@@ -1,5 +1,7 @@
 import React, { useRef } from 'react';
 import { Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
@@ -9,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.6;
+const CARD_WIDTH = width * 0.75;
 const SPACING = 16;
 
 const COLORS = {
@@ -17,6 +19,8 @@ const COLORS = {
   text: '#2E0338',
   textMuted: '#6A5E6E',
   overlay: 'rgba(0,0,0,0.55)',
+  accent: '#FF6B6B',
+  white: '#FFFFFF',
 };
 
 const PromoCard = ({ motel, onPress, index, scrollX }) => {
@@ -36,14 +40,14 @@ const PromoCard = ({ motel, onPress, index, scrollX }) => {
     const scale = interpolate(
       scrollX.value,
       inputRange,
-      [0.85, 1, 0.85],
+      [0.9, 1, 0.9],
       Extrapolate.CLAMP
     );
 
     const opacity = interpolate(
       scrollX.value,
       inputRange,
-      [0.6, 1, 0.6],
+      [0.7, 1, 0.7],
       Extrapolate.CLAMP
     );
 
@@ -55,12 +59,33 @@ const PromoCard = ({ motel, onPress, index, scrollX }) => {
 
   return (
     <Animated.View style={[styles.cardWrapper, animatedStyle]}>
-      <TouchableOpacity activeOpacity={0.85} onPress={() => onPress?.(motel)}>
-        <ImageBackground source={{ uri: image }} style={styles.card} imageStyle={styles.cardImage} />
+      <TouchableOpacity activeOpacity={0.9} onPress={() => onPress?.(motel)}>
+        <ImageBackground source={{ uri: image }} style={styles.card} imageStyle={styles.cardImage}>
+          {/* Badge de Promoción */}
+          <View style={styles.promoBadge}>
+            <Ionicons name="pricetag" size={14} color={COLORS.white} />
+            <Text style={styles.promoBadgeText}>PROMO</Text>
+          </View>
+
+          {/* Gradiente overlay */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.8)']}
+            style={styles.gradient}
+          >
+            <View style={styles.cardContent}>
+              <Text style={styles.cardTitle} numberOfLines={2}>
+                {motel.nombre}
+              </Text>
+              <View style={styles.locationRow}>
+                <Ionicons name="location-outline" size={14} color={COLORS.white} />
+                <Text style={styles.cardLocation} numberOfLines={1}>
+                  {motel.barrio || motel.ciudad}
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </ImageBackground>
       </TouchableOpacity>
-      <Text style={styles.cardTitle} numberOfLines={1}>
-        {motel.nombre}
-      </Text>
     </Animated.View>
   );
 };
@@ -124,24 +149,73 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     marginRight: SPACING,
-    alignItems: 'center',
   },
   card: {
     width: CARD_WIDTH,
-    height: width * 0.4,
-    borderRadius: 16,
+    height: width * 0.5,
+    borderRadius: 20,
     overflow: 'hidden',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  cardImage: {
+    borderRadius: 20,
+  },
+  promoBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.accent,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  promoBadgeText: {
+    color: COLORS.white,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  gradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '50%',
     justifyContent: 'flex-end',
     padding: 16,
   },
-  cardImage: {
-    borderRadius: 16,
+  cardContent: {
+    gap: 6,
   },
   cardTitle: {
-    color: COLORS.text,
-    fontSize: 16,
-    fontWeight: '700',
-    marginTop: 8,
-    textAlign: 'center',
+    color: COLORS.white,
+    fontSize: 18,
+    fontWeight: '800',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  cardLocation: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: '500',
+    opacity: 0.95,
   },
 });
