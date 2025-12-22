@@ -124,12 +124,14 @@ export default function MotelCard({ motel, onPress }) {
       onPressOut={handlePressOut}
     >
       <Animated.View style={[styles.card, animatedCardStyle]}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.motelName}>{motel.nombre}</Text>
-        <View style={styles.headerRight}>
-          {motel.distanciaKm && (
-            <Text style={styles.distance}>{formatDistance(motel.distanciaKm)}</Text>
-          )}
+        {/* Header con nombre y favorito */}
+        <View style={styles.cardHeader}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.motelName} numberOfLines={1}>{motel.nombre}</Text>
+            <Text style={styles.location} numberOfLines={1}>
+              <Ionicons name="location-outline" size={12} color="#888" /> {motel.barrio}, {motel.ciudad}
+            </Text>
+          </View>
           <TouchableOpacity
             onPress={handleFavoritePress}
             style={styles.favoriteButton}
@@ -138,59 +140,65 @@ export default function MotelCard({ motel, onPress }) {
             <Animated.View style={animatedHeartStyle}>
               <Ionicons
                 name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
-                size={24}
+                size={20}
                 color="#FF2E93"
               />
             </Animated.View>
           </TouchableOpacity>
         </View>
-      </View>
 
-      <Text style={styles.location}>{motel.barrio}, {motel.ciudad}</Text>
-
-      <View style={styles.priceRow}>
-        <Text style={styles.priceLabel}>Desde</Text>
-        <Text style={styles.price}>{formatPrice(motel.precioDesde)}</Text>
-      </View>
-
-      {motel.amenities && motel.amenities.length > 0 && (
-        <View style={styles.amenitiesContainer}>
-          {motel.amenities.slice(0, 3).map((amenity, index) => {
-            const amenityData = typeof amenity === 'string' ? { name: amenity } : amenity;
-            const iconConfig = getAmenityIconConfig(amenityData.icon);
-
-            return (
-              <View key={index} style={styles.amenityPill}>
-                {iconConfig && (
-                  <MaterialCommunityIcons
-                    name={iconConfig.name}
-                    size={14}
-                    color={iconConfig.color}
-                    style={styles.amenityIcon}
-                  />
-                )}
-                <Text style={styles.amenityText}>{amenityData.name}</Text>
-              </View>
-            );
-          })}
-        </View>
-      )}
-
-      <View style={styles.ratingRow}>
-        {!!motel.rating && (
-          <Text style={styles.ratingText}>⭐ {motel.rating}</Text>
-        )}
-        {motel.tienePromo && (
-          <Animated.View style={[styles.promoBadge, animatedPromoBadgeStyle]}>
-            <Text style={styles.promoText}>PROMO</Text>
-          </Animated.View>
-        )}
-        {motel.isFeatured && (
-          <View style={styles.featuredBadge}>
-            <Text style={styles.featuredText}>PREMIUM</Text>
+        {/* Fila inferior: precio, amenities, badges */}
+        <View style={styles.bottomRow}>
+          <View style={styles.priceContainer}>
+            <Text style={styles.price}>{formatPrice(motel.precioDesde)}</Text>
+            {motel.distanciaKm && (
+              <Text style={styles.distance}>{formatDistance(motel.distanciaKm)}</Text>
+            )}
           </View>
-        )}
-      </View>
+
+          <View style={styles.rightInfo}>
+            {/* Badges */}
+            <View style={styles.badgesRow}>
+              {motel.tienePromo && (
+                <Animated.View style={[styles.promoBadge, animatedPromoBadgeStyle]}>
+                  <Ionicons name="pricetag" size={10} color="#2A0038" />
+                  <Text style={styles.promoText}>PROMO</Text>
+                </Animated.View>
+              )}
+              {motel.isFeatured && (
+                <View style={styles.featuredBadge}>
+                  <Ionicons name="star" size={10} color="#FFFFFF" />
+                  <Text style={styles.featuredText}>VIP</Text>
+                </View>
+              )}
+              {!!motel.rating && (
+                <View style={styles.ratingBadge}>
+                  <Text style={styles.ratingText}>⭐ {motel.rating}</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Amenities compactas (solo iconos) */}
+            {motel.amenities && motel.amenities.length > 0 && (
+              <View style={styles.amenitiesContainer}>
+                {motel.amenities.slice(0, 4).map((amenity, index) => {
+                  const amenityData = typeof amenity === 'string' ? { name: amenity } : amenity;
+                  const iconConfig = getAmenityIconConfig(amenityData.icon);
+
+                  return iconConfig ? (
+                    <MaterialCommunityIcons
+                      key={index}
+                      name={iconConfig.name}
+                      size={16}
+                      color={iconConfig.color}
+                      style={styles.amenityIcon}
+                    />
+                  ) : null;
+                })}
+              </View>
+            )}
+          </View>
+        </View>
       </Animated.View>
     </Pressable>
   );
@@ -199,111 +207,116 @@ export default function MotelCard({ motel, onPress }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
+    alignItems: 'flex-start',
+    marginBottom: 8,
   },
-  motelName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2A0038',
+  headerLeft: {
     flex: 1,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 8,
-  },
-  distance: {
-    fontSize: 14,
-    color: '#666',
     marginRight: 8,
   },
-  favoriteButton: {
-    padding: 4,
+  motelName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2A0038',
+    marginBottom: 2,
   },
   location: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
+    fontSize: 12,
+    color: '#888',
+    lineHeight: 16,
   },
-  priceRow: {
+  favoriteButton: {
+    padding: 2,
+  },
+  bottomRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
   },
-  priceLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginRight: 6,
+  priceContainer: {
+    flex: 0,
   },
   price: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: 'bold',
     color: '#FF2E93',
+    marginBottom: 2,
+  },
+  distance: {
+    fontSize: 11,
+    color: '#999',
+  },
+  rightInfo: {
+    flex: 1,
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  badgesRow: {
+    flexDirection: 'row',
+    gap: 4,
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+  },
+  promoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    gap: 2,
+  },
+  promoText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#2A0038',
+    letterSpacing: 0.3,
+  },
+  featuredBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF2E93',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    gap: 2,
+  },
+  featuredText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  ratingBadge: {
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  ratingText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#333',
   },
   amenitiesContainer: {
     flexDirection: 'row',
+    gap: 4,
     flexWrap: 'wrap',
-    marginBottom: 12,
-  },
-  amenityPill: {
-    backgroundColor: '#F0E6F6',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 6,
-    marginBottom: 6,
-  },
-  amenityText: {
-    fontSize: 12,
-    color: '#2A0038',
+    justifyContent: 'flex-end',
   },
   amenityIcon: {
-    marginRight: 4,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ratingText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginRight: 8,
-  },
-  promoBadge: {
-    backgroundColor: '#FFD700',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  promoText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#2A0038',
-  },
-  featuredBadge: {
-    backgroundColor: '#FF2E93',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  featuredText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    opacity: 0.7,
   },
 });
