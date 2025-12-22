@@ -31,8 +31,14 @@ export async function GET() {
         featuredPhoto: true,
         photos: {
           select: {
+            id: true,
+            motelId: true,
+            createdAt: true,
+            updatedAt: true,
+            order: true,
             url: true,
             kind: true,
+            roomTypeId: true,
           },
           orderBy: {
             createdAt: 'asc',
