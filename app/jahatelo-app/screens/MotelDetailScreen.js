@@ -164,7 +164,7 @@ export default function MotelDetailScreen({ route, navigation }) {
 
   useEffect(() => {
     setCurrentPhotoIndex(0);
-  }, [motel?.slug]);
+  }, [identifier]);
 
   // Obtener foto principal del motel o usar placeholder
   const mainPhoto = motel.thumbnail || motel.photos?.[0] || 'https://picsum.photos/800/600?random=999';
