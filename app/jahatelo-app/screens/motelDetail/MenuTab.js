@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { formatPrice } from '../../services/motelsApi';
+import { COLORS } from '../../constants/theme';
 
 export default function MenuTab({ route }) {
   const { motel } = route.params || {};
@@ -55,7 +56,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingBottom: 8,
     borderBottomWidth: 2,
-    borderBottomColor: '#FF2E93',
+    borderBottomColor: COLORS.primary,
   },
   menuItem: {
     paddingVertical: 12,

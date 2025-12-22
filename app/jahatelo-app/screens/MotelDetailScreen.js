@@ -17,6 +17,7 @@ import Animated, {
   SlideInUp,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { COLORS } from '../constants/theme';
 import PromosTab from './motelDetail/PromosTab';
 import DetailsTab from './motelDetail/DetailsTab';
 import RoomsTab from './motelDetail/RoomsTab';
@@ -132,7 +133,7 @@ export default function MotelDetailScreen({ route, navigation }) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#FF2E93" />
+          <ActivityIndicator size="large" color="COLORS.primary" />
           <Text style={styles.loadingText}>Cargando motel...</Text>
         </View>
       </SafeAreaView>
@@ -144,7 +145,7 @@ export default function MotelDetailScreen({ route, navigation }) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={64} color="#FF2E93" />
+          <Ionicons name="alert-circle-outline" size={64} color="COLORS.primary" />
           <Text style={styles.errorTitle}>Motel no encontrado</Text>
           <Text style={styles.errorText}>
             {error || 'No pudimos cargar la información de este motel.'}
@@ -244,7 +245,7 @@ export default function MotelDetailScreen({ route, navigation }) {
               <Ionicons
                 name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
                 size={28}
-                color="#FF2E93"
+                color="COLORS.primary"
               />
             </Animated.View>
           </TouchableOpacity>
@@ -267,7 +268,7 @@ export default function MotelDetailScreen({ route, navigation }) {
               onPress={() => handleCall(motel.contact.phone)}
               activeOpacity={0.7}
             >
-              <Ionicons name="call" size={20} color="#FF2E93" />
+              <Ionicons name="call" size={20} color="COLORS.primary" />
             </TouchableOpacity>
           )}
           {motel.contact?.whatsapp && (
@@ -295,7 +296,7 @@ export default function MotelDetailScreen({ route, navigation }) {
             paddingHorizontal: 8,
           },
           tabBarIndicatorStyle: {
-            backgroundColor: '#FF2E93',
+            backgroundColor: 'COLORS.primary',
             height: 3,
           },
           tabBarStyle: {
@@ -305,7 +306,7 @@ export default function MotelDetailScreen({ route, navigation }) {
             borderBottomWidth: 1,
             borderBottomColor: '#E0E0E0',
           },
-          tabBarActiveTintColor: '#FF2E93',
+          tabBarActiveTintColor: 'COLORS.primary',
           tabBarInactiveTintColor: '#666',
         }}
       >
@@ -412,7 +413,7 @@ const styles = StyleSheet.create({
   promoBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FF2E93',
+    backgroundColor: 'COLORS.primary',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 16,
@@ -520,7 +521,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   retryButton: {
-    backgroundColor: '#FF2E93',
+    backgroundColor: 'COLORS.primary',
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 24,

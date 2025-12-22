@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'r
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { formatPrice } from '../../services/motelsApi';
 import { getAmenityIconConfig } from '../../constants/amenityIcons';
+import { COLORS } from '../../constants/theme';
 
 export default function DetailsTab({ route }) {
   const { motel } = route.params || {};
@@ -128,7 +129,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FF2E93',
+    color: COLORS.primary,
   },
   mapsButton: {
     flexDirection: 'row',

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { formatPrice } from '../../services/motelsApi';
 import { getAmenityIconConfig } from '../../constants/amenityIcons';
+import { COLORS } from '../../constants/theme';
 
 export default function RoomsTab({ route }) {
   const { motel } = route.params || {};
@@ -129,7 +130,7 @@ const styles = StyleSheet.create({
   roomPrice: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FF2E93',
+    color: COLORS.primary,
     marginHorizontal: 6,
   },
   amenitiesContainer: {

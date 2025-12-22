@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import { COLORS } from '../../constants/theme';
 
 export default function PromosTab({ route }) {
   const { motel } = route.params || {};
@@ -129,7 +130,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   globalBadgeText: {
-    color: '#FF2E93',
+    color: COLORS.primary,
     fontSize: 12,
     fontWeight: '600',
   },
