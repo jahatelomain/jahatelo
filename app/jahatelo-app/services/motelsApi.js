@@ -42,6 +42,24 @@ const fetchJson = async (url, options = {}) => {
 };
 
 /**
+ * Normaliza una lista de fotos provenientes del backend para que siempre sean strings (URLs)
+ */
+const normalizePhotoList = (photos = []) => {
+  if (!Array.isArray(photos)) return [];
+
+  return photos
+    .map((photo) => {
+      if (!photo) return null;
+      if (typeof photo === 'string') return photo;
+      if (typeof photo === 'object') {
+        return photo.url || photo.photoUrl || null;
+      }
+      return null;
+    })
+    .filter(Boolean);
+};
+
+/**
  * Mapea un motel del API al formato que usan los componentes
  */
 const mapMotelSummary = (apiMotel) => {
@@ -54,9 +72,10 @@ const mapMotelSummary = (apiMotel) => {
   const longitude = lng !== null ? parseFloat(lng) : null;
 
   // Normalizar fotos: siempre una lista de strings para reutilizar en la app
-  const normalizedPhotos = Array.isArray(apiMotel.photos) && apiMotel.photos.length > 0
-    ? apiMotel.photos
-    : (Array.isArray(apiMotel.allPhotos) ? apiMotel.allPhotos.slice(0, 3) : []);
+  let normalizedPhotos = normalizePhotoList(apiMotel.photos);
+  if (normalizedPhotos.length === 0 && Array.isArray(apiMotel.allPhotos)) {
+    normalizedPhotos = normalizePhotoList(apiMotel.allPhotos).slice(0, 3);
+  }
 
   const thumbnail =
     apiMotel.thumbnail ||
@@ -102,7 +121,7 @@ const mapMotelDetail = (apiMotel) => {
     rooms: apiMotel.rooms?.map(mapRoom) || [],
     menu: apiMotel.menu?.map(mapMenuCategory) || [],
     paymentMethods: apiMotel.paymentMethods || [],
-    allPhotos: apiMotel.allPhotos || apiMotel.photos || [],
+    allPhotos: normalizePhotoList(apiMotel.allPhotos || apiMotel.photos),
     hasPhotos: apiMotel.hasPhotos || false,
     promos: apiMotel.promos || [],
   };

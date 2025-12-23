@@ -175,7 +175,10 @@ export default function MotelDetailScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Galería de fotos con indicador */}
-      <Animated.View entering={FadeIn.duration(400)} style={styles.photoContainer}>
+      <Animated.View
+        entering={FadeIn.duration(400)}
+        style={[styles.photoContainer, { paddingTop: insets.top, height: 240 + insets.top }]}
+      >
         <Animated.FlatList
           data={photoGallery}
           horizontal
@@ -185,13 +188,16 @@ export default function MotelDetailScreen({ route, navigation }) {
             const index = Math.round(event.nativeEvent.contentOffset.x / event.nativeEvent.layoutMeasurement.width);
             setCurrentPhotoIndex(index);
           }}
-          renderItem={({ item }) => (
-            <Image
-              source={{ uri: typeof item === 'string' ? item : item }}
-              style={styles.motelPhoto}
-              resizeMode="cover"
-            />
-          )}
+          renderItem={({ item }) => {
+            const photoUrl = typeof item === 'string' ? item : item?.url || item?.photoUrl || null;
+            return (
+              <Image
+                source={{ uri: photoUrl || 'https://picsum.photos/800/600?random=998' }}
+                style={[styles.motelPhoto, { height: 240 + insets.top }]}
+                resizeMode="cover"
+              />
+            );
+          }}
           keyExtractor={(item, index) => index.toString()}
         />
 
