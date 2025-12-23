@@ -53,6 +53,17 @@ const mapMotelSummary = (apiMotel) => {
   const latitude = lat !== null ? parseFloat(lat) : null;
   const longitude = lng !== null ? parseFloat(lng) : null;
 
+  // Normalizar fotos: siempre una lista de strings para reutilizar en la app
+  const normalizedPhotos = Array.isArray(apiMotel.photos) && apiMotel.photos.length > 0
+    ? apiMotel.photos
+    : (Array.isArray(apiMotel.allPhotos) ? apiMotel.allPhotos.slice(0, 3) : []);
+
+  const thumbnail =
+    apiMotel.thumbnail ||
+    apiMotel.featuredPhoto ||
+    normalizedPhotos[0] ||
+    null;
+
   return {
     id: apiMotel.id,
     slug: apiMotel.slug,
@@ -72,8 +83,8 @@ const mapMotelSummary = (apiMotel) => {
     location: (latitude !== null && longitude !== null)
       ? { lat: latitude, lng: longitude }
       : null,
-    photos: apiMotel.photos || [],
-    thumbnail: apiMotel.thumbnail || null,
+    photos: normalizedPhotos,
+    thumbnail,
   };
 };
 
