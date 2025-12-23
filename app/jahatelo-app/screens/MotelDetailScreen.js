@@ -172,12 +172,14 @@ export default function MotelDetailScreen({ route, navigation }) {
   const mainPhoto = motel.thumbnail || motel.photos?.[0] || 'https://picsum.photos/800/600?random=999';
   const photoGallery = motel.photos && motel.photos.length > 0 ? motel.photos : [mainPhoto];
 
+  const photoHeight = 240 + insets.top;
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Galería de fotos con indicador */}
       <Animated.View
         entering={FadeIn.duration(400)}
-        style={[styles.photoContainer, { paddingTop: insets.top, height: 240 + insets.top }]}
+        style={[styles.photoContainer, { height: photoHeight, marginTop: -insets.top }]}
       >
         <Animated.FlatList
           data={photoGallery}
@@ -193,7 +195,7 @@ export default function MotelDetailScreen({ route, navigation }) {
             return (
               <Image
                 source={{ uri: photoUrl || 'https://picsum.photos/800/600?random=998' }}
-                style={[styles.motelPhoto, { height: 240 + insets.top }]}
+                style={[styles.motelPhoto, { height: photoHeight }]}
                 resizeMode="cover"
               />
             );
