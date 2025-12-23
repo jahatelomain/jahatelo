@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Linking, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
@@ -32,6 +32,7 @@ export default function MotelDetailScreen({ route, navigation }) {
   const [error, setError] = useState(null);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const { isFavorite, toggleFavorite } = useFavorites();
+  const insets = useSafeAreaInsets();
 
   // Valores animados para favorito
   const heartScale = useSharedValue(1);
@@ -210,7 +211,7 @@ export default function MotelDetailScreen({ route, navigation }) {
         )}
 
         {/* Badges informativos */}
-        <View style={styles.badgesContainer}>
+        <View style={[styles.badgesContainer, { top: 70 + insets.top }]}>
           {motel.hasPromo && (
             <View style={styles.promoBadge}>
               <Ionicons name="pricetag" size={12} color="#FFFFFF" />
@@ -228,7 +229,7 @@ export default function MotelDetailScreen({ route, navigation }) {
         {/* Botón volver posicionado sobre la foto */}
         <Animated.View entering={FadeInDown.delay(200).duration(400)}>
           <TouchableOpacity
-            style={styles.backIconButton}
+            style={[styles.backIconButton, { top: 16 + insets.top }]}
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
@@ -237,7 +238,7 @@ export default function MotelDetailScreen({ route, navigation }) {
         {/* Botón favorito posicionado sobre la foto */}
         <Animated.View entering={FadeInDown.delay(300).duration(400)}>
           <TouchableOpacity
-            style={styles.favoriteIconButton}
+            style={[styles.favoriteIconButton, { top: 16 + insets.top }]}
             onPress={handleFavoritePress}
             activeOpacity={0.7}
           >
@@ -406,7 +407,6 @@ const styles = StyleSheet.create({
   },
   badgesContainer: {
     position: 'absolute',
-    top: 70,
     right: 16,
     gap: 8,
   },
@@ -446,7 +446,6 @@ const styles = StyleSheet.create({
   },
   backIconButton: {
     position: 'absolute',
-    top: 16,
     left: 16,
     width: 40,
     height: 40,
@@ -457,7 +456,6 @@ const styles = StyleSheet.create({
   },
   favoriteIconButton: {
     position: 'absolute',
-    top: 16,
     right: 16,
     width: 40,
     height: 40,
