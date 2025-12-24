@@ -218,8 +218,6 @@ export function mapMotelToDetail(
     ...listItem,
     photos: getListPhotos(motel.photos, motel.featuredPhoto),
     allPhotos: getAllPhotos(motel.photos, motel.featuredPhoto),
-    photos: getListPhotos(motel.photos, motel.featuredPhoto),
-    allPhotos: getAllPhotos(motel.photos, motel.featuredPhoto),
     promos:
       motel.promos
         ?.filter((promo) => {
@@ -263,7 +261,6 @@ export function mapMotelToDetail(
       })) || [],
     rooms: motel.rooms?.filter((r) => r.isActive).map(mapRoomForMobile) || [],
     paymentMethods: motel.paymentMethods?.map((pm) => pm.method) || [],
-    allPhotos: motel.photos.map((p) => p.url),
-    hasPhotos: motel.photos.length > 0,
+    hasPhotos: motel.photos.length > 0 || Boolean(motel.featuredPhoto),
   };
 }
