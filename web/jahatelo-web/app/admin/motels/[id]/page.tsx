@@ -114,6 +114,7 @@ export default function MotelDetailPage({
   const [motel, setMotel] = useState<Motel | null>(null);
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [geocoding, setGeocoding] = useState(false);
   const [activeTab, setActiveTab] = useState<'promos' | 'details' | 'rooms' | 'menu' | 'commercial'>('promos');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
 
@@ -371,6 +372,34 @@ export default function MotelDetailPage({
     } catch (error) {
       console.error('Error updating motel:', error);
       alert('Error al actualizar motel');
+    }
+  };
+
+  const handleGeocode = async () => {
+    if (!motelForm.address || !motelForm.city) {
+      alert('Por favor ingresa dirección y ciudad antes de geocodificar');
+      return;
+    }
+
+    setGeocoding(true);
+    try {
+      const res = await fetch(`/api/admin/motels/${id}/geocode`, {
+        method: 'POST',
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(`Coordenadas obtenidas exitosamente!\nLat: ${data.motel.latitude}\nLng: ${data.motel.longitude}`);
+        fetchMotel(); // Reload motel to get updated coordinates
+      } else {
+        alert(data.error || 'Error al geocodificar');
+      }
+    } catch (error) {
+      console.error('Error geocoding motel:', error);
+      alert('Error al geocodificar motel');
+    } finally {
+      setGeocoding(false);
     }
   };
 
@@ -1317,12 +1346,23 @@ export default function MotelDetailPage({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Dirección</label>
-                    <input
-                      type="text"
-                      value={motelForm.address}
-                      onChange={(e) => setMotelForm({ ...motelForm, address: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={motelForm.address}
+                        onChange={(e) => setMotelForm({ ...motelForm, address: e.target.value })}
+                        className="flex-1 border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleGeocode}
+                        disabled={geocoding || !motelForm.address || !motelForm.city}
+                        className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
+                      >
+                        <LucideIcons.MapPin className="w-4 h-4" />
+                        {geocoding ? 'Geocodificando...' : 'Obtener coordenadas'}
+                      </button>
+                    </div>
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-2">URL de Mapa</label>
