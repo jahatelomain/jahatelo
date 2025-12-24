@@ -218,6 +218,8 @@ export function mapMotelToDetail(
     ...listItem,
     photos: getListPhotos(motel.photos, motel.featuredPhoto),
     allPhotos: getAllPhotos(motel.photos, motel.featuredPhoto),
+    photos: getListPhotos(motel.photos, motel.featuredPhoto),
+    allPhotos: getAllPhotos(motel.photos, motel.featuredPhoto),
     promos:
       motel.promos
         ?.filter((promo) => {
