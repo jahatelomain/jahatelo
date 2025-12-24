@@ -77,9 +77,20 @@ export function getThumbnail(photos: Photo[], featuredPhoto?: string | null): st
 /**
  * Obtiene hasta 3 URLs de fotos para el listado
  */
-export function getListPhotos(photos: Photo[]): string[] {
-  if (!photos || photos.length === 0) return [];
-  return photos.slice(0, 3).map((p) => p.url);
+export function getListPhotos(photos: Photo[], featuredPhoto?: string | null): string[] {
+  const urls = (photos || []).map((p) => p.url).filter(Boolean);
+  const unique = new Set<string>();
+  if (featuredPhoto) unique.add(featuredPhoto);
+  urls.slice(0, 3).forEach((url) => unique.add(url));
+  return Array.from(unique);
+}
+
+export function getAllPhotos(photos: Photo[], featuredPhoto?: string | null): string[] {
+  const urls = (photos || []).map((p) => p.url).filter(Boolean);
+  const unique = new Set<string>();
+  if (featuredPhoto) unique.add(featuredPhoto);
+  urls.forEach((url) => unique.add(url));
+  return Array.from(unique);
 }
 
 /**
@@ -128,7 +139,7 @@ export function mapMotelToListItem(motel: MotelForList) {
       icon: ma.amenity.icon,
     })),
     thumbnail: getThumbnail(motel.photos, motel.featuredPhoto),
-    photos: getListPhotos(motel.photos),
+    photos: getListPhotos(motel.photos, motel.featuredPhoto),
     featuredPhoto: motel.featuredPhoto,
   };
 }
@@ -205,6 +216,8 @@ export function mapMotelToDetail(
 
   return {
     ...listItem,
+    photos: getListPhotos(motel.photos, motel.featuredPhoto),
+    allPhotos: getAllPhotos(motel.photos, motel.featuredPhoto),
     promos:
       motel.promos
         ?.filter((promo) => {
