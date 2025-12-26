@@ -170,7 +170,12 @@ export default function MotelDetailScreen({ route, navigation }) {
 
   // Obtener foto principal del motel o usar placeholder
   const mainPhoto = motel.thumbnail || motel.photos?.[0] || 'https://picsum.photos/800/600?random=999';
-  const photoGallery = motel.photos && motel.photos.length > 0 ? motel.photos : [mainPhoto];
+  const photoGallery =
+    motel.photos && motel.photos.length > 0
+      ? motel.photos
+      : motel.allPhotos && motel.allPhotos.length > 0
+      ? motel.allPhotos
+      : [mainPhoto];
 
   const photoHeight = 240 + insets.top;
 
@@ -219,7 +224,7 @@ export default function MotelDetailScreen({ route, navigation }) {
         )}
 
         {/* Badges informativos */}
-        <View style={[styles.badgesContainer, { top: 70 + insets.top }]}>
+        <View style={[styles.badgesContainer, { top: insets.top + 70 }]}>
           {motel.hasPromo && (
             <View style={styles.promoBadge}>
               <Ionicons name="pricetag" size={12} color="#FFFFFF" />
@@ -234,31 +239,32 @@ export default function MotelDetailScreen({ route, navigation }) {
           )}
         </View>
 
-        {/* Botón volver posicionado sobre la foto */}
-        <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-          <TouchableOpacity
-            style={[styles.backIconButton, { top: 16 + insets.top }]}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </Animated.View>
-        {/* Botón favorito posicionado sobre la foto */}
-        <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-          <TouchableOpacity
-            style={[styles.favoriteIconButton, { top: 16 + insets.top }]}
-            onPress={handleFavoritePress}
-            activeOpacity={0.7}
-          >
-            <Animated.View style={animatedHeartStyle}>
-              <Ionicons
-                name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
-                size={28}
-                color="COLORS.primary"
-              />
-            </Animated.View>
-          </TouchableOpacity>
-        </Animated.View>
+        {/* Controles superiores (back + favorito) */}
+        <View style={[styles.photoOverlay, { paddingTop: insets.top + 12 }]}>
+          <Animated.View entering={FadeInDown.delay(150).duration(400)}>
+            <TouchableOpacity
+              style={styles.backIconButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          </Animated.View>
+          <Animated.View entering={FadeInDown.delay(250).duration(400)}>
+            <TouchableOpacity
+              style={styles.favoriteIconButton}
+              onPress={handleFavoritePress}
+              activeOpacity={0.7}
+            >
+              <Animated.View style={animatedHeartStyle}>
+                <Ionicons
+                  name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
+                  size={26}
+                  color="COLORS.primary"
+                />
+              </Animated.View>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
       </Animated.View>
 
       {/* Header con nombre del motel */}
@@ -305,7 +311,7 @@ export default function MotelDetailScreen({ route, navigation }) {
             paddingHorizontal: 8,
           },
           tabBarIndicatorStyle: {
-            backgroundColor: 'COLORS.primary',
+            backgroundColor: COLORS.primary,
             height: 3,
           },
           tabBarStyle: {
@@ -315,7 +321,7 @@ export default function MotelDetailScreen({ route, navigation }) {
             borderBottomWidth: 1,
             borderBottomColor: '#E0E0E0',
           },
-          tabBarActiveTintColor: 'COLORS.primary',
+          tabBarActiveTintColor: COLORS.primary,
           tabBarInactiveTintColor: '#666',
         }}
       >
@@ -387,6 +393,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: '100%',
     height: 240,
+    overflow: 'hidden',
   },
   motelPhoto: {
     width: SCREEN_WIDTH,
@@ -421,7 +428,7 @@ const styles = StyleSheet.create({
   promoBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'COLORS.primary',
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 16,
@@ -453,8 +460,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   backIconButton: {
-    position: 'absolute',
-    left: 16,
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -463,14 +468,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   favoriteIconButton: {
-    position: 'absolute',
-    right: 16,
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  photoOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   header: {
     flexDirection: 'row',
@@ -527,7 +540,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   retryButton: {
-    backgroundColor: 'COLORS.primary',
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 24,

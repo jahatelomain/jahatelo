@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, FlatList, ActivityIndicator, Alert, Animated as RNAnimated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Animated as RNAnimated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
-import { filterMotelsByDistance } from '../utils/location';
 import { COLORS } from '../constants/theme';
 import Animated, {
   useSharedValue,
@@ -13,10 +11,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 
-export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [nearbyMotels, setNearbyMotels] = useState([]);
-  const [loading, setLoading] = useState(false);
+export default function HomeHeader({ motels = [], onMotelPress, onSearch, navigation }) {
   const [searchValue, setSearchValue] = useState('');
   const placeholderOpacity = useRef(new RNAnimated.Value(1)).current;
 
@@ -111,56 +106,8 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
     };
   }, []);
 
-  const handleNearbyPress = async () => {
-    setLoading(true);
-    try {
-      // Solicitar permisos de ubicación
-      const { status } = await Location.requestForegroundPermissionsAsync();
-
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permiso denegado',
-          'Necesitamos acceso a tu ubicación para encontrar moteles cercanos.',
-          [{ text: 'OK' }]
-        );
-        setLoading(false);
-        return;
-      }
-
-      // Obtener ubicación actual
-      console.log('📍 Obteniendo ubicación del usuario...');
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-
-      const { latitude, longitude } = location.coords;
-      console.log(`📍 Ubicación del usuario: [${latitude}, ${longitude}]`);
-      console.log(`📊 Total de moteles disponibles: ${motels.length}`);
-
-      // Filtrar moteles cercanos (dentro de 10km)
-      const filtered = filterMotelsByDistance(motels, latitude, longitude, 10);
-
-      if (filtered.length === 0) {
-        Alert.alert(
-          'Sin resultados',
-          'No encontramos moteles a menos de 10 km de tu ubicación.',
-          [{ text: 'OK' }]
-        );
-      } else {
-        console.log(`🎯 Mostrando ${filtered.length} moteles cercanos`);
-        setNearbyMotels(filtered);
-        setModalVisible(true);
-      }
-    } catch (error) {
-      console.error('❌ Error al obtener ubicación:', error);
-      Alert.alert(
-        'Error',
-        'No pudimos obtener tu ubicación. Verifica que el GPS esté activado.',
-        [{ text: 'OK' }]
-      );
-    } finally {
-      setLoading(false);
-    }
+  const handleNearbyPress = () => {
+    navigation?.navigate('NearbyMotels');
   };
 
   const triggerSearch = () => {
@@ -195,16 +142,9 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
           style={styles.cityButton}
           activeOpacity={0.85}
           onPress={handleNearbyPress}
-          disabled={loading}
         >
-          {loading ? (
-            <ActivityIndicator size="small" color={COLORS.text} />
-          ) : (
-            <>
-              <Ionicons name="location" size={16} color={COLORS.text} style={{ marginRight: 6 }} />
-              <Text style={styles.cityText}>Cerca mío</Text>
-            </>
-          )}
+          <Ionicons name="location" size={16} color={COLORS.text} style={{ marginRight: 6 }} />
+          <Text style={styles.cityText}>Cerca mío</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton}>
           <Animated.View style={animatedBellIconStyle}>
@@ -244,53 +184,6 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch }) {
           </RNAnimated.Text>
         )}
       </View>
-
-      {/* Modal de moteles cercanos */}
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Moteles cerca tuyo</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={24} color={COLORS.text} />
-              </TouchableOpacity>
-            </View>
-
-            <FlatList
-              data={nearbyMotels}
-              keyExtractor={(item) => item.id?.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.motelItem}
-                  onPress={() => {
-                    setModalVisible(false);
-                    onMotelPress?.(item);
-                  }}
-                >
-                  <View style={styles.motelInfo}>
-                    <Text style={styles.motelName}>{item.nombre}</Text>
-                    <Text style={styles.motelAddress}>{item.direccion || 'Sin dirección'}</Text>
-                  </View>
-                  <View style={styles.distanceTag}>
-                    <Ionicons name="navigate" size={14} color={COLORS.accent} />
-                    <Text style={styles.distanceText}>{item.distance} km</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyText}>No se encontraron moteles cercanos</Text>
-                </View>
-              }
-            />
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -301,6 +194,8 @@ const styles = StyleSheet.create({
     paddingTop: 13,
     paddingBottom: 15,
     backgroundColor: COLORS.primary,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
     zIndex: 10,
     elevation: 5,
   },
@@ -370,78 +265,5 @@ const styles = StyleSheet.create({
     right: 60,
     color: COLORS.muted,
     fontSize: 13,
-  },
-  // Estilos del modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: COLORS.overlay,
-    justifyContent: 'flex-end',
-  },
-  modalContainer: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 20,
-    paddingBottom: 40,
-    maxHeight: '80%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.divider,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  motelItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.grayLight,
-  },
-  motelInfo: {
-    flex: 1,
-    marginRight: 12,
-  },
-  motelName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-  motelAddress: {
-    fontSize: 13,
-    color: COLORS.textLight,
-  },
-  distanceTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.accentLight,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  distanceText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.primary,
-    marginLeft: 4,
-  },
-  emptyContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: COLORS.textLight,
-    fontSize: 14,
   },
 });

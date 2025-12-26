@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Platform,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,13 +19,14 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
 export default function MapScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [motels, setMotels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
-  const [region, setRegion] = useState({
-    latitude: 4.6097, // Bogotá por defecto
-    longitude: -74.0817,
+  const [initialRegion, setInitialRegion] = useState({
+    latitude: -25.2637, // Asunción, Paraguay por defecto
+    longitude: -57.5759,
     latitudeDelta: 0.5,
     longitudeDelta: 0.5,
   });
@@ -44,13 +45,19 @@ export default function MapScreen() {
       if (data.success && data.motels.length > 0) {
         setMotels(data.motels);
 
-        // Centrar en el primer motel
-        setRegion({
+        // Establecer región inicial solo si hay moteles
+        const firstMotelRegion = {
           latitude: data.motels[0].latitude,
           longitude: data.motels[0].longitude,
           latitudeDelta: 0.5,
           longitudeDelta: 0.5,
-        });
+        };
+        setInitialRegion(firstMotelRegion);
+
+        // Animar el mapa hacia el primer motel
+        setTimeout(() => {
+          mapRef.current?.animateToRegion(firstMotelRegion, 1000);
+        }, 500);
       } else {
         setError('No hay moteles con ubicación disponibles');
       }
@@ -82,7 +89,7 @@ export default function MapScreen() {
       const { latitude, longitude } = location.coords;
       setUserLocation({ latitude, longitude });
 
-      // Centrar mapa en ubicación del usuario
+      // Centrar mapa en ubicación del usuario (solo con animación, sin cambiar state)
       const newRegion = {
         latitude,
         longitude,
@@ -90,7 +97,6 @@ export default function MapScreen() {
         longitudeDelta: 0.1,
       };
 
-      setRegion(newRegion);
       mapRef.current?.animateToRegion(newRegion, 1000);
     } catch (error) {
       console.error('Error getting location:', error);
@@ -143,71 +149,68 @@ export default function MapScreen() {
   }
 
   return (
-    <>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backIcon}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Mapa de Moteles</Text>
-          <View style={{ width: 40 }} />
-        </View>
-
-        {/* Map */}
-        <MapView
-          ref={mapRef}
-          style={styles.map}
-          provider={PROVIDER_GOOGLE}
-          region={region}
-          onRegionChangeComplete={setRegion}
-          showsUserLocation={!!userLocation}
-          showsMyLocationButton={false}
-        >
-          {motels.map((motel) => (
-            <Marker
-              key={motel.id}
-              coordinate={{
-                latitude: motel.latitude,
-                longitude: motel.longitude,
-              }}
-              title={motel.name}
-              description={`${motel.neighborhood}, ${motel.city}`}
-              pinColor={motel.hasPromo ? COLORS.error : COLORS.primary}
-              onPress={() => handleMarkerPress(motel)}
-            />
-          ))}
-
-          {userLocation && (
-            <Marker
-              coordinate={userLocation}
-              title="Tu ubicación"
-              pinColor={COLORS.accent}
-            />
-          )}
-        </MapView>
-
-        {/* Center on Me Button */}
+      {/* Header */}
+      <View style={styles.header}>
         <TouchableOpacity
-          style={styles.centerButton}
-          onPress={handleCenterOnMe}
+          style={styles.backIcon}
+          onPress={() => navigation.goBack()}
         >
-          <Ionicons name="locate" size={24} color={COLORS.white} />
-          <Text style={styles.centerButtonText}>Centrar en mí</Text>
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-
-        {/* Info Badge */}
-        <View style={styles.infoBadge}>
-          <Text style={styles.infoBadgeText}>
-            {motels.length} motel{motels.length !== 1 ? 'es' : ''} en el mapa
-          </Text>
-        </View>
+        <Text style={styles.headerTitle}>Mapa de Moteles</Text>
+        <View style={{ width: 40 }} />
       </View>
-    </>
+
+      {/* Map */}
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        provider={PROVIDER_GOOGLE}
+        initialRegion={initialRegion}
+        showsUserLocation={!!userLocation}
+        showsMyLocationButton={false}
+      >
+        {motels.map((motel) => (
+          <Marker
+            key={motel.id}
+            coordinate={{
+              latitude: motel.latitude,
+              longitude: motel.longitude,
+            }}
+            title={motel.name}
+            description={`${motel.neighborhood}, ${motel.city}`}
+            pinColor={motel.hasPromo ? COLORS.error : COLORS.primary}
+            onPress={() => handleMarkerPress(motel)}
+          />
+        ))}
+
+        {userLocation && (
+          <Marker
+            coordinate={userLocation}
+            title="Tu ubicación"
+            pinColor={COLORS.accent}
+          />
+        )}
+      </MapView>
+
+      {/* Center on Me Button */}
+      <TouchableOpacity
+        style={styles.centerButton}
+        onPress={handleCenterOnMe}
+      >
+        <Ionicons name="locate" size={24} color={COLORS.white} />
+        <Text style={styles.centerButtonText}>Centrar en mí</Text>
+      </TouchableOpacity>
+
+      {/* Info Badge */}
+      <View style={styles.infoBadge}>
+        <Text style={styles.infoBadgeText}>
+          {motels.length} motel{motels.length !== 1 ? 'es' : ''} en el mapa
+        </Text>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -222,7 +225,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 12 : 12,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.grayLight,

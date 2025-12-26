@@ -60,6 +60,44 @@ const normalizePhotoList = (photos = []) => {
 };
 
 /**
+ * Garantiza que un objeto motel tenga siempre fotos/thumbnail en formato string
+ */
+const normalizeMotelPhotos = (motel = {}) => {
+  if (!motel) return motel;
+
+  const normalizedPhotos = normalizePhotoList(motel.photos);
+  const normalizedAllPhotos = normalizePhotoList(motel.allPhotos);
+  const featured = motel.featuredPhoto ? [motel.featuredPhoto] : [];
+
+  const buildUniqueList = (lists) => {
+    const merged = lists.flat().filter(Boolean);
+    return Array.from(new Set(merged));
+  };
+
+  let effectivePhotos = buildUniqueList([featured, normalizedPhotos]);
+  if (effectivePhotos.length === 0) {
+    effectivePhotos = buildUniqueList([featured, normalizedAllPhotos]);
+  }
+
+  let effectiveAllPhotos = buildUniqueList([featured, normalizedAllPhotos]);
+  if (effectiveAllPhotos.length === 0) {
+    effectiveAllPhotos = buildUniqueList([featured, normalizedPhotos]);
+  }
+
+  const normalizedThumbnail =
+    typeof motel.thumbnail === 'string'
+      ? motel.thumbnail
+      : motel.thumbnail?.url || motel.thumbnail?.photoUrl || effectivePhotos[0] || effectiveAllPhotos[0] || null;
+
+  return {
+    ...motel,
+    photos: effectivePhotos,
+    allPhotos: effectiveAllPhotos,
+    thumbnail: normalizedThumbnail,
+  };
+};
+
+/**
  * Mapea un motel del API al formato que usan los componentes
  */
 const mapMotelSummary = (apiMotel) => {
@@ -83,7 +121,7 @@ const mapMotelSummary = (apiMotel) => {
     normalizedPhotos[0] ||
     null;
 
-  return {
+  return normalizeMotelPhotos({
     id: apiMotel.id,
     slug: apiMotel.slug,
     nombre: apiMotel.name,
@@ -104,7 +142,7 @@ const mapMotelSummary = (apiMotel) => {
       : null,
     photos: normalizedPhotos,
     thumbnail,
-  };
+  });
 };
 
 /**
@@ -113,7 +151,7 @@ const mapMotelSummary = (apiMotel) => {
 const mapMotelDetail = (apiMotel) => {
   const summary = mapMotelSummary(apiMotel);
 
-  return {
+  return normalizeMotelPhotos({
     ...summary,
     description: apiMotel.description,
     contact: apiMotel.contact || {},
@@ -124,7 +162,7 @@ const mapMotelDetail = (apiMotel) => {
     allPhotos: normalizePhotoList(apiMotel.allPhotos || apiMotel.photos),
     hasPhotos: apiMotel.hasPhotos || false,
     promos: apiMotel.promos || [],
-  };
+  });
 };
 
 /**
@@ -251,43 +289,42 @@ export const fetchMotelBySlug = async (slugOrId, useCache = true) => {
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}/motels/${slugOrId}`;
 
-  // Intentar obtener del caché primero
+  let cachedDetail = null;
   if (useCache) {
     const cached = await getCachedMotelDetail(slugOrId);
     if (cached) {
-      console.log(`✅ Usando detalle de motel del caché: ${slugOrId}`);
-      return cached;
+      cachedDetail = normalizeMotelPhotos(cached);
     }
   }
 
   try {
     const apiMotel = await fetchJson(url);
     const motelDetail = mapMotelDetail(apiMotel);
+    const normalizedDetail = normalizeMotelPhotos(motelDetail);
 
     // Cachear el detalle
-    await cacheMotelDetail(slugOrId, motelDetail);
+    await cacheMotelDetail(slugOrId, normalizedDetail);
 
     // Agregar a vistos recientemente (formato resumido)
     await addToRecentViews({
-      id: motelDetail.id,
-      slug: motelDetail.slug,
-      nombre: motelDetail.nombre,
-      barrio: motelDetail.barrio,
-      ciudad: motelDetail.ciudad,
-      precioDesde: motelDetail.precioDesde,
-      rating: motelDetail.rating,
-      thumbnail: motelDetail.thumbnail,
-      photos: motelDetail.photos || [],
+      id: normalizedDetail.id,
+      slug: normalizedDetail.slug,
+      nombre: normalizedDetail.nombre,
+      barrio: normalizedDetail.barrio,
+      ciudad: normalizedDetail.ciudad,
+      precioDesde: normalizedDetail.precioDesde,
+      rating: normalizedDetail.rating,
+      thumbnail: normalizedDetail.thumbnail,
+      photos: normalizedDetail.photos || [],
     });
 
-    return motelDetail;
+    return normalizedDetail;
   } catch (error) {
     // Si falla el fetch, intentar devolver del caché
     console.log(`⚠️ Error al obtener motel ${slugOrId}, intentando caché...`);
-    const cached = await getCachedMotelDetail(slugOrId);
-    if (cached) {
+    if (cachedDetail) {
       console.log(`✅ Usando detalle de motel del caché (offline): ${slugOrId}`);
-      return cached;
+      return cachedDetail;
     }
     throw error;
   }

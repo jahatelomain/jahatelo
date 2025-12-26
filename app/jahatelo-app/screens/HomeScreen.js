@@ -125,7 +125,12 @@ export default function HomeScreen() {
       <View style={styles.screen}>
         {/* Header */}
         <View style={styles.headerWrapper}>
-          <HomeHeader motels={motels} onMotelPress={handleMotelPress} onSearch={handleSearch} />
+          <HomeHeader
+            motels={motels}
+            onMotelPress={handleMotelPress}
+            onSearch={handleSearch}
+            navigation={navigation}
+          />
         </View>
 
         {/* ScrollView con contenido */}
