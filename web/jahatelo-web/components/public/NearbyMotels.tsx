@@ -27,7 +27,7 @@ interface Motel {
   ratingAvg: number;
   ratingCount: number;
   distance?: number;
-  photos: Array<{ url: string }>;
+  photos: Array<{ url: string; kind?: string | null }>;
   motelAmenities: Array<{
     amenity: {
       id: string;
