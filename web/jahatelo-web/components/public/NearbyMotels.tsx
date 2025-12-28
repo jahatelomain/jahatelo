@@ -106,7 +106,14 @@ export default function NearbyMotels() {
         try {
           const response = await fetch('/api/motels/nearby');
           const data = await response.json();
-          setAllMotels(data.motels || []);
+          const sanitized = (data.motels || []).map((motel: Motel) => ({
+            ...motel,
+            photos: (motel.photos || []).map((photo) => ({
+              url: photo.url,
+              kind: photo.kind ?? 'OTHER',
+            })),
+          }));
+          setAllMotels(sanitized);
         } catch (error) {
           console.error('Error fetching motels:', error);
           setError('Error al cargar los moteles');
