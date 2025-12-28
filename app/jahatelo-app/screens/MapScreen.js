@@ -21,9 +21,9 @@ const LABEL_ZOOM_THRESHOLD = 0.55;
 const IS_ANDROID = Platform.OS === 'android';
 
 // Componente Custom Marker - dos markers separados para evitar bug de Android
+const LABEL_OFFSET = 0.00015; // Aproximadamente 16 metros al norte
+
 const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
-  // Offset para posicionar la etiqueta arriba del pin
-  const labelOffset = 0.00015; // Aproximadamente 16 metros al norte
   const [labelTracksChanges, setLabelTracksChanges] = React.useState(IS_ANDROID);
 
   React.useEffect(() => {
@@ -42,14 +42,14 @@ const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
         <Marker
           key={`label-${motel.id}`}
           coordinate={{
-            latitude: motel.latitude + labelOffset,
+            latitude: motel.latitude + LABEL_OFFSET,
             longitude: motel.longitude,
           }}
           anchor={{ x: 0.5, y: 1 }}
           tracksViewChanges={IS_ANDROID ? labelTracksChanges : false}
           zIndex={1000}
         >
-          <View style={styles.labelContainer} collapsable={false}>
+          <View style={styles.labelContainer} collapsable={false} pointerEvents="none">
             <Text style={styles.labelText} numberOfLines={1}>
               {motel.name}
             </Text>
@@ -82,30 +82,61 @@ const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
 
 CustomMarkerIOS.displayName = 'CustomMarkerIOS';
 
-const CustomMarkerAndroid = React.memo(({ motel, onPress }) => {
+const CustomMarkerAndroid = React.memo(({ motel, showLabel, onPress }) => {
+  const [labelTracksChanges, setLabelTracksChanges] = React.useState(true);
+
+  React.useEffect(() => {
+    if (!showLabel) return;
+    setLabelTracksChanges(true);
+    const timer = setTimeout(() => setLabelTracksChanges(false), 800);
+    return () => clearTimeout(timer);
+  }, [showLabel, motel.id]);
+
   return (
-    <Marker
-      key={`android-${motel.id}`}
-      coordinate={{
-        latitude: motel.latitude,
-        longitude: motel.longitude,
-      }}
-      anchor={{ x: 0.5, y: 1 }}
-      onPress={onPress}
-      tracksViewChanges={false}
-    >
-      <View style={styles.androidMarkerContainer}>
-        <View style={styles.androidMarkerLabel}>
-          <Text style={styles.androidMarkerLabelText} numberOfLines={1}>
-            {motel.name}
-          </Text>
-        </View>
-        <View style={styles.androidMarkerIcon}>
+    <>
+      {showLabel && (
+        <Marker
+          key={`android-label-${motel.id}`}
+          coordinate={{
+            latitude: motel.latitude + LABEL_OFFSET,
+            longitude: motel.longitude,
+          }}
+          anchor={{ x: 0.5, y: 1 }}
+          tracksViewChanges={labelTracksChanges}
+          zIndex={1000}
+        >
+          <View
+            style={styles.androidLabelContainer}
+            collapsable={false}
+            pointerEvents="none"
+          >
+            <Text style={styles.androidLabelText} numberOfLines={1}>
+              {motel.name}
+            </Text>
+          </View>
+        </Marker>
+      )}
+
+      <Marker
+        key={`android-pin-${motel.id}`}
+        coordinate={{
+          latitude: motel.latitude,
+          longitude: motel.longitude,
+        }}
+        anchor={{ x: 0.5, y: 0.5 }}
+        onPress={onPress}
+        tracksViewChanges={false}
+        zIndex={999}
+      >
+        <View style={styles.androidMarkerPin} collapsable={false}>
           <Ionicons name="location" size={28} color={COLORS.primary} />
         </View>
-      </View>
-    </Marker>
+      </Marker>
+    </>
   );
+}, (prevProps, nextProps) => {
+  return prevProps.motel.id === nextProps.motel.id &&
+         prevProps.showLabel === nextProps.showLabel;
 });
 
 CustomMarkerAndroid.displayName = 'CustomMarkerAndroid';
@@ -283,6 +314,7 @@ export default function MapScreen() {
             <CustomMarkerAndroid
               key={motel.id}
               motel={motel}
+              showLabel={showLabels}
               onPress={() => handleMarkerPress(motel)}
             />
           ) : (
@@ -396,33 +428,20 @@ const styles = StyleSheet.create({
     shadowRadius: 0,
     elevation: 0,
   },
-  androidMarkerContainer: {
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  androidMarkerLabel: {
+  androidLabelContainer: {
     backgroundColor: COLORS.primary,
+    borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
-    marginBottom: 6,
-    minWidth: 80,
-    maxWidth: 180,
+    minWidth: 60,
+    maxWidth: 160,
+    alignItems: 'center',
   },
-  androidMarkerLabelText: {
+  androidLabelText: {
     color: COLORS.white,
     fontWeight: '600',
     fontSize: 12,
     textAlign: 'center',
-  },
-  androidMarkerIcon: {
-    backgroundColor: COLORS.white,
-    borderRadius: 18,
-    padding: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.primary,
   },
   centerButton: {
     position: 'absolute',
