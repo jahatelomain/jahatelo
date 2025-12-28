@@ -97,7 +97,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
               {topAmenities.map((ma, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-1 text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-full"
+                  className="inline-flex items-center gap-1 text-xs bg-purple-50 text-purple-600 px-2 py-1 rounded-full"
                 >
                   {ma.amenity.icon && <span>{ma.amenity.icon}</span>}
                   {ma.amenity.name}

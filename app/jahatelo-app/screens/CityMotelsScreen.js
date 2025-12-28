@@ -6,18 +6,20 @@ import {
   FlatList,
   TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import MotelCard from '../components/MotelCard';
 import { COLORS } from '../constants/theme';
 
 export default function CityMotelsScreen({ route, navigation }) {
+  const insets = useSafeAreaInsets();
   const { cityName, motels = [] } = route.params;
+  const headerPaddingTop = insets.top + 12;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       {/* Header personalizado */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerPaddingTop }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -67,7 +69,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.divider,
     backgroundColor: COLORS.white,

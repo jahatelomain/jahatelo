@@ -3,6 +3,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
+import FavoriteButton from '@/components/public/FavoriteButton';
+import QuickContactButtons from '@/components/public/QuickContactButtons';
+import PromosTab from '@/components/public/PromosTab';
 import { prisma } from '@/lib/prisma';
 import Tabs from '@/components/public/Tabs';
 
@@ -23,6 +26,10 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
         include: {
           amenity: true,
         },
+      },
+      promos: {
+        where: { isActive: true },
+        orderBy: { createdAt: 'desc' },
       },
       rooms: {
         where: { isActive: true },
@@ -61,12 +68,23 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
   const safeRating = motel.ratingAvg || 0;
   const hasReviews = motel.ratingCount > 0;
 
-  // Build tabs
-  const tabs = [
-    {
-      id: 'details',
-      label: 'Detalles',
-      content: (
+  // Build tabs dynamically
+  const tabs = [];
+
+  // Add Promos tab first if there are active promos
+  if (motel.promos && motel.promos.length > 0) {
+    tabs.push({
+      id: 'promos',
+      label: 'Promos',
+      content: <PromosTab promos={motel.promos} />,
+    });
+  }
+
+  // Always add Details tab
+  tabs.push({
+    id: 'details',
+    label: 'Detalles',
+    content: (
         <div>
           {/* Description */}
           {motel.description && (
@@ -157,8 +175,11 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           </div>
         </div>
       ),
-    },
-    {
+    });
+
+  // Add Rooms tab only if there are active rooms
+  if (motel.rooms && motel.rooms.length > 0) {
+    tabs.push({
       id: 'rooms',
       label: 'Habitaciones',
       content: (
@@ -279,8 +300,12 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           )}
         </div>
       ),
-    },
-    {
+    });
+  }
+
+  // Add Menu tab only if there are menu categories
+  if (motel.menuCategories && motel.menuCategories.length > 0) {
+    tabs.push({
       id: 'menu',
       label: 'Menú',
       content: (
@@ -336,8 +361,8 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           )}
         </div>
       ),
-    },
-  ];
+    });
+  }
 
   return (
     <>
@@ -355,6 +380,27 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
             sizes="100vw"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+
+          {/* Badges */}
+          <div className="absolute top-4 right-4 flex flex-col gap-2">
+            {motel.promos && motel.promos.length > 0 && (
+              <div className="bg-purple-600 text-white px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 shadow-lg">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                  <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
+                </svg>
+                PROMO
+              </div>
+            )}
+            {motel.isFeatured && (
+              <div className="bg-orange-500 text-white px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 shadow-lg">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                DESTACADO
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -362,8 +408,8 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10 pb-16">
         {/* Header Card */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-            <div>
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex-1">
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
                 {motel.name}
               </h1>
@@ -390,12 +436,9 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
               </div>
             </div>
 
-            <div className="flex gap-2">
-              {motel.isFeatured && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-600 text-white">
-                  Destacado
-                </span>
-              )}
+            <div className="flex items-center gap-3">
+              <QuickContactButtons phone={motel.phone} whatsapp={motel.whatsapp} />
+              <FavoriteButton motel={{ id: motel.id, name: motel.name, slug: motel.slug }} />
             </div>
           </div>
 
@@ -410,7 +453,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                 }
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium"
+                className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-600 font-medium"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -423,7 +466,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
 
         {/* Tabs */}
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <Tabs tabs={tabs} defaultTab="details" />
+          <Tabs tabs={tabs} defaultTab={tabs[0]?.id} />
         </div>
       </div>
       </div>

@@ -92,7 +92,7 @@ export default async function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Hero / Bienvenida Mejorado */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-purple-600 via-purple-500 to-fuchsia-500 rounded-2xl shadow-xl">
+      <div className="relative overflow-hidden bg-gradient-to-r from-purple-600 via-purple-600 to-fuchsia-500 rounded-2xl shadow-xl">
         <div className="absolute inset-0 bg-grid-white/10"></div>
         <div className="relative px-8 py-10 md:py-12">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">

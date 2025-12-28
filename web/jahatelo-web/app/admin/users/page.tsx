@@ -381,7 +381,7 @@ export default function UsersPage() {
                 placeholder="Buscar por nombre, email o motel..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full border border-slate-300 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               />
               <svg
                 className="w-5 h-5 text-slate-400 absolute left-3 top-2.5"
@@ -652,7 +652,7 @@ export default function UsersPage() {
                   required
                   value={createForm.email}
                   onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 />
               </div>
               <div>
@@ -664,7 +664,7 @@ export default function UsersPage() {
                   required
                   value={createForm.name}
                   onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 />
               </div>
               <div>
@@ -674,7 +674,7 @@ export default function UsersPage() {
                 <select
                   value={createForm.role}
                   onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as UserRole })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 >
                   <option value="USER">USER</option>
                   <option value="MOTEL_ADMIN">MOTEL_ADMIN</option>
@@ -689,7 +689,7 @@ export default function UsersPage() {
                   <select
                     value={createForm.motelId}
                     onChange={(e) => setCreateForm({ ...createForm, motelId: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     required
                   >
                     <option value="">Selecciona un motel</option>
@@ -750,7 +750,7 @@ export default function UsersPage() {
                   required
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 />
               </div>
               <div>
@@ -760,7 +760,7 @@ export default function UsersPage() {
                 <select
                   value={editForm.role}
                   onChange={(e) => setEditForm({ ...editForm, role: e.target.value as UserRole })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 >
                   <option value="USER">USER</option>
                   <option value="MOTEL_ADMIN">MOTEL_ADMIN</option>
@@ -775,7 +775,7 @@ export default function UsersPage() {
                   <select
                     value={editForm.motelId}
                     onChange={(e) => setEditForm({ ...editForm, motelId: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     required
                   >
                     <option value="">Selecciona un motel</option>

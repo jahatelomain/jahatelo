@@ -16,6 +16,7 @@ export const AMENITY_ICONS = [
 
   { value: 'Bed', label: 'Cama king/queen', category: 'bedroom' },
   { value: 'BedDouble', label: 'Cama doble', category: 'bedroom' },
+  { value: 'Water', label: 'Cama de agua', category: 'bedroom' },
   { value: 'Armchair', label: 'Sala de estar', category: 'bedroom' },
   { value: 'Sofa', label: 'Sofá', category: 'bedroom' },
 

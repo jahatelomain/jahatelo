@@ -191,6 +191,8 @@ export default function MotelDetailPage({
   const [uploadingFeatured, setUploadingFeatured] = useState(false);
   const [uploadingRoomId, setUploadingRoomId] = useState<string | null>(null);
   const [uploadingPromo, setUploadingPromo] = useState(false);
+  const [draggedPhotoId, setDraggedPhotoId] = useState<string | null>(null);
+  const [dragOverPhotoId, setDragOverPhotoId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMotel();
@@ -653,6 +655,27 @@ export default function MotelDetailPage({
     }
   };
 
+  const handleReorderRoomPhotos = async (roomId: string, photos: any[]) => {
+    try {
+      // Actualizar el orden de todas las fotos en batch
+      const updates = photos.map((photo, index) =>
+        fetch(`/api/admin/room-photos/${photo.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order: index }),
+        })
+      );
+
+      await Promise.all(updates);
+      fetchMotel();
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus('idle'), 2500);
+    } catch (error) {
+      console.error('Error reordering room photos:', error);
+      alert('Error al reordenar fotos');
+    }
+  };
+
   const uploadFileToS3 = async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -888,7 +911,7 @@ export default function MotelDetailPage({
                     type="text"
                     value={promoForm.title}
                     onChange={(e) => setPromoForm({ ...promoForm, title: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     placeholder="Ej: 2x1 en habitaciones los fines de semana"
                     required
                   />
@@ -898,7 +921,7 @@ export default function MotelDetailPage({
                   <textarea
                     value={promoForm.description}
                     onChange={(e) => setPromoForm({ ...promoForm, description: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     rows={3}
                     placeholder="Detalles de la promoción (opcional)"
                   />
@@ -909,7 +932,7 @@ export default function MotelDetailPage({
                     type="text"
                     value={promoForm.imageUrl}
                     onChange={(e) => setPromoForm({ ...promoForm, imageUrl: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     placeholder="https://ejemplo.com/promo.jpg"
                   />
                   <div className="flex flex-wrap items-center gap-3 mt-3">
@@ -963,7 +986,7 @@ export default function MotelDetailPage({
                         type="checkbox"
                         checked={promoForm.isGlobal}
                         onChange={(e) => setPromoForm({ ...promoForm, isGlobal: e.target.checked })}
-                        className="rounded text-purple-600 focus:ring-purple-500"
+                        className="rounded text-purple-600 focus:ring-purple-600"
                       />
                       <span className="text-sm text-slate-700">
                         <span className="font-medium">Mostrar en Home</span>
@@ -1189,7 +1212,7 @@ export default function MotelDetailPage({
                       type="text"
                       value={motelForm.name}
                       onChange={(e) => setMotelForm({ ...motelForm, name: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       required
                     />
                   </div>
@@ -1198,7 +1221,7 @@ export default function MotelDetailPage({
                     <textarea
                       value={motelForm.description}
                       onChange={(e) => setMotelForm({ ...motelForm, description: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       rows={3}
                     />
                   </div>
@@ -1208,7 +1231,7 @@ export default function MotelDetailPage({
                       type="text"
                       value={motelForm.featuredPhoto}
                       onChange={(e) => setMotelForm({ ...motelForm, featuredPhoto: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       placeholder="https://ejemplo.com/foto.jpg"
                     />
                     <div className="flex flex-wrap items-center gap-3 mt-3">
@@ -1262,7 +1285,7 @@ export default function MotelDetailPage({
                         type="text"
                         value={motelForm.phone}
                         onChange={(e) => setMotelForm({ ...motelForm, phone: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="+595..."
                       />
                     </div>
@@ -1272,7 +1295,7 @@ export default function MotelDetailPage({
                         type="text"
                         value={motelForm.whatsapp}
                         onChange={(e) => setMotelForm({ ...motelForm, whatsapp: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="+595..."
                       />
                     </div>
@@ -1284,7 +1307,7 @@ export default function MotelDetailPage({
                         type="text"
                         value={motelForm.contactName}
                         onChange={(e) => setMotelForm({ ...motelForm, contactName: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="Nombre"
                       />
                     </div>
@@ -1294,7 +1317,7 @@ export default function MotelDetailPage({
                         type="email"
                         value={motelForm.contactEmail}
                         onChange={(e) => setMotelForm({ ...motelForm, contactEmail: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="correo@dominio.com"
                       />
                     </div>
@@ -1304,7 +1327,7 @@ export default function MotelDetailPage({
                         type="text"
                         value={motelForm.contactPhone}
                         onChange={(e) => setMotelForm({ ...motelForm, contactPhone: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="+595..."
                       />
                     </div>
@@ -1323,7 +1346,7 @@ export default function MotelDetailPage({
                       type="text"
                       value={motelForm.country}
                       onChange={(e) => setMotelForm({ ...motelForm, country: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -1332,7 +1355,7 @@ export default function MotelDetailPage({
                       type="text"
                       value={motelForm.city}
                       onChange={(e) => setMotelForm({ ...motelForm, city: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -1341,7 +1364,7 @@ export default function MotelDetailPage({
                       type="text"
                       value={motelForm.neighborhood}
                       onChange={(e) => setMotelForm({ ...motelForm, neighborhood: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -1351,7 +1374,7 @@ export default function MotelDetailPage({
                         type="text"
                         value={motelForm.address}
                         onChange={(e) => setMotelForm({ ...motelForm, address: e.target.value })}
-                        className="flex-1 border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="flex-1 border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       />
                       <button
                         type="button"
@@ -1370,7 +1393,7 @@ export default function MotelDetailPage({
                       type="text"
                       value={motelForm.mapUrl}
                       onChange={(e) => setMotelForm({ ...motelForm, mapUrl: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       placeholder="https://maps.google.com/..."
                     />
                   </div>
@@ -1387,7 +1410,7 @@ export default function MotelDetailPage({
                     <select
                       value={motelForm.plan}
                       onChange={(e) => setMotelForm({ ...motelForm, plan: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     >
                       <option value="">Sin plan</option>
                       <option value="Gratis">Gratis</option>
@@ -1403,7 +1426,7 @@ export default function MotelDetailPage({
                       type="datetime-local"
                       value={motelForm.nextBillingAt}
                       onChange={(e) => setMotelForm({ ...motelForm, nextBillingAt: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     />
                   </div>
                   <div className="flex items-center">
@@ -1412,7 +1435,7 @@ export default function MotelDetailPage({
                         type="checkbox"
                         checked={motelForm.isFeatured}
                         onChange={(e) => setMotelForm({ ...motelForm, isFeatured: e.target.checked })}
-                        className="rounded text-purple-600 focus:ring-purple-500"
+                        className="rounded text-purple-600 focus:ring-purple-600"
                       />
                       <span className="text-sm font-medium text-slate-700">Motel destacado</span>
                     </label>
@@ -1541,21 +1564,21 @@ export default function MotelDetailPage({
                       type="text"
                       value={motelForm.adminContactName}
                       onChange={(e) => setMotelForm({ ...motelForm, adminContactName: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       placeholder="Nombre"
                     />
                     <input
                       type="text"
                       value={motelForm.adminContactPhone}
                       onChange={(e) => setMotelForm({ ...motelForm, adminContactPhone: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       placeholder="Teléfono"
                     />
                     <input
                       type="email"
                       value={motelForm.adminContactEmail}
                       onChange={(e) => setMotelForm({ ...motelForm, adminContactEmail: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       placeholder="Correo"
                     />
                   </div>
@@ -1565,21 +1588,21 @@ export default function MotelDetailPage({
                       type="text"
                       value={motelForm.operationsContactName}
                       onChange={(e) => setMotelForm({ ...motelForm, operationsContactName: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       placeholder="Nombre"
                     />
                     <input
                       type="text"
                       value={motelForm.operationsContactPhone}
                       onChange={(e) => setMotelForm({ ...motelForm, operationsContactPhone: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       placeholder="Teléfono"
                     />
                     <input
                       type="email"
                       value={motelForm.operationsContactEmail}
                       onChange={(e) => setMotelForm({ ...motelForm, operationsContactEmail: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       placeholder="Correo"
                     />
                   </div>
@@ -1596,7 +1619,7 @@ export default function MotelDetailPage({
                     <select
                       value={motelForm.plan}
                       onChange={(e) => setMotelForm({ ...motelForm, plan: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     >
                       <option value="">Sin plan</option>
                       <option value="Gratis">Gratis</option>
@@ -1610,7 +1633,7 @@ export default function MotelDetailPage({
                       type="datetime-local"
                       value={motelForm.nextBillingAt}
                       onChange={(e) => setMotelForm({ ...motelForm, nextBillingAt: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     />
                   </div>
                   <div className="flex items-center">
@@ -1619,7 +1642,7 @@ export default function MotelDetailPage({
                         type="checkbox"
                         checked={motelForm.isFeatured}
                         onChange={(e) => setMotelForm({ ...motelForm, isFeatured: e.target.checked })}
-                        className="rounded text-purple-600 focus:ring-purple-500"
+                        className="rounded text-purple-600 focus:ring-purple-600"
                       />
                       <span className="text-sm font-medium text-slate-700">Destacado</span>
                     </label>
@@ -1631,7 +1654,7 @@ export default function MotelDetailPage({
                       onChange={(e) =>
                         setMotelForm({ ...motelForm, status: e.target.value as MotelStatus })
                       }
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     >
                       <option value="PENDING">Pendiente</option>
                       <option value="APPROVED">Aprobado</option>
@@ -1645,7 +1668,7 @@ export default function MotelDetailPage({
                       onChange={(e) =>
                         setMotelForm({ ...motelForm, isActive: e.target.value === 'true' })
                       }
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     >
                       <option value="true">Sí</option>
                       <option value="false">No</option>
@@ -1736,7 +1759,7 @@ export default function MotelDetailPage({
                     type="text"
                     value={roomForm.name}
                     onChange={(e) => setRoomForm({ ...roomForm, name: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     placeholder="Ej: Suite Romántica"
                     required
                   />
@@ -1746,7 +1769,7 @@ export default function MotelDetailPage({
                   <textarea
                     value={roomForm.description}
                     onChange={(e) => setRoomForm({ ...roomForm, description: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     rows={2}
                     placeholder="Descripción opcional de la habitación"
                   />
@@ -1767,7 +1790,7 @@ export default function MotelDetailPage({
                         type="number"
                         value={roomForm.price1h}
                         onChange={(e) => setRoomForm({ ...roomForm, price1h: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="Gs."
                       />
                     </div>
@@ -1777,7 +1800,7 @@ export default function MotelDetailPage({
                         type="number"
                         value={roomForm.price1_5h}
                         onChange={(e) => setRoomForm({ ...roomForm, price1_5h: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="Gs."
                       />
                     </div>
@@ -1787,7 +1810,7 @@ export default function MotelDetailPage({
                         type="number"
                         value={roomForm.price2h}
                         onChange={(e) => setRoomForm({ ...roomForm, price2h: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="Gs."
                       />
                     </div>
@@ -1797,7 +1820,7 @@ export default function MotelDetailPage({
                         type="number"
                         value={roomForm.price3h}
                         onChange={(e) => setRoomForm({ ...roomForm, price3h: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="Gs."
                       />
                     </div>
@@ -1807,7 +1830,7 @@ export default function MotelDetailPage({
                         type="number"
                         value={roomForm.price12h}
                         onChange={(e) => setRoomForm({ ...roomForm, price12h: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="Gs."
                       />
                     </div>
@@ -1817,7 +1840,7 @@ export default function MotelDetailPage({
                         type="number"
                         value={roomForm.price24h}
                         onChange={(e) => setRoomForm({ ...roomForm, price24h: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="Gs."
                       />
                     </div>
@@ -1827,7 +1850,7 @@ export default function MotelDetailPage({
                         type="number"
                         value={roomForm.priceNight}
                         onChange={(e) => setRoomForm({ ...roomForm, priceNight: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="Gs."
                       />
                     </div>
@@ -1846,7 +1869,7 @@ export default function MotelDetailPage({
                         type="number"
                         value={roomForm.maxPersons}
                         onChange={(e) => setRoomForm({ ...roomForm, maxPersons: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="Número de personas"
                       />
                     </div>
@@ -1857,7 +1880,7 @@ export default function MotelDetailPage({
                         type="checkbox"
                         checked={roomForm.hasJacuzzi}
                         onChange={(e) => setRoomForm({ ...roomForm, hasJacuzzi: e.target.checked })}
-                        className="rounded text-purple-600 focus:ring-purple-500"
+                        className="rounded text-purple-600 focus:ring-purple-600"
                       />
                       <span className="text-sm text-slate-700">🛁 Jacuzzi</span>
                     </label>
@@ -1866,7 +1889,7 @@ export default function MotelDetailPage({
                         type="checkbox"
                         checked={roomForm.hasPrivateGarage}
                         onChange={(e) => setRoomForm({ ...roomForm, hasPrivateGarage: e.target.checked })}
-                        className="rounded text-purple-600 focus:ring-purple-500"
+                        className="rounded text-purple-600 focus:ring-purple-600"
                       />
                       <span className="text-sm text-slate-700">🚗 Garaje Privado</span>
                     </label>
@@ -1875,7 +1898,7 @@ export default function MotelDetailPage({
                         type="checkbox"
                         checked={roomForm.isFeatured}
                         onChange={(e) => setRoomForm({ ...roomForm, isFeatured: e.target.checked })}
-                        className="rounded text-purple-600 focus:ring-purple-500"
+                        className="rounded text-purple-600 focus:ring-purple-600"
                       />
                       <span className="text-sm text-slate-700">⭐ Destacada</span>
                     </label>
@@ -1892,7 +1915,7 @@ export default function MotelDetailPage({
                           type="checkbox"
                           checked={roomForm.amenityIds.includes(amenity.id)}
                           onChange={() => toggleAmenity(amenity.id)}
-                          className="rounded text-purple-600 focus:ring-purple-500"
+                          className="rounded text-purple-600 focus:ring-purple-600"
                         />
                         <span className="text-sm text-slate-700">{amenity.name}</span>
                       </label>
@@ -1914,7 +1937,7 @@ export default function MotelDetailPage({
                         type="number"
                         value={roomForm.basePrice}
                         onChange={(e) => setRoomForm({ ...roomForm, basePrice: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       />
                     </div>
                     <div>
@@ -1925,7 +1948,7 @@ export default function MotelDetailPage({
                         type="text"
                         value={roomForm.priceLabel}
                         onChange={(e) => setRoomForm({ ...roomForm, priceLabel: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="ej. por 3 horas"
                       />
                     </div>
@@ -2113,16 +2136,62 @@ export default function MotelDetailPage({
                     <div className="space-y-3">
                       {(room.roomPhotos?.length ?? 0) > 0 && (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
-                          {(room.roomPhotos ?? []).map((photo) => (
-                            <div key={photo.id} className="relative group">
+                          {(room.roomPhotos ?? [])
+                            .sort((a, b) => a.order - b.order)
+                            .map((photo, index) => (
+                            <div
+                              key={photo.id}
+                              draggable
+                              onDragStart={(e) => {
+                                setDraggedPhotoId(photo.id);
+                                e.dataTransfer.effectAllowed = 'move';
+                              }}
+                              onDragOver={(e) => {
+                                e.preventDefault();
+                                e.dataTransfer.dropEffect = 'move';
+                                setDragOverPhotoId(photo.id);
+                              }}
+                              onDragLeave={() => {
+                                setDragOverPhotoId(null);
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                if (!draggedPhotoId || draggedPhotoId === photo.id) return;
+
+                                const photos = [...(room.roomPhotos ?? [])].sort((a, b) => a.order - b.order);
+                                const draggedIndex = photos.findIndex(p => p.id === draggedPhotoId);
+                                const targetIndex = photos.findIndex(p => p.id === photo.id);
+
+                                const [draggedItem] = photos.splice(draggedIndex, 1);
+                                photos.splice(targetIndex, 0, draggedItem);
+
+                                handleReorderRoomPhotos(room.id, photos);
+                                setDraggedPhotoId(null);
+                                setDragOverPhotoId(null);
+                              }}
+                              onDragEnd={() => {
+                                setDraggedPhotoId(null);
+                                setDragOverPhotoId(null);
+                              }}
+                              className={`relative group cursor-move transition-all ${
+                                draggedPhotoId === photo.id ? 'opacity-50 scale-95' : ''
+                              } ${
+                                dragOverPhotoId === photo.id && draggedPhotoId !== photo.id
+                                  ? 'ring-2 ring-purple-600 scale-105'
+                                  : ''
+                              }`}
+                            >
                               <img
                                 src={photo.url}
                                 alt="Room photo"
-                                className="w-full h-32 object-cover rounded-lg border border-slate-200"
+                                className="w-full h-32 object-cover rounded-lg border border-slate-200 pointer-events-none"
                                 onError={(e) => {
                                   e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="150"%3E%3Crect fill="%23f1f5f9" width="200" height="150"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8" font-size="12"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
                                 }}
                               />
+                              <div className="absolute top-2 left-2 bg-slate-900 bg-opacity-70 text-white px-2 py-1 rounded text-xs font-semibold">
+                                {index + 1}
+                              </div>
                               <button
                                 onClick={() => handleDeleteRoomPhoto(photo.id)}
                                 className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
@@ -2132,6 +2201,11 @@ export default function MotelDetailPage({
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                               </button>
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="bg-slate-900 bg-opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-medium">
+                                  Arrastrá para reordenar
+                                </div>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -2141,7 +2215,7 @@ export default function MotelDetailPage({
                           type="text"
                           id={`photo-url-${room.id}`}
                           placeholder="URL de la foto"
-                          className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         />
                         <button
                           onClick={() => {
@@ -2239,7 +2313,7 @@ export default function MotelDetailPage({
                     type="text"
                     value={categoryForm.title}
                     onChange={(e) => setCategoryForm({ ...categoryForm, title: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     placeholder="Ej: Bebidas, Comidas, etc."
                     required
                   />
@@ -2293,7 +2367,7 @@ export default function MotelDetailPage({
                     type="text"
                     value={itemForm.name}
                     onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     placeholder="Ej: Coca-Cola, Hamburguesa"
                     required
                   />
@@ -2306,7 +2380,7 @@ export default function MotelDetailPage({
                     type="number"
                     value={itemForm.price}
                     onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     placeholder="Gs."
                     required
                   />
@@ -2318,7 +2392,7 @@ export default function MotelDetailPage({
                   <textarea
                     value={itemForm.description}
                     onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     rows={3}
                     placeholder="Descripción del item"
                   />

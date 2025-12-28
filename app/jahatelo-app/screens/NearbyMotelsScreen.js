@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Modal,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import MotelCard from '../components/MotelCard';
@@ -16,15 +17,36 @@ import { COLORS } from '../constants/theme';
 import { fetchMotels } from '../services/motelsApi';
 import { filterMotelsByDistance } from '../utils/location';
 
+// Opciones de radio disponibles
+const RADIUS_OPTIONS = [
+  { value: 2, label: '2 km' },
+  { value: 5, label: '5 km' },
+  { value: 10, label: '10 km' },
+  { value: 20, label: '20 km' },
+  { value: 50, label: '50 km' },
+  { value: null, label: 'Todos' },
+];
+
 export default function NearbyMotelsScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const [motels, setMotels] = useState([]);
+  const [allMotels, setAllMotels] = useState([]); // Todos los moteles sin filtrar
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+  const [selectedRadius, setSelectedRadius] = useState(10); // Radio por defecto 10km
+  const [showRadiusModal, setShowRadiusModal] = useState(false);
 
   useEffect(() => {
     loadNearbyMotels();
   }, []);
+
+  // Filtrar moteles cuando cambie el radio seleccionado
+  useEffect(() => {
+    if (userLocation && allMotels.length > 0) {
+      filterMotelsByRadius(selectedRadius);
+    }
+  }, [selectedRadius]);
 
   const loadNearbyMotels = async () => {
     try {
@@ -51,18 +73,14 @@ export default function NearbyMotelsScreen({ navigation }) {
       console.log(`📍 Ubicación del usuario: [${latitude}, ${longitude}]`);
 
       // Obtener todos los moteles
-      const allMotels = await fetchMotels();
-      console.log(`📊 Total de moteles disponibles: ${allMotels.length}`);
+      const fetchedMotels = await fetchMotels();
+      console.log(`📊 Total de moteles disponibles: ${fetchedMotels.length}`);
 
-      // Filtrar moteles cercanos (dentro de 10km)
-      const nearbyMotels = filterMotelsByDistance(allMotels, latitude, longitude, 10);
+      // Guardar todos los moteles
+      setAllMotels(fetchedMotels);
 
-      if (nearbyMotels.length === 0) {
-        setError('No encontramos moteles a menos de 10 km de tu ubicación.');
-      } else {
-        console.log(`🎯 Mostrando ${nearbyMotels.length} moteles cercanos`);
-        setMotels(nearbyMotels);
-      }
+      // Filtrar moteles cercanos con el radio por defecto
+      filterMotelsByRadius(selectedRadius, fetchedMotels, { latitude, longitude });
     } catch (err) {
       console.error('❌ Error al obtener moteles cercanos:', err);
       setError('No pudimos obtener tu ubicación. Verifica que el GPS esté activado.');
@@ -70,6 +88,60 @@ export default function NearbyMotelsScreen({ navigation }) {
       setLoading(false);
     }
   };
+
+  const filterMotelsByRadius = (radius, motelsToFilter = allMotels, location = userLocation) => {
+    if (!location) return;
+
+    const { latitude, longitude } = location;
+
+    // Si radius es null, mostrar todos los moteles
+    if (radius === null) {
+      // Agregar distancia a todos los moteles y ordenar
+      const motelsWithDistance = motelsToFilter.map(motel => {
+        const motelLat = motel.latitude || motel.lat;
+        const motelLon = motel.longitude || motel.lng;
+
+        if (!motelLat || !motelLon) return null;
+
+        const distance = calculateDistance(latitude, longitude, motelLat, motelLon);
+        return {
+          ...motel,
+          distance: distance.toFixed(1)
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+
+      setMotels(motelsWithDistance);
+      console.log(`🎯 Mostrando todos los ${motelsWithDistance.length} moteles`);
+    } else {
+      // Filtrar por radio específico
+      const filtered = filterMotelsByDistance(motelsToFilter, latitude, longitude, radius);
+      setMotels(filtered);
+      console.log(`🎯 Mostrando ${filtered.length} moteles dentro de ${radius}km`);
+
+      if (filtered.length === 0) {
+        setError(`No encontramos moteles a menos de ${radius} km de tu ubicación.`);
+      } else {
+        setError(null);
+      }
+    }
+  };
+
+  // Función auxiliar para calcular distancia (copia de utils/location.js)
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const toRad = (degrees) => degrees * (Math.PI / 180);
 
   const handleRetry = () => {
     loadNearbyMotels();
@@ -82,19 +154,24 @@ export default function NearbyMotelsScreen({ navigation }) {
     });
   };
 
+  const headerPaddingTop = insets.top + 12;
+  const renderHeader = () => (
+    <View style={[styles.header, { paddingTop: headerPaddingTop }]}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+      </TouchableOpacity>
+      <Text style={styles.headerTitle}>Moteles cerca mío</Text>
+      <View style={styles.placeholder} />
+    </View>
+  );
+
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Moteles cerca mío</Text>
-          <View style={styles.placeholder} />
-        </View>
+      <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+        {renderHeader()}
 
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
@@ -106,17 +183,8 @@ export default function NearbyMotelsScreen({ navigation }) {
 
   if (error) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Moteles cerca mío</Text>
-          <View style={styles.placeholder} />
-        </View>
+      <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+        {renderHeader()}
 
         <View style={styles.centerContainer}>
           <Ionicons name="location-outline" size={64} color={COLORS.muted} />
@@ -131,18 +199,8 @@ export default function NearbyMotelsScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Moteles cerca mío</Text>
-        <View style={styles.placeholder} />
-      </View>
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+      {renderHeader()}
 
       {/* Contenido */}
       <View style={styles.content}>
@@ -151,10 +209,17 @@ export default function NearbyMotelsScreen({ navigation }) {
             {motels.length} {motels.length === 1 ? 'motel encontrado' : 'moteles encontrados'}
           </Text>
           {userLocation && (
-            <View style={styles.locationBadge}>
+            <TouchableOpacity
+              style={styles.locationBadge}
+              onPress={() => setShowRadiusModal(true)}
+              activeOpacity={0.7}
+            >
               <Ionicons name="navigate" size={12} color={COLORS.primary} />
-              <Text style={styles.locationText}>Radio: 10 km</Text>
-            </View>
+              <Text style={styles.locationText}>
+                Radio: {selectedRadius === null ? 'Todos' : `${selectedRadius} km`}
+              </Text>
+              <Ionicons name="chevron-down" size={12} color={COLORS.primary} />
+            </TouchableOpacity>
           )}
         </View>
 
@@ -182,6 +247,51 @@ export default function NearbyMotelsScreen({ navigation }) {
           }
         />
       </View>
+
+      {/* Modal de selección de radio */}
+      <Modal
+        visible={showRadiusModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowRadiusModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowRadiusModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Seleccionar radio de búsqueda</Text>
+            </View>
+            {RADIUS_OPTIONS.map((option) => (
+              <TouchableOpacity
+                key={option.label}
+                style={[
+                  styles.radiusOption,
+                  selectedRadius === option.value && styles.radiusOptionSelected,
+                ]}
+                onPress={() => {
+                  setSelectedRadius(option.value);
+                  setShowRadiusModal(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.radiusOptionText,
+                    selectedRadius === option.value && styles.radiusOptionTextSelected,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+                {selectedRadius === option.value && (
+                  <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -196,7 +306,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.divider,
     backgroundColor: COLORS.white,
@@ -299,5 +409,56 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginTop: 16,
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    width: '80%',
+    maxWidth: 400,
+    paddingVertical: 8,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.divider,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+  radiusOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.divider,
+  },
+  radiusOptionSelected: {
+    backgroundColor: COLORS.accentLight,
+  },
+  radiusOptionText: {
+    fontSize: 15,
+    color: COLORS.text,
+    fontWeight: '500',
+  },
+  radiusOptionTextSelected: {
+    color: COLORS.primary,
+    fontWeight: '700',
   },
 });

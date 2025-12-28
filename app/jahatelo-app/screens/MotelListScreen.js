@@ -6,7 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   FadeIn,
@@ -72,7 +72,9 @@ const AnimatedEmptyState = () => {
 };
 
 export default function MotelListScreen({ route, navigation }) {
+  const insets = useSafeAreaInsets();
   const { title, motels = [] } = route.params;
+  const headerPaddingTop = insets.top + 12;
 
   const handleMotelPress = (motel) => {
     navigation.navigate('MotelDetail', {
@@ -82,9 +84,12 @@ export default function MotelListScreen({ route, navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       {/* Header personalizado con animación */}
-      <Animated.View entering={SlideInLeft.duration(400).springify()} style={styles.header}>
+      <Animated.View
+        entering={SlideInLeft.duration(400).springify()}
+        style={[styles.header, { paddingTop: headerPaddingTop }]}
+      >
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -128,9 +133,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.divider,
+    backgroundColor: COLORS.white,
   },
   backButton: {
     width: 40,

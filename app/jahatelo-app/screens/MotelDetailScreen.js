@@ -30,7 +30,6 @@ export default function MotelDetailScreen({ route, navigation }) {
   const [motel, setMotel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const { isFavorite, toggleFavorite } = useFavorites();
   const insets = useSafeAreaInsets();
 
@@ -125,11 +124,6 @@ export default function MotelDetailScreen({ route, navigation }) {
     ],
   }));
 
-  // Mostrar loading
-  useEffect(() => {
-    setCurrentPhotoIndex(0);
-  }, [motel?.id]);
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -169,13 +163,16 @@ export default function MotelDetailScreen({ route, navigation }) {
   }
 
   // Obtener foto principal del motel o usar placeholder
-  const mainPhoto = motel.thumbnail || motel.photos?.[0] || 'https://picsum.photos/800/600?random=999';
-  const photoGallery =
-    motel.photos && motel.photos.length > 0
-      ? motel.photos
-      : motel.allPhotos && motel.allPhotos.length > 0
-      ? motel.allPhotos
-      : [mainPhoto];
+  const mainPhoto =
+    motel.thumbnail ||
+    motel.featuredPhoto ||
+    motel.photos?.[0] ||
+    motel.allPhotos?.[0] ||
+    'https://picsum.photos/800/600?random=999';
+  const mainPhotoUrl =
+    typeof mainPhoto === 'string'
+      ? mainPhoto
+      : mainPhoto?.url || mainPhoto?.photoUrl || 'https://picsum.photos/800/600?random=999';
 
   const photoHeight = 240 + insets.top;
 
@@ -186,42 +183,11 @@ export default function MotelDetailScreen({ route, navigation }) {
         entering={FadeIn.duration(400)}
         style={[styles.photoContainer, { height: photoHeight, marginTop: -insets.top }]}
       >
-        <Animated.FlatList
-          data={photoGallery}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={(event) => {
-            const index = Math.round(event.nativeEvent.contentOffset.x / event.nativeEvent.layoutMeasurement.width);
-            setCurrentPhotoIndex(index);
-          }}
-          renderItem={({ item }) => {
-            const photoUrl = typeof item === 'string' ? item : item?.url || item?.photoUrl || null;
-            return (
-              <Image
-                source={{ uri: photoUrl || 'https://picsum.photos/800/600?random=998' }}
-                style={[styles.motelPhoto, { height: photoHeight }]}
-                resizeMode="cover"
-              />
-            );
-          }}
-          keyExtractor={(item, index) => index.toString()}
+        <Image
+          source={{ uri: mainPhotoUrl }}
+          style={[styles.motelPhoto, { height: photoHeight }]}
+          resizeMode="cover"
         />
-
-        {/* Indicador de fotos */}
-        {photoGallery.length > 1 && (
-          <View style={styles.photoIndicatorContainer}>
-            {photoGallery.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.photoIndicator,
-                  index === currentPhotoIndex && styles.photoIndicatorActive
-                ]}
-              />
-            ))}
-          </View>
-        )}
 
         {/* Badges informativos */}
         <View style={[styles.badgesContainer, { top: insets.top + 70 }]}>
@@ -400,25 +366,6 @@ const styles = StyleSheet.create({
     height: 240,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-  },
-  photoIndicatorContainer: {
-    position: 'absolute',
-    bottom: 12,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  photoIndicator: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  photoIndicatorActive: {
-    backgroundColor: '#FFFFFF',
-    width: 20,
   },
   badgesContainer: {
     position: 'absolute',

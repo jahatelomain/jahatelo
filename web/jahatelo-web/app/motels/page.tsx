@@ -6,12 +6,18 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
 interface MotelsPageProps {
-  searchParams: Promise<{ city?: string; neighborhood?: string; search?: string }>;
+  searchParams: Promise<{
+    city?: string;
+    neighborhood?: string;
+    search?: string;
+    amenities?: string;
+  }>;
 }
 
 export default async function MotelsPage({ searchParams }: MotelsPageProps) {
   const params = await searchParams;
-  const { city, neighborhood, search } = params;
+  const { city, neighborhood, search, amenities } = params;
+  const amenityIds = amenities ? amenities.split(',') : [];
 
   // Build where clause based on filters
   const whereClause: Prisma.MotelWhereInput = {
@@ -34,6 +40,16 @@ export default async function MotelsPage({ searchParams }: MotelsPageProps) {
       { city: { contains: search } },
       { neighborhood: { contains: search } },
     ];
+  }
+
+  if (amenityIds.length > 0) {
+    whereClause.motelAmenities = {
+      some: {
+        amenityId: {
+          in: amenityIds,
+        },
+      },
+    };
   }
 
   // Fetch motels
@@ -88,6 +104,17 @@ export default async function MotelsPage({ searchParams }: MotelsPageProps) {
       })
     : [];
 
+  // Get all amenities for filter
+  const allAmenities = await prisma.amenity.findMany({
+    where: {
+      OR: [
+        { type: 'MOTEL' },
+        { type: 'BOTH' },
+      ],
+    },
+    orderBy: { name: 'asc' },
+  });
+
   return (
     <>
       <Navbar />
@@ -111,9 +138,11 @@ export default async function MotelsPage({ searchParams }: MotelsPageProps) {
             <MotelFilters
               cities={cities}
               neighborhoods={neighborhoods}
+              amenities={allAmenities}
               currentCity={city}
               currentNeighborhood={neighborhood}
               currentSearch={search}
+              currentAmenities={amenityIds}
             />
           </div>
 

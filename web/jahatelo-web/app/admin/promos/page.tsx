@@ -268,7 +268,7 @@ export default function PromosAdminPage() {
                 placeholder="Buscar por título o motel..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full border border-slate-300 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               />
               <svg
                 className="w-5 h-5 text-slate-400 absolute left-3 top-2.5"
@@ -290,7 +290,7 @@ export default function PromosAdminPage() {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as any)}
-            className="border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
           >
             <option value="ALL">Todos los estados</option>
             <option value="ACTIVE">Activas</option>
@@ -301,7 +301,7 @@ export default function PromosAdminPage() {
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as any)}
-            className="border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
           >
             <option value="ALL">Todos los tipos</option>
             <option value="GLOBAL">Globales</option>
@@ -350,7 +350,7 @@ export default function PromosAdminPage() {
                 <select
                   value={formData.motelId}
                   onChange={(e) => setFormData({ ...formData, motelId: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                   required
                   disabled={editingId !== null}
                 >
@@ -375,7 +375,7 @@ export default function PromosAdminPage() {
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                   placeholder="Ej: 2x1 en habitaciones"
                   required
                 />
@@ -390,7 +390,7 @@ export default function PromosAdminPage() {
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Detalles de la promoción..."
                 rows={3}
               />
@@ -466,7 +466,7 @@ export default function PromosAdminPage() {
                   type="date"
                   value={formData.validFrom}
                   onChange={(e) => setFormData({ ...formData, validFrom: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 />
               </div>
               <div>
@@ -477,7 +477,7 @@ export default function PromosAdminPage() {
                   type="date"
                   value={formData.validUntil}
                   onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 />
               </div>
             </div>
@@ -489,7 +489,7 @@ export default function PromosAdminPage() {
                   type="checkbox"
                   checked={formData.isActive}
                   onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
+                  className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-600"
                 />
                 <span className="text-sm font-medium text-slate-700">Activa</span>
               </label>
@@ -498,7 +498,7 @@ export default function PromosAdminPage() {
                   type="checkbox"
                   checked={formData.isGlobal}
                   onChange={(e) => setFormData({ ...formData, isGlobal: e.target.checked })}
-                  className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
+                  className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-600"
                 />
                 <span className="text-sm font-medium text-slate-700">
                   Global (mostrar en todos lados)

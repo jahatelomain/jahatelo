@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import MarkerClusterGroup from 'react-leaflet-cluster';
@@ -21,6 +21,8 @@ type MapMotel = {
 
 type MapComponentProps = {
   motels: MapMotel[];
+  showRadius?: number; // radius in kilometers to show around user location
+  initialUserLocation?: [number, number]; // initial user location to show
 };
 
 // Fix for default marker icons in Leaflet
@@ -50,9 +52,9 @@ function MapUpdater({ center }: { center: [number, number] }) {
   return null;
 }
 
-export default function MapComponent({ motels }: MapComponentProps) {
+export default function MapComponent({ motels, showRadius, initialUserLocation }: MapComponentProps) {
   const mapRef = useRef<L.Map | null>(null);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(initialUserLocation || null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([4.6097, -74.0817]); // Bogotá por defecto
 
   // Calculate center based on motels or use first motel
@@ -64,8 +66,13 @@ export default function MapComponent({ motels }: MapComponentProps) {
   }, [motels]);
 
   useEffect(() => {
-    setMapCenter(defaultCenter);
-  }, [defaultCenter]);
+    // If user location is provided initially, center on it
+    if (initialUserLocation) {
+      setMapCenter(initialUserLocation);
+    } else {
+      setMapCenter(defaultCenter);
+    }
+  }, [defaultCenter, initialUserLocation]);
 
   const handleLocateMe = () => {
     if ('geolocation' in navigator) {
@@ -144,7 +151,7 @@ export default function MapComponent({ motels }: MapComponentProps) {
                   )}
                   <Link
                     href={`/motels/${motel.slug}`}
-                    className="block w-full text-center bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                    className="block w-full text-center bg-purple-600 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
                   >
                     Ver detalles
                   </Link>
@@ -156,25 +163,41 @@ export default function MapComponent({ motels }: MapComponentProps) {
 
         {/* User location marker */}
         {userLocation && (
-          <Marker
-            position={userLocation}
-            icon={
-              new L.Icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41],
-              })
-            }
-          >
-            <Popup>
-              <div className="text-center">
-                <p className="font-semibold text-blue-600">Tu ubicación</p>
-              </div>
-            </Popup>
-          </Marker>
+          <>
+            <Marker
+              position={userLocation}
+              icon={
+                new L.Icon({
+                  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                  iconSize: [25, 41],
+                  iconAnchor: [12, 41],
+                  popupAnchor: [1, -34],
+                  shadowSize: [41, 41],
+                })
+              }
+            >
+              <Popup>
+                <div className="text-center">
+                  <p className="font-semibold text-blue-600">Tu ubicación</p>
+                </div>
+              </Popup>
+            </Marker>
+
+            {/* Radius circle if specified */}
+            {showRadius && (
+              <Circle
+                center={userLocation}
+                radius={showRadius * 1000} // convert km to meters
+                pathOptions={{
+                  color: '#9333ea',
+                  fillColor: '#9333ea',
+                  fillOpacity: 0.1,
+                  weight: 2,
+                }}
+              />
+            )}
+          </>
         )}
       </MapContainer>
     </div>

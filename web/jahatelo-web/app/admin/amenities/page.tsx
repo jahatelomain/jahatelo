@@ -250,7 +250,7 @@ export default function AmenitiesPage() {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                   placeholder="Ej: WiFi, Aire acondicionado"
                   required
                 />
@@ -262,7 +262,7 @@ export default function AmenitiesPage() {
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white"
                 >
                   <option value="">Sin especificar</option>
                   <option value="ROOM">Habitación</option>
@@ -307,7 +307,7 @@ export default function AmenitiesPage() {
                             }`}
                             title={icon.label}
                           >
-                            <IconComponent size={20} />
+                        <IconComponent size={16} />
                           </button>
                         );
                       })}
@@ -346,7 +346,7 @@ export default function AmenitiesPage() {
                 placeholder="Buscar por nombre..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full border border-slate-300 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               />
               <svg
                 className="w-5 h-5 text-slate-400 absolute left-3 top-2.5"
@@ -577,7 +577,7 @@ export default function AmenitiesPage() {
                           <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-slate-700">
                             {motels.map(({ motel }) => (
                               <li key={motel.id} className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2">
-                                <span className="text-purple-500">🏨</span>
+                                <span className="text-purple-600">🏨</span>
                                 <div>
                                   <p className="font-medium text-slate-900">{motel.name}</p>
                                   <p className="text-xs text-slate-500">{motel.city}</p>

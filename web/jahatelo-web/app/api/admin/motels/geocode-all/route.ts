@@ -72,17 +72,15 @@ export async function POST() {
 
     // Batch update all successful geocodes
     if (updates.length > 0) {
-      await Promise.all(
-        updates.map(update =>
-          prisma.motel.update({
-            where: { id: update.id },
-            data: {
-              latitude: update.latitude,
-              longitude: update.longitude,
-            },
-          })
-        )
-      );
+      for (const update of updates) {
+        await prisma.motel.update({
+          where: { id: update.id },
+          data: {
+            latitude: update.latitude,
+            longitude: update.longitude,
+          },
+        });
+      }
     }
 
     return NextResponse.json({

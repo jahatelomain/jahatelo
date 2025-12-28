@@ -2,9 +2,33 @@ import Link from 'next/link';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import MotelCard from '@/components/public/MotelCard';
+import PromoCarousel from '@/components/public/PromoCarousel';
+import CategoriesGrid from '@/components/public/CategoriesGrid';
+import SocialLinks from '@/components/public/SocialLinks';
 import { prisma } from '@/lib/prisma';
 
 export default async function HomePage() {
+  // Get motels with active promos
+  const promosMotels = await prisma.motel.findMany({
+    where: {
+      status: 'APPROVED',
+      isActive: true,
+      promos: {
+        some: {
+          isActive: true,
+        },
+      },
+    },
+    include: {
+      photos: {
+        orderBy: { order: 'asc' },
+        take: 1,
+      },
+    },
+    take: 5,
+    orderBy: { createdAt: 'desc' },
+  });
+
   // Get featured motels or any active approved motels
   const featuredMotels = await prisma.motel.findMany({
     where: {
@@ -68,38 +92,44 @@ export default async function HomePage() {
         orderBy: { createdAt: 'desc' },
       });
 
+  // Categories for navigation
+  const categories = [
+    { id: 'cities', label: 'Moteles por ciudad', href: '/motels', iconName: 'location-outline' },
+    { id: 'map', label: 'Ver mapa', href: '/mapa', iconName: 'map-outline' },
+    { id: 'popular', label: 'Populares', href: '/motels', iconName: 'flame-outline' },
+  ];
+
   return (
     <>
       <Navbar />
       <div>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-purple-600 via-purple-500 to-fuchsia-500 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-              Encontrá tu motel ideal en minutos
+      <section className="bg-white border-b-4 border-purple-600">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+          <div className="text-center max-w-3xl mx-auto mb-8">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-gray-900">
+              Encontrá tu motel ideal
             </h1>
-            <p className="text-lg md:text-xl text-purple-100 mb-8">
-              La plataforma más completa para descubrir y comparar moteles.
-              Información detallada, fotos, precios y reseñas reales.
+            <p className="text-lg md:text-xl text-gray-600">
+              La plataforma más completa para descubrir y comparar moteles
             </p>
+          </div>
 
-            {/* Search Box */}
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-white rounded-full shadow-xl p-2 flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre, ciudad o barrio..."
-                  className="flex-1 px-6 py-3 text-gray-900 placeholder-gray-400 focus:outline-none rounded-full"
-                />
-                <Link
-                  href="/motels"
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-8 py-3 rounded-full transition-colors whitespace-nowrap"
-                >
-                  Ver moteles
-                </Link>
-              </div>
+          {/* Promo Carousel */}
+          {promosMotels.length > 0 && (
+            <div className="max-w-4xl mx-auto">
+              <PromoCarousel promos={promosMotels} />
             </div>
+          )}
+
+          {/* Categories Grid */}
+          <div className="max-w-4xl mx-auto mt-8">
+            <CategoriesGrid categories={categories} />
+          </div>
+
+          {/* Social Links */}
+          <div className="max-w-4xl mx-auto mt-6">
+            <SocialLinks />
           </div>
         </div>
       </section>
@@ -127,7 +157,7 @@ export default async function HomePage() {
               <div className="text-center">
                 <Link
                   href="/motels"
-                  className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors"
+                  className="inline-block border-2 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white font-semibold px-8 py-3 rounded-lg transition-colors"
                 >
                   Ver todos los moteles
                 </Link>
@@ -151,48 +181,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full mb-4">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Búsqueda Fácil</h3>
-              <p className="text-gray-600">
-                Encuentra el motel perfecto filtrando por ubicación, precios y servicios.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full mb-4">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Fotos Reales</h3>
-              <p className="text-gray-600">
-                Ve fotos reales de las habitaciones, instalaciones y servicios de cada motel.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full mb-4">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Precios Claros</h3>
-              <p className="text-gray-600">
-                Compara precios por hora, media jornada o noche completa de forma transparente.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
       </div>
       <Footer />
     </>

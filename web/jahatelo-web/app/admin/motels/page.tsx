@@ -162,7 +162,7 @@ export default function MotelsAdminPage() {
                 placeholder="Buscar por nombre, ciudad, barrio o contacto..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full border border-slate-300 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               />
               <svg
                 className="w-5 h-5 text-slate-400 absolute left-3 top-2.5"

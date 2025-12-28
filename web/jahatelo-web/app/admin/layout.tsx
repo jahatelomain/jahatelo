@@ -159,7 +159,7 @@ export default function AdminLayout({
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen((prev) => !prev)}
-                  className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center text-white text-sm font-semibold hover:shadow-lg transition-all cursor-pointer"
+                  className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-fuchsia-500 flex items-center justify-center text-white text-sm font-semibold hover:shadow-lg transition-all cursor-pointer"
                   title="Opciones de usuario"
                 >
                   {profileInitials}

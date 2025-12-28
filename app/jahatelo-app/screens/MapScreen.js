@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -16,6 +17,70 @@ import { COLORS } from '../constants/theme';
 import { useNavigation } from '@react-navigation/native';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const LABEL_ZOOM_THRESHOLD = 0.55;
+const IS_ANDROID = Platform.OS === 'android';
+
+// Componente Custom Marker - dos markers separados para evitar bug de Android
+const CustomMarker = React.memo(({ motel, showLabel, onPress }) => {
+  // Offset para posicionar la etiqueta arriba del pin
+  const labelOffset = 0.00015; // Aproximadamente 16 metros al norte
+  const [labelTracksChanges, setLabelTracksChanges] = React.useState(IS_ANDROID);
+
+  React.useEffect(() => {
+    if (!IS_ANDROID) return;
+    if (!showLabel) return;
+
+    setLabelTracksChanges(true);
+    const timer = setTimeout(() => setLabelTracksChanges(false), 1200);
+    return () => clearTimeout(timer);
+  }, [showLabel, motel.id]);
+
+  return (
+    <>
+      {/* Marker de la etiqueta - solo visible cuando showLabel es true */}
+      {showLabel && (
+        <Marker
+          key={`label-${motel.id}`}
+          coordinate={{
+            latitude: motel.latitude + labelOffset,
+            longitude: motel.longitude,
+          }}
+          anchor={{ x: 0.5, y: 1 }}
+          tracksViewChanges={IS_ANDROID ? labelTracksChanges : false}
+          zIndex={1000}
+        >
+          <View style={styles.labelContainer} collapsable={false}>
+            <Text style={styles.labelText} numberOfLines={1}>
+              {motel.name}
+            </Text>
+          </View>
+        </Marker>
+      )}
+
+      {/* Marker del pin - siempre visible */}
+      <Marker
+        key={`pin-${motel.id}`}
+        coordinate={{
+          latitude: motel.latitude,
+          longitude: motel.longitude,
+        }}
+        anchor={{ x: 0.5, y: 0.5 }}
+        onPress={onPress}
+        tracksViewChanges={false}
+        zIndex={999}
+      >
+        <View style={styles.markerPin}>
+          <Ionicons name="location" size={28} color={COLORS.primary} />
+        </View>
+      </Marker>
+    </>
+  );
+}, (prevProps, nextProps) => {
+  return prevProps.motel.id === nextProps.motel.id &&
+         prevProps.showLabel === nextProps.showLabel;
+});
+
+CustomMarker.displayName = 'CustomMarker';
 
 export default function MapScreen() {
   const navigation = useNavigation();
@@ -31,6 +96,9 @@ export default function MapScreen() {
     longitudeDelta: 0.5,
   });
   const mapRef = React.useRef(null);
+  const [showLabels, setShowLabels] = useState(
+    (initialRegion?.latitudeDelta || 1) <= LABEL_ZOOM_THRESHOLD
+  );
 
   useEffect(() => {
     fetchMapData();
@@ -53,6 +121,7 @@ export default function MapScreen() {
           longitudeDelta: 0.5,
         };
         setInitialRegion(firstMotelRegion);
+        setShowLabels(firstMotelRegion.latitudeDelta <= LABEL_ZOOM_THRESHOLD);
 
         // Animar el mapa hacia el primer motel
         setTimeout(() => {
@@ -98,6 +167,8 @@ export default function MapScreen() {
       };
 
       mapRef.current?.animateToRegion(newRegion, 1000);
+      // Ajustar visibilidad de labels según zoom al centrar
+      setShowLabels(newRegion.latitudeDelta <= LABEL_ZOOM_THRESHOLD);
     } catch (error) {
       console.error('Error getting location:', error);
       Alert.alert(
@@ -108,12 +179,12 @@ export default function MapScreen() {
     }
   };
 
-  const handleMarkerPress = (motel) => {
+  const handleMarkerPress = useCallback((motel) => {
     navigation.navigate('MotelDetail', {
       motelSlug: motel.slug,
       motelId: motel.id,
     });
-  };
+  }, [navigation]);
 
   if (loading) {
     return (
@@ -148,11 +219,13 @@ export default function MapScreen() {
     );
   }
 
+  const headerPaddingTop = insets.top + 12;
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerPaddingTop }]}>
         <TouchableOpacity
           style={styles.backIcon}
           onPress={() => navigation.goBack()}
@@ -171,17 +244,17 @@ export default function MapScreen() {
         initialRegion={initialRegion}
         showsUserLocation={!!userLocation}
         showsMyLocationButton={false}
+        onRegionChangeComplete={(region) => {
+          if (region?.latitudeDelta) {
+            setShowLabels(region.latitudeDelta <= LABEL_ZOOM_THRESHOLD);
+          }
+        }}
       >
         {motels.map((motel) => (
-          <Marker
+          <CustomMarker
             key={motel.id}
-            coordinate={{
-              latitude: motel.latitude,
-              longitude: motel.longitude,
-            }}
-            title={motel.name}
-            description={`${motel.neighborhood}, ${motel.city}`}
-            pinColor={motel.hasPromo ? COLORS.error : COLORS.primary}
+            motel={motel}
+            showLabel={showLabels}
             onPress={() => handleMarkerPress(motel)}
           />
         ))}
@@ -190,7 +263,8 @@ export default function MapScreen() {
           <Marker
             coordinate={userLocation}
             title="Tu ubicación"
-            pinColor={COLORS.accent}
+            pinColor="#D32F2F"
+            tracksViewChanges={false}
           />
         )}
       </MapView>
@@ -224,7 +298,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.grayLight,
@@ -244,6 +318,48 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  // Etiqueta morada (marker separado)
+  labelContainer: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    minWidth: 60,
+    maxWidth: 180,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+    overflow: 'visible',
+  },
+  labelText: {
+    fontSize: 12,
+    color: COLORS.white,
+    fontWeight: '700',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  // Pin (marker separado)
+  markerPin: {
+    width: 36,
+    height: 36,
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   centerButton: {
     position: 'absolute',

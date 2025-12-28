@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => pathname === path;
 
@@ -42,6 +44,26 @@ export default function Navbar() {
               Moteles
             </Link>
             <Link
+              href="/search"
+              className={`font-medium transition-colors ${
+                isActive('/search')
+                  ? 'text-purple-600'
+                  : 'text-gray-600 hover:text-purple-600'
+              }`}
+            >
+              Buscar
+            </Link>
+            <Link
+              href="/nearby"
+              className={`font-medium transition-colors ${
+                isActive('/nearby')
+                  ? 'text-purple-600'
+                  : 'text-gray-600 hover:text-purple-600'
+              }`}
+            >
+              Cerca mío
+            </Link>
+            <Link
               href="/mapa"
               className={`font-medium transition-colors ${
                 isActive('/mapa')
@@ -55,13 +77,85 @@ export default function Navbar() {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
-            <button className="text-gray-600 hover:text-purple-600 p-2">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-gray-600 hover:text-purple-600 p-2"
+            >
+              {mobileMenuOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
             </button>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 py-4">
+            <div className="flex flex-col gap-4">
+              <Link
+                href="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`font-medium transition-colors ${
+                  isActive('/')
+                    ? 'text-purple-600'
+                    : 'text-gray-600 hover:text-purple-600'
+                }`}
+              >
+                Inicio
+              </Link>
+              <Link
+                href="/motels"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`font-medium transition-colors ${
+                  isActive('/motels') || pathname.startsWith('/motels')
+                    ? 'text-purple-600'
+                    : 'text-gray-600 hover:text-purple-600'
+                }`}
+              >
+                Moteles
+              </Link>
+              <Link
+                href="/search"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`font-medium transition-colors ${
+                  isActive('/search')
+                    ? 'text-purple-600'
+                    : 'text-gray-600 hover:text-purple-600'
+                }`}
+              >
+                Buscar
+              </Link>
+              <Link
+                href="/nearby"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`font-medium transition-colors ${
+                  isActive('/nearby')
+                    ? 'text-purple-600'
+                    : 'text-gray-600 hover:text-purple-600'
+                }`}
+              >
+                Cerca mío
+              </Link>
+              <Link
+                href="/mapa"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`font-medium transition-colors ${
+                  isActive('/mapa')
+                    ? 'text-purple-600'
+                    : 'text-gray-600 hover:text-purple-600'
+                }`}
+              >
+                Mapa
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );

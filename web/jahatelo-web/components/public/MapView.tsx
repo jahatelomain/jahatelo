@@ -80,7 +80,7 @@ export default function MapView() {
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="inline-block px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+            className="inline-block px-6 py-2 bg-purple-600 hover:bg-purple-600 text-white font-medium rounded-lg transition-colors"
           >
             Intentar nuevamente
           </button>

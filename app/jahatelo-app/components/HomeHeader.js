@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Animated as RNAnimated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Animated as RNAnimated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import Animated, {
@@ -10,8 +10,10 @@ import Animated, {
   withTiming,
   withDelay,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function HomeHeader({ motels = [], onMotelPress, onSearch, navigation }) {
+  const insets = useSafeAreaInsets();
   const [searchValue, setSearchValue] = useState('');
   const placeholderOpacity = useRef(new RNAnimated.Value(1)).current;
 
@@ -135,8 +137,14 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
     transform: [{ scale: bellIconScale.value }],
   }));
 
+  const paddingTop = Platform.select({
+    ios: insets.top + 6,
+    android: insets.top + 16,
+    default: insets.top + 16,
+  });
+
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, { paddingTop }]}>
       <View style={styles.topRow}>
         <TouchableOpacity
           style={styles.cityButton}
@@ -191,13 +199,8 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
 const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: 16,
-    paddingTop: 13,
     paddingBottom: 15,
     backgroundColor: COLORS.primary,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    zIndex: 10,
-    elevation: 5,
   },
   topRow: {
     flexDirection: 'row',
