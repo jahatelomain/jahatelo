@@ -21,7 +21,7 @@ const LABEL_ZOOM_THRESHOLD = 0.55;
 const IS_ANDROID = Platform.OS === 'android';
 
 // Componente Custom Marker - dos markers separados para evitar bug de Android
-const CustomMarker = React.memo(({ motel, showLabel, onPress }) => {
+const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
   // Offset para posicionar la etiqueta arriba del pin
   const labelOffset = 0.00015; // Aproximadamente 16 metros al norte
   const [labelTracksChanges, setLabelTracksChanges] = React.useState(IS_ANDROID);
@@ -80,7 +80,35 @@ const CustomMarker = React.memo(({ motel, showLabel, onPress }) => {
          prevProps.showLabel === nextProps.showLabel;
 });
 
-CustomMarker.displayName = 'CustomMarker';
+CustomMarkerIOS.displayName = 'CustomMarkerIOS';
+
+const CustomMarkerAndroid = React.memo(({ motel, onPress }) => {
+  return (
+    <Marker
+      key={`android-${motel.id}`}
+      coordinate={{
+        latitude: motel.latitude,
+        longitude: motel.longitude,
+      }}
+      anchor={{ x: 0.5, y: 1 }}
+      onPress={onPress}
+      tracksViewChanges={false}
+    >
+      <View style={styles.androidMarkerContainer}>
+        <View style={styles.androidMarkerLabel}>
+          <Text style={styles.androidMarkerLabelText} numberOfLines={1}>
+            {motel.name}
+          </Text>
+        </View>
+        <View style={styles.androidMarkerIcon}>
+          <Ionicons name="location" size={28} color={COLORS.primary} />
+        </View>
+      </View>
+    </Marker>
+  );
+});
+
+CustomMarkerAndroid.displayName = 'CustomMarkerAndroid';
 
 export default function MapScreen() {
   const navigation = useNavigation();
@@ -250,14 +278,22 @@ export default function MapScreen() {
           }
         }}
       >
-        {motels.map((motel) => (
-          <CustomMarker
-            key={motel.id}
-            motel={motel}
-            showLabel={showLabels}
-            onPress={() => handleMarkerPress(motel)}
-          />
-        ))}
+        {motels.map((motel) =>
+          IS_ANDROID ? (
+            <CustomMarkerAndroid
+              key={motel.id}
+              motel={motel}
+              onPress={() => handleMarkerPress(motel)}
+            />
+          ) : (
+            <CustomMarkerIOS
+              key={motel.id}
+              motel={motel}
+              showLabel={showLabels}
+              onPress={() => handleMarkerPress(motel)}
+            />
+          )
+        )}
 
         {userLocation && (
           <Marker
@@ -329,13 +365,13 @@ const styles = StyleSheet.create({
     maxWidth: 180,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.9)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 6,
+    borderWidth: 0,
+    borderColor: 'transparent',
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
     overflow: 'visible',
   },
   labelText: {
@@ -349,17 +385,44 @@ const styles = StyleSheet.create({
   },
   // Pin (marker separado)
   markerPin: {
-    width: 36,
-    height: 36,
-    backgroundColor: COLORS.white,
-    borderRadius: 18,
+    padding: 4,
+    backgroundColor: 'transparent',
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+  },
+  androidMarkerContainer: {
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  androidMarkerLabel: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginBottom: 6,
+    minWidth: 80,
+    maxWidth: 180,
+  },
+  androidMarkerLabelText: {
+    color: COLORS.white,
+    fontWeight: '600',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  androidMarkerIcon: {
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    padding: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.primary,
   },
   centerButton: {
     position: 'absolute',
