@@ -53,7 +53,7 @@ export default async function MotelsPage({ searchParams }: MotelsPageProps) {
   }
 
   // Fetch motels
-  const motels = await prisma.motel.findMany({
+  const motelsRaw = await prisma.motel.findMany({
     where: whereClause,
     include: {
       photos: {
@@ -81,6 +81,15 @@ export default async function MotelsPage({ searchParams }: MotelsPageProps) {
       { createdAt: 'desc' },
     ],
   });
+
+  // Sanitize photos to ensure kind is always a string
+  const motels = motelsRaw.map((motel) => ({
+    ...motel,
+    photos: motel.photos.map((photo) => ({
+      url: photo.url,
+      kind: photo.kind ?? 'OTHER',
+    })),
+  }));
 
   // Get unique cities for filter
   const cities = await prisma.motel.findMany({

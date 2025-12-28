@@ -9,7 +9,7 @@ interface Motel {
   slug: string;
   name: string;
   featuredPhoto?: string | null;
-  photos?: Array<{ url: string }>;
+  photos?: Array<{ url: string; kind: string }>;
 }
 
 interface PromoCarouselProps {

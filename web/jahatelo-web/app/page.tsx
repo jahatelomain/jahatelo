@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma';
 
 export default async function HomePage() {
   // Get motels with active promos
-  const promosMotels = await prisma.motel.findMany({
+  const promosMotelsRaw = await prisma.motel.findMany({
     where: {
       status: 'APPROVED',
       isActive: true,
@@ -29,8 +29,17 @@ export default async function HomePage() {
     orderBy: { createdAt: 'desc' },
   });
 
+  // Sanitize photos to ensure kind is always a string
+  const promosMotels = promosMotelsRaw.map((motel) => ({
+    ...motel,
+    photos: motel.photos.map((photo) => ({
+      url: photo.url,
+      kind: photo.kind ?? 'OTHER',
+    })),
+  }));
+
   // Get featured motels or any active approved motels
-  const featuredMotels = await prisma.motel.findMany({
+  const featuredMotelsRaw = await prisma.motel.findMany({
     where: {
       status: 'APPROVED',
       isActive: true,
@@ -61,8 +70,8 @@ export default async function HomePage() {
   });
 
   // If no featured motels, get any approved active motels
-  const motelsToShow = featuredMotels.length > 0
-    ? featuredMotels
+  const motelsToShowRaw = featuredMotelsRaw.length > 0
+    ? featuredMotelsRaw
     : await prisma.motel.findMany({
         where: {
           status: 'APPROVED',
@@ -91,6 +100,15 @@ export default async function HomePage() {
         take: 6,
         orderBy: { createdAt: 'desc' },
       });
+
+  // Sanitize photos to ensure kind is always a string
+  const motelsToShow = motelsToShowRaw.map((motel) => ({
+    ...motel,
+    photos: motel.photos.map((photo) => ({
+      url: photo.url,
+      kind: photo.kind ?? 'OTHER',
+    })),
+  }));
 
   // Categories for navigation
   const categories = [
@@ -139,7 +157,7 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              {featuredMotels.length > 0 ? 'Moteles Destacados' : 'Moteles Disponibles'}
+              {featuredMotelsRaw.length > 0 ? 'Moteles Destacados' : 'Moteles Disponibles'}
             </h2>
             <p className="text-lg text-gray-600">
               Descubrí los mejores moteles con toda la información que necesitás

@@ -36,7 +36,16 @@ export async function GET() {
       ],
     });
 
-    return NextResponse.json({ motels });
+    // Sanitize photos to ensure kind is always a string
+    const sanitizedMotels = motels.map((motel) => ({
+      ...motel,
+      photos: motel.photos.map((photo) => ({
+        url: photo.url,
+        kind: photo.kind ?? 'OTHER',
+      })),
+    }));
+
+    return NextResponse.json({ motels: sanitizedMotels });
   } catch (error) {
     console.error('Error fetching nearby motels:', error);
     return NextResponse.json(

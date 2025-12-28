@@ -4,7 +4,7 @@ interface SocialLink {
   name: string;
   url: string | null;
   enabled: boolean;
-  icon: JSX.Element;
+  icon: React.ReactElement;
   gradient?: string[];
   bgColor?: string;
 }

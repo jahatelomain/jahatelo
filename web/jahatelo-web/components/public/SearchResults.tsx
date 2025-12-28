@@ -24,7 +24,7 @@ interface Motel {
   isFeatured: boolean;
   ratingAvg: number;
   ratingCount: number;
-  photos: Array<{ url: string }>;
+  photos: Array<{ url: string; kind: string }>;
   motelAmenities: Array<{
     amenity: {
       id: string;
@@ -68,7 +68,15 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
 
         const response = await fetch(`/api/motels/search?${params.toString()}`);
         const data = await response.json();
-        setMotels(data.motels || []);
+        // Sanitize photos to ensure kind is always a string
+        const sanitized = (data.motels || []).map((motel: Motel) => ({
+          ...motel,
+          photos: (motel.photos || []).map((photo) => ({
+            url: photo.url,
+            kind: photo.kind ?? 'OTHER',
+          })),
+        }));
+        setMotels(sanitized);
       } catch (error) {
         console.error('Error fetching motels:', error);
         setMotels([]);
