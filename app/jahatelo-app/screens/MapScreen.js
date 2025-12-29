@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
@@ -83,16 +83,28 @@ const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
 CustomMarkerIOS.displayName = 'CustomMarkerIOS';
 
 const CustomMarkerAndroid = React.memo(({ motel, showLabel, onPress }) => {
-  const [tracksChanges, setTracksChanges] = React.useState(true);
+  const markerRef = React.useRef(null);
 
   React.useEffect(() => {
-    setTracksChanges(true);
-    const timer = setTimeout(() => setTracksChanges(false), 800);
-    return () => clearTimeout(timer);
-  }, [showLabel, motel.id]);
+    if (!markerRef.current) return;
+
+    if (showLabel) {
+      const timeout = setTimeout(() => {
+        markerRef.current?.showCallout();
+      }, 150);
+
+      return () => {
+        clearTimeout(timeout);
+        markerRef.current?.hideCallout();
+      };
+    }
+
+    markerRef.current?.hideCallout();
+  }, [showLabel]);
 
   return (
     <Marker
+      ref={markerRef}
       key={`android-${motel.id}`}
       coordinate={{
         latitude: motel.latitude,
@@ -100,26 +112,21 @@ const CustomMarkerAndroid = React.memo(({ motel, showLabel, onPress }) => {
       }}
       anchor={{ x: 0.5, y: 1 }}
       onPress={onPress}
-      tracksViewChanges={tracksChanges}
+      tracksViewChanges={false}
       zIndex={999}
     >
-      <View
-        style={styles.androidMarkerWrapper}
-        collapsable={false}
-        pointerEvents="none"
-        renderToHardwareTextureAndroid
-      >
-        {showLabel && (
-          <View style={styles.androidLabelContainer} collapsable={false}>
-            <Text style={styles.androidLabelText} numberOfLines={1}>
+      <View style={styles.androidMarkerPin} collapsable={false}>
+        <Ionicons name="location" size={28} color={COLORS.primary} />
+      </View>
+      <Callout tooltip onPress={onPress}>
+        {showLabel ? (
+          <View style={styles.calloutContainerAndroid}>
+            <Text style={styles.calloutTextAndroid} numberOfLines={1}>
               {motel.name}
             </Text>
           </View>
-        )}
-        <View style={styles.androidMarkerPin} collapsable={false}>
-          <Ionicons name="location" size={28} color={COLORS.primary} />
-        </View>
-      </View>
+        ) : null}
+      </Callout>
     </Marker>
   );
 }, (prevProps, nextProps) => {
@@ -416,32 +423,23 @@ const styles = StyleSheet.create({
     shadowRadius: 0,
     elevation: 0,
   },
-  androidLabelContainer: {
+  calloutContainerAndroid: {
     backgroundColor: COLORS.primary,
-    borderRadius: 16,
+    borderRadius: 18,
     paddingHorizontal: 18,
     paddingVertical: 8,
     minWidth: 80,
-    maxWidth: 180,
+    maxWidth: 200,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 0,
-    borderColor: 'transparent',
-    shadowColor: 'transparent',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
+    borderWidth: 2,
+    borderColor: COLORS.white,
   },
-  androidLabelText: {
+  calloutTextAndroid: {
     color: COLORS.white,
     fontWeight: '600',
     fontSize: 12,
     textAlign: 'center',
-  },
-  androidMarkerWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   centerButton: {
     position: 'absolute',

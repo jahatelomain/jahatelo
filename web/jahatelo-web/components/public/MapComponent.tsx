@@ -111,6 +111,15 @@ export default function MapComponent({ motels, showRadius, initialUserLocation }
     }
   };
 
+  // Don't render map until icons are ready to prevent errors
+  if (!iconsReady) {
+    return (
+      <div className="relative h-full w-full bg-gray-100 flex items-center justify-center">
+        <p className="text-gray-600">Inicializando mapa...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative h-full w-full">
       {/* Locate Me Button */}
@@ -139,15 +148,14 @@ export default function MapComponent({ motels, showRadius, initialUserLocation }
         />
 
         {/* Cluster markers */}
-        {iconsReady && (
-          <MarkerClusterGroup chunkedLoading>
-            {motels.map((motel) => (
-              <Marker
-                key={motel.id}
-                position={[motel.latitude, motel.longitude]}
-                icon={motel.hasPromo ? promoIcon : undefined}
-              >
-              <Popup>
+        <MarkerClusterGroup chunkedLoading>
+          {motels.map((motel) => (
+            <Marker
+              key={motel.id}
+              position={[motel.latitude, motel.longitude]}
+              icon={motel.hasPromo ? promoIcon : undefined}
+            >
+            <Popup>
                 <div className="min-w-[250px]">
                   {motel.featuredPhoto && (
                     <img
@@ -175,14 +183,13 @@ export default function MapComponent({ motels, showRadius, initialUserLocation }
                     Ver detalles
                   </Link>
                 </div>
-              </Popup>
-              </Marker>
-            ))}
-          </MarkerClusterGroup>
-        )}
+            </Popup>
+            </Marker>
+          ))}
+        </MarkerClusterGroup>
 
         {/* User location marker */}
-        {userLocation && iconsReady && (
+        {userLocation && (
           <>
             <Marker
               position={userLocation}
