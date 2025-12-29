@@ -48,7 +48,7 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
   // Calcular posición en pantalla cuando el mapa se mueve o cambia zoom
   useEffect(() => {
     if (!visible || !mapRef.current) {
-      setPosition(null);
+      // No setear a null para evitar parpadeo - mantener última posición
       return;
     }
 
@@ -62,14 +62,20 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
           longitude: motel.longitude,
         });
 
-        setPosition(point);
+        // Solo actualizar si hay un punto válido
+        if (point && point.x !== undefined && point.y !== undefined) {
+          setPosition(point);
+        }
       } catch (error) {
         console.log('Error calculating position:', error);
-        setPosition(null);
+        // Mantener posición anterior en caso de error
       }
     };
 
-    updatePosition();
+    // Usar requestAnimationFrame para suavizar la actualización
+    requestAnimationFrame(() => {
+      updatePosition();
+    });
   }, [motel.latitude, motel.longitude, visible, region, mapRef]);
 
   if (!visible || !position) {
@@ -151,6 +157,14 @@ CustomMarkerIOS.displayName = 'CustomMarkerIOS';
 
 // Simple marker for Android - just the pin, no complex views
 const CustomMarkerAndroid = React.memo(({ motel, onPress }) => {
+  const [tracksChanges, setTracksChanges] = React.useState(true);
+
+  // Desactivar tracking después del primer render para mejorar performance
+  React.useEffect(() => {
+    const timer = setTimeout(() => setTracksChanges(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <Marker
       key={`android-${motel.id}`}
@@ -158,13 +172,15 @@ const CustomMarkerAndroid = React.memo(({ motel, onPress }) => {
         latitude: motel.latitude,
         longitude: motel.longitude,
       }}
-      anchor={{ x: 0.5, y: 1 }}
+      anchor={{ x: 0.5, y: 0.5 }}
       onPress={onPress}
-      tracksViewChanges={false}
+      tracksViewChanges={tracksChanges}
       zIndex={999}
     >
       <View style={styles.androidMarkerPin}>
-        <Ionicons name="location" size={32} color={COLORS.primary} />
+        <View style={styles.markerInner}>
+          <Ionicons name="heart" size={14} color={COLORS.white} />
+        </View>
       </View>
     </Marker>
   );
@@ -465,11 +481,24 @@ const styles = StyleSheet.create({
 
   // ===== ANDROID STYLES =====
   androidMarkerPin: {
-    backgroundColor: 'transparent',
+    backgroundColor: COLORS.primary,
+    borderRadius: 20,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 32,
-    height: 32,
+    borderWidth: 3,
+    borderColor: COLORS.white,
+    // Sombra para que se destaque
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  markerInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   // Overlay absoluto para etiquetas en Android
   androidLabelOverlay: {
