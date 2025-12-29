@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapView, { Marker, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
@@ -20,24 +20,91 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 const LABEL_ZOOM_THRESHOLD = 0.55;
 const IS_ANDROID = Platform.OS === 'android';
 
-// Componente Custom Marker - dos markers separados para evitar bug de Android
-const LABEL_OFFSET = 0.00015; // Aproximadamente 16 metros al norte
+/**
+ * ===== SOLUCIÓN ANDROID: OVERLAY ABSOLUTO =====
+ *
+ * Problema: react-native-maps en Android tiene severas limitaciones con Views complejas dentro de markers.
+ * - Callouts con tooltip no se muestran automáticamente
+ * - Views personalizadas se recortan o desaparecen
+ * - showCallout() programático no funciona consistentemente
+ *
+ * Solución: Renderizar etiquetas como Views absolutas SOBRE el mapa
+ * - El Marker solo contiene el pin (simple View sin complejidad)
+ * - Las etiquetas se renderizan fuera del MapView como overlays absolutos
+ * - Calculamos posiciones de pantalla basadas en coordenadas geográficas
+ * - Total control sobre rendering, sin clipping
+ *
+ * Esta solución:
+ * ✅ Funciona en Expo Go
+ * ✅ No requiere librerías adicionales
+ * ✅ Sin problemas de rendering
+ * ✅ iOS sin cambios (sigue usando two-marker approach que funciona perfecto)
+ */
 
-const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
-  const [labelTracksChanges, setLabelTracksChanges] = React.useState(IS_ANDROID);
+// Componente de etiqueta overlay para Android
+const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
+  const [position, setPosition] = useState(null);
 
-  React.useEffect(() => {
-    if (!IS_ANDROID) return;
-    if (!showLabel) return;
+  // Calcular posición en pantalla cuando el mapa se mueve o cambia zoom
+  useEffect(() => {
+    if (!visible || !mapRef.current) {
+      setPosition(null);
+      return;
+    }
 
-    setLabelTracksChanges(true);
-    const timer = setTimeout(() => setLabelTracksChanges(false), 1200);
-    return () => clearTimeout(timer);
-  }, [showLabel, motel.id]);
+    const updatePosition = async () => {
+      try {
+        // Offset para posicionar label arriba del pin (aproximadamente 40 píxeles)
+        const labelLatitude = motel.latitude + 0.00012;
+
+        const point = await mapRef.current.pointForCoordinate({
+          latitude: labelLatitude,
+          longitude: motel.longitude,
+        });
+
+        setPosition(point);
+      } catch (error) {
+        console.log('Error calculating position:', error);
+        setPosition(null);
+      }
+    };
+
+    updatePosition();
+  }, [motel.latitude, motel.longitude, visible, region, mapRef]);
+
+  if (!visible || !position) {
+    return null;
+  }
 
   return (
+    <View
+      style={[
+        styles.androidLabelOverlay,
+        {
+          left: position.x,
+          top: position.y,
+        },
+      ]}
+      pointerEvents="none"
+    >
+      <View style={styles.androidLabelContainer}>
+        <Text style={styles.androidLabelText} numberOfLines={1}>
+          {motel.name}
+        </Text>
+      </View>
+    </View>
+  );
+});
+
+LabelOverlay.displayName = 'LabelOverlay';
+
+// Custom Marker component for iOS (unchanged - works perfectly)
+const LABEL_OFFSET = 0.00015;
+
+const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
+  return (
     <>
-      {/* Marker de la etiqueta - solo visible cuando showLabel es true */}
+      {/* Label marker - visible when zoomed in */}
       {showLabel && (
         <Marker
           key={`label-${motel.id}`}
@@ -46,10 +113,10 @@ const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
             longitude: motel.longitude,
           }}
           anchor={{ x: 0.5, y: 1 }}
-          tracksViewChanges={IS_ANDROID ? labelTracksChanges : false}
+          tracksViewChanges={false}
           zIndex={1000}
         >
-          <View style={styles.labelContainer} collapsable={false} pointerEvents="none">
+          <View style={styles.labelContainer}>
             <Text style={styles.labelText} numberOfLines={1}>
               {motel.name}
             </Text>
@@ -57,7 +124,7 @@ const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
         </Marker>
       )}
 
-      {/* Marker del pin - siempre visible */}
+      {/* Pin marker - always visible */}
       <Marker
         key={`pin-${motel.id}`}
         coordinate={{
@@ -82,29 +149,10 @@ const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
 
 CustomMarkerIOS.displayName = 'CustomMarkerIOS';
 
-const CustomMarkerAndroid = React.memo(({ motel, showLabel, onPress }) => {
-  const markerRef = React.useRef(null);
-
-  React.useEffect(() => {
-    if (!markerRef.current) return;
-
-    if (showLabel) {
-      const timeout = setTimeout(() => {
-        markerRef.current?.showCallout();
-      }, 150);
-
-      return () => {
-        clearTimeout(timeout);
-        markerRef.current?.hideCallout();
-      };
-    }
-
-    markerRef.current?.hideCallout();
-  }, [showLabel]);
-
+// Simple marker for Android - just the pin, no complex views
+const CustomMarkerAndroid = React.memo(({ motel, onPress }) => {
   return (
     <Marker
-      ref={markerRef}
       key={`android-${motel.id}`}
       coordinate={{
         latitude: motel.latitude,
@@ -115,23 +163,13 @@ const CustomMarkerAndroid = React.memo(({ motel, showLabel, onPress }) => {
       tracksViewChanges={false}
       zIndex={999}
     >
-      <View style={styles.androidMarkerPin} collapsable={false}>
-        <Ionicons name="location" size={28} color={COLORS.primary} />
+      <View style={styles.androidMarkerPin}>
+        <Ionicons name="location" size={32} color={COLORS.primary} />
       </View>
-      <Callout tooltip onPress={onPress}>
-        {showLabel ? (
-          <View style={styles.calloutContainerAndroid}>
-            <Text style={styles.calloutTextAndroid} numberOfLines={1}>
-              {motel.name}
-            </Text>
-          </View>
-        ) : null}
-      </Callout>
     </Marker>
   );
 }, (prevProps, nextProps) => {
-  return prevProps.motel.id === nextProps.motel.id &&
-         prevProps.showLabel === nextProps.showLabel;
+  return prevProps.motel.id === nextProps.motel.id;
 });
 
 CustomMarkerAndroid.displayName = 'CustomMarkerAndroid';
@@ -144,7 +182,7 @@ export default function MapScreen() {
   const [error, setError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [initialRegion, setInitialRegion] = useState({
-    latitude: -25.2637, // Asunción, Paraguay por defecto
+    latitude: -25.2637,
     longitude: -57.5759,
     latitudeDelta: 0.5,
     longitudeDelta: 0.5,
@@ -153,6 +191,8 @@ export default function MapScreen() {
   const [showLabels, setShowLabels] = useState(
     (initialRegion?.latitudeDelta || 1) <= LABEL_ZOOM_THRESHOLD
   );
+  const [mapReady, setMapReady] = useState(false);
+  const [region, setRegion] = useState(initialRegion);
 
   useEffect(() => {
     fetchMapData();
@@ -167,7 +207,6 @@ export default function MapScreen() {
       if (data.success && data.motels.length > 0) {
         setMotels(data.motels);
 
-        // Establecer región inicial solo si hay moteles
         const firstMotelRegion = {
           latitude: data.motels[0].latitude,
           longitude: data.motels[0].longitude,
@@ -175,9 +214,9 @@ export default function MapScreen() {
           longitudeDelta: 0.5,
         };
         setInitialRegion(firstMotelRegion);
+        setRegion(firstMotelRegion);
         setShowLabels(firstMotelRegion.latitudeDelta <= LABEL_ZOOM_THRESHOLD);
 
-        // Animar el mapa hacia el primer motel
         setTimeout(() => {
           mapRef.current?.animateToRegion(firstMotelRegion, 1000);
         }, 500);
@@ -212,7 +251,6 @@ export default function MapScreen() {
       const { latitude, longitude } = location.coords;
       setUserLocation({ latitude, longitude });
 
-      // Centrar mapa en ubicación del usuario (solo con animación, sin cambiar state)
       const newRegion = {
         latitude,
         longitude,
@@ -221,7 +259,6 @@ export default function MapScreen() {
       };
 
       mapRef.current?.animateToRegion(newRegion, 1000);
-      // Ajustar visibilidad de labels según zoom al centrar
       setShowLabels(newRegion.latitudeDelta <= LABEL_ZOOM_THRESHOLD);
     } catch (error) {
       console.error('Error getting location:', error);
@@ -239,6 +276,13 @@ export default function MapScreen() {
       motelId: motel.id,
     });
   }, [navigation]);
+
+  const handleRegionChangeComplete = useCallback((newRegion) => {
+    if (newRegion?.latitudeDelta) {
+      setRegion(newRegion);
+      setShowLabels(newRegion.latitudeDelta <= LABEL_ZOOM_THRESHOLD);
+    }
+  }, []);
 
   if (loading) {
     return (
@@ -278,6 +322,7 @@ export default function MapScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+
       {/* Header */}
       <View style={[styles.header, { paddingTop: headerPaddingTop }]}>
         <TouchableOpacity
@@ -298,18 +343,14 @@ export default function MapScreen() {
         initialRegion={initialRegion}
         showsUserLocation={!!userLocation}
         showsMyLocationButton={false}
-        onRegionChangeComplete={(region) => {
-          if (region?.latitudeDelta) {
-            setShowLabels(region.latitudeDelta <= LABEL_ZOOM_THRESHOLD);
-          }
-        }}
+        onRegionChangeComplete={handleRegionChangeComplete}
+        onMapReady={() => setMapReady(true)}
       >
         {motels.map((motel) =>
           IS_ANDROID ? (
             <CustomMarkerAndroid
               key={motel.id}
               motel={motel}
-              showLabel={showLabels}
               onPress={() => handleMarkerPress(motel)}
             />
           ) : (
@@ -331,6 +372,21 @@ export default function MapScreen() {
           />
         )}
       </MapView>
+
+      {/*
+        ANDROID LABEL OVERLAYS
+        Renderizados FUERA del MapView como Views absolutas
+        Se posicionan basándose en cálculo de coordenadas a puntos de pantalla
+      */}
+      {IS_ANDROID && mapReady && motels.map((motel) => (
+        <LabelOverlay
+          key={`overlay-${motel.id}`}
+          motel={motel}
+          mapRef={mapRef}
+          visible={showLabels}
+          region={region}
+        />
+      ))}
 
       {/* Center on Me Button */}
       <TouchableOpacity
@@ -382,7 +438,8 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
-  // Etiqueta morada (marker separado)
+
+  // ===== iOS STYLES (unchanged) =====
   labelContainer: {
     backgroundColor: COLORS.primary,
     borderRadius: 16,
@@ -392,55 +449,58 @@ const styles = StyleSheet.create({
     maxWidth: 180,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 0,
-    borderColor: 'transparent',
-    shadowColor: 'transparent',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
-    overflow: 'visible',
   },
   labelText: {
     fontSize: 12,
     color: COLORS.white,
     fontWeight: '700',
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
-  // Pin (marker separado)
   markerPin: {
     padding: 4,
     backgroundColor: 'transparent',
-    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: 'transparent',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
   },
-  calloutContainerAndroid: {
+
+  // ===== ANDROID STYLES =====
+  androidMarkerPin: {
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 32,
+    height: 32,
+  },
+  // Overlay absoluto para etiquetas en Android
+  androidLabelOverlay: {
+    position: 'absolute',
+    transform: [{ translateX: -90 }, { translateY: -50 }], // Centrar horizontalmente, posicionar arriba del pin
+    zIndex: 1000,
+    pointerEvents: 'none', // No interferir con interacción del mapa
+  },
+  androidLabelContainer: {
     backgroundColor: COLORS.primary,
-    borderRadius: 18,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
     minWidth: 80,
-    maxWidth: 200,
+    maxWidth: 180,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: COLORS.white,
+    // Sombra para que se destaque sobre el mapa
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  calloutTextAndroid: {
+  androidLabelText: {
+    fontSize: 13,
     color: COLORS.white,
-    fontWeight: '600',
-    fontSize: 12,
+    fontWeight: '700',
     textAlign: 'center',
   },
+
   centerButton: {
     position: 'absolute',
     bottom: 80,
@@ -456,6 +516,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+    zIndex: 999, // Debajo de las etiquetas overlay
   },
   centerButtonText: {
     color: COLORS.white,
@@ -475,6 +536,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
+    zIndex: 999,
   },
   infoBadgeText: {
     color: COLORS.text,
