@@ -177,6 +177,7 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
           onChangeText={setSearchValue}
           returnKeyType="search"
           onSubmitEditing={triggerSearch}
+          placeholderTextColor={COLORS.muted}
         />
         <TouchableOpacity style={styles.searchAction} onPress={triggerSearch}>
           <Animated.View style={animatedArrowIconStyle}>
@@ -253,6 +254,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     flex: 1,
     color: COLORS.text,
+    fontWeight: '600',
   },
   searchAction: {
     width: 28,

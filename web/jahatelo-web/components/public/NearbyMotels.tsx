@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import MotelCard from './MotelCard';
 
-const MapComponent = dynamic(() => import('./MapComponent'), {
+const GoogleMapComponent = dynamic(() => import('./GoogleMapComponent'), {
   ssr: false,
   loading: () => (
     <div className="h-full w-full bg-gray-100 flex items-center justify-center">
@@ -233,7 +233,7 @@ export default function NearbyMotels() {
 
       {/* Map */}
       <div className="mb-8 h-96 rounded-2xl overflow-hidden shadow-lg border border-gray-200">
-        <MapComponent
+        <GoogleMapComponent
           motels={nearbyMotels.map((motel) => ({
             id: motel.id,
             name: motel.name,

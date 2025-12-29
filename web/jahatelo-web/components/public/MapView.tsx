@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import 'leaflet/dist/leaflet.css';
 
-// Dynamic import to avoid SSR issues with Leaflet
-const MapComponent = dynamic(() => import('./MapComponent'), {
+// Dynamic import to avoid SSR issues with Google Maps
+const GoogleMapComponent = dynamic(() => import('./GoogleMapComponent'), {
   ssr: false,
   loading: () => (
     <div className="h-full w-full flex items-center justify-center bg-gray-100">
@@ -105,5 +104,5 @@ export default function MapView() {
     );
   }
 
-  return <MapComponent motels={motels} />;
+  return <GoogleMapComponent motels={motels} />;
 }

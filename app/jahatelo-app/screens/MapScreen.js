@@ -160,13 +160,13 @@ const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
           latitude: motel.latitude,
           longitude: motel.longitude,
         }}
-        anchor={{ x: 0.5, y: 0.5 }}
+        anchor={{ x: 0.5, y: 1 }}
         onPress={onPress}
         tracksViewChanges={false}
         zIndex={999}
       >
         <View style={styles.markerPin}>
-          <Ionicons name="heart" size={26} color={COLORS.primary} />
+          <Ionicons name="location" size={28} color={COLORS.primary} />
         </View>
       </Marker>
     </>

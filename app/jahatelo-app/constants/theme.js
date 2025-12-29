@@ -25,6 +25,7 @@ export const COLORS = {
   text: '#2E0338',
   textLight: '#6A5E6E',
   textMuted: '#9CA3AF',
+  muted: '#9CA3AF',
 
   // Colores de acento
   accent: '#8E2DE2',

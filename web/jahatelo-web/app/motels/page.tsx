@@ -4,6 +4,7 @@ import MotelCard from '@/components/public/MotelCard';
 import MotelFilters from '@/components/public/MotelFilters';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import Link from 'next/link';
 
 interface MotelsPageProps {
   searchParams: Promise<{
@@ -177,14 +178,12 @@ export default async function MotelsPage({ searchParams }: MotelsPageProps) {
                   Intenta ajustar los filtros para encontrar lo que buscas.
                 </p>
                 {(city || neighborhood || search) && (
-                  <button
-                    onClick={() => {
-                      window.location.href = '/motels';
-                    }}
+                  <Link
+                    href="/motels"
                     className="inline-block px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
                   >
                     Ver todos los moteles
-                  </button>
+                  </Link>
                 )}
               </div>
             )}
