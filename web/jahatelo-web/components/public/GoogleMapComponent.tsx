@@ -69,6 +69,20 @@ export default function GoogleMapComponent({
     script.onerror = () => setError('Error al cargar Google Maps');
     document.head.appendChild(script);
 
+    // Inject custom CSS for map labels
+    const style = document.createElement('style');
+    style.textContent = `
+      .gm-style div[style*="font-weight"] {
+        background: white !important;
+        padding: 4px 8px !important;
+        border-radius: 6px !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+        white-space: nowrap !important;
+        border: 1px solid rgba(0,0,0,0.1) !important;
+      }
+    `;
+    document.head.appendChild(style);
+
     return () => {
       // Cleanup: no removemos el script porque puede ser reutilizado
     };
@@ -111,7 +125,7 @@ export default function GoogleMapComponent({
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
 
-    // Custom purple pin SVG
+    // Custom purple pin SVG for ALL motels
     const purplePinSVG = `
       <svg width="32" height="45" viewBox="0 0 32 45" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 29 16 29s16-17 16-29c0-8.837-7.163-16-16-16z" fill="#8E2DE2"/>
@@ -119,7 +133,7 @@ export default function GoogleMapComponent({
       </svg>
     `;
 
-    // Red pin for promos
+    // Red pin for user location ONLY
     const redPinSVG = `
       <svg width="32" height="45" viewBox="0 0 32 45" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 29 16 29s16-17 16-29c0-8.837-7.163-16-16-16z" fill="#EF4444"/>
@@ -131,12 +145,14 @@ export default function GoogleMapComponent({
       url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(purplePinSVG)}`,
       scaledSize: new window.google.maps.Size(32, 45),
       anchor: new window.google.maps.Point(16, 45),
+      labelOrigin: new window.google.maps.Point(16, -8),
     };
 
     const redPinIcon = {
       url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(redPinSVG)}`,
       scaledSize: new window.google.maps.Size(32, 45),
       anchor: new window.google.maps.Point(16, 45),
+      labelOrigin: new window.google.maps.Point(16, -8),
     };
 
     // Create markers for each motel
@@ -145,7 +161,14 @@ export default function GoogleMapComponent({
         position: { lat: motel.latitude, lng: motel.longitude },
         map: googleMapRef.current,
         title: motel.name,
-        icon: motel.hasPromo ? redPinIcon : purplePinIcon,
+        icon: purplePinIcon, // ALL motels have purple pin
+        label: {
+          text: motel.name,
+          color: '#2E0338',
+          fontSize: '12px',
+          fontWeight: '600',
+          className: 'map-marker-label',
+        },
       });
 
       // Create InfoWindow with custom content
@@ -209,29 +232,36 @@ export default function GoogleMapComponent({
       circleRef.current.setMap(null);
     }
 
-    // Blue pin for user location
-    const bluePinSVG = `
+    // Red pin for user location ONLY
+    const redUserPinSVG = `
       <svg width="32" height="45" viewBox="0 0 32 45" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 29 16 29s16-17 16-29c0-8.837-7.163-16-16-16z" fill="#3B82F6"/>
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 29 16 29s16-17 16-29c0-8.837-7.163-16-16-16z" fill="#EF4444"/>
         <circle cx="16" cy="16" r="6" fill="white"/>
       </svg>
     `;
 
-    const bluePinIcon = {
-      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(bluePinSVG)}`,
+    const redUserPinIcon = {
+      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(redUserPinSVG)}`,
       scaledSize: new window.google.maps.Size(32, 45),
       anchor: new window.google.maps.Point(16, 45),
+      labelOrigin: new window.google.maps.Point(16, -8),
     };
 
     const marker = new window.google.maps.Marker({
       position: { lat: location[0], lng: location[1] },
       map: googleMapRef.current,
       title: 'Tu ubicación',
-      icon: bluePinIcon,
+      icon: redUserPinIcon,
+      label: {
+        text: 'Tu ubicación',
+        color: '#DC2626',
+        fontSize: '12px',
+        fontWeight: '600',
+      },
     });
 
     const infoWindow = new window.google.maps.InfoWindow({
-      content: '<div style="padding: 8px;"><p style="font-weight: 600; color: #3B82F6; margin: 0;">Tu ubicación</p></div>',
+      content: '<div style="padding: 8px;"><p style="font-weight: 600; color: #EF4444; margin: 0;">Tu ubicación</p></div>',
     });
 
     marker.addListener('click', () => {
