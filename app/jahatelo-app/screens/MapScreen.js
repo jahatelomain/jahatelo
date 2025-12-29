@@ -45,11 +45,17 @@ const IS_ANDROID = Platform.OS === 'android';
 const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
   const [position, setPosition] = useState(null);
   const updateTimerRef = useRef(null);
+  const isUpdatingRef = useRef(false);
 
   // Calcular posición en pantalla cuando el mapa se mueve o cambia zoom
   useEffect(() => {
     if (!visible || !mapRef.current) {
       // No setear a null para evitar parpadeo - mantener última posición
+      return;
+    }
+
+    // Si ya hay una actualización en curso, no iniciar otra
+    if (isUpdatingRef.current) {
       return;
     }
 
@@ -59,9 +65,13 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
     }
 
     const updatePosition = async () => {
+      if (!mapRef.current) return;
+
+      isUpdatingRef.current = true;
+
       try {
-        // Offset pequeño para posicionar label justo arriba del pin (como iOS)
-        const labelLatitude = motel.latitude + 0.0001;
+        // Offset muy pequeño para posicionar label justo arriba del pin
+        const labelLatitude = motel.latitude + 0.00008;
 
         const point = await mapRef.current.pointForCoordinate({
           latitude: labelLatitude,
@@ -73,15 +83,16 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
           setPosition(point);
         }
       } catch (error) {
-        console.log('Error calculating position:', error);
         // Mantener posición anterior en caso de error
+      } finally {
+        isUpdatingRef.current = false;
       }
     };
 
-    // Debounce: solo actualizar después de 100ms sin cambios (cuando el usuario para de mover)
+    // Debounce más agresivo: solo actualizar después de 250ms sin cambios
     updateTimerRef.current = setTimeout(() => {
       updatePosition();
-    }, 100);
+    }, 250);
 
     return () => {
       if (updateTimerRef.current) {
@@ -515,17 +526,17 @@ const styles = StyleSheet.create({
   // Overlay absoluto para etiquetas en Android
   androidLabelOverlay: {
     position: 'absolute',
-    transform: [{ translateX: -90 }, { translateY: -15 }], // Centrar horizontalmente, posicionar justo arriba del pin
+    transform: [{ translateX: -90 }, { translateY: -10 }], // Centrar horizontalmente, posicionar pegado al pin
     zIndex: 1000,
     pointerEvents: 'none', // No interferir con interacción del mapa
   },
   androidLabelContainer: {
     backgroundColor: COLORS.primary,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    minWidth: 80,
-    maxWidth: 180,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minWidth: 70,
+    maxWidth: 170,
     alignItems: 'center',
     justifyContent: 'center',
     // Sombra para que se destaque sobre el mapa
@@ -536,7 +547,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   androidLabelText: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.white,
     fontWeight: '700',
     textAlign: 'center',
