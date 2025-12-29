@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -44,6 +44,7 @@ const IS_ANDROID = Platform.OS === 'android';
 // Componente de etiqueta overlay para Android
 const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
   const [position, setPosition] = useState(null);
+  const updateTimerRef = useRef(null);
 
   // Calcular posición en pantalla cuando el mapa se mueve o cambia zoom
   useEffect(() => {
@@ -52,10 +53,15 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
       return;
     }
 
+    // Limpiar timer anterior
+    if (updateTimerRef.current) {
+      clearTimeout(updateTimerRef.current);
+    }
+
     const updatePosition = async () => {
       try {
-        // Offset para posicionar label arriba del pin (aproximadamente 40 píxeles)
-        const labelLatitude = motel.latitude + 0.00012;
+        // Offset pequeño para posicionar label justo arriba del pin (como iOS)
+        const labelLatitude = motel.latitude + 0.0001;
 
         const point = await mapRef.current.pointForCoordinate({
           latitude: labelLatitude,
@@ -72,10 +78,16 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
       }
     };
 
-    // Usar requestAnimationFrame para suavizar la actualización
-    requestAnimationFrame(() => {
+    // Debounce: solo actualizar después de 100ms sin cambios (cuando el usuario para de mover)
+    updateTimerRef.current = setTimeout(() => {
       updatePosition();
-    });
+    }, 100);
+
+    return () => {
+      if (updateTimerRef.current) {
+        clearTimeout(updateTimerRef.current);
+      }
+    };
   }, [motel.latitude, motel.longitude, visible, region, mapRef]);
 
   if (!visible || !position) {
@@ -143,7 +155,7 @@ const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
         zIndex={999}
       >
         <View style={styles.markerPin}>
-          <Ionicons name="location" size={28} color={COLORS.primary} />
+          <Ionicons name="heart" size={26} color={COLORS.primary} />
         </View>
       </Marker>
     </>
@@ -503,7 +515,7 @@ const styles = StyleSheet.create({
   // Overlay absoluto para etiquetas en Android
   androidLabelOverlay: {
     position: 'absolute',
-    transform: [{ translateX: -90 }, { translateY: -50 }], // Centrar horizontalmente, posicionar arriba del pin
+    transform: [{ translateX: -90 }, { translateY: -15 }], // Centrar horizontalmente, posicionar justo arriba del pin
     zIndex: 1000,
     pointerEvents: 'none', // No interferir con interacción del mapa
   },
