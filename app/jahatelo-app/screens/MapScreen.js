@@ -83,56 +83,44 @@ const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
 CustomMarkerIOS.displayName = 'CustomMarkerIOS';
 
 const CustomMarkerAndroid = React.memo(({ motel, showLabel, onPress }) => {
-  const [labelTracksChanges, setLabelTracksChanges] = React.useState(true);
+  const [tracksChanges, setTracksChanges] = React.useState(true);
 
   React.useEffect(() => {
-    if (!showLabel) return;
-    setLabelTracksChanges(true);
-    const timer = setTimeout(() => setLabelTracksChanges(false), 800);
+    setTracksChanges(true);
+    const timer = setTimeout(() => setTracksChanges(false), 800);
     return () => clearTimeout(timer);
   }, [showLabel, motel.id]);
 
   return (
-    <>
-      {showLabel && (
-        <Marker
-          key={`android-label-${motel.id}`}
-          coordinate={{
-            latitude: motel.latitude + LABEL_OFFSET,
-            longitude: motel.longitude,
-          }}
-          anchor={{ x: 0.5, y: 1 }}
-          tracksViewChanges={labelTracksChanges}
-          zIndex={1000}
-        >
-          <View
-            style={styles.androidLabelContainer}
-            collapsable={false}
-            pointerEvents="none"
-          >
+    <Marker
+      key={`android-${motel.id}`}
+      coordinate={{
+        latitude: motel.latitude,
+        longitude: motel.longitude,
+      }}
+      anchor={{ x: 0.5, y: 1 }}
+      onPress={onPress}
+      tracksViewChanges={tracksChanges}
+      zIndex={999}
+    >
+      <View
+        style={styles.androidMarkerWrapper}
+        collapsable={false}
+        pointerEvents="none"
+        renderToHardwareTextureAndroid
+      >
+        {showLabel && (
+          <View style={styles.androidLabelContainer} collapsable={false}>
             <Text style={styles.androidLabelText} numberOfLines={1}>
               {motel.name}
             </Text>
           </View>
-        </Marker>
-      )}
-
-      <Marker
-        key={`android-pin-${motel.id}`}
-        coordinate={{
-          latitude: motel.latitude,
-          longitude: motel.longitude,
-        }}
-        anchor={{ x: 0.5, y: 0.5 }}
-        onPress={onPress}
-        tracksViewChanges={false}
-        zIndex={999}
-      >
+        )}
         <View style={styles.androidMarkerPin} collapsable={false}>
           <Ionicons name="location" size={28} color={COLORS.primary} />
         </View>
-      </Marker>
-    </>
+      </View>
+    </Marker>
   );
 }, (prevProps, nextProps) => {
   return prevProps.motel.id === nextProps.motel.id &&
@@ -431,17 +419,29 @@ const styles = StyleSheet.create({
   androidLabelContainer: {
     backgroundColor: COLORS.primary,
     borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    minWidth: 60,
-    maxWidth: 160,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    minWidth: 80,
+    maxWidth: 180,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 0,
+    borderColor: 'transparent',
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   androidLabelText: {
     color: COLORS.white,
     fontWeight: '600',
     fontSize: 12,
     textAlign: 'center',
+  },
+  androidMarkerWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   centerButton: {
     position: 'absolute',
