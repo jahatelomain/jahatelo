@@ -33,16 +33,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-// Custom icon for motels with promos
-const promoIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
 // Component to update map view when needed
 function MapUpdater({ center }: { center: [number, number] }) {
   const map = useMap();
@@ -56,6 +46,34 @@ export default function MapComponent({ motels, showRadius, initialUserLocation }
   const mapRef = useRef<L.Map | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(initialUserLocation || null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([4.6097, -74.0817]); // Bogotá por defecto
+  const [iconsReady, setIconsReady] = useState(false);
+  const [promoIcon, setPromoIcon] = useState<L.Icon | undefined>();
+  const [userLocationIcon, setUserLocationIcon] = useState<L.Icon | undefined>();
+
+  // Create icons only after component mounts on client
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !iconsReady) {
+      setPromoIcon(new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      }));
+
+      setUserLocationIcon(new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      }));
+
+      setIconsReady(true);
+    }
+  }, [iconsReady]);
 
   // Calculate center based on motels or use first motel
   const defaultCenter = useMemo(() => {
@@ -121,13 +139,14 @@ export default function MapComponent({ motels, showRadius, initialUserLocation }
         />
 
         {/* Cluster markers */}
-        <MarkerClusterGroup chunkedLoading>
-          {motels.map((motel) => (
-            <Marker
-              key={motel.id}
-              position={[motel.latitude, motel.longitude]}
-              icon={motel.hasPromo ? promoIcon : undefined}
-            >
+        {iconsReady && (
+          <MarkerClusterGroup chunkedLoading>
+            {motels.map((motel) => (
+              <Marker
+                key={motel.id}
+                position={[motel.latitude, motel.longitude]}
+                icon={motel.hasPromo ? promoIcon : undefined}
+              >
               <Popup>
                 <div className="min-w-[250px]">
                   {motel.featuredPhoto && (
@@ -157,25 +176,17 @@ export default function MapComponent({ motels, showRadius, initialUserLocation }
                   </Link>
                 </div>
               </Popup>
-            </Marker>
-          ))}
-        </MarkerClusterGroup>
+              </Marker>
+            ))}
+          </MarkerClusterGroup>
+        )}
 
         {/* User location marker */}
-        {userLocation && (
+        {userLocation && iconsReady && (
           <>
             <Marker
               position={userLocation}
-              icon={
-                new L.Icon({
-                  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-                  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                  iconSize: [25, 41],
-                  iconAnchor: [12, 41],
-                  popupAnchor: [1, -34],
-                  shadowSize: [41, 41],
-                })
-              }
+              icon={userLocationIcon}
             >
               <Popup>
                 <div className="text-center">
