@@ -127,49 +127,31 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
 
 LabelOverlay.displayName = 'LabelOverlay';
 
-// Custom Marker component for iOS (unchanged - works perfectly)
-const LABEL_OFFSET = 0.00015;
-
+// Custom Marker component for iOS - etiqueta encima del pin
 const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
   return (
-    <>
-      {/* Label marker - visible when zoomed in */}
-      {showLabel && (
-        <Marker
-          key={`label-${motel.id}`}
-          coordinate={{
-            latitude: motel.latitude + LABEL_OFFSET,
-            longitude: motel.longitude,
-          }}
-          anchor={{ x: 0.5, y: 1 }}
-          tracksViewChanges={false}
-          zIndex={1000}
-        >
-          <View style={styles.labelContainer}>
-            <Text style={styles.labelText} numberOfLines={1}>
+    <Marker
+      coordinate={{
+        latitude: motel.latitude,
+        longitude: motel.longitude,
+      }}
+      anchor={{ x: 0.5, y: 1 }}
+      onPress={onPress}
+      tracksViewChanges={false}
+    >
+      <View style={styles.iosMarkerContainer}>
+        {/* Etiqueta arriba - solo visible cuando showLabel es true */}
+        {showLabel && (
+          <View style={styles.iosLabel}>
+            <Text style={styles.iosLabelText} numberOfLines={1}>
               {motel.name}
             </Text>
           </View>
-        </Marker>
-      )}
-
-      {/* Pin marker - always visible */}
-      <Marker
-        key={`pin-${motel.id}`}
-        coordinate={{
-          latitude: motel.latitude,
-          longitude: motel.longitude,
-        }}
-        anchor={{ x: 0.5, y: 1 }}
-        onPress={onPress}
-        tracksViewChanges={false}
-        zIndex={999}
-      >
-        <View style={styles.markerPin}>
-          <Ionicons name="location" size={28} color={COLORS.primary} />
-        </View>
-      </Marker>
-    </>
+        )}
+        {/* Pin abajo - siempre visible */}
+        <Ionicons name="location" size={28} color={COLORS.primary} style={styles.iosPin} />
+      </View>
+    </Marker>
   );
 }, (prevProps, nextProps) => {
   return prevProps.motel.id === nextProps.motel.id &&
@@ -478,28 +460,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // ===== iOS STYLES (unchanged) =====
-  labelContainer: {
+  // ===== iOS STYLES =====
+  iosMarkerContainer: {
+    alignItems: 'center',
+  },
+  iosLabel: {
     backgroundColor: COLORS.primary,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    marginBottom: 6,
+    zIndex: 2,
     minWidth: 60,
     maxWidth: 180,
     alignItems: 'center',
-    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  labelText: {
-    fontSize: 12,
+  iosLabelText: {
     color: COLORS.white,
     fontWeight: '700',
+    fontSize: 13,
     textAlign: 'center',
   },
-  markerPin: {
-    padding: 4,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
+  iosPin: {
+    zIndex: 1,
   },
 
   // ===== ANDROID STYLES =====
