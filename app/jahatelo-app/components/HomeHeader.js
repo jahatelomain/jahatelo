@@ -138,9 +138,9 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
   }));
 
   const paddingTop = Platform.select({
-    ios: insets.top + 6,
-    android: insets.top + 16,
-    default: insets.top + 16,
+    ios: insets.top + 2,
+    android: insets.top + 8,
+    default: insets.top + 8,
   });
 
   return (
