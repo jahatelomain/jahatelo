@@ -69,16 +69,20 @@ export default function GoogleMapComponent({
     script.onerror = () => setError('Error al cargar Google Maps');
     document.head.appendChild(script);
 
-    // Inject custom CSS for map labels
+    // Inject custom CSS for map labels (iOS-style)
     const style = document.createElement('style');
     style.textContent = `
       .gm-style div[style*="font-weight"] {
-        background: white !important;
-        padding: 4px 8px !important;
-        border-radius: 6px !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+        background: rgba(255, 255, 255, 0.95) !important;
+        padding: 6px 12px !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
         white-space: nowrap !important;
-        border: 1px solid rgba(0,0,0,0.1) !important;
+        border: 0.5px solid rgba(0, 0, 0, 0.08) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+        letter-spacing: -0.01em !important;
       }
     `;
     document.head.appendChild(style);
@@ -164,9 +168,9 @@ export default function GoogleMapComponent({
         icon: purplePinIcon, // ALL motels have purple pin
         label: {
           text: motel.name,
-          color: '#2E0338',
-          fontSize: '12px',
-          fontWeight: '600',
+          color: '#1C1C1E',
+          fontSize: '13px',
+          fontWeight: '500',
           className: 'map-marker-label',
         },
       });
@@ -255,8 +259,8 @@ export default function GoogleMapComponent({
       label: {
         text: 'Tu ubicación',
         color: '#DC2626',
-        fontSize: '12px',
-        fontWeight: '600',
+        fontSize: '13px',
+        fontWeight: '500',
       },
     });
 
