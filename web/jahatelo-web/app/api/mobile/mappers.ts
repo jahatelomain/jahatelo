@@ -109,10 +109,28 @@ export function hasActivePromos(promos?: Promo[]): boolean {
 }
 
 /**
+ * Obtiene la primera promo activa de un motel
+ */
+function getFirstActivePromo(promos?: Promo[]) {
+  if (!promos || promos.length === 0) return null;
+
+  const now = new Date();
+  const activePromo = promos.find((promo) => {
+    if (!promo.isActive) return false;
+    if (promo.validFrom && promo.validFrom > now) return false;
+    if (promo.validUntil && promo.validUntil < now) return false;
+    return true;
+  });
+
+  return activePromo || null;
+}
+
+/**
  * Mapea un Motel con relaciones al formato de listado para mobile
  */
 export function mapMotelToListItem(motel: MotelForList) {
   const hasPromotions = hasActivePromos(motel.promos);
+  const firstPromo = getFirstActivePromo(motel.promos);
 
   return {
     id: motel.id,
@@ -141,6 +159,10 @@ export function mapMotelToListItem(motel: MotelForList) {
     thumbnail: getThumbnail(motel.photos, motel.featuredPhoto),
     photos: getListPhotos(motel.photos, motel.featuredPhoto),
     featuredPhoto: motel.featuredPhoto,
+    // Incluir datos de la primera promo activa para el carrusel
+    promoImageUrl: firstPromo?.imageUrl || null,
+    promoTitle: firstPromo?.title || null,
+    promoDescription: firstPromo?.description || null,
   };
 }
 

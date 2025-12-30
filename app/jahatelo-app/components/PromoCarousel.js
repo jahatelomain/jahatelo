@@ -24,10 +24,12 @@ const COLORS = {
 };
 
 const PromoCard = ({ motel, onPress, index, scrollX }) => {
+  // Priorizar imagen de la promo, luego thumbnail del motel, luego fallback
   const image =
+    motel.promoImageUrl ||
+    motel.thumbnail ||
     motel.photos?.[0]?.url ||
     motel.fotos?.[0] ||
-    motel.thumbnail ||
     'https://images.unsplash.com/photo-1559599238-4b9b034d4e9e?auto=format&fit=crop&w=1400&q=80';
 
   const inputRange = [
