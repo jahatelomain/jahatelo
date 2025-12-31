@@ -1,42 +1,25 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Jahatelo Brand Colors */
+  --color-primary: #822DE2;
+  --color-pink: #F56565;
+  --color-pink-dark: #D53F8C;
+  --color-grey: #424A54;
+  --color-white: #FFFFFF;
+
+  /* Gradiente de marca (rosa a morado) */
+  --gradient-brand: linear-gradient(135deg, #F56565 0%, #D53F8C 50%, #822DE2 100%);
+
+  /* Fuente principal */
+  --font-family: var(--font-lato), 'Lato', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    font-family: var(--font-family);
+    color: var(--color-grey);
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-.admin-theme {
-  color: #0f172a;
-}
-
-.admin-theme .text-slate-300,
-.admin-theme .text-slate-400,
-.admin-theme .text-slate-500,
-.admin-theme .text-slate-600,
-.admin-theme .text-slate-700 {
-  color: #0f172a !important;
-}
-
-.admin-theme .text-white {
-  color: #ffffff !important;
 }
