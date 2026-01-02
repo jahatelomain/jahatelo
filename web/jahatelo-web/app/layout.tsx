@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Lato } from "next/font/google";
 import "./globals.css";
 
@@ -7,6 +7,10 @@ const lato = Lato({
   variable: "--font-lato",
   subsets: ["latin"],
 });
+
+export const viewport: Viewport = {
+  themeColor: '#822DE2',
+};
 
 export const metadata: Metadata = {
   title: "Jahatelo - Encuentra tu motel ideal",
@@ -54,7 +58,6 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/manifest.json',
-  themeColor: '#822DE2',
 };
 
 export default function RootLayout({
@@ -64,9 +67,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <head>
-        <meta name="theme-color" content="#822DE2" />
-      </head>
       <body className={`${lato.variable} antialiased`}>
         {children}
       </body>
