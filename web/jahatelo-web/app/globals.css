@@ -1,8 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
+  --background: #ffffff;
+  --foreground: #424A54;
+
   /* Jahatelo Brand Colors */
   --color-primary: #822DE2;
   --color-pink: #F56565;
@@ -17,9 +18,37 @@
   --font-family: var(--font-lato), 'Lato', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-@layer base {
-  body {
-    font-family: var(--font-family);
-    color: var(--color-grey);
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-lato);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #ffffff;
+    --foreground: #424A54;
   }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-family);
+}
+
+.admin-theme {
+  color: #0f172a;
+}
+
+.admin-theme .text-slate-300,
+.admin-theme .text-slate-400,
+.admin-theme .text-slate-500,
+.admin-theme .text-slate-600,
+.admin-theme .text-slate-700 {
+  color: #0f172a !important;
+}
+
+.admin-theme .text-white {
+  color: #ffffff !important;
 }
