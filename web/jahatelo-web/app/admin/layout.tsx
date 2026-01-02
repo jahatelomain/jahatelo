@@ -141,9 +141,12 @@ export default function AdminLayout({
                   )}
                 </svg>
               </button>
-              <div>
-                <h1 className="text-xl font-bold text-slate-900">Jahatelo Admin</h1>
-                <p className="text-xs text-slate-500 hidden sm:block">Panel de administración</p>
+              <div className="flex items-center gap-2">
+                <img src="/logo-32.png" alt="Jahatelo" className="w-8 h-8" />
+                <div>
+                  <h1 className="text-xl font-bold text-slate-900">Jahatelo Admin</h1>
+                  <p className="text-xs text-slate-500 hidden sm:block">Panel de administración</p>
+                </div>
               </div>
             </div>
 
