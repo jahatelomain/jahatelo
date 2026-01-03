@@ -137,10 +137,12 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
     transform: [{ scale: bellIconScale.value }],
   }));
 
+  // Reduce extra espacio superior respetando el notch en iOS y Android
   const paddingTop = Platform.select({
-    ios: insets.top + 2,
-    android: insets.top + 8,
-    default: insets.top + 8,
+    // Menos margen sobre el botón "Cerca mío". Garantiza un mínimo cómodo.
+    ios: Math.max(insets.top - 6, 8),
+    android: Math.max(insets.top - 4, 12),
+    default: Math.max(insets.top - 4, 12),
   });
 
   return (
