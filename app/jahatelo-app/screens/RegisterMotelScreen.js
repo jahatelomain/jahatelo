@@ -1,20 +1,88 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  Modal,
+  Alert
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS } from '../constants/theme';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
 export default function RegisterMotelScreen({ navigation }) {
-  const handleSendRequest = () => {
-    const email = 'contacto@jahatelo.app';
-    const subject = 'Solicitud de registro de motel';
-    const body = 'Hola equipo de Jahatelo,\n\nQuiero registrar mi motel en la plataforma.\n\nDatos del motel:\n- Nombre:\n- Dirección:\n- Teléfono:\n- Email:\n\nQuedo atento a sus indicaciones.\n\nSaludos.';
+  const [contactName, setContactName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [motelName, setMotelName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-    const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const handleSubmit = async () => {
+    // Validación básica
+    if (!contactName.trim() || !phone.trim() || !motelName.trim()) {
+      Alert.alert('Error', 'Todos los campos son requeridos');
+      return;
+    }
 
-    Linking.openURL(mailtoUrl).catch((err) => {
-      console.error('Error al abrir cliente de email:', err);
-      alert('No se pudo abrir el cliente de email. Por favor, contacta a contacto@jahatelo.app manualmente.');
-    });
+    if (contactName.trim().length < 2) {
+      Alert.alert('Error', 'El nombre de contacto debe tener al menos 2 caracteres');
+      return;
+    }
+
+    if (phone.replace(/\D/g, '').length < 7) {
+      Alert.alert('Error', 'El teléfono debe tener al menos 7 dígitos');
+      return;
+    }
+
+    if (motelName.trim().length < 2) {
+      Alert.alert('Error', 'El nombre del motel debe tener al menos 2 caracteres');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/prospects`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contactName: contactName.trim(),
+          phone: phone.trim(),
+          motelName: motelName.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Limpiar formulario
+        setContactName('');
+        setPhone('');
+        setMotelName('');
+        // Mostrar modal de éxito
+        setShowSuccessModal(true);
+      } else {
+        Alert.alert('Error', data.error || 'Error al enviar los datos');
+      }
+    } catch (error) {
+      console.error('Error al enviar formulario:', error);
+      Alert.alert('Error', 'No se pudo conectar con el servidor. Verifica tu conexión a internet.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowSuccessModal(false);
+    navigation.goBack();
   };
 
   return (
@@ -26,9 +94,9 @@ export default function RegisterMotelScreen({ navigation }) {
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#2A0038" />
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Registrar tu motel</Text>
+        <Text style={styles.headerTitle}>Registrar un motel</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -39,68 +107,102 @@ export default function RegisterMotelScreen({ navigation }) {
       >
         {/* Icon */}
         <View style={styles.iconContainer}>
-          <Ionicons name="business" size={64} color="#FF2E93" />
+          <Ionicons name="business" size={64} color={COLORS.primary} />
         </View>
 
         {/* Main Title */}
-        <Text style={styles.title}>Suma tu motel a Jahatelo</Text>
+        <Text style={styles.title}>Registrá tu motel en Jahatelo</Text>
 
         {/* Description */}
         <Text style={styles.description}>
-          Jahatelo es la plataforma líder para visibilizar moteles en Paraguay.
-          Si tenés un motel y querés aparecer en nuestra app, estamos para ayudarte.
+          Completá los siguientes datos y nos contactaremos en la brevedad posible.
         </Text>
 
-        {/* What we need section */}
-        <View style={styles.infoSection}>
-          <Text style={styles.infoTitle}>¿Qué información necesitamos?</Text>
-          <View style={styles.infoList}>
-            <InfoItem text="Nombre y ubicación del motel" />
-            <InfoItem text="Tipos de habitaciones disponibles" />
-            <InfoItem text="Precios y tarifas" />
-            <InfoItem text="Amenities y servicios" />
-            <InfoItem text="Fotos de alta calidad" />
-            <InfoItem text="Menú de bebidas y alimentos (si aplica)" />
-            <InfoItem text="Datos de contacto" />
+        {/* Form */}
+        <View style={styles.formContainer}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Nombre de contacto</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej: Juan Pérez"
+              placeholderTextColor="#999"
+              value={contactName}
+              onChangeText={setContactName}
+              editable={!loading}
+            />
           </View>
-        </View>
 
-        {/* Process section */}
-        <View style={styles.processSection}>
-          <Text style={styles.processTitle}>Proceso de registro</Text>
-          <Text style={styles.processText}>
-            En esta versión MVP, el registro se realiza de forma manual.
-            Nuestro equipo te contactará para coordinar la carga de información
-            y verificar los datos de tu establecimiento.
-          </Text>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Teléfono</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej: 0981 123 456"
+              placeholderTextColor="#999"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              editable={!loading}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Nombre del motel</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej: Motel Paradise"
+              placeholderTextColor="#999"
+              value={motelName}
+              onChangeText={setMotelName}
+              editable={!loading}
+            />
+          </View>
         </View>
 
         {/* Action button */}
         <TouchableOpacity
-          style={styles.actionButton}
-          onPress={handleSendRequest}
+          style={[styles.actionButton, loading && styles.actionButtonDisabled]}
+          onPress={handleSubmit}
           activeOpacity={0.8}
+          disabled={loading}
         >
-          <Ionicons name="mail" size={20} color="#FFFFFF" style={styles.buttonIcon} />
-          <Text style={styles.actionButtonText}>Enviar solicitud</Text>
+          {loading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <>
+              <Ionicons name="send" size={20} color="#FFFFFF" style={styles.buttonIcon} />
+              <Text style={styles.actionButtonText}>Enviar</Text>
+            </>
+          )}
         </TouchableOpacity>
-
-        {/* Additional info */}
-        <Text style={styles.footerText}>
-          Te responderemos a la brevedad para comenzar el proceso de registro.
-        </Text>
       </ScrollView>
-    </SafeAreaView>
-  );
-}
 
-// Reusable InfoItem Component
-function InfoItem({ text }) {
-  return (
-    <View style={styles.infoItem}>
-      <Ionicons name="checkmark-circle" size={20} color="#FF2E93" />
-      <Text style={styles.infoItemText}>{text}</Text>
-    </View>
+      {/* Success Modal */}
+      <Modal
+        visible={showSuccessModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCloseModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.successIconContainer}>
+              <Ionicons name="checkmark-circle" size={64} color={COLORS.primary} />
+            </View>
+            <Text style={styles.modalTitle}>¡Gracias por tus datos!</Text>
+            <Text style={styles.modalMessage}>
+              Nos contactaremos en la brevedad posible.{'\n'}¡Gracias!
+            </Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={handleCloseModal}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalButtonText}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
@@ -125,7 +227,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2A0038',
+    color: COLORS.text,
   },
   placeholder: {
     width: 32,
@@ -143,7 +245,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: 'bold',
-    color: '#2A0038',
+    color: COLORS.text,
     textAlign: 'center',
     marginBottom: 16,
   },
@@ -154,7 +256,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 32,
   },
-  infoSection: {
+  formContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 20,
@@ -165,58 +267,41 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  infoTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2A0038',
-    marginBottom: 16,
+  inputGroup: {
+    marginBottom: 20,
   },
-  infoList: {
-    gap: 12,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
     marginBottom: 8,
   },
-  infoItemText: {
-    fontSize: 15,
-    color: '#333',
-    marginLeft: 12,
-    flex: 1,
-  },
-  processSection: {
-    backgroundColor: '#FFF9E6',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 32,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FFD700',
-  },
-  processTitle: {
+  input: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2A0038',
-    marginBottom: 12,
-  },
-  processText: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 22,
+    color: COLORS.text,
+    backgroundColor: '#FAFAFA',
   },
   actionButton: {
-    backgroundColor: '#FF2E93',
+    backgroundColor: COLORS.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
     borderRadius: 12,
     marginBottom: 16,
-    shadowColor: '#FF2E93',
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+  },
+  actionButtonDisabled: {
+    opacity: 0.6,
   },
   buttonIcon: {
     marginRight: 8,
@@ -226,11 +311,54 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
-  footerText: {
-    fontSize: 13,
-    color: '#999',
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 32,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  successIconContainer: {
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: 12,
     textAlign: 'center',
-    fontStyle: 'italic',
-    lineHeight: 20,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 28,
+  },
+  modalButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 48,
+    borderRadius: 12,
+    width: '100%',
+  },
+  modalButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
   },
 });

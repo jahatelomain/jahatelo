@@ -40,6 +40,14 @@ enum UserRole {
   USER
 }
 
+enum ProspectStatus {
+  NEW
+  CONTACTED
+  IN_NEGOTIATION
+  WON
+  LOST
+}
+
 // ============================================
 // MOTEL
 // ============================================
@@ -395,4 +403,19 @@ model HomeBanner {
   validUntil  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+// ============================================
+// MOTEL PROSPECTS (leads de registro)
+// ============================================
+
+model MotelProspect {
+  id            String         @id @default(cuid())
+  contactName   String
+  phone         String
+  motelName     String
+  status        ProspectStatus @default(NEW)
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }

@@ -128,12 +128,12 @@ export default function PromoCarousel({ promos = [], onPromoPress }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 12,
+    marginTop: 4, // Reducido de 12 a 4 para acercar a header
     marginBottom: 12,
   },
   curvedContainer: {
     backgroundColor: COLORS.card,
-    paddingTop: 18,
+    paddingTop: 10, // Reducido de 18 a 10 para menos espacio antes del título
     paddingBottom: 22,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,

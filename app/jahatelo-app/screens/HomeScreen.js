@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     overflow: 'hidden',
-    marginBottom: 20,
+    marginBottom: 8, // Reducido de 20 a 8 para acercar header a "Promociones"
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },

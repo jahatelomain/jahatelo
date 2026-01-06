@@ -83,6 +83,7 @@ export default function AdminLayout({
     if (pathname.startsWith('/admin/motels')) return 'Moteles';
     if (pathname.startsWith('/admin/amenities')) return 'Amenities';
     if (pathname.startsWith('/admin/users')) return 'Usuarios';
+    if (pathname.startsWith('/admin/prospects')) return 'Prospects';
     return 'Admin';
   };
 
@@ -92,6 +93,7 @@ export default function AdminLayout({
     { href: '/admin/promos', label: 'Promos', roles: ['SUPERADMIN'] },
     { href: '/admin/amenities', label: 'Amenities', roles: ['SUPERADMIN'] },
     { href: '/admin/users', label: 'Usuarios', roles: ['SUPERADMIN'] },
+    { href: '/admin/prospects', label: 'Prospects', roles: ['SUPERADMIN'] },
   ];
 
   // Filtrar items según el rol del usuario

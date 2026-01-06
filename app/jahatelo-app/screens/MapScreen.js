@@ -42,6 +42,7 @@ const IS_ANDROID = Platform.OS === 'android';
  */
 
 // Componente de etiqueta overlay para Android
+// MÉTODO 2: collapsable={false} + mantener visibilidad durante pan/zoom
 const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
   const [position, setPosition] = useState(null);
   const updateTimerRef = useRef(null);
@@ -101,12 +102,20 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
     };
   }, [motel.latitude, motel.longitude, visible, region, mapRef]);
 
-  if (!visible || !position) {
+  // MÉTODO 2: No ocultar si no hay posición, solo si !visible
+  // Mantener última posición durante recalculación para evitar flicker
+  if (!visible) {
+    return null;
+  }
+
+  // Si aún no hay posición inicial, no renderizar
+  if (!position) {
     return null;
   }
 
   return (
     <View
+      collapsable={false}
       style={[
         styles.androidLabelOverlay,
         {
@@ -116,7 +125,7 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
       ]}
       pointerEvents="none"
     >
-      <View style={styles.androidLabelContainer}>
+      <View collapsable={false} style={styles.androidLabelContainer}>
         <Text style={styles.androidLabelText} numberOfLines={1}>
           {motel.name}
         </Text>
@@ -161,12 +170,13 @@ const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
 CustomMarkerIOS.displayName = 'CustomMarkerIOS';
 
 // Simple marker for Android - just the pin, no complex views
+// MÉTODO 2: collapsable={false} + tracksViewChanges timeout optimizado (400ms)
 const CustomMarkerAndroid = React.memo(({ motel, onPress }) => {
   const [tracksChanges, setTracksChanges] = React.useState(true);
 
-  // Desactivar tracking después del primer render para mejorar performance
+  // MÉTODO 2: Desactivar tracking después de 400ms (rango 300-500ms)
   React.useEffect(() => {
-    const timer = setTimeout(() => setTracksChanges(false), 1000);
+    const timer = setTimeout(() => setTracksChanges(false), 400);
     return () => clearTimeout(timer);
   }, []);
 
@@ -178,12 +188,13 @@ const CustomMarkerAndroid = React.memo(({ motel, onPress }) => {
         longitude: motel.longitude,
       }}
       anchor={{ x: 0.5, y: 0.5 }}
+      centerOffset={{ x: 0, y: 0 }}
       onPress={onPress}
       tracksViewChanges={tracksChanges}
       zIndex={999}
     >
-      <View style={styles.androidMarkerPin}>
-        <View style={styles.markerInner}>
+      <View collapsable={false} style={styles.androidMarkerPin}>
+        <View collapsable={false} style={styles.markerInner}>
           <Ionicons name="heart" size={14} color={COLORS.white} />
         </View>
       </View>
