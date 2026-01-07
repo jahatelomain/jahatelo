@@ -11,6 +11,7 @@ export async function GET() {
         city: true,
         isActive: true,
         featuredPhoto: true,
+        isFinanciallyEnabled: true,
       },
       orderBy: {
         name: 'asc',

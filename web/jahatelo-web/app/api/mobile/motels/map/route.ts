@@ -29,6 +29,7 @@ export async function GET() {
         latitude: true,
         longitude: true,
         featuredPhoto: true,
+        isFinanciallyEnabled: true,
         photos: {
           select: {
             id: true,

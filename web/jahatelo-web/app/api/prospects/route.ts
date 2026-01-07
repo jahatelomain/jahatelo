@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { contactName, phone, motelName } = body;
+    const { contactName, phone, motelName, channel } = body;
 
     // Validación básica
     if (!contactName || !phone || !motelName) {
@@ -39,12 +39,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validar canal si se proporciona
+    const validChannels = ['WEB', 'APP', 'MANUAL'];
+    const finalChannel = channel && validChannels.includes(channel) ? channel : 'WEB';
+
     // Crear prospect
     const prospect = await prisma.motelProspect.create({
       data: {
         contactName: contactName.trim(),
         phone: phone.trim(),
         motelName: motelName.trim(),
+        channel: finalChannel,
       },
     });
 
@@ -56,6 +61,7 @@ export async function POST(request: NextRequest) {
           id: prospect.id,
           contactName: prospect.contactName,
           motelName: prospect.motelName,
+          channel: prospect.channel,
         }
       },
       { status: 201 }

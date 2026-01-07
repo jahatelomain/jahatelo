@@ -48,6 +48,34 @@ enum ProspectStatus {
   LOST
 }
 
+enum ProspectChannel {
+  WEB
+  APP
+  MANUAL
+}
+
+enum PaymentType {
+  DIRECT_DEBIT
+  TRANSFER
+  EXCHANGE
+}
+
+enum FinancialStatus {
+  ACTIVE
+  INACTIVE
+  DISABLED
+}
+
+enum AnalyticsEventType {
+  VIEW
+  CLICK_PHONE
+  CLICK_WHATSAPP
+  CLICK_MAP
+  CLICK_WEBSITE
+  FAVORITE_ADD
+  FAVORITE_REMOVE
+}
+
 // ============================================
 // MOTEL
 // ============================================
@@ -85,6 +113,15 @@ model Motel {
   isFeatured       Boolean         @default(false)
   ratingAvg        Float           @default(0)
   ratingCount      Int             @default(0)
+
+  // Campos financieros
+  billingDay       Int?            // Día del mes para cobro (1-31)
+  paymentType      PaymentType?    // Tipo de cobro
+  financialStatus  FinancialStatus @default(ACTIVE)
+  billingCompanyName String?       // Razón Social
+  billingTaxId     String?         // RUC
+  isFinanciallyEnabled Boolean     @default(true) // Si está inhabilitado financieramente
+
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
@@ -99,6 +136,7 @@ model Motel {
   socialLinks      SocialLink[]
   promos           Promo[]
   users            User[]         // Usuarios administradores del motel
+  analytics        MotelAnalytics[] // Eventos de analytics
 }
 
 // ============================================
@@ -410,12 +448,38 @@ model HomeBanner {
 // ============================================
 
 model MotelProspect {
-  id            String         @id @default(cuid())
+  id            String          @id @default(cuid())
   contactName   String
   phone         String
   motelName     String
-  status        ProspectStatus @default(NEW)
+  status        ProspectStatus  @default(NEW)
+  channel       ProspectChannel @default(WEB)
   notes         String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+// ============================================
+// MOTEL ANALYTICS (sistema de vistas y tracking)
+// ============================================
+
+model MotelAnalytics {
+  id           String              @id @default(cuid())
+  motel        Motel               @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId      String
+  eventType    AnalyticsEventType
+  timestamp    DateTime            @default(now())
+
+  // Metadatos del evento
+  source       String?             // 'MAP', 'LIST', 'SEARCH', 'HOME', 'DETAIL'
+  userCity     String?             // Ciudad del usuario (si está disponible)
+  userCountry  String?             // País del usuario
+  deviceType   String?             // 'MOBILE', 'WEB'
+
+  // Campos opcionales para contexto adicional
+  metadata     Json?               // Información adicional flexible
+
+  @@index([motelId, timestamp])
+  @@index([motelId, eventType])
+  @@index([timestamp])
 }

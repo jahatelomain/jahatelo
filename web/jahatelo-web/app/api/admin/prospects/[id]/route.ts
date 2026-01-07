@@ -23,7 +23,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { status, notes } = body;
+    const { status, notes, channel } = body;
 
     // Validar que el prospecto existe
     const prospect = await prisma.motelProspect.findUnique({
@@ -45,12 +45,21 @@ export async function PATCH(
       );
     }
 
+    // Validar canal si se provee
+    if (channel && !['WEB', 'APP', 'MANUAL'].includes(channel)) {
+      return NextResponse.json(
+        { error: 'Canal inválido' },
+        { status: 400 }
+      );
+    }
+
     // Actualizar prospect
     const updatedProspect = await prisma.motelProspect.update({
       where: { id },
       data: {
         ...(status && { status }),
         ...(notes !== undefined && { notes }),
+        ...(channel && { channel }),
       },
     });
 

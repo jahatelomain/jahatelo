@@ -15,6 +15,7 @@ import { useFavorites } from '../hooks/useFavorites';
 import { prefetchMotelDetails } from '../services/prefetchService';
 import { getAmenityIconConfig } from '../constants/amenityIcons';
 import { COLORS } from '../constants/theme';
+import { trackFavoriteAdd, trackFavoriteRemove } from '../services/analyticsService';
 
 export default function MotelCard({ motel, onPress }) {
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -64,10 +65,23 @@ export default function MotelCard({ motel, onPress }) {
       heartRotation.value = 0;
     });
 
+    const wasFavorite = isFavorite(motel.id);
     toggleFavorite(motel);
+
+    // Track analytics
+    if (wasFavorite) {
+      trackFavoriteRemove(motel.id, 'LIST');
+    } else {
+      trackFavoriteAdd(motel.id, 'LIST');
+    }
   };
 
   const handlePress = () => {
+    // No permitir navegación si está financieramente deshabilitado
+    if (motel.isFinanciallyEnabled === false) {
+      return;
+    }
+
     // Prefetch en background sin bloquear navegación
     prefetchMotelDetails([motel]);
 
@@ -76,6 +90,11 @@ export default function MotelCard({ motel, onPress }) {
   };
 
   const handlePressIn = () => {
+    // No animar si está deshabilitado
+    if (motel.isFinanciallyEnabled === false) {
+      return;
+    }
+
     // Haptic feedback ligero
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
@@ -87,6 +106,11 @@ export default function MotelCard({ motel, onPress }) {
   };
 
   const handlePressOut = () => {
+    // No animar si está deshabilitado
+    if (motel.isFinanciallyEnabled === false) {
+      return;
+    }
+
     scale.value = withSpring(1, {
       damping: 12,
       stiffness: 200,
@@ -118,13 +142,16 @@ export default function MotelCard({ motel, onPress }) {
     };
   });
 
+  const isDisabled = motel.isFinanciallyEnabled === false;
+
   return (
     <Pressable
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      disabled={isDisabled}
     >
-      <Animated.View style={[styles.card, animatedCardStyle]}>
+      <Animated.View style={[styles.card, animatedCardStyle, isDisabled && styles.disabledCard]}>
         {/* Header con nombre y favorito */}
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
@@ -216,6 +243,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 2,
+  },
+  disabledCard: {
+    opacity: 0.4,
+    backgroundColor: '#F5F5F5',
   },
   cardHeader: {
     flexDirection: 'row',

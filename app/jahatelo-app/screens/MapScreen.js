@@ -42,9 +42,10 @@ const IS_ANDROID = Platform.OS === 'android';
  */
 
 // Componente de etiqueta overlay para Android
-// MÉTODO 2: collapsable={false} + mantener visibilidad durante pan/zoom
+// MÉTODO 2 MEJORADO: Cache de posición + collapsable={false} + debounce optimizado
 const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
   const [position, setPosition] = useState(null);
+  const lastValidPositionRef = useRef(null);
   const updateTimerRef = useRef(null);
   const isUpdatingRef = useRef(false);
 
@@ -81,6 +82,7 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
 
         // Solo actualizar si hay un punto válido
         if (point && point.x !== undefined && point.y !== undefined) {
+          lastValidPositionRef.current = point;
           setPosition(point);
         }
       } catch (error) {
@@ -90,10 +92,10 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
       }
     };
 
-    // Debounce más agresivo: solo actualizar después de 250ms sin cambios
+    // MÉTODO 2: Debounce moderado 180ms (rango 150-200ms) para reducir re-paints
     updateTimerRef.current = setTimeout(() => {
       updatePosition();
-    }, 250);
+    }, 180);
 
     return () => {
       if (updateTimerRef.current) {
@@ -103,15 +105,19 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
   }, [motel.latitude, motel.longitude, visible, region, mapRef]);
 
   // MÉTODO 2: No ocultar si no hay posición, solo si !visible
-  // Mantener última posición durante recalculación para evitar flicker
   if (!visible) {
     return null;
   }
 
+  // MÉTODO 2: Usar cache de última posición válida si está disponible
+  const displayPosition = position || lastValidPositionRef.current;
+
   // Si aún no hay posición inicial, no renderizar
-  if (!position) {
+  if (!displayPosition) {
     return null;
   }
+
+  const isDisabled = motel.isFinanciallyEnabled === false;
 
   return (
     <View
@@ -119,13 +125,13 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
       style={[
         styles.androidLabelOverlay,
         {
-          left: position.x,
-          top: position.y,
+          left: displayPosition.x,
+          top: displayPosition.y,
         },
       ]}
       pointerEvents="none"
     >
-      <View collapsable={false} style={styles.androidLabelContainer}>
+      <View collapsable={false} style={[styles.androidLabelContainer, isDisabled && styles.disabledLabel]}>
         <Text style={styles.androidLabelText} numberOfLines={1}>
           {motel.name}
         </Text>
@@ -138,6 +144,9 @@ LabelOverlay.displayName = 'LabelOverlay';
 
 // Custom Marker component for iOS - etiqueta encima del pin
 const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
+  const isDisabled = motel.isFinanciallyEnabled === false;
+  const pinColor = isDisabled ? '#CCCCCC' : COLORS.primary;
+
   return (
     <Marker
       coordinate={{
@@ -148,35 +157,37 @@ const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
       onPress={onPress}
       tracksViewChanges={false}
     >
-      <View style={styles.iosMarkerContainer}>
+      <View style={[styles.iosMarkerContainer, isDisabled && { opacity: 0.5 }]}>
         {/* Etiqueta arriba - solo visible cuando showLabel es true */}
         {showLabel && (
-          <View style={styles.iosLabel}>
+          <View style={[styles.iosLabel, isDisabled && styles.disabledLabel]}>
             <Text style={styles.iosLabelText} numberOfLines={1}>
               {motel.name}
             </Text>
           </View>
         )}
         {/* Pin abajo - siempre visible */}
-        <Ionicons name="location" size={28} color={COLORS.primary} style={styles.iosPin} />
+        <Ionicons name="location" size={28} color={pinColor} style={styles.iosPin} />
       </View>
     </Marker>
   );
 }, (prevProps, nextProps) => {
   return prevProps.motel.id === nextProps.motel.id &&
-         prevProps.showLabel === nextProps.showLabel;
+         prevProps.showLabel === nextProps.showLabel &&
+         prevProps.motel.isFinanciallyEnabled === nextProps.motel.isFinanciallyEnabled;
 });
 
 CustomMarkerIOS.displayName = 'CustomMarkerIOS';
 
 // Simple marker for Android - just the pin, no complex views
-// MÉTODO 2: collapsable={false} + tracksViewChanges timeout optimizado (400ms)
+// MÉTODO 2 MEJORADO: tracksViewChanges 500ms + collapsable={false} + anchor fijo
 const CustomMarkerAndroid = React.memo(({ motel, onPress }) => {
   const [tracksChanges, setTracksChanges] = React.useState(true);
+  const isDisabled = motel.isFinanciallyEnabled === false;
 
-  // MÉTODO 2: Desactivar tracking después de 400ms (rango 300-500ms)
+  // MÉTODO 2: Desactivar tracking después de 500ms (render inicial completo)
   React.useEffect(() => {
-    const timer = setTimeout(() => setTracksChanges(false), 400);
+    const timer = setTimeout(() => setTracksChanges(false), 500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -187,13 +198,13 @@ const CustomMarkerAndroid = React.memo(({ motel, onPress }) => {
         latitude: motel.latitude,
         longitude: motel.longitude,
       }}
-      anchor={{ x: 0.5, y: 0.5 }}
+      anchor={{ x: 0.5, y: 1 }}
       centerOffset={{ x: 0, y: 0 }}
       onPress={onPress}
       tracksViewChanges={tracksChanges}
       zIndex={999}
     >
-      <View collapsable={false} style={styles.androidMarkerPin}>
+      <View collapsable={false} style={[styles.androidMarkerPin, isDisabled && styles.disabledMarker]}>
         <View collapsable={false} style={styles.markerInner}>
           <Ionicons name="heart" size={14} color={COLORS.white} />
         </View>
@@ -201,7 +212,8 @@ const CustomMarkerAndroid = React.memo(({ motel, onPress }) => {
     </Marker>
   );
 }, (prevProps, nextProps) => {
-  return prevProps.motel.id === nextProps.motel.id;
+  return prevProps.motel.id === nextProps.motel.id &&
+         prevProps.motel.isFinanciallyEnabled === nextProps.motel.isFinanciallyEnabled;
 });
 
 CustomMarkerAndroid.displayName = 'CustomMarkerAndroid';
@@ -303,6 +315,11 @@ export default function MapScreen() {
   };
 
   const handleMarkerPress = useCallback((motel) => {
+    // No permitir navegación si está financieramente deshabilitado
+    if (motel.isFinanciallyEnabled === false) {
+      return;
+    }
+
     navigation.navigate('MotelDetail', {
       motelSlug: motel.slug,
       motelId: motel.id,
@@ -550,6 +567,16 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontWeight: '700',
     textAlign: 'center',
+  },
+
+  // ===== DISABLED STYLES =====
+  disabledMarker: {
+    backgroundColor: '#CCCCCC',
+    opacity: 0.5,
+  },
+  disabledLabel: {
+    backgroundColor: '#CCCCCC',
+    opacity: 0.6,
   },
 
   centerButton: {

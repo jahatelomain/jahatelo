@@ -22,6 +22,7 @@ import PromosTab from './motelDetail/PromosTab';
 import DetailsTab from './motelDetail/DetailsTab';
 import RoomsTab from './motelDetail/RoomsTab';
 import MenuTab from './motelDetail/MenuTab';
+import { trackMotelView, trackPhoneClick, trackWhatsAppClick } from '../services/analyticsService';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -52,6 +53,11 @@ export default function MotelDetailScreen({ route, navigation }) {
       setError(null);
       const data = await fetchMotelBySlug(identifier);
       setMotel(data);
+
+      // Track vista del motel
+      if (data?.id) {
+        trackMotelView(data.id, 'DETAIL');
+      }
     } catch (err) {
       console.error('Error al cargar motel:', err);
       setError(err.message || 'Error al cargar el motel');
@@ -68,6 +74,12 @@ export default function MotelDetailScreen({ route, navigation }) {
   const handleCall = (phoneNumber) => {
     if (!phoneNumber) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Track click en teléfono
+    if (motel?.id) {
+      trackPhoneClick(motel.id, 'DETAIL');
+    }
+
     const url = `tel:${phoneNumber}`;
     Linking.canOpenURL(url)
       .then((supported) => {
@@ -84,6 +96,12 @@ export default function MotelDetailScreen({ route, navigation }) {
   const handleWhatsApp = (whatsappNumber) => {
     if (!whatsappNumber) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Track click en WhatsApp
+    if (motel?.id) {
+      trackWhatsAppClick(motel.id, 'DETAIL');
+    }
+
     // Remover caracteres no numéricos
     const cleanNumber = whatsappNumber.replace(/\D/g, '');
     const url = `https://wa.me/${cleanNumber}`;

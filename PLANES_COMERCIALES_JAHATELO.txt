@@ -1,0 +1,437 @@
+================================================================================
+                    JAHATELO - PLANES COMERCIALES
+                    Estrategia de Monetización
+================================================================================
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│                        🆓 PLAN BÁSICO - GRATIS                           │
+└──────────────────────────────────────────────────────────────────────────┘
+
+POSICIONAMIENTO:
+  ✓ Listado básico en búsquedas y mapa
+  ✓ Sin prioridad en resultados
+  ✓ Pin estándar en mapa
+
+CONTENIDO:
+  ✓ Hasta 3 fotos
+  ✓ 1 promo activa a la vez
+  ✓ Información básica (teléfono, dirección, horarios)
+
+ANALYTICS:
+  ✗ Sin acceso a estadísticas
+
+GESTIÓN:
+  ✗ No puede responder reviews
+  ✗ Sin notificaciones de comentarios
+
+PRECIO: GRATIS
+IDEAL PARA: Moteles que recién inician o quieren probar la plataforma
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│                   🥈 PLAN PREMIUM - $60-80/mes                           │
+│                      "Visibilidad Mejorada"                              │
+└──────────────────────────────────────────────────────────────────────────┘
+
+POSICIONAMIENTO:
+  ✓ Badge "VIP" visible en perfil
+  ✓ Aparición en TOP 10 de búsquedas de tu zona
+  ✓ Pin destacado en mapa (color especial diferenciado)
+  ✓ Prioridad media en resultados de búsqueda
+
+CONTENIDO:
+  ✓ Hasta 15 fotos de alta calidad
+  ✓ 1 video promocional (hasta 60 segundos)
+  ✓ Hasta 5 promos simultáneas
+  ✓ Galería ampliada de habitaciones
+
+ANALYTICS BÁSICO:
+  ✓ Total de vistas del perfil (mensual)
+  ✓ Clicks en teléfono/WhatsApp
+  ✓ Clicks en "Cómo llegar"
+  ✓ Gráfica simple de tráfico semanal
+  ✓ Dashboard con métricas básicas
+
+GESTIÓN DE REPUTACIÓN:
+  ✓ Responder a reviews de clientes
+  ✓ Notificaciones de nuevos comentarios
+  ✓ Panel de gestión de reseñas
+
+SOPORTE:
+  ✓ Soporte por email (respuesta en 24-48h)
+
+PRECIO: $60-80/mes
+IDEAL PARA: Moteles que buscan más visibilidad y contactos
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│                💎 PLAN PLATINUM - $150-200/mes                           │
+│          "Paquete Completo + Generación de Reservas"                     │
+└──────────────────────────────────────────────────────────────────────────┘
+
+TODO LO DE PREMIUM, MÁS:
+
+POSICIONAMIENTO PREMIUM:
+  ✓ Badge "PLATINUM" exclusivo dorado
+  ✓ SIEMPRE en TOP 3 de todas las búsquedas
+  ✓ Pin XL en mapa (2x más grande, animado)
+  ✓ Aparición garantizada en carousel destacado del home
+  ✓ Banner destacado en listados
+  ✓ Prioridad máxima en resultados
+
+CONTENIDO ILIMITADO:
+  ✓ FOTOS ILIMITADAS
+  ✓ VIDEOS ILIMITADOS
+  ✓ Tour virtual 360° de habitaciones
+  ✓ PROMOS ILIMITADAS
+  ✓ Promos con scheduling (programar futuras)
+  ✓ Destacar habitaciones especiales
+
+🚀 SISTEMA DE RESERVAS (EXCLUSIVO):
+  ✓ Botón "RESERVAR AHORA" en tu perfil
+  ✓ Calendario de disponibilidad en tiempo real
+  ✓ Gestión automática de habitaciones disponibles
+  ✓ Confirmación instantánea de reservas
+  ✓ Pagos integrados (tarjeta/transferencia)
+  ✓ Notificaciones automáticas al motel
+  ✓ Panel de gestión de reservas
+  ✓ Historial completo de reservas
+  ✓ Comisión: 10% por reserva (tú ganas 90%)
+
+ANALYTICS PROFESIONAL:
+  ✓ Dashboard completo con métricas avanzadas
+  ✓ Comparativa con competencia (posición, vistas, reservas)
+  ✓ Análisis por horarios pico de búsquedas
+  ✓ Origen geográfico de visitantes
+  ✓ Tasa de conversión (vistas → clicks → reservas)
+  ✓ Reportes históricos con gráficas
+  ✓ Exportar reportes en PDF/Excel
+  ✓ Predicción de demanda con IA
+  ✓ Sugerencias de precios óptimos
+
+GESTIÓN AVANZADA:
+  ✓ Responder a reviews con plantillas
+  ✓ Destacar reviews positivas
+  ✓ Alertas de reviews negativas
+  ✓ Moderación de comentarios
+
+MARKETING:
+  ✓ Campañas promocionales destacadas
+  ✓ Push notifications a usuarios cercanos
+  ✓ Email marketing a usuarios interesados
+
+SOPORTE:
+  ✓ Soporte prioritario por WhatsApp
+  ✓ Respuesta en menos de 2 horas
+  ✓ Asesoría mensual de marketing digital
+  ✓ Capacitación inicial del sistema
+
+PRECIO: $150-200/mes + 10% comisión por reserva
+IDEAL PARA: Moteles establecidos que quieren maximizar ingresos y automatizar
+
+
+================================================================================
+                          COMPARATIVA RÁPIDA
+================================================================================
+
+CARACTERÍSTICA              BÁSICO      PREMIUM     PLATINUM
+──────────────────────────────────────────────────────────────────────────
+Precio/mes                  GRATIS      $60-80      $150-200
+Posición en búsquedas       Normal      Top 10      Top 3
+Badge destacado             ✗           VIP         PLATINUM
+Fotos permitidas            3           15          ILIMITADAS
+Videos                      ✗           1           ILIMITADOS
+Promos simultáneas          1           5           ILIMITADAS
+Tour virtual 360°           ✗           ✗           ✓
+Analytics                   ✗           Básico      Avanzado
+Responder reviews           ✗           ✓           ✓ Avanzado
+Sistema de reservas         ✗           ✗           ✓ COMPLETO
+Comisión por reserva        -           -           10%
+Soporte                     Email       Email       WhatsApp prioritario
+Asesoría marketing          ✗           ✗           ✓ Mensual
+
+
+================================================================================
+                        DIFERENCIA CLAVE
+================================================================================
+
+🥈 PREMIUM = "Te hacemos más VISIBLE"
+   → Más personas ven tu motel
+   → Más contactos por WhatsApp/teléfono
+   → Proceso de reserva MANUAL
+
+💎 PLATINUM = "Generamos RESERVAS DIRECTAS"
+   → Máxima visibilidad
+   → Reservas automáticas 24/7
+   → Proceso AUTOMATIZADO
+   → Ingresos pasivos mientras duermes
+
+
+================================================================================
+                        EJEMPLO PRÁCTICO
+================================================================================
+
+MOTEL CON PLAN PREMIUM:
+  1. Usuario ve el motel destacado en búsqueda
+  2. Le gusta, copia el número de teléfono
+  3. Llama o manda WhatsApp
+  4. Negocia disponibilidad y precio
+  5. Tal vez reserva, tal vez no
+
+  Resultado: Más visibilidad, proceso MANUAL
+
+──────────────────────────────────────────────────────────────────────────
+
+MOTEL CON PLAN PLATINUM:
+  1. Usuario ve el motel destacado en búsqueda
+  2. Le gusta, ve habitaciones disponibles en TIEMPO REAL
+  3. Click en "Reservar Suite Jacuzzi - Hoy 8pm - $150"
+  4. Paga con tarjeta/transferencia en la app
+  5. Reserva confirmada AUTOMÁTICAMENTE
+  6. Motel recibe notificación + 90% del pago ($135)
+  7. Jahatelo cobra 10% de comisión ($15)
+
+  Resultado: Reservas automáticas 24/7, SIN FRICCIÓN
+
+
+================================================================================
+                    RETORNO DE INVERSIÓN (ROI)
+================================================================================
+
+MOTEL PREMIUM ($70/mes):
+  Inversión mensual:        $70
+  Contactos generados:      ~50/mes
+  Conversión manual:        30% = 15 reservas
+  Ticket promedio:          $100
+  Ingresos mensuales:       $1,500
+  ROI:                      2,043%
+
+──────────────────────────────────────────────────────────────────────────
+
+MOTEL PLATINUM ($180/mes):
+  Inversión mensual:        $180
+  Contactos generados:      ~100/mes (mejor posicionamiento)
+  Conversión automática:    50% = 50 reservas
+  Ticket promedio:          $100
+  Ingresos brutos:          $5,000
+  Comisión Jahatelo (10%):  -$500
+  Ingresos netos:           $4,500/mes
+  ROI:                      2,400%
+
+  DIFERENCIA VS PREMIUM: +$3,000/mes adicionales
+
+
+================================================================================
+                    ¿CUÁL PLAN RECOMENDAR?
+================================================================================
+
+PLAN BÁSICO - Recomendar a:
+  → Moteles nuevos que recién inician
+  → Los que solo quieren probar la plataforma
+  → Presupuesto muy limitado
+  → Sin expectativas de alto volumen
+
+PLAN PREMIUM - Recomendar a:
+  → Moteles que ya tienen sistema de reservas propio
+  → Buscan solo aumentar visibilidad
+  → Presupuesto limitado pero quieren crecer
+  → Buenos en gestión manual de reservas
+
+PLAN PLATINUM - Recomendar a:
+  → Moteles establecidos que quieren crecer exponencialmente
+  → Los que NO tienen sistema de reservas
+  → Quieren automatizar y reducir trabajo manual
+  → Dispuestos a invertir más para ganar mucho más
+  → Buscan posicionarse como líderes del mercado
+
+
+================================================================================
+                PROYECCIÓN DE INGRESOS PARA JAHATELO
+================================================================================
+
+Asumiendo base de 50 moteles:
+
+DISTRIBUCIÓN:
+  30 moteles → Plan BÁSICO (gratis)      = $0/mes
+  15 moteles → Plan PREMIUM ($70)        = $1,050/mes
+   5 moteles → Plan PLATINUM ($180)      = $900/mes
+                                          ──────────
+  Subtotal por planes:                    $1,950/mes
+
+COMISIÓN RESERVAS (solo PLATINUM):
+  5 moteles × 50 reservas/mes × $100 promedio × 10%
+  = $2,500/mes adicional
+
+  TOTAL MENSUAL:  $4,450
+  TOTAL ANUAL:    $53,400 🚀
+
+
+CRECIMIENTO A 12 MESES:
+  Mes 1-3:   20 moteles → $1,500/mes
+  Mes 4-6:   35 moteles → $2,800/mes
+  Mes 7-9:   50 moteles → $4,450/mes
+  Mes 10-12: 70 moteles → $6,500/mes
+
+  Proyección año 1: $45,000 - $60,000
+
+
+================================================================================
+                    ESTRATEGIAS DE UPSELLING
+================================================================================
+
+1. TRIAL PREMIUM GRATUITO
+   → Ofrecer 30 días gratis de Premium a nuevos moteles
+   → Mostrar métricas reales de mejora
+   → Conversión esperada: 40-50%
+
+2. BUNDLE ANUAL
+   → Pago anual: 2 meses gratis
+   → Premium: $700/año (ahorra $140)
+   → Platinum: $1,800/año (ahorra $360)
+
+3. COMPARATIVA EN DASHBOARD
+   → Mostrar a usuarios BÁSICO:
+     "Los moteles Premium tienen 5x más vistas que tú"
+     "Un motel similar a ti genera $4,000/mes con Platinum"
+
+4. ALERTAS COMPETITIVAS
+   → "Un competidor a 500m de ti acaba de actualizar a Premium"
+   → "3 moteles en tu zona ya tienen sistema de reservas"
+
+5. DESCUENTO POR REFERIDO
+   → 15% de descuento si refiere otro motel
+   → Motel referido también obtiene 15% primer mes
+
+
+================================================================================
+                FUNCIONALIDADES A IMPLEMENTAR
+================================================================================
+
+FASE 1 - RÁPIDO (2-3 semanas):
+  ✓ Sistema de planes en base de datos
+  ✓ Campo 'plan' en modelo Motel
+  ✓ Límite de fotos según plan
+  ✓ Badge VIP/PLATINUM en cards
+  ✓ Ordenamiento por plan en búsquedas
+
+FASE 2 - ANALYTICS BÁSICO (3-4 semanas):
+  ✓ Tracking de vistas de motel
+  ✓ Tracking de clicks (teléfono, WhatsApp, mapa)
+  ✓ Dashboard simple con gráficas
+  ✓ Exportar reporte básico
+
+FASE 3 - SISTEMA DE RESERVAS (8-12 semanas):
+  ✓ Modelo de Reservations
+  ✓ Calendario de disponibilidad
+  ✓ Integración de pagos (Stripe/PayPal)
+  ✓ Confirmación automática
+  ✓ Notificaciones push
+  ✓ Panel de gestión para moteles
+
+FASE 4 - ANALYTICS AVANZADO (4-6 semanas):
+  ✓ Comparativas con competencia
+  ✓ Análisis de horarios pico
+  ✓ Predicciones con IA
+  ✓ Sugerencias de precios
+  ✓ Reportes PDF/Excel
+
+
+================================================================================
+                    MODELO DE BASE DE DATOS
+================================================================================
+
+// Agregar a schema.prisma
+
+enum PlanType {
+  BASIC
+  PREMIUM
+  PLATINUM
+}
+
+model Motel {
+  // ... campos existentes ...
+
+  // NUEVO: Sistema de planes
+  plan                PlanType    @default(BASIC)
+  planStartDate       DateTime?
+  planEndDate         DateTime?
+  photoLimit          Int         @default(3)
+  promoLimit          Int         @default(1)
+  analyticsEnabled    Boolean     @default(false)
+  reservationsEnabled Boolean     @default(false)
+}
+
+model MotelAnalytics {
+  id           String   @id @default(cuid())
+  motelId      String
+  motel        Motel    @relation(fields: [motelId], references: [id])
+  eventType    String   // 'VIEW', 'CLICK_PHONE', 'CLICK_WHATSAPP', 'CLICK_MAP'
+  timestamp    DateTime @default(now())
+  userLocation Json?
+  source       String?  // 'MAP', 'LIST', 'SEARCH', 'HOME'
+
+  @@index([motelId, timestamp])
+}
+
+model Reservation {
+  id              String   @id @default(cuid())
+  motelId         String
+  motel           Motel    @relation(fields: [motelId], references: [id])
+  roomTypeId      String
+  roomType        RoomType @relation(fields: [roomTypeId], references: [id])
+  userId          String?
+  customerName    String
+  customerEmail   String
+  customerPhone   String
+  checkIn         DateTime
+  checkOut        DateTime
+  status          String   @default("PENDING") // PENDING, CONFIRMED, CANCELLED
+  totalAmount     Float
+  commission      Float
+  paymentMethod   String
+  paymentStatus   String   @default("PENDING")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([motelId, status])
+  @@index([checkIn])
+}
+
+
+================================================================================
+                        RESUMEN EJECUTIVO
+================================================================================
+
+🎯 OBJETIVO: Generar $50,000+/año con modelo de suscripciones + comisiones
+
+📊 ESTRATEGIA: 3 planes diferenciados por valor real entregado
+   - BÁSICO: Presencia básica (gratis, puerta de entrada)
+   - PREMIUM: Visibilidad mejorada ($60-80/mes)
+   - PLATINUM: Generación automática de reservas ($150-200/mes + 10% comisión)
+
+💰 MODELO DE INGRESOS:
+   - Suscripciones mensuales recurrentes
+   - Comisiones por reservas (solo PLATINUM)
+   - Modelo escalable y predecible
+
+🚀 VENTAJA COMPETITIVA:
+   - Sistema de reservas integrado (diferenciador clave)
+   - Analytics avanzado
+   - Automatización completa
+
+📈 CRECIMIENTO:
+   - Fase 1: Lanzar planes y analytics básico
+   - Fase 2: Implementar sistema de reservas
+   - Fase 3: Escalar con marketing y upselling
+
+🎁 FACTOR ÉXITO:
+   - PREMIUM/PLATINUM deben demostrar ROI claro
+   - El motel debe ganar 10x más de lo que paga
+   - Datos y métricas transparentes
+
+
+================================================================================
+Generado: 2026-01-06
+Proyecto: Jahatelo - Plataforma de Moteles
+Autor: Claude (Anthropic)
+================================================================================

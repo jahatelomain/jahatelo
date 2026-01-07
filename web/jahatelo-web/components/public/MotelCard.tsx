@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { trackMotelView } from '@/lib/analyticsService';
 
 interface MotelCardProps {
   motel: {
@@ -15,6 +16,7 @@ interface MotelCardProps {
     photos?: { url: string; kind: string }[];
     motelAmenities?: { amenity: { name: string; icon?: string | null } }[];
     rooms?: { price1h?: number | null; price2h?: number | null; price12h?: number | null }[];
+    isFinanciallyEnabled?: boolean;
   };
 }
 
@@ -22,6 +24,11 @@ export default function MotelCard({ motel }: MotelCardProps) {
   const facadePhoto = motel.photos?.find((p) => p.kind === 'FACADE');
   const firstPhoto = motel.photos?.[0];
   const photoUrl = facadePhoto?.url || firstPhoto?.url;
+
+  // Track vista cuando se hace click en la card
+  const handleClick = () => {
+    trackMotelView(motel.id, 'LIST');
+  };
 
   // Get minimum price from rooms
   const prices = motel.rooms?.flatMap((r) => [r.price1h, r.price2h, r.price12h].filter((p) => p !== null && p !== undefined)) ?? [];
@@ -33,10 +40,10 @@ export default function MotelCard({ motel }: MotelCardProps) {
 
   // Get first 3 amenities
   const topAmenities = motel.motelAmenities?.slice(0, 3) ?? [];
+  const isDisabled = motel.isFinanciallyEnabled === false;
 
-  return (
-    <Link href={`/motels/${motel.slug}`}>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group">
+  const cardContent = (
+    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-default' : 'cursor-pointer'}`}>
         {/* Image */}
         <div className="relative h-48 bg-gray-200">
           {photoUrl ? (
@@ -117,6 +124,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
           )}
         </div>
       </div>
-    </Link>
   );
+
+  return isDisabled ? cardContent : <Link href={`/motels/${motel.slug}`} onClick={handleClick}>{cardContent}</Link>;
 }
