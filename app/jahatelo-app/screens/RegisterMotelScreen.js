@@ -57,6 +57,7 @@ export default function RegisterMotelScreen({ navigation }) {
           contactName: contactName.trim(),
           phone: phone.trim(),
           motelName: motelName.trim(),
+          channel: 'APP',
         }),
       });
 

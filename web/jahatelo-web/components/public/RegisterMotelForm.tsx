@@ -47,6 +47,7 @@ export default function RegisterMotelForm() {
           contactName: contactName.trim(),
           phone: phone.trim(),
           motelName: motelName.trim(),
+          channel: 'WEB',
         }),
       });
 

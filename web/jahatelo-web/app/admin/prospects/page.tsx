@@ -6,6 +6,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 
 type ProspectStatus = 'NEW' | 'CONTACTED' | 'IN_NEGOTIATION' | 'WON' | 'LOST';
+type ProspectChannel = 'WEB' | 'APP' | 'MANUAL';
 
 interface Prospect {
   id: string;
@@ -13,6 +14,7 @@ interface Prospect {
   phone: string;
   motelName: string;
   status: ProspectStatus;
+  channel: ProspectChannel;
   notes: string | null;
   createdAt: string;
   updatedAt: string;
@@ -39,6 +41,18 @@ const STATUS_COLORS: Record<ProspectStatus, string> = {
   LOST: 'bg-gray-100 text-gray-800',
 };
 
+const CHANNEL_LABELS: Record<ProspectChannel, string> = {
+  WEB: 'Web',
+  APP: 'App',
+  MANUAL: 'Manual',
+};
+
+const CHANNEL_COLORS: Record<ProspectChannel, string> = {
+  WEB: 'bg-blue-100 text-blue-700',
+  APP: 'bg-purple-100 text-purple-700',
+  MANUAL: 'bg-gray-100 text-gray-700',
+};
+
 export default function ProspectsPage() {
   const router = useRouter();
   const toast = useToast();
@@ -48,6 +62,14 @@ export default function ProspectsPage() {
   const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [notes, setNotes] = useState('');
+
+  // Estado para crear prospect manual
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newContactName, setNewContactName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newMotelName, setNewMotelName] = useState('');
+  const [newNotes, setNewNotes] = useState('');
 
   useEffect(() => {
     checkAccess();
@@ -158,6 +180,64 @@ export default function ProspectsPage() {
     }
   };
 
+  const handleCreateProspect = async () => {
+    // Validación básica
+    if (!newContactName.trim() || !newPhone.trim() || !newMotelName.trim()) {
+      toast?.showToast('Todos los campos son requeridos', 'error');
+      return;
+    }
+
+    if (newContactName.trim().length < 2) {
+      toast?.showToast('El nombre de contacto debe tener al menos 2 caracteres', 'error');
+      return;
+    }
+
+    if (newPhone.replace(/\D/g, '').length < 7) {
+      toast?.showToast('El teléfono debe tener al menos 7 dígitos', 'error');
+      return;
+    }
+
+    if (newMotelName.trim().length < 2) {
+      toast?.showToast('El nombre del motel debe tener al menos 2 caracteres', 'error');
+      return;
+    }
+
+    setCreating(true);
+
+    try {
+      const response = await fetch('/api/admin/prospects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contactName: newContactName.trim(),
+          phone: newPhone.trim(),
+          motelName: newMotelName.trim(),
+          notes: newNotes.trim() || null,
+          channel: 'MANUAL',
+        }),
+      });
+
+      if (response.ok) {
+        toast?.showToast('Prospect creado correctamente', 'success');
+        setShowCreateModal(false);
+        // Limpiar formulario
+        setNewContactName('');
+        setNewPhone('');
+        setNewMotelName('');
+        setNewNotes('');
+        fetchProspects();
+      } else {
+        const data = await response.json();
+        toast?.showToast(data.error || 'Error al crear prospect', 'error');
+      }
+    } catch (error) {
+      console.error('Error creating prospect:', error);
+      toast?.showToast('Error al crear prospect', 'error');
+    } finally {
+      setCreating(false);
+    }
+  };
+
   if (loading || !currentUser) {
     return (
       <div className="p-8">
@@ -177,8 +257,19 @@ export default function ProspectsPage() {
             Gestión de leads de moteles registrados
           </p>
         </div>
-        <div className="text-sm text-gray-600">
-          Total: <span className="font-semibold">{prospects.length}</span>
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-gray-600">
+            Total: <span className="font-semibold">{prospects.length}</span>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Crear Prospect
+          </button>
         </div>
       </div>
 
@@ -198,6 +289,9 @@ export default function ProspectsPage() {
                   Teléfono
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Canal
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Estado
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -211,7 +305,7 @@ export default function ProspectsPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {prospects.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                     No hay prospects registrados
                   </td>
                 </tr>
@@ -228,6 +322,11 @@ export default function ProspectsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-600">{prospect.phone}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${CHANNEL_COLORS[prospect.channel]}`}>
+                        {CHANNEL_LABELS[prospect.channel]}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <select
@@ -301,6 +400,97 @@ export default function ProspectsPage() {
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
               >
                 Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Prospect Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Crear Prospect Manualmente
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre de contacto *
+                </label>
+                <input
+                  type="text"
+                  value={newContactName}
+                  onChange={(e) => setNewContactName(e.target.value)}
+                  placeholder="Ej: Juan Pérez"
+                  disabled={creating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Teléfono *
+                </label>
+                <input
+                  type="tel"
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                  placeholder="Ej: 0981 123 456"
+                  disabled={creating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre del motel *
+                </label>
+                <input
+                  type="text"
+                  value={newMotelName}
+                  onChange={(e) => setNewMotelName(e.target.value)}
+                  placeholder="Ej: Motel Paradise"
+                  disabled={creating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notas (opcional)
+                </label>
+                <textarea
+                  value={newNotes}
+                  onChange={(e) => setNewNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Notas adicionales..."
+                  disabled={creating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowCreateModal(false)}
+                disabled={creating}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreateProspect}
+                disabled={creating}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {creating ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Creando...
+                  </>
+                ) : (
+                  'Crear Prospect'
+                )}
               </button>
             </div>
           </div>
