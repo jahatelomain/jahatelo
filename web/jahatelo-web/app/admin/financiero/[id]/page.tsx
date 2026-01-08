@@ -421,169 +421,6 @@ export default function EditFinancieroPage() {
           </div>
         </div>
 
-        {/* Historial de pagos */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Historial de Pagos</h2>
-              <p className="text-sm text-gray-600">
-                Registros de cobros realizados al motel
-              </p>
-            </div>
-          </div>
-
-          <form onSubmit={handleAddPayment} className="mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-              <div className="md:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Monto</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={paymentForm.amount}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Ej: 250000"
-                />
-              </div>
-
-              <div className="md:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Moneda</label>
-                <input
-                  type="text"
-                  value={paymentForm.currency}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, currency: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="PYG"
-                />
-              </div>
-
-              <div className="md:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
-                <input
-                  type="date"
-                  value={paymentForm.paidAt}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, paidAt: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="md:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-                <select
-                  value={paymentForm.status}
-                  onChange={(e) =>
-                    setPaymentForm({
-                      ...paymentForm,
-                      status: e.target.value as PaymentStatus,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  <option value="PAID">Pagado</option>
-                  <option value="PENDING">Pendiente</option>
-                  <option value="FAILED">Fallido</option>
-                  <option value="REFUNDED">Reembolsado</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
-                <select
-                  value={paymentForm.paymentType}
-                  onChange={(e) =>
-                    setPaymentForm({ ...paymentForm, paymentType: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  <option value="">Seleccionar...</option>
-                  <option value="DIRECT_DEBIT">Débito automático</option>
-                  <option value="TRANSFER">Transferencia</option>
-                  <option value="EXCHANGE">Canje</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-1 flex items-end">
-                <button
-                  type="submit"
-                  disabled={addingPayment}
-                  className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {addingPayment ? 'Guardando...' : 'Registrar pago'}
-                </button>
-              </div>
-
-              <div className="md:col-span-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Referencia</label>
-                <input
-                  type="text"
-                  value={paymentForm.reference}
-                  onChange={(e) =>
-                    setPaymentForm({ ...paymentForm, reference: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Ej: Transferencia #123"
-                />
-              </div>
-
-              <div className="md:col-span-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Notas</label>
-                <input
-                  type="text"
-                  value={paymentForm.notes}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Observaciones opcionales"
-                />
-              </div>
-            </div>
-          </form>
-
-          {paymentHistory.length === 0 ? (
-            <div className="text-sm text-gray-500">Sin pagos registrados.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="text-left text-gray-500 border-b">
-                    <th className="py-2 pr-4">Fecha</th>
-                    <th className="py-2 pr-4">Monto</th>
-                    <th className="py-2 pr-4">Estado</th>
-                    <th className="py-2 pr-4">Tipo</th>
-                    <th className="py-2 pr-4">Referencia</th>
-                    <th className="py-2">Notas</th>
-                  </tr>
-                </thead>
-                <tbody className="text-gray-700">
-                  {paymentHistory.map((payment) => (
-                    <tr key={payment.id} className="border-b last:border-0">
-                      <td className="py-3 pr-4">{formatDate(payment.paidAt)}</td>
-                      <td className="py-3 pr-4">
-                        {formatAmount(payment.amount, payment.currency)}
-                      </td>
-                      <td className="py-3 pr-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            PAYMENT_STATUS_STYLES[payment.status]
-                          }`}
-                        >
-                          {PAYMENT_STATUS_LABELS[payment.status]}
-                        </span>
-                      </td>
-                      <td className="py-3 pr-4">
-                        {payment.paymentType
-                          ? PAYMENT_TYPE_LABELS[payment.paymentType]
-                          : '-'}
-                      </td>
-                      <td className="py-3 pr-4">{payment.reference || '-'}</td>
-                      <td className="py-3">{payment.notes || '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
         {/* Actions */}
         <div className="flex justify-end gap-4">
           <Link
@@ -601,6 +438,169 @@ export default function EditFinancieroPage() {
           </button>
         </div>
       </form>
+
+      {/* Historial de pagos */}
+      <div className="bg-white rounded-lg shadow p-6 mt-6">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Historial de Pagos</h2>
+            <p className="text-sm text-gray-600">
+              Registros de cobros realizados al motel
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleAddPayment} className="mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Monto</label>
+              <input
+                type="number"
+                min="1"
+                value={paymentForm.amount}
+                onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Ej: 250000"
+              />
+            </div>
+
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Moneda</label>
+              <input
+                type="text"
+                value={paymentForm.currency}
+                onChange={(e) => setPaymentForm({ ...paymentForm, currency: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="PYG"
+              />
+            </div>
+
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
+              <input
+                type="date"
+                value={paymentForm.paidAt}
+                onChange={(e) => setPaymentForm({ ...paymentForm, paidAt: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+              <select
+                value={paymentForm.status}
+                onChange={(e) =>
+                  setPaymentForm({
+                    ...paymentForm,
+                    status: e.target.value as PaymentStatus,
+                  })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="PAID">Pagado</option>
+                <option value="PENDING">Pendiente</option>
+                <option value="FAILED">Fallido</option>
+                <option value="REFUNDED">Reembolsado</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+              <select
+                value={paymentForm.paymentType}
+                onChange={(e) =>
+                  setPaymentForm({ ...paymentForm, paymentType: e.target.value })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="">Seleccionar...</option>
+                <option value="DIRECT_DEBIT">Débito automático</option>
+                <option value="TRANSFER">Transferencia</option>
+                <option value="EXCHANGE">Canje</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-1 flex items-end">
+              <button
+                type="submit"
+                disabled={addingPayment}
+                className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {addingPayment ? 'Guardando...' : 'Registrar pago'}
+              </button>
+            </div>
+
+            <div className="md:col-span-3">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Referencia</label>
+              <input
+                type="text"
+                value={paymentForm.reference}
+                onChange={(e) =>
+                  setPaymentForm({ ...paymentForm, reference: e.target.value })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Ej: Transferencia #123"
+              />
+            </div>
+
+            <div className="md:col-span-3">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Notas</label>
+              <input
+                type="text"
+                value={paymentForm.notes}
+                onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Observaciones opcionales"
+              />
+            </div>
+          </div>
+        </form>
+
+        {paymentHistory.length === 0 ? (
+          <div className="text-sm text-gray-500">Sin pagos registrados.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-500 border-b">
+                  <th className="py-2 pr-4">Fecha</th>
+                  <th className="py-2 pr-4">Monto</th>
+                  <th className="py-2 pr-4">Estado</th>
+                  <th className="py-2 pr-4">Tipo</th>
+                  <th className="py-2 pr-4">Referencia</th>
+                  <th className="py-2">Notas</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-700">
+                {paymentHistory.map((payment) => (
+                  <tr key={payment.id} className="border-b last:border-0">
+                    <td className="py-3 pr-4">{formatDate(payment.paidAt)}</td>
+                    <td className="py-3 pr-4">
+                      {formatAmount(payment.amount, payment.currency)}
+                    </td>
+                    <td className="py-3 pr-4">
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          PAYMENT_STATUS_STYLES[payment.status]
+                        }`}
+                      >
+                        {PAYMENT_STATUS_LABELS[payment.status]}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4">
+                      {payment.paymentType
+                        ? PAYMENT_TYPE_LABELS[payment.paymentType]
+                        : '-'}
+                    </td>
+                    <td className="py-3 pr-4">{payment.reference || '-'}</td>
+                    <td className="py-3">{payment.notes || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
