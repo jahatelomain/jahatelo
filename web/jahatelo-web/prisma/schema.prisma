@@ -66,6 +66,13 @@ enum FinancialStatus {
   DISABLED
 }
 
+enum PaymentStatus {
+  PAID
+  PENDING
+  FAILED
+  REFUNDED
+}
+
 enum AnalyticsEventType {
   VIEW
   CLICK_PHONE
@@ -137,6 +144,26 @@ model Motel {
   promos           Promo[]
   users            User[]         // Usuarios administradores del motel
   analytics        MotelAnalytics[] // Eventos de analytics
+  paymentHistory   PaymentHistory[]
+}
+
+// ============================================
+// PAYMENT HISTORY
+// ============================================
+
+model PaymentHistory {
+  id            String        @id @default(cuid())
+  motel         Motel         @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId       String
+  amount        Int
+  currency      String        @default("PYG")
+  paidAt        DateTime      @default(now())
+  status        PaymentStatus @default(PAID)
+  paymentType   PaymentType?
+  reference     String?
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
 // ============================================

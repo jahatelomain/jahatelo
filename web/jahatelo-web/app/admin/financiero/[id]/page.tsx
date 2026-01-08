@@ -7,6 +7,7 @@ import Link from 'next/link';
 
 type PaymentType = 'DIRECT_DEBIT' | 'TRANSFER' | 'EXCHANGE';
 type FinancialStatus = 'ACTIVE' | 'INACTIVE' | 'DISABLED';
+type PaymentStatus = 'PAID' | 'PENDING' | 'FAILED' | 'REFUNDED';
 
 interface Motel {
   id: string;
@@ -21,15 +22,50 @@ interface Motel {
   adminContactName: string | null;
   adminContactEmail: string | null;
   adminContactPhone: string | null;
+  paymentHistory?: PaymentHistory[];
 }
+
+interface PaymentHistory {
+  id: string;
+  amount: number;
+  currency: string;
+  paidAt: string;
+  status: PaymentStatus;
+  paymentType: PaymentType | null;
+  reference: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
+  DIRECT_DEBIT: 'Débito automático',
+  TRANSFER: 'Transferencia',
+  EXCHANGE: 'Canje',
+};
+
+const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  PAID: 'Pagado',
+  PENDING: 'Pendiente',
+  FAILED: 'Fallido',
+  REFUNDED: 'Reembolsado',
+};
+
+const PAYMENT_STATUS_STYLES: Record<PaymentStatus, string> = {
+  PAID: 'bg-green-100 text-green-700',
+  PENDING: 'bg-yellow-100 text-yellow-700',
+  FAILED: 'bg-red-100 text-red-700',
+  REFUNDED: 'bg-blue-100 text-blue-700',
+};
 
 export default function EditFinancieroPage() {
   const router = useRouter();
   const params = useParams();
   const toast = useToast();
   const [motel, setMotel] = useState<Motel | null>(null);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [addingPayment, setAddingPayment] = useState(false);
 
   const [formData, setFormData] = useState({
     billingDay: '',
@@ -41,6 +77,16 @@ export default function EditFinancieroPage() {
     adminContactName: '',
     adminContactEmail: '',
     adminContactPhone: '',
+  });
+
+  const [paymentForm, setPaymentForm] = useState({
+    amount: '',
+    currency: 'PYG',
+    paidAt: '',
+    status: 'PAID' as PaymentStatus,
+    paymentType: '',
+    reference: '',
+    notes: '',
   });
 
   useEffect(() => {
@@ -56,6 +102,7 @@ export default function EditFinancieroPage() {
       if (response.ok) {
         const data = await response.json();
         setMotel(data);
+        setPaymentHistory(data.paymentHistory || []);
         setFormData({
           billingDay: data.billingDay?.toString() || '',
           paymentType: data.paymentType || '',
@@ -77,6 +124,78 @@ export default function EditFinancieroPage() {
       router.push('/admin/financiero');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddPayment = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!paymentForm.amount) {
+      toast?.showToast('El monto es obligatorio', 'error');
+      return;
+    }
+
+    try {
+      setAddingPayment(true);
+      const response = await fetch(`/api/admin/financiero/${params?.id}/payments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: Number(paymentForm.amount),
+          currency: paymentForm.currency || 'PYG',
+          paidAt: paymentForm.paidAt || null,
+          status: paymentForm.status,
+          paymentType: paymentForm.paymentType || null,
+          reference: paymentForm.reference || null,
+          notes: paymentForm.notes || null,
+        }),
+      });
+
+      if (response.ok) {
+        const newPayment = await response.json();
+        setPaymentHistory((prev) => [newPayment, ...prev]);
+        setPaymentForm({
+          amount: '',
+          currency: 'PYG',
+          paidAt: '',
+          status: 'PAID',
+          paymentType: '',
+          reference: '',
+          notes: '',
+        });
+        toast?.showToast('Pago registrado', 'success');
+      } else {
+        const error = await response.json();
+        toast?.showToast(error.error || 'Error al registrar pago', 'error');
+      }
+    } catch (error) {
+      console.error('Error creating payment:', error);
+      toast?.showToast('Error al registrar pago', 'error');
+    } finally {
+      setAddingPayment(false);
+    }
+  };
+
+  const formatDate = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return '-';
+    }
+    return new Intl.DateTimeFormat('es-ES', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).format(date);
+  };
+
+  const formatAmount = (amount: number, currency: string) => {
+    try {
+      return new Intl.NumberFormat('es-PY', {
+        style: 'currency',
+        currency: currency || 'PYG',
+        maximumFractionDigits: 0,
+      }).format(amount);
+    } catch {
+      return `${amount} ${currency || 'PYG'}`;
     }
   };
 
@@ -300,6 +419,169 @@ export default function EditFinancieroPage() {
               />
             </div>
           </div>
+        </div>
+
+        {/* Historial de pagos */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Historial de Pagos</h2>
+              <p className="text-sm text-gray-600">
+                Registros de cobros realizados al motel
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleAddPayment} className="mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Monto</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={paymentForm.amount}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Ej: 250000"
+                />
+              </div>
+
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Moneda</label>
+                <input
+                  type="text"
+                  value={paymentForm.currency}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, currency: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="PYG"
+                />
+              </div>
+
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
+                <input
+                  type="date"
+                  value={paymentForm.paidAt}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, paidAt: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+                <select
+                  value={paymentForm.status}
+                  onChange={(e) =>
+                    setPaymentForm({
+                      ...paymentForm,
+                      status: e.target.value as PaymentStatus,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="PAID">Pagado</option>
+                  <option value="PENDING">Pendiente</option>
+                  <option value="FAILED">Fallido</option>
+                  <option value="REFUNDED">Reembolsado</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+                <select
+                  value={paymentForm.paymentType}
+                  onChange={(e) =>
+                    setPaymentForm({ ...paymentForm, paymentType: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="DIRECT_DEBIT">Débito automático</option>
+                  <option value="TRANSFER">Transferencia</option>
+                  <option value="EXCHANGE">Canje</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-1 flex items-end">
+                <button
+                  type="submit"
+                  disabled={addingPayment}
+                  className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {addingPayment ? 'Guardando...' : 'Registrar pago'}
+                </button>
+              </div>
+
+              <div className="md:col-span-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Referencia</label>
+                <input
+                  type="text"
+                  value={paymentForm.reference}
+                  onChange={(e) =>
+                    setPaymentForm({ ...paymentForm, reference: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Ej: Transferencia #123"
+                />
+              </div>
+
+              <div className="md:col-span-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Notas</label>
+                <input
+                  type="text"
+                  value={paymentForm.notes}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Observaciones opcionales"
+                />
+              </div>
+            </div>
+          </form>
+
+          {paymentHistory.length === 0 ? (
+            <div className="text-sm text-gray-500">Sin pagos registrados.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-500 border-b">
+                    <th className="py-2 pr-4">Fecha</th>
+                    <th className="py-2 pr-4">Monto</th>
+                    <th className="py-2 pr-4">Estado</th>
+                    <th className="py-2 pr-4">Tipo</th>
+                    <th className="py-2 pr-4">Referencia</th>
+                    <th className="py-2">Notas</th>
+                  </tr>
+                </thead>
+                <tbody className="text-gray-700">
+                  {paymentHistory.map((payment) => (
+                    <tr key={payment.id} className="border-b last:border-0">
+                      <td className="py-3 pr-4">{formatDate(payment.paidAt)}</td>
+                      <td className="py-3 pr-4">
+                        {formatAmount(payment.amount, payment.currency)}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            PAYMENT_STATUS_STYLES[payment.status]
+                          }`}
+                        >
+                          {PAYMENT_STATUS_LABELS[payment.status]}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4">
+                        {payment.paymentType
+                          ? PAYMENT_TYPE_LABELS[payment.paymentType]
+                          : '-'}
+                      </td>
+                      <td className="py-3 pr-4">{payment.reference || '-'}</td>
+                      <td className="py-3">{payment.notes || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Actions */}
