@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, ChangeEvent } from 'react';
+import Link from 'next/link';
 import { use } from 'react';
 import * as LucideIcons from 'lucide-react';
 
@@ -864,6 +865,12 @@ export default function MotelDetailPage({
         >
           Menú <span className="ml-1 opacity-70">({menuCategories.length})</span>
         </button>
+        <Link
+          href={`/admin/motels/${id}/analytics`}
+          className="px-5 py-3 font-medium text-sm text-slate-500 hover:text-slate-700 transition-colors"
+        >
+          Analytics
+        </Link>
       </div>
 
       {activeTab === 'promos' && (
