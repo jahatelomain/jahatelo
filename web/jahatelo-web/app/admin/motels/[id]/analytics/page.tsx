@@ -42,6 +42,13 @@ export default function MotelAnalyticsPage() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('30'); // 7, 30, 90 días
+  const sourceLabels: Record<string, string> = {
+    DETAIL: 'Pantalla de Detalles',
+    LIST: 'Pantalla de Listado',
+    SEARCH: 'Pantalla de Búsqueda',
+    HOME: 'Pantalla de Inicio',
+    MAP: 'Pantalla de Mapa',
+  };
 
   useEffect(() => {
     if (params?.id) {
@@ -247,7 +254,9 @@ export default function MotelAnalyticsPage() {
             <div className="space-y-3">
               {analytics.charts.bySource.map((item, index) => (
                 <div key={index} className="flex justify-between items-center">
-                  <span className="text-gray-600 capitalize">{item.source?.toLowerCase()}</span>
+                  <span className="text-gray-600">
+                    {item.source ? sourceLabels[item.source] || item.source : 'Sin origen'}
+                  </span>
                   <span className="font-semibold">{item.count}</span>
                 </div>
               ))}
