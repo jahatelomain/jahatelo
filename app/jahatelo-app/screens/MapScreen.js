@@ -167,7 +167,6 @@ LabelOverlay.displayName = 'LabelOverlay';
 // Custom Marker component for iOS - etiqueta encima del pin
 const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
   const isDisabled = motel.isFinanciallyEnabled === false;
-  const pinColor = isDisabled ? '#CCCCCC' : COLORS.primary;
 
   return (
     <Marker
@@ -188,8 +187,12 @@ const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
             </Text>
           </View>
         )}
-        {/* Pin abajo - siempre visible */}
-        <Ionicons name="location" size={28} color={pinColor} style={styles.iosPin} />
+        {/* Pin abajo - mismo diseño que Android */}
+        <View style={[styles.iosMarkerPin, isDisabled && styles.disabledMarker]}>
+          <View style={styles.markerInner}>
+            <Ionicons name="heart" size={14} color={COLORS.white} />
+          </View>
+        </View>
       </View>
     </Marker>
   );
@@ -536,7 +539,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
   },
-  iosPin: {
+  iosMarkerPin: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 20,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: COLORS.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
     zIndex: 1,
   },
 
