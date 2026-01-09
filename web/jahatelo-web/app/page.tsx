@@ -89,11 +89,11 @@ export default async function HomePage() {
       },
     },
     _count: {
-      _all: true,
+      id: true,
     },
     orderBy: {
       _count: {
-        _all: 'desc',
+        id: 'desc',
       },
     },
     take: 6,
