@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
-import FavoriteButton from '@/components/public/FavoriteButton';
+import FavoriteButtonClient from '@/components/public/FavoriteButtonClient';
 import QuickContactButtons from '@/components/public/QuickContactButtons';
 import PromosTab from '@/components/public/PromosTab';
 import { prisma } from '@/lib/prisma';
@@ -438,7 +438,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
 
             <div className="flex items-center gap-3">
               <QuickContactButtons phone={motel.phone} whatsapp={motel.whatsapp} />
-              <FavoriteButton motel={{ id: motel.id, name: motel.name, slug: motel.slug }} />
+              <FavoriteButtonClient motelId={motel.id} source="DETAIL" />
             </div>
           </div>
 
