@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import ThemeToggle from '@/components/public/ThemeToggle';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -74,10 +75,12 @@ export default function Navbar() {
             >
               Mapa
             </Link>
+            <ThemeToggle />
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-3">
+            <ThemeToggle />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="text-gray-600 hover:text-purple-600 p-2"

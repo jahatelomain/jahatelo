@@ -87,6 +87,7 @@ export default function AdminLayout({
     if (pathname.startsWith('/admin/prospects')) return 'Prospects';
     if (pathname.startsWith('/admin/financiero')) return 'Financiero';
     if (pathname.startsWith('/admin/analytics')) return 'Analytics';
+    if (pathname.startsWith('/admin/advertisements')) return 'Publicidad';
     if (pathname.startsWith('/admin/audit')) return 'Auditoría';
     return 'Admin';
   };
@@ -100,6 +101,7 @@ export default function AdminLayout({
     { href: '/admin/prospects', label: 'Prospects', roles: ['SUPERADMIN'] },
     { href: '/admin/financiero', label: 'Financiero', roles: ['SUPERADMIN'] },
     { href: '/admin/analytics', label: 'Analytics', roles: ['SUPERADMIN'] },
+    { href: '/admin/advertisements', label: 'Publicidad', roles: ['SUPERADMIN'] },
     { href: '/admin/audit', label: 'Auditoría', roles: ['SUPERADMIN'] },
   ];
 
@@ -112,6 +114,7 @@ export default function AdminLayout({
     if (path.startsWith('/admin/prospects')) return 'prospects';
     if (path.startsWith('/admin/financiero')) return 'financiero';
     if (path.startsWith('/admin/analytics')) return 'analytics';
+    if (path.startsWith('/admin/advertisements')) return 'advertisements';
     if (path.startsWith('/admin/audit')) return 'audit';
     return null;
   };

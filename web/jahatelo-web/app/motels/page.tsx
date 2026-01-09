@@ -1,6 +1,6 @@
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
-import MotelCard from '@/components/public/MotelCard';
+import MotelListWithAds from '@/components/public/MotelListWithAds';
 import MotelFilters from '@/components/public/MotelFilters';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
@@ -159,11 +159,7 @@ export default async function MotelsPage({ searchParams }: MotelsPageProps) {
           {/* Motels Grid */}
           <div className="lg:col-span-3">
             {motels.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {motels.map((motel) => (
-                  <MotelCard key={motel.id} motel={motel} />
-                ))}
-              </div>
+              <MotelListWithAds motels={motels} />
             ) : (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">

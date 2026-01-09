@@ -42,78 +42,91 @@ const IS_ANDROID = Platform.OS === 'android';
  */
 
 // Componente de etiqueta overlay para Android
-// MÉTODO 2 MEJORADO: Cache de posición + collapsable={false} + debounce optimizado
+// MÉTODO OPTIMIZADO: useRef + transform (sin re-renders innecesarios)
 const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
-  const [position, setPosition] = useState(null);
-  const lastValidPositionRef = useRef(null);
-  const updateTimerRef = useRef(null);
-  const isUpdatingRef = useRef(false);
+  const labelRef = useRef(null);
+  const lastPositionRef = useRef({ x: 0, y: 0 });
+  const animationFrameRef = useRef(null);
+  const [initialPosition, setInitialPosition] = useState(null);
 
-  // Calcular posición en pantalla cuando el mapa se mueve o cambia zoom
+  // Calcular posición inicial solo una vez
   useEffect(() => {
-    if (!visible || !mapRef.current) {
-      // No setear a null para evitar parpadeo - mantener última posición
-      return;
-    }
+    if (!visible || !mapRef.current || initialPosition) return;
 
-    // Si ya hay una actualización en curso, no iniciar otra
-    if (isUpdatingRef.current) {
-      return;
-    }
-
-    // Limpiar timer anterior
-    if (updateTimerRef.current) {
-      clearTimeout(updateTimerRef.current);
-    }
-
-    const updatePosition = async () => {
-      if (!mapRef.current) return;
-
-      isUpdatingRef.current = true;
-
+    const getInitialPosition = async () => {
       try {
-        // Offset muy pequeño para posicionar label justo arriba del pin
         const labelLatitude = motel.latitude + 0.00008;
-
         const point = await mapRef.current.pointForCoordinate({
           latitude: labelLatitude,
           longitude: motel.longitude,
         });
 
-        // Solo actualizar si hay un punto válido
         if (point && point.x !== undefined && point.y !== undefined) {
-          lastValidPositionRef.current = point;
-          setPosition(point);
+          setInitialPosition(point);
+          lastPositionRef.current = point;
         }
       } catch (error) {
-        // Mantener posición anterior en caso de error
-      } finally {
-        isUpdatingRef.current = false;
+        console.error('Error getting initial position:', error);
       }
     };
 
-    // MÉTODO 2: Debounce moderado 180ms (rango 150-200ms) para reducir re-paints
-    updateTimerRef.current = setTimeout(() => {
-      updatePosition();
-    }, 180);
+    getInitialPosition();
+  }, [motel.latitude, motel.longitude, visible, mapRef, initialPosition]);
+
+  // Actualizar posición usando setNativeProps (sin re-render)
+  useEffect(() => {
+    if (!visible || !mapRef.current || !labelRef.current || !initialPosition) {
+      return;
+    }
+
+    const updatePosition = async () => {
+      try {
+        const labelLatitude = motel.latitude + 0.00008;
+        const point = await mapRef.current.pointForCoordinate({
+          latitude: labelLatitude,
+          longitude: motel.longitude,
+        });
+
+        if (point && point.x !== undefined && point.y !== undefined) {
+          // Usar setNativeProps para actualizar posición sin re-render
+          if (labelRef.current) {
+            labelRef.current.setNativeProps({
+              style: {
+                transform: [
+                  { translateX: point.x - initialPosition.x },
+                  { translateY: point.y - initialPosition.y }
+                ]
+              }
+            });
+          }
+
+          lastPositionRef.current = point;
+        }
+      } catch (error) {
+        // Silenciar errores durante movimiento rápido
+      }
+    };
+
+    // Usar requestAnimationFrame para sincronizar con frames del dispositivo
+    const scheduleUpdate = () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      animationFrameRef.current = requestAnimationFrame(() => {
+        updatePosition();
+      });
+    };
+
+    scheduleUpdate();
 
     return () => {
-      if (updateTimerRef.current) {
-        clearTimeout(updateTimerRef.current);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [motel.latitude, motel.longitude, visible, region, mapRef]);
+  }, [motel.latitude, motel.longitude, visible, region, mapRef, initialPosition]);
 
-  // MÉTODO 2: No ocultar si no hay posición, solo si !visible
-  if (!visible) {
-    return null;
-  }
-
-  // MÉTODO 2: Usar cache de última posición válida si está disponible
-  const displayPosition = position || lastValidPositionRef.current;
-
-  // Si aún no hay posición inicial, no renderizar
-  if (!displayPosition) {
+  if (!visible || !initialPosition) {
     return null;
   }
 
@@ -121,12 +134,13 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
 
   return (
     <View
+      ref={labelRef}
       collapsable={false}
       style={[
         styles.androidLabelOverlay,
         {
-          left: displayPosition.x,
-          top: displayPosition.y,
+          left: initialPosition.x,
+          top: initialPosition.y,
         },
       ]}
       pointerEvents="none"

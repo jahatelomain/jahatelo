@@ -83,6 +83,24 @@ enum AnalyticsEventType {
   FAVORITE_REMOVE
 }
 
+enum AdPlacement {
+  POPUP_HOME
+  CAROUSEL
+  SECTION_BANNER
+  LIST_INLINE
+}
+
+enum AdStatus {
+  ACTIVE
+  PAUSED
+  INACTIVE
+}
+
+enum AdEventType {
+  VIEW
+  CLICK
+}
+
 // ============================================
 // MOTEL
 // ============================================
@@ -529,4 +547,46 @@ model MotelAnalytics {
   @@index([motelId, timestamp])
   @@index([motelId, eventType])
   @@index([timestamp])
+}
+
+// ============================================
+// ADVERTISEMENTS
+// ============================================
+
+model Advertisement {
+  id            String       @id @default(cuid())
+  title         String
+  advertiser    String
+  imageUrl      String
+  largeImageUrl String?
+  description   String?
+  linkUrl       String?
+  placement     AdPlacement
+  status        AdStatus      @default(ACTIVE)
+  priority      Int           @default(0)
+  startDate     DateTime?
+  endDate       DateTime?
+  viewCount     Int           @default(0)
+  clickCount    Int           @default(0)
+  maxViews      Int?
+  maxClicks     Int?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  analytics     AdAnalytics[]
+}
+
+model AdAnalytics {
+  id               String       @id @default(cuid())
+  advertisement    Advertisement @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
+  advertisementId  String
+  eventType        AdEventType
+  timestamp        DateTime     @default(now())
+  deviceType       String?
+  userCity         String?
+  userCountry      String?
+  source           String?
+
+  @@index([advertisementId, timestamp])
+  @@index([eventType, timestamp])
 }

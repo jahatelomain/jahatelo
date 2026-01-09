@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Lato } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import PwaRegistrar from "@/components/public/PwaRegistrar";
 
 const lato = Lato({
   weight: ['400', '700'],
@@ -68,8 +70,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`${lato.variable} antialiased`}>
-        {children}
+      <body className={`${lato.variable} antialiased bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100`}>
+        <ThemeProvider>
+          <PwaRegistrar />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

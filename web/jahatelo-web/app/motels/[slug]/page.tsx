@@ -4,9 +4,15 @@ import Link from 'next/link';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import FavoriteButtonClient from '@/components/public/FavoriteButtonClient';
-import QuickContactButtons from '@/components/public/QuickContactButtons';
+import ContactButtons from '@/components/public/ContactButtons';
 import PromosTab from '@/components/public/PromosTab';
+import ImageGallery from '@/components/public/ImageGallery';
+import ShareButton from '@/components/public/ShareButton';
+import ReviewsSection from '@/components/public/ReviewsSection';
+import PriceTable from '@/components/public/PriceTable';
+import JsonLd from '@/components/JsonLd';
 import { prisma } from '@/lib/prisma';
+import { generateBreadcrumbSchema, generateMotelSchema } from '@/lib/seo';
 import Tabs from '@/components/public/Tabs';
 
 interface MotelDetailPageProps {
@@ -86,6 +92,11 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     label: 'Detalles',
     content: (
         <div>
+          {motel.photos.length > 0 && (
+            <div className="mb-8">
+              <ImageGallery images={motel.photos.map((photo) => ({ url: photo.url, alt: motel.name }))} />
+            </div>
+          )}
           {/* Description */}
           {motel.description && (
             <div className="mb-8">
@@ -275,16 +286,26 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                         {prices.length > 0 && (
                           <div className="border-t border-gray-200 pt-4">
                             <p className="text-sm font-semibold text-gray-700 mb-2">Precios:</p>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                              {prices.map((price) => (
-                                <div key={price.label} className="text-center">
-                                  <p className="text-xs text-gray-500">{price.label}</p>
-                                  <p className="text-lg font-bold text-purple-600">
-                                    ${price.value?.toLocaleString()}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
+                            <PriceTable
+                              prices={prices.map((price) => ({
+                                label: price.label,
+                                price: Number(price.value),
+                                hours:
+                                  price.label === '1h'
+                                    ? 1
+                                    : price.label === '1.5h'
+                                      ? 1.5
+                                      : price.label === '2h'
+                                        ? 2
+                                        : price.label === '3h'
+                                          ? 3
+                                          : price.label === '12h'
+                                            ? 12
+                                            : price.label === '24h'
+                                              ? 24
+                                              : 8,
+                              }))}
+                            />
                           </div>
                         )}
                       </div>
@@ -364,8 +385,34 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     });
   }
 
+  tabs.push({
+    id: 'reviews',
+    label: 'Reseñas',
+    content: <ReviewsSection motelId={motel.id} />,
+  });
+
+  const motelSchema = generateMotelSchema({
+    name: motel.name,
+    description: motel.description,
+    image: mainPhoto?.url,
+    address: motel.address,
+    city: motel.city,
+    country: motel.country,
+    ratingAvg: motel.ratingAvg,
+    ratingCount: motel.ratingCount,
+    phone: motel.phone,
+    url: `https://jahatelo.vercel.app/motels/${motel.slug}`,
+  });
+
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Inicio', url: 'https://jahatelo.vercel.app' },
+    { name: 'Moteles', url: 'https://jahatelo.vercel.app/motels' },
+    { name: motel.name, url: `https://jahatelo.vercel.app/motels/${motel.slug}` },
+  ]);
+
   return (
     <>
+      <JsonLd data={[motelSchema, breadcrumbSchema]} />
       <Navbar />
       <div className="bg-gray-50 min-h-screen">
       {/* Hero Image */}
@@ -437,8 +484,9 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
             </div>
 
             <div className="flex items-center gap-3">
-              <QuickContactButtons phone={motel.phone} whatsapp={motel.whatsapp} />
+              <ContactButtons motelId={motel.id} phone={motel.phone} whatsapp={motel.whatsapp} />
               <FavoriteButtonClient motelId={motel.id} source="DETAIL" />
+              <ShareButton title={motel.name} url={`https://jahatelo.vercel.app/motels/${motel.slug}`} />
             </div>
           </div>
 
