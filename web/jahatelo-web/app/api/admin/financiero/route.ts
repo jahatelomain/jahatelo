@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getTokenFromRequest, verifyToken, hasRole } from '@/lib/auth';
+import { requireAdminAccess } from '@/lib/adminAccess';
 
 /**
  * GET /api/admin/financiero
@@ -8,15 +8,8 @@ import { getTokenFromRequest, verifyToken, hasRole } from '@/lib/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    const token = await getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-    if (!hasRole(user, ['SUPERADMIN'])) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'financiero');
+    if (access.error) return access.error;
 
     const motels = await prisma.motel.findMany({
       select: {

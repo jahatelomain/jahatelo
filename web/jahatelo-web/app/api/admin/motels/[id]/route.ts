@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import { canAccessMotel } from '@/lib/auth';
+import { logAuditEvent } from '@/lib/audit';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -12,6 +15,12 @@ export async function GET(
   const { id } = await context.params;
 
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
+    if (access.error) return access.error;
+    if (!canAccessMotel(access.user || null, id)) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
+
     const motel = await prisma.motel.findUnique({
       where: { id },
       include: {
@@ -70,6 +79,12 @@ export async function PATCH(
   const { id } = await context.params;
 
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
+    if (access.error) return access.error;
+    if (!canAccessMotel(access.user || null, id)) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
+
     const body = await request.json();
 
     const data = { ...body };
@@ -82,6 +97,14 @@ export async function PATCH(
     const motel = await prisma.motel.update({
       where: { id },
       data,
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'UPDATE',
+      entityType: 'Motel',
+      entityId: motel.id,
+      metadata: { name: motel.name },
     });
 
     return NextResponse.json(motel);

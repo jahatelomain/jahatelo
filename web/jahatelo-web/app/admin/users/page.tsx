@@ -20,6 +20,7 @@ interface User {
   role: UserRole;
   isActive: boolean;
   motelId?: string | null;
+  modulePermissions?: string[];
   createdAt: string;
   motel?: Motel | null;
 }
@@ -61,6 +62,7 @@ export default function UsersPage() {
     name: '',
     role: 'USER' as UserRole,
     motelId: '',
+    modulePermissions: [] as string[],
   });
 
   // Form state para editar
@@ -69,7 +71,20 @@ export default function UsersPage() {
     role: 'USER' as UserRole,
     motelId: '',
     isActive: true,
+    modulePermissions: [] as string[],
   });
+
+  const moduleOptions = [
+    { value: 'dashboard', label: 'Dashboard' },
+    { value: 'motels', label: 'Moteles' },
+    { value: 'promos', label: 'Promos' },
+    { value: 'amenities', label: 'Amenities' },
+    { value: 'users', label: 'Usuarios' },
+    { value: 'prospects', label: 'Prospects' },
+    { value: 'financiero', label: 'Financiero' },
+    { value: 'analytics', label: 'Analytics' },
+    { value: 'audit', label: 'Auditoría' },
+  ];
 
   useEffect(() => {
     checkAccess();
@@ -138,7 +153,7 @@ export default function UsersPage() {
           `Usuario creado. Contraseña temporal: ${data.temporaryPassword}`
         );
         setShowCreateModal(false);
-        setCreateForm({ email: '', name: '', role: 'USER', motelId: '' });
+        setCreateForm({ email: '', name: '', role: 'USER', motelId: '', modulePermissions: [] });
         fetchUsers();
       } else {
         toast.error(data.error || 'Error al crear usuario');
@@ -280,6 +295,7 @@ export default function UsersPage() {
       role: user.role,
       motelId: user.motelId || '',
       isActive: user.isActive,
+      modulePermissions: user.modulePermissions || [],
     });
     setShowEditModal(true);
   };
@@ -673,7 +689,14 @@ export default function UsersPage() {
                 </label>
                 <select
                   value={createForm.role}
-                  onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as UserRole })}
+                  onChange={(e) => {
+                    const nextRole = e.target.value as UserRole;
+                    const defaultModules =
+                      nextRole === 'MOTEL_ADMIN' && createForm.modulePermissions.length === 0
+                        ? ['dashboard', 'motels']
+                        : createForm.modulePermissions;
+                    setCreateForm({ ...createForm, role: nextRole, modulePermissions: defaultModules });
+                  }}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 >
                   <option value="USER">USER</option>
@@ -701,6 +724,32 @@ export default function UsersPage() {
                   </select>
                 </div>
               )}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Permisos por módulo
+                </label>
+                <p className="text-xs text-slate-500 mb-2">
+                  Si no elegís ninguno, SUPERADMIN mantiene acceso total.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {moduleOptions.map((module) => (
+                    <label key={module.value} className="flex items-center gap-2 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={createForm.modulePermissions.includes(module.value)}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...createForm.modulePermissions, module.value]
+                            : createForm.modulePermissions.filter((value) => value !== module.value);
+                          setCreateForm({ ...createForm, modulePermissions: next });
+                        }}
+                        className="rounded border-slate-300 text-purple-600 focus:ring-purple-600"
+                      />
+                      {module.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
@@ -759,7 +808,14 @@ export default function UsersPage() {
                 </label>
                 <select
                   value={editForm.role}
-                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value as UserRole })}
+                  onChange={(e) => {
+                    const nextRole = e.target.value as UserRole;
+                    const defaultModules =
+                      nextRole === 'MOTEL_ADMIN' && editForm.modulePermissions.length === 0
+                        ? ['dashboard', 'motels']
+                        : editForm.modulePermissions;
+                    setEditForm({ ...editForm, role: nextRole, modulePermissions: defaultModules });
+                  }}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 >
                   <option value="USER">USER</option>
@@ -787,6 +843,32 @@ export default function UsersPage() {
                   </select>
                 </div>
               )}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Permisos por módulo
+                </label>
+                <p className="text-xs text-slate-500 mb-2">
+                  Si no elegís ninguno, SUPERADMIN mantiene acceso total.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {moduleOptions.map((module) => (
+                    <label key={module.value} className="flex items-center gap-2 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={editForm.modulePermissions.includes(module.value)}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...editForm.modulePermissions, module.value]
+                            : editForm.modulePermissions.filter((value) => value !== module.value);
+                          setEditForm({ ...editForm, modulePermissions: next });
+                        }}
+                        className="rounded border-slate-300 text-purple-600 focus:ring-purple-600"
+                      />
+                      {module.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"

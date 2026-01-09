@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getTokenFromRequest, verifyToken, hasRole } from '@/lib/auth';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import { logAuditEvent } from '@/lib/audit';
 
 /**
  * PATCH /api/admin/prospects/[id]
@@ -11,15 +12,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = await getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-    if (!hasRole(user, ['SUPERADMIN'])) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'prospects');
+    if (access.error) return access.error;
 
     const { id } = await params;
     const body = await request.json();
@@ -63,6 +57,14 @@ export async function PATCH(
       },
     });
 
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'UPDATE',
+      entityType: 'Prospect',
+      entityId: updatedProspect.id,
+      metadata: { status: updatedProspect.status, channel: updatedProspect.channel },
+    });
+
     return NextResponse.json(updatedProspect);
   } catch (error) {
     console.error('Error updating prospect:', error);
@@ -82,15 +84,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = await getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-    if (!hasRole(user, ['SUPERADMIN'])) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'prospects');
+    if (access.error) return access.error;
 
     const { id } = await params;
 
@@ -109,6 +104,14 @@ export async function DELETE(
     // Eliminar
     await prisma.motelProspect.delete({
       where: { id },
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'DELETE',
+      entityType: 'Prospect',
+      entityId: id,
+      metadata: { motelName: prospect.motelName, channel: prospect.channel },
     });
 
     return NextResponse.json({ success: true });

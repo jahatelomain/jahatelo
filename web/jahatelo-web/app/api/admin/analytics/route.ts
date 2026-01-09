@@ -3,63 +3,82 @@ import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 
 /**
- * GET /api/admin/motels/[id]/analytics
- * Obtiene estadísticas de analytics de un motel
- * Solo accesible por SUPERADMIN y el MOTEL_ADMIN dueño del motel
+ * GET /api/admin/analytics
+ * Obtiene estadísticas globales de analytics de todos los moteles o filtrado por motel
+ * Solo accesible por SUPERADMIN
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'analytics');
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'analytics');
     if (access.error) return access.error;
-    const user = access.user;
-
-    const { id: motelId } = await params;
-
-    // Verificar que el motel existe
-    const motel = await prisma.motel.findUnique({
-      where: { id: motelId },
-      select: { id: true, name: true },
-    });
-
-    if (!motel) {
-      return NextResponse.json(
-        { error: 'Motel no encontrado' },
-        { status: 404 }
-      );
-    }
-
-    // Verificar permisos: SUPERADMIN o MOTEL_ADMIN dueño del motel
-    const isSuperAdmin = user?.role === 'SUPERADMIN';
-    const isMotelOwner = user?.role === 'MOTEL_ADMIN' && user.motelId === motelId;
-
-    if (!isSuperAdmin && !isMotelOwner) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
 
     // Obtener parámetros de consulta
     const { searchParams } = new URL(request.url);
     const period = searchParams.get('period') || '30'; // días (7, 30, 90)
+    const motelId = searchParams.get('motelId'); // Opcional
+    const source = searchParams.get('source');
+    const deviceType = searchParams.get('deviceType');
+    const eventType = searchParams.get('eventType');
     const days = parseInt(period);
 
     // Calcular fecha de inicio
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
+    // Construir filtro de eventos
+    const eventFilter: any = {
+      timestamp: {
+        gte: startDate,
+      },
+    };
+
+    // Si se especifica motelId, filtrar por ese motel
+    if (motelId) {
+      // Verificar que el motel existe
+      const motel = await prisma.motel.findUnique({
+        where: { id: motelId },
+        select: { id: true, name: true },
+      });
+
+      if (!motel) {
+        return NextResponse.json(
+          { error: 'Motel no encontrado' },
+          { status: 404 }
+        );
+      }
+
+      eventFilter.motelId = motelId;
+    }
+
+    if (source) {
+      eventFilter.source = source;
+    }
+
+    if (deviceType) {
+      eventFilter.deviceType = deviceType;
+    }
+
+    if (eventType) {
+      eventFilter.eventType = eventType;
+    }
+
     // Obtener eventos del período
     const events = await prisma.motelAnalytics.findMany({
-      where: {
-        motelId,
-        timestamp: {
-          gte: startDate,
-        },
-      },
+      where: eventFilter,
       orderBy: {
         timestamp: 'desc',
       },
     });
+
+    // Obtener información de motel(es) si se filtró
+    let motelInfo = null;
+    if (motelId) {
+      const motel = await prisma.motel.findUnique({
+        where: { id: motelId },
+        select: { id: true, name: true },
+      });
+      motelInfo = motel;
+    }
 
     // Calcular métricas agregadas
     const totalViews = events.filter((e) => e.eventType === 'VIEW').length;
@@ -107,15 +126,38 @@ export async function GET(
       .slice(0, 10)
       .map(([city, count]) => ({ city, count }));
 
+    // Top moteles (solo si no se filtró por motelId)
+    let topMotels: { motelId: string; motelName: string; count: number }[] = [];
+    if (!motelId) {
+      const byMotelMap: Record<string, number> = {};
+      events.forEach((event) => {
+        byMotelMap[event.motelId] = (byMotelMap[event.motelId] || 0) + 1;
+      });
+
+      // Obtener nombres de moteles
+      const motelIds = Object.keys(byMotelMap);
+      const motels = await prisma.motel.findMany({
+        where: { id: { in: motelIds } },
+        select: { id: true, name: true },
+      });
+
+      topMotels = Object.entries(byMotelMap)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10)
+        .map(([id, count]) => ({
+          motelId: id,
+          motelName: motels.find((m) => m.id === id)?.name || 'Desconocido',
+          count,
+        }));
+    }
+
     // Calcular tasa de conversión (clicks / views)
     const totalClicks = totalClicksPhone + totalClicksWhatsApp + totalClicksMap + totalClicksWebsite;
     const conversionRate = totalViews > 0 ? (totalClicks / totalViews) * 100 : 0;
 
     return NextResponse.json({
-      motel: {
-        id: motel.id,
-        name: motel.name,
-      },
+      motel: motelInfo,
+      isGlobal: !motelId,
       period: {
         days,
         startDate,
@@ -147,9 +189,11 @@ export async function GET(
           count,
         })),
         topCities,
+        topMotels,
       },
       recentEvents: events.slice(0, 50).map((e) => ({
         id: e.id,
+        motelId: e.motelId,
         eventType: e.eventType,
         timestamp: e.timestamp,
         source: e.source,
@@ -158,9 +202,9 @@ export async function GET(
       })),
     });
   } catch (error) {
-    console.error('Error fetching motel analytics:', error);
+    console.error('Error fetching global analytics:', error);
     return NextResponse.json(
-      { error: 'Error al obtener estadísticas' },
+      { error: 'Error al obtener estadísticas globales' },
       { status: 500 }
     );
   }

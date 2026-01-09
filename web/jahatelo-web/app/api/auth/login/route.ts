@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
       role: user.role,
       motelId: user.motelId || undefined,
       name: user.name || undefined,
+      modulePermissions: user.modulePermissions ?? [],
     });
 
     // Setear cookie httpOnly
@@ -71,6 +72,7 @@ export async function POST(request: NextRequest) {
         name: user.name,
         role: user.role,
         motelId: user.motelId,
+        modulePermissions: user.modulePermissions ?? [],
       },
     });
   } catch (error) {

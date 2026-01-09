@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getTokenFromRequest, verifyToken, hasRole } from '@/lib/auth';
+import { requireAdminAccess } from '@/lib/adminAccess';
 import { hashPassword, generateRandomPassword } from '@/lib/password';
+import { ADMIN_MODULES } from '@/lib/adminModules';
+import { logAuditEvent } from '@/lib/audit';
 
 /**
  * PATCH /api/admin/users/:id
@@ -12,19 +14,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = await getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-    if (!hasRole(user, ['SUPERADMIN'])) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'users');
+    if (access.error) return access.error;
+    const user = access.user;
 
     const { id } = await params;
     const body = await request.json();
-    const { name, role, motelId, isActive, resetPassword } = body;
+    const { name, role, motelId, isActive, resetPassword, modulePermissions } = body;
 
     // Verificar que el usuario existe
     const existingUser = await prisma.user.findUnique({
@@ -45,6 +41,7 @@ export async function PATCH(
       motelId?: string | null;
       isActive?: boolean;
       passwordHash?: string;
+      modulePermissions?: string[];
     } = {};
 
     if (name !== undefined) updateData.name = name;
@@ -95,6 +92,23 @@ export async function PATCH(
       }
     }
 
+    if (modulePermissions !== undefined) {
+      if (!Array.isArray(modulePermissions)) {
+        return NextResponse.json(
+          { error: 'Permisos inválidos' },
+          { status: 400 }
+        );
+      }
+      const invalidModule = modulePermissions.find((module: string) => !ADMIN_MODULES.includes(module as never));
+      if (invalidModule) {
+        return NextResponse.json(
+          { error: 'Permisos inválidos' },
+          { status: 400 }
+        );
+      }
+      updateData.modulePermissions = modulePermissions;
+    }
+
     let temporaryPassword: string | undefined;
 
     // Si se solicita reset de password
@@ -114,6 +128,7 @@ export async function PATCH(
         role: true,
         isActive: true,
         motelId: true,
+        modulePermissions: true,
         updatedAt: true,
         motel: {
           select: {
@@ -123,6 +138,14 @@ export async function PATCH(
           },
         },
       },
+    });
+
+    await logAuditEvent({
+      userId: user?.id,
+      action: 'UPDATE',
+      entityType: 'User',
+      entityId: updatedUser.id,
+      metadata: { role: updatedUser.role, isActive: updatedUser.isActive },
     });
 
     const response: {
@@ -153,15 +176,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = await getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-    if (!hasRole(user, ['SUPERADMIN'])) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'users');
+    if (access.error) return access.error;
+    const user = access.user;
 
     const { id } = await params;
 
@@ -188,6 +205,14 @@ export async function DELETE(
     // Eliminar usuario
     await prisma.user.delete({
       where: { id },
+    });
+
+    await logAuditEvent({
+      userId: user?.id,
+      action: 'DELETE',
+      entityType: 'User',
+      entityId: id,
+      metadata: { email: existingUser.email },
     });
 
     return NextResponse.json(

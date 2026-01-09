@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getTokenFromRequest, verifyToken, hasRole } from '@/lib/auth';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import { logAuditEvent } from '@/lib/audit';
 
 /**
  * GET /api/admin/prospects
@@ -8,15 +9,8 @@ import { getTokenFromRequest, verifyToken, hasRole } from '@/lib/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    const token = await getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-    if (!hasRole(user, ['SUPERADMIN'])) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'prospects');
+    if (access.error) return access.error;
 
     const prospects = await prisma.motelProspect.findMany({
       orderBy: [
@@ -41,15 +35,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const token = await getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-    if (!hasRole(user, ['SUPERADMIN'])) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'prospects');
+    if (access.error) return access.error;
 
     const body = await request.json();
     const { contactName, phone, motelName, channel, notes } = body;
@@ -100,6 +87,14 @@ export async function POST(request: NextRequest) {
         channel: finalChannel,
         notes: notes?.trim() || null,
       },
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'CREATE',
+      entityType: 'Prospect',
+      entityId: prospect.id,
+      metadata: { motelName: prospect.motelName, channel: prospect.channel },
     });
 
     return NextResponse.json(prospect, { status: 201 });

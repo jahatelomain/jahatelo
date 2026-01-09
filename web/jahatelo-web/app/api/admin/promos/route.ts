@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import { logAuditEvent } from '@/lib/audit';
 
 // GET /api/admin/promos?motelId=xxx
 export async function GET(request: NextRequest) {
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'promos');
+    if (access.error) return access.error;
+
     const { searchParams } = new URL(request.url);
     const motelId = searchParams.get('motelId');
 
@@ -31,6 +36,9 @@ export async function GET(request: NextRequest) {
 // POST /api/admin/promos
 export async function POST(request: NextRequest) {
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'promos');
+    if (access.error) return access.error;
+
     const body = await request.json();
     const { motelId, title, description, imageUrl, validFrom, validUntil, isActive, isGlobal } = body;
 
@@ -52,6 +60,14 @@ export async function POST(request: NextRequest) {
         isActive: isActive ?? true,
         isGlobal: isGlobal ?? false,
       },
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'CREATE',
+      entityType: 'Promo',
+      entityId: promo.id,
+      metadata: { motelId: promo.motelId, title: promo.title },
     });
 
     return NextResponse.json(promo, { status: 201 });

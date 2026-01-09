@@ -14,6 +14,7 @@ export interface UserPayload extends JWTPayload {
   role: 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
   motelId?: string;
   name?: string;
+  modulePermissions?: string[];
 }
 
 /**

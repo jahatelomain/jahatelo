@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { AMENITY_ICONS } from '@/lib/amenityIcons';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import { logAuditEvent } from '@/lib/audit';
 
 // GET all amenities
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'amenities');
+    if (access.error) return access.error;
+
     const amenities = await prisma.amenity.findMany({
       include: {
         motelAmenities: {
@@ -38,6 +43,9 @@ export async function GET() {
 // POST create new amenity
 export async function POST(request: NextRequest) {
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'amenities');
+    if (access.error) return access.error;
+
     const body = await request.json();
     const { name, type, icon } = body;
 
@@ -73,6 +81,14 @@ export async function POST(request: NextRequest) {
         type: type || null,
         icon: icon || null,
       },
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'CREATE',
+      entityType: 'Amenity',
+      entityId: amenity.id,
+      metadata: { name: amenity.name },
     });
 
     return NextResponse.json(amenity, { status: 201 });

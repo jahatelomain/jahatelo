@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getTokenFromRequest, verifyToken, hasRole } from '@/lib/auth';
+import { requireAdminAccess } from '@/lib/adminAccess';
 import { hashPassword, generateRandomPassword } from '@/lib/password';
+import { ADMIN_MODULES } from '@/lib/adminModules';
+import { logAuditEvent } from '@/lib/audit';
 
 /**
  * GET /api/admin/users
@@ -9,15 +11,8 @@ import { hashPassword, generateRandomPassword } from '@/lib/password';
  */
 export async function GET(request: NextRequest) {
   try {
-    const token = await getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-    if (!hasRole(user, ['SUPERADMIN'])) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'users');
+    if (access.error) return access.error;
 
     const users = await prisma.user.findMany({
       select: {
@@ -27,6 +22,7 @@ export async function GET(request: NextRequest) {
         role: true,
         isActive: true,
         motelId: true,
+        modulePermissions: true,
         createdAt: true,
         updatedAt: true,
         motel: {
@@ -59,18 +55,12 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const token = await getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-    if (!hasRole(user, ['SUPERADMIN'])) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'users');
+    if (access.error) return access.error;
+    const user = access.user;
 
     const body = await request.json();
-    const { email, name, role, motelId, password } = body;
+    const { email, name, role, motelId, password, modulePermissions } = body;
 
     // Validaciones
     if (!email || !name || !role) {
@@ -94,6 +84,23 @@ export async function POST(request: NextRequest) {
         { error: 'Para MOTEL_ADMIN el motelId es requerido' },
         { status: 400 }
       );
+    }
+
+    if (modulePermissions && !Array.isArray(modulePermissions)) {
+      return NextResponse.json(
+        { error: 'Permisos inválidos' },
+        { status: 400 }
+      );
+    }
+
+    if (modulePermissions) {
+      const invalidModule = modulePermissions.find((module: string) => !ADMIN_MODULES.includes(module as never));
+      if (invalidModule) {
+        return NextResponse.json(
+          { error: 'Permisos inválidos' },
+          { status: 400 }
+        );
+      }
     }
 
     // Verificar si el email ya existe
@@ -133,6 +140,7 @@ export async function POST(request: NextRequest) {
         name,
         role,
         motelId: role === 'MOTEL_ADMIN' ? motelId : null,
+        modulePermissions: modulePermissions ?? [],
         passwordHash,
         isActive: true,
       },
@@ -143,6 +151,7 @@ export async function POST(request: NextRequest) {
         role: true,
         isActive: true,
         motelId: true,
+        modulePermissions: true,
         createdAt: true,
         motel: {
           select: {
@@ -152,6 +161,14 @@ export async function POST(request: NextRequest) {
           },
         },
       },
+    });
+
+    await logAuditEvent({
+      userId: user?.id,
+      action: 'CREATE',
+      entityType: 'User',
+      entityId: newUser.id,
+      metadata: { email: newUser.email, role: newUser.role },
     });
 
     return NextResponse.json({

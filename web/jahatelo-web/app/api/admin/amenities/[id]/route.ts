@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { AMENITY_ICONS } from '@/lib/amenityIcons';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import { logAuditEvent } from '@/lib/audit';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -14,6 +16,9 @@ export async function GET(
   const { id } = await context.params;
 
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'amenities');
+    if (access.error) return access.error;
+
     const amenity = await prisma.amenity.findUnique({
       where: { id },
       include: {
@@ -51,6 +56,9 @@ export async function PATCH(
   const { id } = await context.params;
 
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'amenities');
+    if (access.error) return access.error;
+
     const body = await request.json();
     const { name, type, icon } = body;
 
@@ -92,6 +100,14 @@ export async function PATCH(
       },
     });
 
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'UPDATE',
+      entityType: 'Amenity',
+      entityId: amenity.id,
+      metadata: { name: amenity.name },
+    });
+
     return NextResponse.json(amenity);
   } catch (error) {
     console.error('Error updating amenity:', error);
@@ -110,6 +126,9 @@ export async function DELETE(
   const { id } = await context.params;
 
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'amenities');
+    if (access.error) return access.error;
+
     const amenity = await prisma.amenity.findUnique({
       where: { id },
     });
@@ -131,6 +150,14 @@ export async function DELETE(
 
     await prisma.amenity.delete({
       where: { id },
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'DELETE',
+      entityType: 'Amenity',
+      entityId: id,
+      metadata: { name: amenity.name },
     });
 
     return NextResponse.json({ success: true });

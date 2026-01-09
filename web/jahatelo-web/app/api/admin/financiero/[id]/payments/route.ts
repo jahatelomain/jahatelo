@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getTokenFromRequest, verifyToken, hasRole } from '@/lib/auth';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import { logAuditEvent } from '@/lib/audit';
 
 const PAYMENT_TYPES = ['DIRECT_DEBIT', 'TRANSFER', 'EXCHANGE'] as const;
 const PAYMENT_STATUSES = ['PAID', 'PENDING', 'FAILED', 'REFUNDED'] as const;
@@ -14,15 +15,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = await getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-    if (!hasRole(user, ['SUPERADMIN'])) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'financiero');
+    if (access.error) return access.error;
 
     const { id } = await params;
     const body = await request.json();
@@ -92,6 +86,14 @@ export async function POST(
         notes: true,
         createdAt: true,
       },
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'CREATE',
+      entityType: 'PaymentHistory',
+      entityId: payment.id,
+      metadata: { motelId: id, amount: payment.amount, status: payment.status },
     });
 
     return NextResponse.json(payment, { status: 201 });

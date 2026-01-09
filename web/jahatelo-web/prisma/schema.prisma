@@ -361,6 +361,7 @@ model User {
   birthDate    DateTime?
   role         UserRole   @default(USER)
   isActive     Boolean    @default(true)
+  modulePermissions String[] @default([])
 
   // Relación con motel (para MOTEL_ADMIN)
   motel        Motel?     @relation(fields: [motelId], references: [id], onDelete: Cascade)
@@ -372,6 +373,25 @@ model User {
   // Relations
   reviews      Review[]
   favorites    Favorite[]
+  auditLogs    AuditLog[]
+}
+
+// ============================================
+// AUDIT LOGS
+// ============================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([entityType, createdAt])
 }
 
 // ============================================

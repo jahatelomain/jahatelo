@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getTokenFromRequest, verifyToken, hasRole } from '@/lib/auth';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import { logAuditEvent } from '@/lib/audit';
 
 /**
  * GET /api/admin/financiero/[id]
@@ -11,15 +12,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = await getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-    if (!hasRole(user, ['SUPERADMIN'])) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'financiero');
+    if (access.error) return access.error;
 
     const { id } = await params;
 
@@ -83,15 +77,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = await getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-    if (!hasRole(user, ['SUPERADMIN'])) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'financiero');
+    if (access.error) return access.error;
 
     const { id } = await params;
     const body = await request.json();
@@ -174,6 +161,14 @@ export async function PATCH(
         adminContactPhone: true,
         updatedAt: true,
       },
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'UPDATE',
+      entityType: 'MotelFinanzas',
+      entityId: updatedMotel.id,
+      metadata: { name: updatedMotel.name, paymentType: updatedMotel.paymentType },
     });
 
     return NextResponse.json(updatedMotel);

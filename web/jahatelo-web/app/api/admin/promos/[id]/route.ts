@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import { logAuditEvent } from '@/lib/audit';
 
 // PATCH /api/admin/promos/[id]
 export async function PATCH(
@@ -7,6 +9,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'promos');
+    if (access.error) return access.error;
+
     const { id } = await params;
     const body = await request.json();
     const { title, description, imageUrl, validFrom, validUntil, isActive, isGlobal } = body;
@@ -24,6 +29,14 @@ export async function PATCH(
       },
     });
 
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'UPDATE',
+      entityType: 'Promo',
+      entityId: promo.id,
+      metadata: { motelId: promo.motelId, title: promo.title },
+    });
+
     return NextResponse.json(promo);
   } catch (error) {
     console.error('Error updating promo:', error);
@@ -37,10 +50,21 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'promos');
+    if (access.error) return access.error;
+
     const { id } = await params;
 
-    await prisma.promo.delete({
+    const promo = await prisma.promo.delete({
       where: { id },
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'DELETE',
+      entityType: 'Promo',
+      entityId: promo.id,
+      metadata: { motelId: promo.motelId, title: promo.title },
     });
 
     return NextResponse.json({ success: true });

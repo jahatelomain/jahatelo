@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { UserPayload } from '@/lib/auth';
+import { hasModuleAccess } from '@/lib/adminModules';
 import { ToastProvider } from '@/contexts/ToastContext';
 
 export default function AdminLayout({
@@ -85,6 +86,8 @@ export default function AdminLayout({
     if (pathname.startsWith('/admin/users')) return 'Usuarios';
     if (pathname.startsWith('/admin/prospects')) return 'Prospects';
     if (pathname.startsWith('/admin/financiero')) return 'Financiero';
+    if (pathname.startsWith('/admin/analytics')) return 'Analytics';
+    if (pathname.startsWith('/admin/audit')) return 'Auditoría';
     return 'Admin';
   };
 
@@ -96,11 +99,28 @@ export default function AdminLayout({
     { href: '/admin/users', label: 'Usuarios', roles: ['SUPERADMIN'] },
     { href: '/admin/prospects', label: 'Prospects', roles: ['SUPERADMIN'] },
     { href: '/admin/financiero', label: 'Financiero', roles: ['SUPERADMIN'] },
+    { href: '/admin/analytics', label: 'Analytics', roles: ['SUPERADMIN'] },
+    { href: '/admin/audit', label: 'Auditoría', roles: ['SUPERADMIN'] },
   ];
+
+  const getModuleFromPath = (path: string) => {
+    if (path === '/admin') return 'dashboard';
+    if (path.startsWith('/admin/motels')) return 'motels';
+    if (path.startsWith('/admin/promos')) return 'promos';
+    if (path.startsWith('/admin/amenities')) return 'amenities';
+    if (path.startsWith('/admin/users')) return 'users';
+    if (path.startsWith('/admin/prospects')) return 'prospects';
+    if (path.startsWith('/admin/financiero')) return 'financiero';
+    if (path.startsWith('/admin/analytics')) return 'analytics';
+    if (path.startsWith('/admin/audit')) return 'audit';
+    return null;
+  };
 
   // Filtrar items según el rol del usuario
   const filteredNavItems = navItems.filter(item =>
-    !user?.role || item.roles.includes(user.role as 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER')
+    !user?.role ||
+    (item.roles.includes(user.role as 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER') &&
+      hasModuleAccess(user, getModuleFromPath(item.href) || 'dashboard'))
   );
 
   if (isLoginPage) {
@@ -113,6 +133,12 @@ export default function AdminLayout({
         <div className="text-slate-500">Cargando panel...</div>
       </div>
     );
+  }
+
+  const currentModule = getModuleFromPath(pathname);
+  if (currentModule && !hasModuleAccess(user, currentModule)) {
+    router.push('/admin');
+    return null;
   }
 
   const profileInitials = user?.name
