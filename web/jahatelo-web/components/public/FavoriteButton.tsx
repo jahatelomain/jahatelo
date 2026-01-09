@@ -1,64 +1,132 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-
-interface Motel {
-  id: string;
-  name: string;
-  slug: string;
-}
+import { useState } from 'react';
 
 interface FavoriteButtonProps {
-  motel: Motel;
+  motelId: string;
+  isFavorite: boolean;
+  onToggle: () => Promise<boolean>;
+  source?: string;
+  size?: 'small' | 'medium' | 'large';
+  variant?: 'icon' | 'button';
 }
 
-export default function FavoriteButton({ motel }: FavoriteButtonProps) {
-  const [isFavorite, setIsFavorite] = useState(false);
+export default function FavoriteButton({
+  motelId,
+  isFavorite,
+  onToggle,
+  source = 'LIST',
+  size = 'medium',
+  variant = 'icon',
+}: FavoriteButtonProps) {
+  const [isLoading, setIsLoading] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  useEffect(() => {
-    // Load favorites from localStorage
-    const favorites = JSON.parse(localStorage.getItem('jahatelo_favorites') || '[]');
-    setIsFavorite(favorites.some((fav: Motel) => fav.id === motel.id));
-  }, [motel.id]);
+  const handleClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-  const toggleFavorite = () => {
-    const favorites = JSON.parse(localStorage.getItem('jahatelo_favorites') || '[]');
+    if (isLoading) return;
 
-    if (isFavorite) {
-      // Remove from favorites
-      const newFavorites = favorites.filter((fav: Motel) => fav.id !== motel.id);
-      localStorage.setItem('jahatelo_favorites', JSON.stringify(newFavorites));
-      setIsFavorite(false);
+    setIsLoading(true);
+    setIsAnimating(true);
+
+    const success = await onToggle();
+
+    if (success) {
+      setTimeout(() => setIsAnimating(false), 300);
     } else {
-      // Add to favorites
-      const newFavorites = [...favorites, { id: motel.id, name: motel.name, slug: motel.slug }];
-      localStorage.setItem('jahatelo_favorites', JSON.stringify(newFavorites));
-      setIsFavorite(true);
+      setIsAnimating(false);
     }
 
-    // Trigger animation
-    setIsAnimating(true);
-    setTimeout(() => setIsAnimating(false), 500);
+    setIsLoading(false);
   };
+
+  // Tamaños
+  const sizes = {
+    small: 'w-8 h-8',
+    medium: 'w-10 h-10',
+    large: 'w-12 h-12',
+  };
+
+  const iconSizes = {
+    small: 'w-4 h-4',
+    medium: 'w-5 h-5',
+    large: 'w-6 h-6',
+  };
+
+  if (variant === 'button') {
+    return (
+      <button
+        onClick={handleClick}
+        disabled={isLoading}
+        className={`
+          flex items-center gap-2 px-4 py-2 rounded-lg font-medium
+          transition-all duration-200
+          ${
+            isFavorite
+              ? 'bg-red-100 text-red-700 hover:bg-red-200'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }
+          ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          ${isAnimating ? 'scale-95' : 'scale-100'}
+        `}
+      >
+        <svg
+          className={`${iconSizes[size]} transition-transform ${
+            isAnimating ? 'scale-125' : 'scale-100'
+          }`}
+          fill={isFavorite ? 'currentColor' : 'none'}
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={isFavorite ? 0 : 2}
+            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+          />
+        </svg>
+        <span>{isFavorite ? 'En Favoritos' : 'Agregar a Favoritos'}</span>
+      </button>
+    );
+  }
 
   return (
     <button
-      onClick={toggleFavorite}
-      className={`p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-all ${
-        isAnimating ? 'scale-125' : 'scale-100'
-      }`}
+      onClick={handleClick}
+      disabled={isLoading}
       aria-label={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+      className={`
+        ${sizes[size]}
+        rounded-full
+        flex items-center justify-center
+        transition-all duration-200
+        ${
+          isFavorite
+            ? 'bg-red-500 text-white hover:bg-red-600'
+            : 'bg-white text-gray-600 hover:bg-gray-100'
+        }
+        ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+        ${isAnimating ? 'scale-110' : 'scale-100'}
+        shadow-md hover:shadow-lg
+      `}
     >
-      {isFavorite ? (
-        <svg className="w-6 h-6 text-purple-600 fill-current" viewBox="0 0 20 20">
-          <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
-        </svg>
-      ) : (
-        <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-        </svg>
-      )}
+      <svg
+        className={`${iconSizes[size]} transition-all ${
+          isAnimating ? 'scale-125' : 'scale-100'
+        }`}
+        fill={isFavorite ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={isFavorite ? 0 : 2}
+          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+        />
+      </svg>
     </button>
   );
 }

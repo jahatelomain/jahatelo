@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 
 type AuditPayload = {
   userId?: string | null;
@@ -16,7 +17,7 @@ export async function logAuditEvent(payload: AuditPayload) {
         action: payload.action,
         entityType: payload.entityType,
         entityId: payload.entityId ?? null,
-        metadata: payload.metadata ?? undefined,
+        metadata: (payload.metadata ?? undefined) as Prisma.InputJsonValue | undefined,
       },
     });
   } catch (error) {
