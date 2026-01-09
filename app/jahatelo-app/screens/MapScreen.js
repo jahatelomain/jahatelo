@@ -15,6 +15,11 @@ import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { useNavigation } from '@react-navigation/native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 const LABEL_ZOOM_THRESHOLD = 0.55;
@@ -42,16 +47,17 @@ const IS_ANDROID = Platform.OS === 'android';
  */
 
 // Componente de etiqueta overlay para Android
-// MÉTODO OPTIMIZADO: useRef + transform (sin re-renders innecesarios)
+// SOLUCIÓN DEFINITIVA: React Native Reanimated (animaciones nativas 60 FPS)
 const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
-  const labelRef = useRef(null);
-  const lastPositionRef = useRef({ x: 0, y: 0 });
-  const animationFrameRef = useRef(null);
-  const [initialPosition, setInitialPosition] = useState(null);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(0);
+  const [basePosition, setBasePosition] = useState(null);
+  const intervalRef = useRef(null);
 
-  // Calcular posición inicial solo una vez
+  // Calcular posición base inicial
   useEffect(() => {
-    if (!visible || !mapRef.current || initialPosition) return;
+    if (!visible || !mapRef.current) return;
 
     const getInitialPosition = async () => {
       try {
@@ -62,8 +68,9 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
         });
 
         if (point && point.x !== undefined && point.y !== undefined) {
-          setInitialPosition(point);
-          lastPositionRef.current = point;
+          setBasePosition(point);
+          // Fade in suave al aparecer
+          opacity.value = withTiming(1, { duration: 200 });
         }
       } catch (error) {
         console.error('Error getting initial position:', error);
@@ -71,11 +78,11 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
     };
 
     getInitialPosition();
-  }, [motel.latitude, motel.longitude, visible, mapRef, initialPosition]);
+  }, [motel.latitude, motel.longitude, visible, mapRef]);
 
-  // Actualizar posición usando setNativeProps (sin re-render)
+  // Actualizar posición continuamente con Reanimated
   useEffect(() => {
-    if (!visible || !mapRef.current || !labelRef.current || !initialPosition) {
+    if (!visible || !mapRef.current || !basePosition) {
       return;
     }
 
@@ -88,60 +95,61 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
         });
 
         if (point && point.x !== undefined && point.y !== undefined) {
-          // Usar setNativeProps para actualizar posición sin re-render
-          if (labelRef.current) {
-            labelRef.current.setNativeProps({
-              style: {
-                transform: [
-                  { translateX: point.x - initialPosition.x },
-                  { translateY: point.y - initialPosition.y }
-                ]
-              }
-            });
-          }
-
-          lastPositionRef.current = point;
+          // Animar suavemente a la nueva posición
+          // Duración muy corta (100ms) para respuesta rápida pero suave
+          translateX.value = withTiming(point.x - basePosition.x, { duration: 100 });
+          translateY.value = withTiming(point.y - basePosition.y, { duration: 100 });
         }
       } catch (error) {
         // Silenciar errores durante movimiento rápido
       }
     };
 
-    // Usar requestAnimationFrame para sincronizar con frames del dispositivo
-    const scheduleUpdate = () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      animationFrameRef.current = requestAnimationFrame(() => {
-        updatePosition();
-      });
-    };
-
-    scheduleUpdate();
+    // Actualizar cada 33ms (~30 FPS) para reducir carga con muchos markers
+    intervalRef.current = setInterval(updatePosition, 33);
 
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
       }
     };
-  }, [motel.latitude, motel.longitude, visible, region, mapRef, initialPosition]);
+  }, [motel.latitude, motel.longitude, visible, region, mapRef, basePosition]);
 
-  if (!visible || !initialPosition) {
+  // Fade out cuando se oculta
+  useEffect(() => {
+    if (!visible) {
+      opacity.value = withTiming(0, { duration: 150 });
+    } else if (basePosition) {
+      opacity.value = withTiming(1, { duration: 200 });
+    }
+  }, [visible, basePosition]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+      ],
+      opacity: opacity.value,
+    };
+  });
+
+  if (!basePosition) {
     return null;
   }
 
   const isDisabled = motel.isFinanciallyEnabled === false;
 
   return (
-    <View
-      ref={labelRef}
+    <Animated.View
       collapsable={false}
       style={[
         styles.androidLabelOverlay,
         {
-          left: initialPosition.x,
-          top: initialPosition.y,
+          left: basePosition.x,
+          top: basePosition.y,
         },
+        animatedStyle,
       ]}
       pointerEvents="none"
     >
@@ -150,7 +158,7 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
           {motel.name}
         </Text>
       </View>
-    </View>
+    </Animated.View>
   );
 });
 

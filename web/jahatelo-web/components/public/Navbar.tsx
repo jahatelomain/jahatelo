@@ -12,7 +12,7 @@ export default function Navbar() {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-white dark:bg-slate-900 shadow-sm border-b border-gray-200 dark:border-slate-800 sticky top-0 z-50 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -29,8 +29,8 @@ export default function Navbar() {
               href="/"
               className={`font-medium transition-colors ${
                 isActive('/')
-                  ? 'text-purple-600'
-                  : 'text-gray-600 hover:text-purple-600'
+                  ? 'text-purple-600 dark:text-purple-400'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
               }`}
             >
               Inicio
@@ -39,8 +39,8 @@ export default function Navbar() {
               href="/motels"
               className={`font-medium transition-colors ${
                 isActive('/motels') || pathname.startsWith('/motels')
-                  ? 'text-purple-600'
-                  : 'text-gray-600 hover:text-purple-600'
+                  ? 'text-purple-600 dark:text-purple-400'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
               }`}
             >
               Moteles
@@ -49,8 +49,8 @@ export default function Navbar() {
               href="/search"
               className={`font-medium transition-colors ${
                 isActive('/search')
-                  ? 'text-purple-600'
-                  : 'text-gray-600 hover:text-purple-600'
+                  ? 'text-purple-600 dark:text-purple-400'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
               }`}
             >
               Buscar
@@ -59,8 +59,8 @@ export default function Navbar() {
               href="/nearby"
               className={`font-medium transition-colors ${
                 isActive('/nearby')
-                  ? 'text-purple-600'
-                  : 'text-gray-600 hover:text-purple-600'
+                  ? 'text-purple-600 dark:text-purple-400'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
               }`}
             >
               Cerca mío
@@ -69,8 +69,8 @@ export default function Navbar() {
               href="/mapa"
               className={`font-medium transition-colors ${
                 isActive('/mapa')
-                  ? 'text-purple-600'
-                  : 'text-gray-600 hover:text-purple-600'
+                  ? 'text-purple-600 dark:text-purple-400'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
               }`}
             >
               Mapa
@@ -83,7 +83,7 @@ export default function Navbar() {
             <ThemeToggle />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-gray-600 hover:text-purple-600 p-2"
+              className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 p-2 transition-colors"
             >
               {mobileMenuOpen ? (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,15 +100,15 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 py-4">
+          <div className="md:hidden border-t border-gray-200 dark:border-slate-800 py-4">
             <div className="flex flex-col gap-4">
               <Link
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
                 className={`font-medium transition-colors ${
                   isActive('/')
-                    ? 'text-purple-600'
-                    : 'text-gray-600 hover:text-purple-600'
+                    ? 'text-purple-600 dark:text-purple-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
                 }`}
               >
                 Inicio
@@ -118,8 +118,8 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`font-medium transition-colors ${
                   isActive('/motels') || pathname.startsWith('/motels')
-                    ? 'text-purple-600'
-                    : 'text-gray-600 hover:text-purple-600'
+                    ? 'text-purple-600 dark:text-purple-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
                 }`}
               >
                 Moteles
@@ -129,8 +129,8 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`font-medium transition-colors ${
                   isActive('/search')
-                    ? 'text-purple-600'
-                    : 'text-gray-600 hover:text-purple-600'
+                    ? 'text-purple-600 dark:text-purple-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
                 }`}
               >
                 Buscar
@@ -140,8 +140,8 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`font-medium transition-colors ${
                   isActive('/nearby')
-                    ? 'text-purple-600'
-                    : 'text-gray-600 hover:text-purple-600'
+                    ? 'text-purple-600 dark:text-purple-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
                 }`}
               >
                 Cerca mío
@@ -151,8 +151,8 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`font-medium transition-colors ${
                   isActive('/mapa')
-                    ? 'text-purple-600'
-                    : 'text-gray-600 hover:text-purple-600'
+                    ? 'text-purple-600 dark:text-purple-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
                 }`}
               >
                 Mapa

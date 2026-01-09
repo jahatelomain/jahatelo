@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Animated as RNAnimated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../constants/theme';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -11,9 +10,13 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../contexts/ThemeContext';
+import { useThemedColors } from '../hooks/useThemedColors';
 
 export default function HomeHeader({ motels = [], onMotelPress, onSearch, navigation }) {
   const insets = useSafeAreaInsets();
+  const { theme, toggleTheme } = useTheme();
+  const colors = useThemedColors();
   const [searchValue, setSearchValue] = useState('');
   const placeholderOpacity = useRef(new RNAnimated.Value(1)).current;
 
@@ -145,50 +148,71 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
     default: Math.max(insets.top - 12, 4),
   });
 
+  const getThemeIcon = () => {
+    switch (theme) {
+      case 'light':
+        return 'sunny';
+      case 'dark':
+        return 'moon';
+      case 'auto':
+        return 'contrast';
+      default:
+        return 'sunny';
+    }
+  };
+
   return (
-    <View style={[styles.wrapper, { paddingTop }]}>
+    <View style={[styles.wrapper, { paddingTop, backgroundColor: colors.primary }]}>
       <View style={styles.topRow}>
         <TouchableOpacity
-          style={styles.cityButton}
+          style={[styles.cityButton, { backgroundColor: colors.white }]}
           activeOpacity={0.85}
           onPress={handleNearbyPress}
         >
-          <Ionicons name="location" size={16} color={COLORS.text} style={{ marginRight: 6 }} />
-          <Text style={styles.cityText}>Cerca mío</Text>
+          <Ionicons name="location" size={16} color={colors.text} style={{ marginRight: 6 }} />
+          <Text style={[styles.cityText, { color: colors.text }]}>Cerca mío</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
-          <Animated.View style={animatedBellIconStyle}>
-            <Ionicons name="notifications-outline" size={18} color={COLORS.text} />
-          </Animated.View>
-        </TouchableOpacity>
+        <View style={styles.rightButtons}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.white }]}
+            onPress={toggleTheme}
+          >
+            <Ionicons name={getThemeIcon()} size={18} color={colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.white }]}>
+            <Animated.View style={animatedBellIconStyle}>
+              <Ionicons name="notifications-outline" size={18} color={colors.text} />
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.greetingBlock}>
-        <Text style={styles.greeting}>¡Hola!</Text>
+        <Text style={[styles.greeting, { color: colors.white }]}>¡Hola!</Text>
         <Text style={styles.subGreeting}>Encontrá tu próximo destino</Text>
       </View>
 
-      <View style={styles.searchContainer}>
+      <View style={[styles.searchContainer, { backgroundColor: colors.white }]}>
         <Animated.View style={animatedSearchIconStyle}>
-          <Ionicons name="search" size={18} color={COLORS.muted} />
+          <Ionicons name="search" size={18} color={colors.muted} />
         </Animated.View>
         <TextInput
           placeholder=""
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: colors.text }]}
           value={searchValue}
           onChangeText={setSearchValue}
           returnKeyType="search"
           onSubmitEditing={triggerSearch}
-          placeholderTextColor={COLORS.muted}
+          placeholderTextColor={colors.muted}
         />
-        <TouchableOpacity style={styles.searchAction} onPress={triggerSearch}>
+        <TouchableOpacity style={[styles.searchAction, { backgroundColor: colors.primary }]} onPress={triggerSearch}>
           <Animated.View style={animatedArrowIconStyle}>
             <Ionicons name="arrow-forward" size={16} color="#fff" />
           </Animated.View>
         </TouchableOpacity>
         {!searchValue && (
           <RNAnimated.Text
-            style={[styles.animatedPlaceholder, { opacity: placeholderOpacity }]}
+            style={[styles.animatedPlaceholder, { opacity: placeholderOpacity, color: colors.muted }]}
             pointerEvents="none"
           >
             Buscar moteles, barrios o amenities
@@ -203,23 +227,25 @@ const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: 16,
     paddingBottom: 15,
-    backgroundColor: COLORS.primary,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  rightButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   cityButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
   },
   cityText: {
-    color: COLORS.text,
     fontWeight: '600',
   },
   greetingBlock: {
@@ -228,7 +254,6 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.white,
   },
   subGreeting: {
     fontSize: 13,
@@ -239,7 +264,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -247,7 +271,6 @@ const styles = StyleSheet.create({
     marginTop: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -255,14 +278,12 @@ const styles = StyleSheet.create({
   searchInput: {
     marginLeft: 6,
     flex: 1,
-    color: COLORS.text,
     fontWeight: '600',
   },
   searchAction: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -270,7 +291,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 40,
     right: 60,
-    color: COLORS.muted,
     fontSize: 13,
   },
 });

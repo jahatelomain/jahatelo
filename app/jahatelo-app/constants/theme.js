@@ -5,6 +5,7 @@
  * consistencia visual en toda la aplicación.
  */
 
+// COLORES MODO CLARO
 export const COLORS = {
   // Color principal de la marca (lila del splash)
   primary: '#8E2DE2',
@@ -53,6 +54,57 @@ export const COLORS = {
   border: '#E5E7EB',
   divider: '#F0F0F0',
   disabled: '#D1D5DB',
+};
+
+// COLORES MODO OSCURO
+export const COLORS_DARK = {
+  // Color principal de la marca
+  primary: '#A855F7', // Más claro para mejor contraste en dark
+
+  // Variantes del color principal
+  primaryLight: '#C084FC',
+  primaryDark: '#9333EA',
+
+  // Colores de fondo
+  background: '#0F172A', // slate-900
+  backgroundDark: '#1E293B', // slate-800
+
+  // Colores de tarjetas y superficies
+  card: '#1E293B',
+  cardBorder: '#334155',
+
+  // Colores de texto
+  text: '#F1F5F9', // slate-100
+  textLight: '#CBD5E1', // slate-300
+  textMuted: '#64748B', // slate-500
+  muted: '#64748B',
+
+  // Colores de acento
+  accent: '#A855F7',
+  accentLight: '#312E81',
+  accentLighter: '#1E1B4B',
+
+  // Colores semánticos
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  info: '#3B82F6',
+
+  // Colores neutros
+  white: '#FFFFFF',
+  black: '#000000',
+  gray: '#64748B',
+  grayLight: '#475569',
+  grayDark: '#94A3B8',
+
+  // Overlays y sombras
+  overlay: 'rgba(0, 0, 0, 0.7)',
+  shadow: '#000000',
+
+  // Colores específicos
+  border: '#334155',
+  divider: '#334155',
+  disabled: '#475569',
 };
 
 export const SPACING = {

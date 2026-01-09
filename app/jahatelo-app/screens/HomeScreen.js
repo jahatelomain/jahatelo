@@ -15,10 +15,11 @@ import { fetchMotels } from '../services/motelsApi';
 import HomeCategoriesGrid from '../components/HomeCategoriesGrid';
 import HomeHeader from '../components/HomeHeader';
 import PromoCarousel from '../components/PromoCarousel';
-import { COLORS } from '../constants/theme';
+import { useThemedColors } from '../hooks/useThemedColors';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
+  const colors = useThemedColors();
   const [motels, setMotels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -84,13 +85,13 @@ export default function HomeScreen() {
       <>
         <StatusBar
           barStyle="light-content"
-          backgroundColor={COLORS.primary}
+          backgroundColor={colors.primary}
           translucent={Platform.OS === 'android'}
         />
-        <View style={styles.screen}>
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={COLORS.white} />
-            <Text style={styles.centerText}>Cargando moteles...</Text>
+        <View style={[styles.screen, { backgroundColor: colors.background }]}>
+          <View style={[styles.centerContainer, { backgroundColor: colors.primary }]}>
+            <ActivityIndicator size="large" color={colors.white} />
+            <Text style={[styles.centerText, { color: colors.white }]}>Cargando moteles...</Text>
           </View>
         </View>
       </>
@@ -102,13 +103,13 @@ export default function HomeScreen() {
       <>
         <StatusBar
           barStyle="light-content"
-          backgroundColor={COLORS.primary}
+          backgroundColor={colors.primary}
           translucent={Platform.OS === 'android'}
         />
-        <View style={styles.screen}>
-          <View style={styles.centerContainer}>
-            <Text style={styles.centerText}>⚠️ {error}</Text>
-            <Text style={[styles.centerText, { opacity: 0.8 }]}>Verifica tu conexión a internet</Text>
+        <View style={[styles.screen, { backgroundColor: colors.background }]}>
+          <View style={[styles.centerContainer, { backgroundColor: colors.primary }]}>
+            <Text style={[styles.centerText, { color: colors.white }]}>⚠️ {error}</Text>
+            <Text style={[styles.centerText, { opacity: 0.8, color: colors.white }]}>Verifica tu conexión a internet</Text>
           </View>
         </View>
       </>
@@ -119,12 +120,12 @@ export default function HomeScreen() {
     <>
       <StatusBar
         barStyle="light-content"
-        backgroundColor={COLORS.primary}
+        backgroundColor={colors.primary}
         translucent={Platform.OS === 'android'}
       />
-      <View style={styles.screen}>
+      <View style={[styles.screen, { backgroundColor: colors.background }]}>
         {/* Header */}
-        <View style={styles.headerWrapper}>
+        <View style={[styles.headerWrapper, { backgroundColor: colors.primary }]}>
           <HomeHeader
             motels={motels}
             onMotelPress={handleMotelPress}
@@ -136,13 +137,13 @@ export default function HomeScreen() {
         {/* ScrollView con contenido */}
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, { backgroundColor: colors.background }]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={COLORS.primary}
-              colors={[COLORS.primary]}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
             />
           }
         >
@@ -157,14 +158,12 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: COLORS.white,
   },
   headerWrapper: {
-    backgroundColor: COLORS.primary,
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     overflow: 'hidden',
-    marginBottom: 8, // Reducido de 20 a 8 para acercar header a "Promociones"
+    marginBottom: 8,
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -172,7 +171,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   content: {
-    backgroundColor: COLORS.white,
     paddingTop: 0,
     paddingBottom: 24,
   },
@@ -180,10 +178,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
   },
   centerText: {
-    color: COLORS.white,
     marginTop: 12,
   },
 });
