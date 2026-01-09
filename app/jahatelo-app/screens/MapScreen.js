@@ -22,6 +22,13 @@ const IS_ANDROID = Platform.OS === 'android';
 // Marker con Callout solo en iOS para evitar etiquetas en Android
 const CustomMarker = React.memo(({ motel, onPress }) => {
   const isDisabled = motel.isFinanciallyEnabled === false;
+  const [tracksChanges, setTracksChanges] = useState(IS_ANDROID);
+
+  useEffect(() => {
+    if (!IS_ANDROID) return;
+    const timer = setTimeout(() => setTracksChanges(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <Marker
@@ -31,7 +38,7 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
       }}
       anchor={{ x: 0.5, y: 1 }}
       onPress={onPress}
-      tracksViewChanges={false}
+      tracksViewChanges={IS_ANDROID ? tracksChanges : false}
     >
       {/* Pin personalizado */}
       <View style={[styles.markerPin, isDisabled && styles.disabledMarker]}>
