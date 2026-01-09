@@ -279,7 +279,7 @@ export default function AdminLayout({
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 p-6 md:p-8 bg-slate-100 min-h-[calc(100vh-57px)]">
+        <main className="flex-1 p-6 md:p-8 bg-slate-100 h-[calc(100vh-57px)] overflow-y-scroll">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
