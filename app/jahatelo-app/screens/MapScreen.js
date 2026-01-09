@@ -19,7 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 const IS_ANDROID = Platform.OS === 'android';
 
-// Marker unificado con Callout nativo para ambas plataformas
+// Marker con Callout solo en iOS para evitar etiquetas en Android
 const CustomMarker = React.memo(({ motel, onPress }) => {
   const isDisabled = motel.isFinanciallyEnabled === false;
 
@@ -40,15 +40,16 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
         </View>
       </View>
 
-      {/* Callout nativo - se muestra al hacer tap */}
-      <Callout tooltip onPress={onPress}>
-        <View style={[styles.calloutContainer, isDisabled && styles.disabledCallout]}>
-          <Text style={styles.calloutTitle} numberOfLines={1}>
-            {motel.name}
-          </Text>
-          <Text style={styles.calloutSubtitle}>Tap para ver detalles</Text>
-        </View>
-      </Callout>
+      {!IS_ANDROID && (
+        <Callout tooltip onPress={onPress}>
+          <View style={[styles.calloutContainer, isDisabled && styles.disabledCallout]}>
+            <Text style={styles.calloutTitle} numberOfLines={1}>
+              {motel.name}
+            </Text>
+            <Text style={styles.calloutSubtitle}>Tap para ver detalles</Text>
+          </View>
+        </Callout>
+      )}
     </Marker>
   );
 }, (prevProps, nextProps) => {
