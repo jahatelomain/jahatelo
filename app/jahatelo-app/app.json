@@ -4,7 +4,7 @@
     "slug": "jahatelo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo-1024.png",
+    "icon": "./assets/app-icon-1024.png",
     "scheme": "jahatelo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -12,7 +12,7 @@
     "splash": {
       "image": "./assets/splash-2732.png",
       "resizeMode": "contain",
-      "backgroundColor": "#822DE2"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": true,
@@ -25,8 +25,8 @@
     "android": {
       "package": "app.jahatelo.mobile",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/android-foreground-1080.png",
-        "backgroundColor": "#822DE2"
+        "foregroundImage": "./assets/logo-icon.png",
+        "backgroundColor": "#FFFFFF"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -48,9 +48,9 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#822DE2",
+          "backgroundColor": "#FFFFFF",
           "dark": {
-            "backgroundColor": "#822DE2"
+            "backgroundColor": "#FFFFFF"
           }
         }
       ]

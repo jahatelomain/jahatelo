@@ -1,21 +1,16 @@
 import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
-import HeartLogo from './HeartLogo';
+import { Animated, StyleSheet, View } from 'react-native';
+import LottieView from 'lottie-react-native';
 
 const COLORS = {
   background: '#FFFFFF',
-  title: '#2A0038',
-  subtitle: '#705B85',
 };
 
-export default function AnimatedSplash() {
+export default function AnimatedSplash({ onFinish }) {
   // Valores de animación
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
-  const heartPulseAnim = useRef(new Animated.Value(1)).current;
   const pinDropAnim = useRef(new Animated.Value(-50)).current;
-  const textFadeAnim = useRef(new Animated.Value(0)).current;
-  const textSlideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
     // Secuencia de entrada del logo
@@ -43,69 +38,31 @@ export default function AnimatedSplash() {
       }),
       // 3. Delay pequeño
       Animated.delay(150),
-      // 4. Fade in del texto
-      Animated.parallel([
-        Animated.timing(textFadeAnim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-        Animated.spring(textSlideAnim, {
-          toValue: 0,
-          tension: 35,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start(() => {
-      // 5. Iniciar animación de pulso del corazón
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(heartPulseAnim, {
-            toValue: 1.05,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(heartPulseAnim, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    });
+    ]).start();
   }, []);
 
   return (
     <View style={styles.container}>
-      {/* Logo animado con efecto de pulso en el corazón */}
+      {/* Logo oficial */}
       <Animated.View
         style={[
           styles.logoContainer,
           {
             opacity: fadeAnim,
             transform: [
-              { scale: Animated.multiply(scaleAnim, heartPulseAnim) },
+              { scale: scaleAnim },
               { translateY: pinDropAnim },
             ],
           },
         ]}
       >
-        <HeartLogo size={180} />
-      </Animated.View>
-
-      {/* Textos animados */}
-      <Animated.View
-        style={[
-          styles.textContainer,
-          {
-            opacity: textFadeAnim,
-            transform: [{ translateY: textSlideAnim }],
-          },
-        ]}
-      >
-        <Text style={styles.title}>Jahatelo</Text>
-        <Text style={styles.subtitle}>Moteles cerca tuyo, al instante</Text>
+        <LottieView
+          source={require('../assets/logo-lottie.json')}
+          autoPlay
+          loop={false}
+          onAnimationFinish={() => onFinish?.()}
+          style={styles.logo}
+        />
       </Animated.View>
     </View>
   );
@@ -119,25 +76,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   logoContainer: {
-    width: 200,
-    height: 200,
+    width: 260,
+    height: 260,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  textContainer: {
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: COLORS.title,
-    letterSpacing: 0.5,
-  },
-  subtitle: {
-    marginTop: 8,
-    fontSize: 15,
-    color: COLORS.subtitle,
-    fontWeight: '400',
+  logo: {
+    width: 260,
+    height: 260,
   },
 });

@@ -35,6 +35,12 @@ const icons: Record<string, ReactElement> = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
     </svg>
   ),
+  pricetag: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h5l7 7-5 5-7-7V7z" />
+      <circle cx="9.5" cy="9.5" r="1.5" />
+    </svg>
+  ),
 };
 
 export default function CategoriesGrid({ categories }: CategoriesGridProps) {

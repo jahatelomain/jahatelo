@@ -110,7 +110,7 @@ export default async function HomePage() {
   const categories = [
     { id: 'cities', label: 'Moteles por ciudad', href: '/motels', iconName: 'location-outline' },
     { id: 'map', label: 'Ver mapa', href: '/mapa', iconName: 'map-outline' },
-    { id: 'popular', label: 'Populares', href: '/motels', iconName: 'flame-outline' },
+    { id: 'promos', label: 'Promos', href: '/motels', iconName: 'pricetag' },
   ];
 
   return (
