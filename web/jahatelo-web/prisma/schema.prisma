@@ -370,7 +370,14 @@ model Review {
   userId      String?
   score       Int        // 1-5
   comment     String?
+  isVerified  Boolean    @default(false) // True si el usuario está verificado
+  isAnonymous Boolean    @default(false) // True si la review es anónima
+  likes       Int        @default(0)     // Para futuro: sistema de likes
   createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([motelId, createdAt])
+  @@index([userId, motelId])
 }
 
 // ============================================
@@ -380,12 +387,23 @@ model Review {
 model User {
   id           String     @id @default(cuid())
   email        String     @unique
-  passwordHash String
+  passwordHash String?    // Nullable para OAuth users
   name         String?
   birthDate    DateTime?
   role         UserRole   @default(USER)
   isActive     Boolean    @default(true)
   modulePermissions String[] @default([])
+
+  // Campos para usuarios móviles
+  phone        String?
+  profilePhoto String?
+  provider     String?    @default("email") // "email", "google", "facebook", "apple"
+  providerId   String?    // ID del proveedor OAuth
+  isEmailVerified Boolean @default(false)
+
+  // Tokens para notificaciones push
+  pushToken    String?    // Expo push token
+  deviceInfo   Json?      // Info del dispositivo (OS, version, etc)
 
   // Relación con motel (para MOTEL_ADMIN)
   motel        Motel?     @relation(fields: [motelId], references: [id], onDelete: Cascade)
@@ -398,6 +416,10 @@ model User {
   reviews      Review[]
   favorites    Favorite[]
   auditLogs    AuditLog[]
+  notificationPreferences UserNotificationPreferences?
+
+  @@index([email])
+  @@index([provider, providerId])
 }
 
 // ============================================
@@ -431,6 +453,37 @@ model Favorite {
   createdAt  DateTime @default(now())
 
   @@unique([userId, motelId])
+}
+
+// ============================================
+// USER NOTIFICATION PREFERENCES
+// ============================================
+
+model UserNotificationPreferences {
+  id                      String   @id @default(cuid())
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                  String   @unique
+
+  // Preferencias generales
+  enableNotifications     Boolean  @default(true)
+  enableEmail             Boolean  @default(true)
+  enablePush              Boolean  @default(true)
+
+  // Alertas de favoritos
+  notifyNewPromos         Boolean  @default(true)  // Nuevas promos en favoritos
+  notifyPriceDrops        Boolean  @default(true)  // Bajadas de precio
+  notifyUpdates           Boolean  @default(true)  // Actualizaciones de motel
+
+  // Alertas de reviews
+  notifyReviewReplies     Boolean  @default(true)  // Respuestas a mis reviews
+  notifyReviewLikes       Boolean  @default(false) // Likes en mis reviews
+
+  // Marketing
+  notifyPromotions        Boolean  @default(true)  // Promociones generales
+  notifyNewMotels         Boolean  @default(false) // Nuevos moteles cerca
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 }
 
 // ============================================
