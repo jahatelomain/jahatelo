@@ -35,6 +35,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar password
+    if (!user.passwordHash) {
+      return NextResponse.json(
+        { error: 'Credenciales inválidas' },
+        { status: 401 }
+      );
+    }
+
     const isValid = await verifyPassword(password, user.passwordHash);
     console.log('[LOGIN] Password valid?', isValid);
     if (!isValid) {
