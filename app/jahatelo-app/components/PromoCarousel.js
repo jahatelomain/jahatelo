@@ -30,7 +30,7 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
     motel.thumbnail ||
     motel.photos?.[0]?.url ||
     motel.fotos?.[0] ||
-    'https://images.unsplash.com/photo-1559599238-4b9b034d4e9e?auto=format&fit=crop&w=1400&q=80';
+    'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=1400&q=80';
 
   const inputRange = [
     (index - 1) * (CARD_WIDTH + SPACING),
