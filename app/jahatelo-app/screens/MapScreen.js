@@ -23,6 +23,37 @@ const IS_ANDROID = Platform.OS === 'android';
 const CustomMarker = React.memo(({ motel, onPress }) => {
   const isDisabled = motel.isFinanciallyEnabled === false;
   const [tracksChanges, setTracksChanges] = useState(IS_ANDROID);
+  const plan = motel.plan || 'BASIC';
+
+  // Configuración según plan
+  const isPremium = plan === 'PREMIUM';
+  const isPlatinum = plan === 'PLATINUM';
+  const pinSize = isPlatinum ? 48 : 36; // PLATINUM 2x más grande
+  const iconSize = isPlatinum ? 20 : 14;
+
+  // Colores según plan
+  let pinColor = COLORS.primary; // BASIC
+  if (isPremium) pinColor = '#8B5CF6'; // Violeta brillante
+  if (isPlatinum) pinColor = '#F59E0B'; // Dorado
+
+  const pinStyle = [
+    styles.markerPin,
+    {
+      width: pinSize,
+      height: pinSize,
+      backgroundColor: isDisabled ? '#CCCCCC' : pinColor,
+      borderRadius: pinSize / 2,
+    },
+    isDisabled && styles.disabledMarker,
+    isPlatinum && styles.platinumMarker,
+  ];
+
+  const calloutStyle = [
+    styles.calloutContainer,
+    isDisabled && styles.disabledCallout,
+    isPremium && styles.premiumCallout,
+    isPlatinum && styles.platinumCallout,
+  ];
 
   useEffect(() => {
     if (!IS_ANDROID) return;
@@ -41,15 +72,26 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
       tracksViewChanges={IS_ANDROID ? tracksChanges : false}
     >
       {/* Pin personalizado */}
-      <View style={[styles.markerPin, isDisabled && styles.disabledMarker]}>
+      <View style={pinStyle}>
         <View style={styles.markerInner}>
-          <Ionicons name="heart" size={14} color={COLORS.white} />
+          <Ionicons name="heart" size={iconSize} color={COLORS.white} />
         </View>
+        {isPlatinum && (
+          <View style={styles.platinumBadge}>
+            <Ionicons name="star" size={10} color="#F59E0B" />
+          </View>
+        )}
       </View>
 
       {!IS_ANDROID && (
         <Callout tooltip onPress={onPress}>
-          <View style={[styles.calloutContainer, isDisabled && styles.disabledCallout]}>
+          <View style={calloutStyle}>
+            {isPlatinum && (
+              <Text style={styles.calloutBadge}>💎 PLATINUM</Text>
+            )}
+            {isPremium && !isPlatinum && (
+              <Text style={styles.calloutBadge}>⭐ VIP</Text>
+            )}
             <Text style={styles.calloutTitle} numberOfLines={1}>
               {motel.name}
             </Text>
@@ -61,7 +103,8 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
   );
 }, (prevProps, nextProps) => {
   return prevProps.motel.id === nextProps.motel.id &&
-         prevProps.motel.isFinanciallyEnabled === nextProps.motel.isFinanciallyEnabled;
+         prevProps.motel.isFinanciallyEnabled === nextProps.motel.isFinanciallyEnabled &&
+         prevProps.motel.plan === nextProps.motel.plan;
 });
 
 CustomMarker.displayName = 'CustomMarker';
@@ -376,6 +419,38 @@ const styles = StyleSheet.create({
   },
   disabledCallout: {
     backgroundColor: '#CCCCCC',
+  },
+  platinumMarker: {
+    shadowColor: '#F59E0B',
+    shadowOpacity: 0.6,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  platinumBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: COLORS.white,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#F59E0B',
+  },
+  premiumCallout: {
+    backgroundColor: '#8B5CF6',
+  },
+  platinumCallout: {
+    backgroundColor: '#F59E0B',
+  },
+  calloutBadge: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.white,
+    marginBottom: 4,
+    textAlign: 'center',
   },
   centerButton: {
     position: 'absolute',

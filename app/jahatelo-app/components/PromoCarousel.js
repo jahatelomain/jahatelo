@@ -23,7 +23,7 @@ const COLORS = {
   white: '#FFFFFF',
 };
 
-const PromoCard = ({ motel, onPress, index, scrollX }) => {
+const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badgeIconName = 'pricetag' }) => {
   // Priorizar imagen de la promo, luego thumbnail del motel, luego fallback
   const image =
     motel.promoImageUrl ||
@@ -65,8 +65,8 @@ const PromoCard = ({ motel, onPress, index, scrollX }) => {
         <ImageBackground source={{ uri: image }} style={styles.card} imageStyle={styles.cardImage}>
           {/* Badge de Promoción */}
           <View style={styles.promoBadge}>
-            <Ionicons name="pricetag" size={14} color={COLORS.white} />
-            <Text style={styles.promoBadgeText}>PROMO</Text>
+            <Ionicons name={badgeIconName} size={14} color={COLORS.white} />
+            <Text style={styles.promoBadgeText}>{badgeLabel}</Text>
           </View>
 
           {/* Gradiente overlay */}
@@ -92,7 +92,7 @@ const PromoCard = ({ motel, onPress, index, scrollX }) => {
   );
 };
 
-export default function PromoCarousel({ promos = [], onPromoPress }) {
+export default function PromoCarousel({ promos = [], onPromoPress, title = 'Promociones', badgeLabel = 'PROMO', badgeIconName = 'pricetag' }) {
   const scrollX = useSharedValue(0);
 
   const scrollHandler = useAnimatedScrollHandler({
@@ -106,12 +106,19 @@ export default function PromoCarousel({ promos = [], onPromoPress }) {
   return (
     <View style={styles.container}>
       <View style={styles.curvedContainer}>
-        <Text style={styles.sectionTitle}>Promociones</Text>
+        <Text style={styles.sectionTitle}>{title}</Text>
         <Animated.FlatList
           data={promos}
           keyExtractor={(item) => item.id?.toString()}
           renderItem={({ item, index }) => (
-            <PromoCard motel={item} onPress={onPromoPress} index={index} scrollX={scrollX} />
+            <PromoCard
+              motel={item}
+              onPress={onPromoPress}
+              index={index}
+              scrollX={scrollX}
+              badgeLabel={badgeLabel}
+              badgeIconName={badgeIconName}
+            />
           )}
           horizontal
           showsHorizontalScrollIndicator={false}

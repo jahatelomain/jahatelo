@@ -101,6 +101,12 @@ enum AdEventType {
   CLICK
 }
 
+enum PlanType {
+  BASIC
+  PREMIUM
+  PLATINUM
+}
+
 // ============================================
 // MOTEL
 // ============================================
@@ -133,7 +139,7 @@ model Motel {
   operationsContactName  String?
   operationsContactEmail String?
   operationsContactPhone String?
-  plan             String?
+  plan             PlanType        @default(BASIC)
   nextBillingAt    DateTime?
   isFeatured       Boolean         @default(false)
   ratingAvg        Float           @default(0)

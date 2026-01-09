@@ -75,10 +75,11 @@ export default function HomeScreen() {
   const categories = [
     { id: 'cities', label: 'Moteles por ciudad', iconName: 'location-outline', onPress: handleCitiesPress },
     { id: 'map', label: 'Ver mapa', iconName: 'map-outline', onPress: handleMapPress },
-    { id: 'popular', label: 'Populares', iconName: 'flame-outline', onPress: () => navigateList('Populares', motels) },
+    { id: 'promos', label: 'Promos', iconName: 'pricetag', onPress: () => navigateList('Promos', promos) },
   ];
 
   const promos = useMemo(() => motels.filter((motel) => motel.tienePromo), [motels]);
+  const featured = useMemo(() => motels.filter((motel) => motel.isFeatured), [motels]);
 
   if (loading && !refreshing) {
     return (
@@ -147,7 +148,13 @@ export default function HomeScreen() {
             />
           }
         >
-          <PromoCarousel promos={promos.length ? promos : motels.slice(0, 5)} onPromoPress={handleMotelPress} />
+          <PromoCarousel
+            promos={featured.length ? featured : motels.slice(0, 5)}
+            onPromoPress={handleMotelPress}
+            title="Destacados"
+            badgeLabel="DESTACADO"
+            badgeIconName="star"
+          />
           <HomeCategoriesGrid categories={categories} />
         </ScrollView>
       </View>

@@ -27,6 +27,7 @@ export async function GET() {
         latitude: true,
         longitude: true,
         isFinanciallyEnabled: true,
+        plan: true,
       },
     });
 
@@ -41,6 +42,7 @@ export async function GET() {
           latitude: m.latitude!,
           longitude: m.longitude!,
           isFinanciallyEnabled: m.isFinanciallyEnabled ?? true,
+          plan: m.plan,
         })),
       },
       {

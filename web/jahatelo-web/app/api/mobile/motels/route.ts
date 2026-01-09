@@ -3,6 +3,16 @@ import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { mapMotelToListItem } from '../mappers';
 
+// Helper to get plan priority for sorting
+const getPlanPriority = (plan: string | null | undefined): number => {
+  switch (plan) {
+    case 'PLATINUM': return 1;
+    case 'PREMIUM': return 2;
+    case 'BASIC': return 3;
+    default: return 4;
+  }
+};
+
 // Helper to normalize text: remove accents, lowercase, trim
 const normalizeText = (value?: string | null) => {
   if (!value) return undefined;
@@ -131,7 +141,15 @@ export async function GET(request: NextRequest) {
             OR LOWER(TRANSLATE(m.city, 'áéíóúñÁÉÍÓÚÑäëïöüÄËÏÖÜàèìòùÀÈÌÒÙâêîôûÂÊÎÔÛ', 'aeiounAEIOUNaeiouAEIOUaeiouAEIOUaeiouAEIOU')) LIKE LOWER(${searchPattern})
             OR LOWER(TRANSLATE(m.neighborhood, 'áéíóúñÁÉÍÓÚÑäëïöüÄËÏÖÜàèìòùÀÈÌÒÙâêîôûÂÊÎÔÛ', 'aeiounAEIOUNaeiouAEIOUaeiouAEIOUaeiouAEIOU')) LIKE LOWER(${searchPattern})
           )
-        ORDER BY m."isFeatured" DESC, m."ratingAvg" DESC, m."createdAt" DESC
+        ORDER BY
+          CASE m.plan
+            WHEN 'PLATINUM' THEN 1
+            WHEN 'PREMIUM' THEN 2
+            WHEN 'BASIC' THEN 3
+            ELSE 4
+          END ASC,
+          m."ratingAvg" DESC,
+          m."createdAt" DESC
         LIMIT ${limit}
         OFFSET ${skip}
       `;
@@ -189,10 +207,22 @@ export async function GET(request: NextRequest) {
             },
           },
           orderBy: [
-            { isFeatured: 'desc' },
             { ratingAvg: 'desc' },
             { createdAt: 'desc' },
           ],
+        });
+
+        // Ordenar por plan en memoria
+        motels.sort((a: any, b: any) => {
+          const planDiff = getPlanPriority(a.plan) - getPlanPriority(b.plan);
+          if (planDiff !== 0) return planDiff;
+
+          // Si tienen el mismo plan, ordenar por rating
+          const ratingDiff = (b.ratingAvg || 0) - (a.ratingAvg || 0);
+          if (ratingDiff !== 0) return ratingDiff;
+
+          // Si tienen el mismo rating, ordenar por fecha de creación
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
       }
     } else {
@@ -231,7 +261,6 @@ export async function GET(request: NextRequest) {
             },
           },
           orderBy: [
-            { isFeatured: 'desc' },
             { ratingAvg: 'desc' },
             { createdAt: 'desc' },
           ],
@@ -239,6 +268,19 @@ export async function GET(request: NextRequest) {
           take: limit,
         }),
       ]);
+
+      // Ordenar por plan en memoria
+      motels.sort((a: any, b: any) => {
+        const planDiff = getPlanPriority(a.plan) - getPlanPriority(b.plan);
+        if (planDiff !== 0) return planDiff;
+
+        // Si tienen el mismo plan, ordenar por rating
+        const ratingDiff = (b.ratingAvg || 0) - (a.ratingAvg || 0);
+        if (ratingDiff !== 0) return ratingDiff;
+
+        // Si tienen el mismo rating, ordenar por fecha de creación
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
     }
 
     // Map motels to mobile format

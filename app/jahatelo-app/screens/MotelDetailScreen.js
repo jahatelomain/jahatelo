@@ -215,10 +215,16 @@ export default function MotelDetailScreen({ route, navigation }) {
               <Text style={styles.badgeText}>PROMO</Text>
             </View>
           )}
-          {motel.isFeatured && (
-            <View style={styles.featuredBadge}>
+          {motel.plan === 'PLATINUM' && (
+            <View style={styles.platinumBadge}>
+              <Ionicons name="diamond" size={12} color="#FFFFFF" />
+              <Text style={styles.badgeText}>PLATINUM</Text>
+            </View>
+          )}
+          {motel.plan === 'PREMIUM' && (
+            <View style={styles.premiumBadge}>
               <Ionicons name="star" size={12} color="#FFFFFF" />
-              <Text style={styles.badgeText}>DESTACADO</Text>
+              <Text style={styles.badgeText}>VIP</Text>
             </View>
           )}
         </View>
@@ -404,10 +410,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 3,
   },
-  featuredBadge: {
+  premiumBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFA500',
+    backgroundColor: '#8B5CF6',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 16,
@@ -417,6 +423,20 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
+  },
+  platinumBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+    elevation: 5,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
   },
   badgeText: {
     color: '#FFFFFF',

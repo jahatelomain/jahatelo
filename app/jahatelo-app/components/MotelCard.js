@@ -193,10 +193,16 @@ export default function MotelCard({ motel, onPress }) {
                   <Text style={styles.promoText}>PROMO</Text>
                 </Animated.View>
               )}
-              {motel.isFeatured && (
-                <View style={styles.featuredBadge}>
+              {motel.plan === 'PLATINUM' && (
+                <View style={styles.platinumBadge}>
+                  <Ionicons name="diamond" size={10} color="#FFFFFF" />
+                  <Text style={styles.platinumText}>PLATINUM</Text>
+                </View>
+              )}
+              {motel.plan === 'PREMIUM' && (
+                <View style={styles.premiumBadge}>
                   <Ionicons name="star" size={10} color="#FFFFFF" />
-                  <Text style={styles.featuredText}>VIP</Text>
+                  <Text style={styles.premiumText}>VIP</Text>
                 </View>
               )}
               {!!motel.rating && (
@@ -316,16 +322,36 @@ const styles = StyleSheet.create({
     color: '#2A0038',
     letterSpacing: 0.3,
   },
-  featuredBadge: {
+  premiumBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#8B5CF6',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
     gap: 2,
   },
-  featuredText: {
+  premiumText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  platinumBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    gap: 2,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  platinumText: {
     fontSize: 9,
     fontWeight: '800',
     color: '#FFFFFF',

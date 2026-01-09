@@ -6,9 +6,9 @@ import CategoriesGrid from '@/components/public/CategoriesGrid';
 import SocialLinks from '@/components/public/SocialLinks';
 import SearchBar from '@/components/public/SearchBar';
 import FeaturedMotels from '@/components/public/FeaturedMotels';
-import PopularMotels from '@/components/public/PopularMotels';
 import RecentMotels from '@/components/public/RecentMotels';
 import AdPopup from '@/components/public/AdPopup';
+import MotelCard from '@/components/public/MotelCard';
 import { prisma } from '@/lib/prisma';
 
 export default async function HomePage() {
@@ -81,55 +81,6 @@ export default async function HomePage() {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const analyticsTop = await prisma.motelAnalytics.groupBy({
-    by: ['motelId'],
-    where: {
-      timestamp: {
-        gte: thirtyDaysAgo,
-      },
-    },
-    _count: {
-      id: true,
-    },
-    orderBy: {
-      _count: {
-        id: 'desc',
-      },
-    },
-    take: 6,
-  });
-
-  const popularMotelsRaw = analyticsTop.length > 0
-    ? await prisma.motel.findMany({
-        where: {
-          id: { in: analyticsTop.map((item) => item.motelId) },
-          status: 'APPROVED',
-          isActive: true,
-        },
-        include: {
-          photos: { orderBy: { order: 'asc' }, take: 1 },
-          motelAmenities: { take: 3, include: { amenity: true } },
-          rooms: {
-            where: { isActive: true },
-            select: { price1h: true, price2h: true, price12h: true },
-          },
-        },
-      })
-    : [];
-
-  const popularMotels = analyticsTop.length > 0
-    ? analyticsTop
-        .map((item) => popularMotelsRaw.find((motel) => motel.id === item.motelId))
-        .filter(Boolean)
-        .map((motel: any) => ({
-          ...motel,
-          photos: motel.photos.map((photo: any) => ({
-            url: photo.url,
-            kind: photo.kind ?? 'OTHER',
-          })),
-        }))
-    : [];
-
   const recentMotelsRaw = await prisma.motel.findMany({
     where: {
       status: 'APPROVED',
@@ -182,9 +133,9 @@ export default async function HomePage() {
               <SearchBar />
             </div>
 
-            {promosMotels.length > 0 && (
+            {featuredMotels.length > 0 && (
               <div className="max-w-4xl mx-auto">
-                <PromoCarousel promos={promosMotels} />
+                <PromoCarousel promos={featuredMotels} />
               </div>
             )}
 
@@ -199,10 +150,26 @@ export default async function HomePage() {
         </section>
 
         {featuredMotels.length > 0 && <FeaturedMotels motels={featuredMotels} />}
-        {popularMotels.length > 0 && <PopularMotels motels={popularMotels} />}
+        {promosMotels.length > 0 && (
+          <section className="py-12 bg-slate-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Promos activas</h2>
+                <Link href="/motels" className="text-sm font-semibold text-purple-600 hover:text-purple-700">
+                  Ver todas
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {promosMotels.map((motel) => (
+                  <MotelCard key={motel.id} motel={motel} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
         {recentMotels.length > 0 && <RecentMotels motels={recentMotels} />}
 
-        {featuredMotels.length === 0 && popularMotels.length === 0 && recentMotels.length === 0 && (
+        {featuredMotels.length === 0 && promosMotels.length === 0 && recentMotels.length === 0 && (
           <section className="py-16 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
