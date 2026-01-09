@@ -22,7 +22,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-const LABEL_ZOOM_THRESHOLD = 0.55;
+const LABEL_ZOOM_THRESHOLD = 0.25; // Mostrar etiquetas solo con zoom MUY cercano
 const IS_ANDROID = Platform.OS === 'android';
 
 /**
@@ -95,18 +95,17 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
         });
 
         if (point && point.x !== undefined && point.y !== undefined) {
-          // Animar suavemente a la nueva posición
-          // Duración muy corta (100ms) para respuesta rápida pero suave
-          translateX.value = withTiming(point.x - basePosition.x, { duration: 100 });
-          translateY.value = withTiming(point.y - basePosition.y, { duration: 100 });
+          // Sin animación - actualización directa para máxima performance
+          translateX.value = point.x - basePosition.x;
+          translateY.value = point.y - basePosition.y;
         }
       } catch (error) {
         // Silenciar errores durante movimiento rápido
       }
     };
 
-    // Actualizar cada 16ms (~60 FPS) para máxima suavidad
-    intervalRef.current = setInterval(updatePosition, 16);
+    // Actualizar cada 100ms para balance entre suavidad y performance
+    intervalRef.current = setInterval(updatePosition, 100);
 
     return () => {
       if (intervalRef.current) {
@@ -204,17 +203,9 @@ const CustomMarkerIOS = React.memo(({ motel, showLabel, onPress }) => {
 
 CustomMarkerIOS.displayName = 'CustomMarkerIOS';
 
-// Simple marker for Android - just the pin, no complex views
-// MÉTODO 2 MEJORADO: tracksViewChanges 500ms + collapsable={false} + anchor fijo
+// Simple marker for Android - ULTRA OPTIMIZADO
 const CustomMarkerAndroid = React.memo(({ motel, onPress }) => {
-  const [tracksChanges, setTracksChanges] = React.useState(true);
   const isDisabled = motel.isFinanciallyEnabled === false;
-
-  // MÉTODO 2: Desactivar tracking después de 500ms (render inicial completo)
-  React.useEffect(() => {
-    const timer = setTimeout(() => setTracksChanges(false), 500);
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <Marker
@@ -224,10 +215,8 @@ const CustomMarkerAndroid = React.memo(({ motel, onPress }) => {
         longitude: motel.longitude,
       }}
       anchor={{ x: 0.5, y: 1 }}
-      centerOffset={{ x: 0, y: 0 }}
       onPress={onPress}
-      tracksViewChanges={tracksChanges}
-      zIndex={999}
+      tracksViewChanges={false} // SIEMPRE false para máxima performance
     >
       <View collapsable={false} style={[styles.androidMarkerPin, isDisabled && styles.disabledMarker]}>
         <View collapsable={false} style={styles.markerInner}>
@@ -237,8 +226,8 @@ const CustomMarkerAndroid = React.memo(({ motel, onPress }) => {
     </Marker>
   );
 }, (prevProps, nextProps) => {
-  return prevProps.motel.id === nextProps.motel.id &&
-         prevProps.motel.isFinanciallyEnabled === nextProps.motel.isFinanciallyEnabled;
+  // Solo re-render si cambia el ID (nunca cambia)
+  return prevProps.motel.id === nextProps.motel.id;
 });
 
 CustomMarkerAndroid.displayName = 'CustomMarkerAndroid';
@@ -262,9 +251,8 @@ export default function MapScreen() {
     longitudeDelta: 0.5,
   });
   const mapRef = React.useRef(null);
-  const [showLabels, setShowLabels] = useState(
-    (initialRegion?.latitudeDelta || 1) <= LABEL_ZOOM_THRESHOLD
-  );
+  const [showLabels, setShowLabels] = useState(false); // Desactivadas por default para mejor performance
+  const [labelsEnabled, setLabelsEnabled] = useState(false); // Control manual
   const [mapReady, setMapReady] = useState(false);
   const [region, setRegion] = useState(initialRegion);
 
@@ -386,9 +374,24 @@ export default function MapScreen() {
   const handleRegionChangeComplete = useCallback((newRegion) => {
     if (newRegion?.latitudeDelta) {
       setRegion(newRegion);
-      setShowLabels(newRegion.latitudeDelta <= LABEL_ZOOM_THRESHOLD);
+      // Solo actualizar si el usuario activó las etiquetas manualmente
+      if (labelsEnabled) {
+        setShowLabels(newRegion.latitudeDelta <= LABEL_ZOOM_THRESHOLD);
+      }
     }
-  }, []);
+  }, [labelsEnabled]);
+
+  const toggleLabels = useCallback(() => {
+    const newState = !labelsEnabled;
+    setLabelsEnabled(newState);
+    if (newState) {
+      // Al activar, verificar zoom
+      setShowLabels(region.latitudeDelta <= LABEL_ZOOM_THRESHOLD);
+    } else {
+      // Al desactivar, ocultar todas
+      setShowLabels(false);
+    }
+  }, [labelsEnabled, region]);
 
   if (loading) {
     return (
@@ -481,10 +484,9 @@ export default function MapScreen() {
 
       {/*
         ANDROID LABEL OVERLAYS
-        Renderizados FUERA del MapView como Views absolutas
-        Se posicionan basándose en cálculo de coordenadas a puntos de pantalla
+        Solo renderizar primeros 20 para reducir carga
       */}
-      {IS_ANDROID && mapReady && motels.map((motel) => (
+      {IS_ANDROID && mapReady && showLabels && motels.slice(0, 20).map((motel) => (
         <LabelOverlay
           key={`overlay-${motel.id}`}
           motel={motel}
@@ -493,6 +495,23 @@ export default function MapScreen() {
           region={region}
         />
       ))}
+
+      {/* Toggle Labels Button - Solo Android */}
+      {IS_ANDROID && (
+        <TouchableOpacity
+          style={[styles.toggleButton, { bottom: 140 }]}
+          onPress={toggleLabels}
+        >
+          <Ionicons
+            name={labelsEnabled ? "eye" : "eye-off"}
+            size={20}
+            color={COLORS.white}
+          />
+          <Text style={styles.toggleButtonText}>
+            {labelsEnabled ? 'Nombres' : 'Nombres'}
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {/* Center on Me Button */}
       <TouchableOpacity
@@ -649,6 +668,28 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
 
+  toggleButton: {
+    position: 'absolute',
+    right: 16,
+    backgroundColor: COLORS.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 24,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    zIndex: 999,
+  },
+  toggleButtonText: {
+    color: COLORS.white,
+    fontWeight: '600',
+    marginLeft: 6,
+    fontSize: 13,
+  },
   centerButton: {
     position: 'absolute',
     bottom: 80,
@@ -664,7 +705,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    zIndex: 999, // Debajo de las etiquetas overlay
+    zIndex: 999,
   },
   centerButtonText: {
     color: COLORS.white,
