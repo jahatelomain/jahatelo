@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { geocodeAddress } from '@/lib/geocoding';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import { logAuditEvent } from '@/lib/audit';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -15,6 +17,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
 
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
+    if (access.error) return access.error;
+
     // Get motel from database
     const motel = await prisma.motel.findUnique({
       where: { id },
@@ -68,6 +73,20 @@ export async function POST(request: NextRequest, context: RouteContext) {
         city: true,
         latitude: true,
         longitude: true,
+      },
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'UPDATE',
+      entityType: 'Motel',
+      entityId: updatedMotel.id,
+      metadata: {
+        action: 'GEOCODE',
+        address: updatedMotel.address,
+        city: updatedMotel.city,
+        latitude: updatedMotel.latitude,
+        longitude: updatedMotel.longitude,
       },
     });
 

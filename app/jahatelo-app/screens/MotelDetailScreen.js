@@ -22,6 +22,7 @@ import PromosTab from './motelDetail/PromosTab';
 import DetailsTab from './motelDetail/DetailsTab';
 import RoomsTab from './motelDetail/RoomsTab';
 import MenuTab from './motelDetail/MenuTab';
+import ReviewsTab from './motelDetail/ReviewsTab';
 import { trackMotelView, trackPhoneClick, trackWhatsAppClick } from '../services/analyticsService';
 
 const Tab = createMaterialTopTabNavigator();
@@ -348,6 +349,12 @@ export default function MotelDetailScreen({ route, navigation }) {
               component: MenuTab,
             });
           }
+
+          // Reseñas siempre se muestra
+          availableTabs.push({
+            name: 'Reseñas',
+            component: ReviewsTab,
+          });
 
           return availableTabs.map((tab) => (
             <Tab.Screen

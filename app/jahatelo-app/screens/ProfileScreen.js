@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
+import { useAuth } from '../contexts/AuthContext';
 import {
   clearCache,
   clearSearchHistory,
@@ -15,6 +16,7 @@ import {
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
+  const { user, isAuthenticated, logout, isLoading: authLoading } = useAuth();
   const [cacheSize, setCacheSize] = useState('0 Bytes');
   const [recentViewsCount, setRecentViewsCount] = useState(0);
   const [lastSyncDate, setLastSyncDate] = useState(null);
@@ -96,18 +98,95 @@ export default function ProfileScreen() {
     );
   };
 
+  const handleLogout = () => {
+    Alert.alert(
+      'Cerrar Sesión',
+      '¿Estás seguro que deseas cerrar sesión?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Cerrar Sesión',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            Alert.alert('Sesión cerrada', 'Has cerrado sesión exitosamente');
+          },
+        },
+      ]
+    );
+  };
+
+  // Loading state
+  if (authLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Header Section */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
-            <Ionicons name="person" size={40} color="#FFFFFF" />
+            {isAuthenticated && user?.profilePhoto ? (
+              <Image source={{ uri: user.profilePhoto }} style={styles.avatar} />
+            ) : (
+              <Ionicons name="person" size={40} color="#FFFFFF" />
+            )}
           </View>
-          <Text style={styles.headerTitle}>Modo invitado</Text>
-          <Text style={styles.headerSubtitle}>
-            Más adelante podrás crear una cuenta y sincronizar tus datos.
-          </Text>
+
+          {isAuthenticated ? (
+            <>
+              <Text style={styles.headerTitle}>{user?.name || 'Usuario'}</Text>
+              <Text style={styles.headerSubtitle}>{user?.email}</Text>
+
+              {/* Stats for authenticated users */}
+              {user?.stats && (
+                <View style={styles.statsContainer}>
+                  <View style={styles.statItem}>
+                    <Ionicons name="heart" size={24} color={COLORS.primary} />
+                    <Text style={styles.statValue}>{user.stats.favoritesCount || 0}</Text>
+                    <Text style={styles.statLabel}>Favoritos</Text>
+                  </View>
+                  <View style={styles.statDivider} />
+                  <View style={styles.statItem}>
+                    <Ionicons name="star" size={24} color={COLORS.primary} />
+                    <Text style={styles.statValue}>{user.stats.reviewsCount || 0}</Text>
+                    <Text style={styles.statLabel}>Reseñas</Text>
+                  </View>
+                </View>
+              )}
+            </>
+          ) : (
+            <>
+              <Text style={styles.headerTitle}>Modo invitado</Text>
+              <Text style={styles.headerSubtitle}>
+                Inicia sesión para sincronizar favoritos y más
+              </Text>
+
+              {/* Login/Register buttons for guest */}
+              <View style={styles.authButtonsContainer}>
+                <TouchableOpacity
+                  style={styles.loginButton}
+                  onPress={() => navigation.navigate('Login')}
+                >
+                  <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.registerButton}
+                  onPress={() => navigation.navigate('Register')}
+                >
+                  <Text style={styles.registerButtonText}>Crear Cuenta</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Explora Jahatelo Section */}
@@ -121,6 +200,20 @@ export default function ProfileScreen() {
             />
           </View>
         </View>
+
+        {/* Cuenta Section (solo para usuarios autenticados) */}
+        {isAuthenticated && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Tu cuenta</Text>
+            <View style={styles.optionsContainer}>
+              <OptionRow
+                icon="notifications-outline"
+                title="Notificaciones"
+                onPress={() => navigation.navigate('NotificationPreferences')}
+              />
+            </View>
+          </View>
+        )}
 
         {/* Almacenamiento y datos Section */}
         <View style={styles.section}>
@@ -238,6 +331,18 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Logout Button (only for authenticated users) */}
+        {isAuthenticated && (
+          <View style={styles.section}>
+            <View style={styles.optionsContainer}>
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <Ionicons name="log-out-outline" size={24} color="#FF6B6B" />
+                <Text style={styles.logoutText}>Cerrar Sesión</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Footer spacing */}
         <View style={styles.footer} />
       </ScrollView>
@@ -267,6 +372,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.backgroundDark,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   scrollView: {
     flex: 1,
   },
@@ -286,6 +396,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
+    overflow: 'hidden',
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   headerTitle: {
     fontSize: 24,
@@ -298,6 +414,62 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  authButtonsContainer: {
+    width: '100%',
+    marginTop: 20,
+    gap: 12,
+  },
+  loginButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  loginButtonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  registerButton: {
+    backgroundColor: COLORS.white,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+  },
+  registerButtonText: {
+    color: COLORS.primary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    paddingHorizontal: 32,
+  },
+  statItem: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: COLORS.border,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginTop: 8,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    marginTop: 4,
   },
   section: {
     marginTop: 24,
@@ -349,6 +521,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textLight,
     marginTop: 2,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    gap: 12,
+  },
+  logoutText: {
+    fontSize: 16,
+    color: '#FF6B6B',
+    fontWeight: '600',
   },
   footer: {
     height: 32,

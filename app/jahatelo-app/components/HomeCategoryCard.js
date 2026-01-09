@@ -112,6 +112,29 @@ const FlamePattern = ({ isHorizontal }) => (
   </Svg>
 );
 
+// Componente de patrón de promos (etiquetas y descuentos)
+const PromoPattern = ({ isHorizontal }) => (
+  <Svg width="100%" height="100%" style={StyleSheet.absoluteFillObject}>
+    <Defs>
+      <Pattern id="promoPattern" patternUnits="userSpaceOnUse" width="120" height="120">
+        <Rect width="120" height="120" fill="#2b0f2f" />
+        {/* Etiquetas inclinadas */}
+        <Rect x="5" y="15" width="40" height="12" rx="6" fill="#6b1f7a" opacity="0.8" />
+        <Rect x="60" y="10" width="45" height="12" rx="6" fill="#8b2fb0" opacity="0.8" />
+        <Rect x="15" y="55" width="50" height="12" rx="6" fill="#6b1f7a" opacity="0.8" />
+        <Rect x="70" y="65" width="40" height="12" rx="6" fill="#8b2fb0" opacity="0.8" />
+        {/* Círculos de descuento */}
+        <Circle cx="25" cy="95" r="9" fill="#a855f7" opacity="0.7" />
+        <Circle cx="85" cy="95" r="7" fill="#f59e0b" opacity="0.7" />
+        {/* Líneas diagonales suaves */}
+        <Line x1="0" y1="35" x2="120" y2="25" stroke="#3f1647" strokeWidth="1" opacity="0.6" />
+        <Line x1="0" y1="85" x2="120" y2="75" stroke="#3f1647" strokeWidth="1" opacity="0.6" />
+      </Pattern>
+    </Defs>
+    <Rect width="100%" height="100%" fill="url(#promoPattern)" />
+  </Svg>
+);
+
 // Configuración de temas con patrones
 const PATTERN_THEMES = {
   'location-outline': {
@@ -128,6 +151,12 @@ const PATTERN_THEMES = {
   },
   'flame-outline': {
     PatternComponent: FlamePattern,
+    iconColor: '#FFFFFF',
+    textColor: '#FFFFFF',
+    height: 160,
+  },
+  pricetag: {
+    PatternComponent: PromoPattern,
     iconColor: '#FFFFFF',
     textColor: '#FFFFFF',
     height: 160,

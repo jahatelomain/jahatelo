@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import { logAuditEvent } from '@/lib/audit';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -12,6 +14,9 @@ export async function PATCH(
   const { id } = await context.params;
 
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
+    if (access.error) return access.error;
+
     const body = await request.json();
     const {
       name,
@@ -71,6 +76,14 @@ export async function PATCH(
       },
     });
 
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'UPDATE',
+      entityType: 'Room',
+      entityId: room.id,
+      metadata: { motelId: room.motelId, name: room.name },
+    });
+
     return NextResponse.json(room);
   } catch (error) {
     console.error('Error updating room:', error);
@@ -88,8 +101,19 @@ export async function DELETE(
   const { id } = await context.params;
 
   try {
-    await prisma.roomType.delete({
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
+    if (access.error) return access.error;
+
+    const room = await prisma.roomType.delete({
       where: { id },
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'DELETE',
+      entityType: 'Room',
+      entityId: room.id,
+      metadata: { motelId: room.motelId, name: room.name },
     });
 
     return NextResponse.json({ success: true });

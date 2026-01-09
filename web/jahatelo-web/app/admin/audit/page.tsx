@@ -20,14 +20,47 @@ type AuditLog = {
 export default function AuditPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
   const [actionFilter, setActionFilter] = useState('');
   const [entityFilter, setEntityFilter] = useState('');
   const [userFilter, setUserFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
+  const getAuditLink = (log: AuditLog) => {
+    const metadata = log.metadata || {};
+    const motelId = typeof metadata.motelId === 'string' ? metadata.motelId : null;
+
+    switch (log.entityType) {
+      case 'Motel':
+        return log.entityId ? `/admin/motels/${log.entityId}` : null;
+      case 'MotelFinanzas':
+        return log.entityId ? `/admin/financiero/${log.entityId}` : null;
+      case 'PaymentHistory':
+        return motelId ? `/admin/financiero/${motelId}` : null;
+      case 'Advertisement':
+        return log.entityId ? `/admin/advertisements/${log.entityId}` : '/admin/advertisements';
+      case 'Promo':
+        return '/admin/promos';
+      case 'Amenity':
+        return '/admin/amenities';
+      case 'Prospect':
+        return '/admin/prospects';
+      case 'User':
+        return '/admin/users';
+      case 'Room':
+      case 'RoomPhoto':
+      case 'MenuCategory':
+      case 'MenuItem':
+        return motelId ? `/admin/motels/${motelId}` : '/admin/motels';
+      default:
+        return null;
+    }
+  };
+
   const fetchLogs = async () => {
     try {
       setLoading(true);
+      setErrorMessage('');
       const params = new URLSearchParams();
       if (actionFilter) params.set('action', actionFilter);
       if (entityFilter) params.set('entityType', entityFilter);
@@ -36,12 +69,18 @@ export default function AuditPage() {
 
       const queryString = params.toString();
       const response = await fetch(`/api/admin/audit${queryString ? `?${queryString}` : ''}`);
-      if (response.ok) {
-        const data = await response.json();
-        setLogs(data);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        setErrorMessage(error.error || 'No se pudo cargar la auditoría');
+        setLogs([]);
+        return;
       }
+
+      const data = await response.json();
+      setLogs(data);
     } catch (error) {
       console.error('Error fetching audit logs:', error);
+      setErrorMessage('No se pudo cargar la auditoría');
     } finally {
       setLoading(false);
     }
@@ -147,6 +186,12 @@ export default function AuditPage() {
         </div>
       </div>
 
+      {errorMessage && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3">
+          {errorMessage}
+        </div>
+      )}
+
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
@@ -191,7 +236,19 @@ export default function AuditPage() {
                     {log.entityType}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                    {log.entityId || '-'}
+                    {(() => {
+                      const link = getAuditLink(log);
+                      const label = log.entityId || 'Ver';
+                      if (!link) return log.entityId || '-';
+                      return (
+                        <a
+                          href={link}
+                          className="text-purple-600 hover:text-purple-700"
+                        >
+                          {label}
+                        </a>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))

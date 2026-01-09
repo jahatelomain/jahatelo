@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import { logAuditEvent } from '@/lib/audit';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -12,6 +14,9 @@ export async function PATCH(
   const { id } = await context.params;
 
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
+    if (access.error) return access.error;
+
     const body = await request.json();
     const { title, sortOrder } = body;
 
@@ -21,6 +26,14 @@ export async function PATCH(
         title,
         sortOrder,
       },
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'UPDATE',
+      entityType: 'MenuCategory',
+      entityId: category.id,
+      metadata: { motelId: category.motelId, title: category.title },
     });
 
     return NextResponse.json(category);
@@ -40,8 +53,19 @@ export async function DELETE(
   const { id } = await context.params;
 
   try {
-    await prisma.menuCategory.delete({
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
+    if (access.error) return access.error;
+
+    const category = await prisma.menuCategory.delete({
       where: { id },
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'DELETE',
+      entityType: 'MenuCategory',
+      entityId: category.id,
+      metadata: { motelId: category.motelId, title: category.title },
     });
 
     return NextResponse.json({ success: true });

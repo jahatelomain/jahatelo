@@ -1,14 +1,19 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { geocodeMultipleAddresses } from '@/lib/geocoding';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import { logAuditEvent } from '@/lib/audit';
 
 /**
  * POST /api/admin/motels/geocode-all
  *
  * Geocodes all motels that don't have coordinates yet
  */
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'motels');
+    if (access.error) return access.error;
+
     // Get all motels without coordinates
     const motels = await prisma.motel.findMany({
       where: {
@@ -82,6 +87,18 @@ export async function POST() {
         });
       }
     }
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'UPDATE',
+      entityType: 'Motel',
+      entityId: null,
+      metadata: {
+        action: 'GEOCODE_BATCH',
+        geocoded: updates.length,
+        failed: failed.length,
+      },
+    });
 
     return NextResponse.json({
       success: true,

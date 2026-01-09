@@ -1,15 +1,28 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import { logAuditEvent } from '@/lib/audit';
 
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
+    if (access.error) return access.error;
+
     const { id } = await params;
 
-    await prisma.roomPhoto.delete({
+    const roomPhoto = await prisma.roomPhoto.delete({
       where: { id },
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'DELETE',
+      entityType: 'RoomPhoto',
+      entityId: roomPhoto.id,
+      metadata: { roomTypeId: roomPhoto.roomTypeId, url: roomPhoto.url },
     });
 
     return NextResponse.json({ success: true });
@@ -27,6 +40,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
+    if (access.error) return access.error;
+
     const { id } = await params;
     const body = await request.json();
     const { order, url } = body;
@@ -38,6 +54,14 @@ export async function PATCH(
     const roomPhoto = await prisma.roomPhoto.update({
       where: { id },
       data: updateData,
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'UPDATE',
+      entityType: 'RoomPhoto',
+      entityId: roomPhoto.id,
+      metadata: { roomTypeId: roomPhoto.roomTypeId, url: roomPhoto.url },
     });
 
     return NextResponse.json(roomPhoto);
