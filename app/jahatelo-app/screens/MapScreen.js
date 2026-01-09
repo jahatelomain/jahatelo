@@ -61,9 +61,9 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
 
     const getInitialPosition = async () => {
       try {
-        const labelLatitude = motel.latitude + 0.00008;
+        // Sin offset - usa la misma coordenada del pin
         const point = await mapRef.current.pointForCoordinate({
-          latitude: labelLatitude,
+          latitude: motel.latitude,
           longitude: motel.longitude,
         });
 
@@ -88,9 +88,9 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
 
     const updatePosition = async () => {
       try {
-        const labelLatitude = motel.latitude + 0.00008;
+        // Sin offset - usa la misma coordenada del pin
         const point = await mapRef.current.pointForCoordinate({
-          latitude: labelLatitude,
+          latitude: motel.latitude,
           longitude: motel.longitude,
         });
 
@@ -105,8 +105,8 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
       }
     };
 
-    // Actualizar cada 33ms (~30 FPS) para reducir carga con muchos markers
-    intervalRef.current = setInterval(updatePosition, 33);
+    // Actualizar cada 16ms (~60 FPS) para máxima suavidad
+    intervalRef.current = setInterval(updatePosition, 16);
 
     return () => {
       if (intervalRef.current) {
@@ -243,6 +243,11 @@ const CustomMarkerAndroid = React.memo(({ motel, onPress }) => {
 
 CustomMarkerAndroid.displayName = 'CustomMarkerAndroid';
 
+// Cache simple en memoria para reducir llamadas al API
+let cachedMapData = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
 export default function MapScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -270,10 +275,37 @@ export default function MapScreen() {
   const fetchMapData = async () => {
     try {
       setLoading(true);
+
+      // Usar cache si está disponible y es reciente
+      const now = Date.now();
+      if (cachedMapData && (now - cacheTimestamp) < CACHE_DURATION) {
+        console.log('📍 Usando datos del mapa cacheados');
+        setMotels(cachedMapData.motels);
+
+        if (cachedMapData.motels.length > 0) {
+          const firstMotelRegion = {
+            latitude: cachedMapData.motels[0].latitude,
+            longitude: cachedMapData.motels[0].longitude,
+            latitudeDelta: 0.5,
+            longitudeDelta: 0.5,
+          };
+          setInitialRegion(firstMotelRegion);
+          setRegion(firstMotelRegion);
+          setShowLabels(firstMotelRegion.latitudeDelta <= LABEL_ZOOM_THRESHOLD);
+        }
+        setLoading(false);
+        return;
+      }
+
+      console.log('📍 Cargando datos del mapa desde API...');
       const response = await fetch(`${API_URL}/api/mobile/motels/map`);
       const data = await response.json();
 
       if (data.success && data.motels.length > 0) {
+        // Guardar en cache
+        cachedMapData = data;
+        cacheTimestamp = now;
+
         setMotels(data.motels);
 
         const firstMotelRegion = {
@@ -522,7 +554,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 14,
-    marginBottom: 6,
+    marginBottom: 8,
     zIndex: 2,
     minWidth: 60,
     maxWidth: 180,
@@ -580,7 +612,7 @@ const styles = StyleSheet.create({
   // Overlay absoluto para etiquetas en Android
   androidLabelOverlay: {
     position: 'absolute',
-    transform: [{ translateX: -90 }, { translateY: -10 }], // Centrar horizontalmente, posicionar pegado al pin
+    transform: [{ translateX: -85 }, { translateY: -48 }], // Centrado sobre el pin (ajustado para que quede justo arriba)
     zIndex: 1000,
     pointerEvents: 'none', // No interferir con interacción del mapa
   },

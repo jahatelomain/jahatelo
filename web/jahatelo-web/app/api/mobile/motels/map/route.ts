@@ -1,22 +1,22 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getThumbnail } from '../../mappers';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 60; // Cache por 60 segundos
 
 /**
  * GET /api/mobile/motels/map
  *
- * Endpoint optimizado para obtener moteles con coordenadas para mapas.
- * Retorna solo los campos necesarios: id, name, city, latitude, longitude, slug, featuredPhoto
+ * Endpoint ULTRA OPTIMIZADO para mapas - solo datos mínimos necesarios
+ * Retorna: id, name, slug, latitude, longitude, isFinanciallyEnabled
  */
 export async function GET() {
   try {
+    // Query optimizada: sin joins innecesarios, solo campos esenciales
     const motels = await prisma.motel.findMany({
       where: {
         status: 'APPROVED',
         isActive: true,
-        // Solo moteles con coordenadas válidas
         latitude: { not: null },
         longitude: { not: null },
       },
@@ -24,68 +24,31 @@ export async function GET() {
         id: true,
         name: true,
         slug: true,
-        city: true,
-        neighborhood: true,
         latitude: true,
         longitude: true,
-        featuredPhoto: true,
         isFinanciallyEnabled: true,
-        photos: {
-          select: {
-            id: true,
-            motelId: true,
-            createdAt: true,
-            updatedAt: true,
-            order: true,
-            url: true,
-            kind: true,
-            roomTypeId: true,
-          },
-          orderBy: {
-            createdAt: 'asc',
-          },
-        },
-        promos: {
-          where: {
-            isActive: true,
-          },
-          select: {
-            id: true,
-            validFrom: true,
-            validUntil: true,
-          },
-        },
       },
     });
 
-    // Mapear a formato simple para mapa
-    const mapData = motels.map((motel) => {
-      // Verificar si tiene promos activas
-      const now = new Date();
-      const hasActivePromo = motel.promos.some((promo) => {
-        if (promo.validFrom && promo.validFrom > now) return false;
-        if (promo.validUntil && promo.validUntil < now) return false;
-        return true;
-      });
-
-      return {
-        id: motel.id,
-        name: motel.name,
-        slug: motel.slug,
-        city: motel.city,
-        neighborhood: motel.neighborhood,
-        latitude: motel.latitude!,
-        longitude: motel.longitude!,
-        featuredPhoto: getThumbnail(motel.photos, motel.featuredPhoto),
-        hasPromo: hasActivePromo,
-      };
-    });
-
-    return NextResponse.json({
-      success: true,
-      count: mapData.length,
-      motels: mapData,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        count: motels.length,
+        motels: motels.map(m => ({
+          id: m.id,
+          name: m.name,
+          slug: m.slug,
+          latitude: m.latitude!,
+          longitude: m.longitude!,
+          isFinanciallyEnabled: m.isFinanciallyEnabled ?? true,
+        })),
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+        },
+      }
+    );
   } catch (error) {
     console.error('Error fetching map data:', error);
     return NextResponse.json(

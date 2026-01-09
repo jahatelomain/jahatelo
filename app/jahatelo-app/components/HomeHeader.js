@@ -10,13 +10,11 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../contexts/ThemeContext';
-import { useThemedColors } from '../hooks/useThemedColors';
+import { COLORS } from '../constants/theme';
 
 export default function HomeHeader({ motels = [], onMotelPress, onSearch, navigation }) {
   const insets = useSafeAreaInsets();
-  const { theme, toggleTheme } = useTheme();
-  const colors = useThemedColors();
+  const colors = COLORS;
   const [searchValue, setSearchValue] = useState('');
   const placeholderOpacity = useRef(new RNAnimated.Value(1)).current;
 
@@ -148,19 +146,6 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
     default: Math.max(insets.top - 12, 4),
   });
 
-  const getThemeIcon = () => {
-    switch (theme) {
-      case 'light':
-        return 'sunny';
-      case 'dark':
-        return 'moon';
-      case 'auto':
-        return 'contrast';
-      default:
-        return 'sunny';
-    }
-  };
-
   return (
     <View style={[styles.wrapper, { paddingTop, backgroundColor: colors.primary }]}>
       <View style={styles.topRow}>
@@ -173,12 +158,6 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
           <Text style={[styles.cityText, { color: colors.text }]}>Cerca mío</Text>
         </TouchableOpacity>
         <View style={styles.rightButtons}>
-          <TouchableOpacity
-            style={[styles.iconButton, { backgroundColor: colors.white }]}
-            onPress={toggleTheme}
-          >
-            <Ionicons name={getThemeIcon()} size={18} color={colors.primary} />
-          </TouchableOpacity>
           <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.white }]}>
             <Animated.View style={animatedBellIconStyle}>
               <Ionicons name="notifications-outline" size={18} color={colors.text} />

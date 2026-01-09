@@ -15,11 +15,11 @@ import { fetchMotels } from '../services/motelsApi';
 import HomeCategoriesGrid from '../components/HomeCategoriesGrid';
 import HomeHeader from '../components/HomeHeader';
 import PromoCarousel from '../components/PromoCarousel';
-import { useThemedColors } from '../hooks/useThemedColors';
+import { COLORS } from '../constants/theme';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
-  const colors = useThemedColors();
+  const colors = COLORS;
   const [motels, setMotels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
