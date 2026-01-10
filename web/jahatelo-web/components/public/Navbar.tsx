@@ -15,11 +15,13 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-1">
+          <Link href="/" className="flex items-center gap-0">
             <img src="/logo-icon.png" alt="Jahatelo" className="w-20 h-20 object-contain -my-2" />
-            <span className="text-2xl font-bold font-[var(--font-lato)] bg-gradient-to-r from-purple-600 to-fuchsia-500 bg-clip-text text-transparent">
-              Jahatelo
-            </span>
+            <img
+              src="/logo-text-gradient.png"
+              alt="Jahatelo"
+              className="h-8 w-auto object-contain -ml-1"
+            />
           </Link>
 
           {/* Navigation Links */}

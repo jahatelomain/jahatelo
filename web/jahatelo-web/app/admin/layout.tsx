@@ -174,12 +174,14 @@ export default function AdminLayout({
                   )}
                 </svg>
               </button>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0">
                 <img src="/logo-icon.png" alt="Jahatelo" className="w-20 h-20 object-contain" />
                 <div className="flex flex-col">
-                  <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-fuchsia-500 bg-clip-text text-transparent">
-                    Jahatelo
-                  </span>
+                  <img
+                    src="/logo-text-gradient.png"
+                    alt="Jahatelo"
+                    className="h-8 w-auto object-contain -ml-1"
+                  />
                   <span className="text-xs text-slate-500 -mt-1 hidden sm:block">Admin Panel</span>
                 </div>
               </div>

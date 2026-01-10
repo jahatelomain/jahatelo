@@ -53,11 +53,13 @@ function LoginForm() {
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-1 mb-4">
+            <div className="flex items-center justify-center gap-0 mb-4">
               <img src="/logo-icon.png" alt="Jahatelo" className="w-16 h-16 object-contain" />
-              <span className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-fuchsia-500 bg-clip-text text-transparent">
-                Jahatelo
-              </span>
+              <img
+                src="/logo-text-gradient.png"
+                alt="Jahatelo"
+                className="h-9 w-auto object-contain -ml-1"
+              />
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
               Panel Admin
