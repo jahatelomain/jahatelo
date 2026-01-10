@@ -94,7 +94,7 @@ export default function SearchBar() {
         }}
         onKeyDown={handleKeyDown}
         placeholder="Busca moteles, ciudades o barrios"
-        className="w-full rounded-xl border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-black caret-black placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
       />
 
       {open && suggestions.length > 0 && (

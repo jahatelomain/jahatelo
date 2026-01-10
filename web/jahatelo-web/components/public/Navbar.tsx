@@ -16,7 +16,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <img src="/logo-32.png" alt="Jahatelo" className="w-8 h-8" />
+            <img src="/logo-32.png" alt="Jahatelo" className="w-10 h-10" />
             <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-fuchsia-500 bg-clip-text text-transparent">
               Jahatelo
             </span>
