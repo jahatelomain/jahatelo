@@ -43,6 +43,8 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
       height: pinSize,
       backgroundColor: isDisabled ? '#CCCCCC' : pinColor,
       borderRadius: pinSize / 2,
+      borderWidth: 3,
+      borderColor: COLORS.white,
     },
     isDisabled && styles.disabledMarker,
     isPlatinum && styles.platinumMarker,
@@ -71,24 +73,26 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
       onPress={onPress}
       tracksViewChanges={IS_ANDROID ? tracksChanges : false}
     >
-      {!IS_ANDROID && (
-        <View style={styles.iosLabelContainer} pointerEvents="none">
-          <Text style={styles.iosLabelText} numberOfLines={1}>
-            {motel.name}
-          </Text>
-        </View>
-      )}
-
-      {/* Pin personalizado */}
-      <View style={pinStyle}>
-        <View style={styles.markerInner}>
-          <Ionicons name="heart" size={iconSize} color={COLORS.white} />
-        </View>
-        {isPlatinum && (
-          <View style={styles.platinumBadge}>
-            <Ionicons name="star" size={10} color="#F59E0B" />
+      <View style={{ alignItems: 'center' }}>
+        {!IS_ANDROID && (
+          <View style={styles.iosLabelContainer} pointerEvents="none">
+            <Text style={styles.iosLabelText} numberOfLines={1}>
+              {motel.name}
+            </Text>
           </View>
         )}
+
+        {/* Pin personalizado */}
+        <View style={pinStyle}>
+          <View style={styles.markerInner}>
+            <Ionicons name="heart" size={iconSize} color={COLORS.white} />
+          </View>
+          {isPlatinum && (
+            <View style={styles.platinumBadge}>
+              <Ionicons name="star" size={10} color="#F59E0B" />
+            </View>
+          )}
+        </View>
       </View>
 
       {!IS_ANDROID && (
@@ -386,11 +390,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 3,
     borderColor: COLORS.white,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
+    // Sin sombra para iOS - fondo transparente
+    ...(Platform.OS === 'android' && {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 3,
+      elevation: 5,
+    }),
   },
   markerInner: {
     alignItems: 'center',
@@ -429,10 +436,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#CCCCCC',
   },
   platinumMarker: {
-    shadowColor: '#F59E0B',
-    shadowOpacity: 0.6,
-    shadowRadius: 6,
-    elevation: 8,
+    ...(Platform.OS === 'android' && {
+      shadowColor: '#F59E0B',
+      shadowOpacity: 0.6,
+      shadowRadius: 6,
+      elevation: 8,
+    }),
   },
   platinumBadge: {
     position: 'absolute',
@@ -461,14 +470,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   iosLabelContainer: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.primary,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderWidth: 2,
+    borderColor: COLORS.white,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    marginBottom: 6,
+    marginBottom: 3,
     maxWidth: 180,
+    alignSelf: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowOffset: { width: 0, height: 2 },
@@ -477,8 +487,9 @@ const styles = StyleSheet.create({
   },
   iosLabelText: {
     fontSize: 12,
-    color: COLORS.text,
+    color: COLORS.white,
     fontWeight: '600',
+    textAlign: 'center',
   },
   centerButton: {
     position: 'absolute',

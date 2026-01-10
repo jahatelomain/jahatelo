@@ -48,6 +48,7 @@ export default function GoogleMapComponent({
   // Load Google Maps script
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const scriptId = 'google-maps-js';
 
     if (!apiKey) {
       setError('API key de Google Maps no configurada. Contacte al administrador.');
@@ -61,35 +62,20 @@ export default function GoogleMapComponent({
     }
 
     // Load script
+    const existingScript = document.getElementById(scriptId) as HTMLScriptElement | null;
+    if (existingScript) {
+      existingScript.addEventListener('load', () => setIsLoaded(true));
+      return;
+    }
+
     const script = document.createElement('script');
+    script.id = scriptId;
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=marker`;
     script.async = true;
     script.defer = true;
     script.onload = () => setIsLoaded(true);
     script.onerror = () => setError('Error al cargar Google Maps');
     document.head.appendChild(script);
-
-    // Inject custom CSS for map labels (iOS-style)
-    const style = document.createElement('style');
-    style.textContent = `
-      .gm-style div[style*="font-weight"] {
-        background: rgba(255, 255, 255, 0.95) !important;
-        padding: 6px 12px !important;
-        border-radius: 12px !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-        white-space: nowrap !important;
-        border: 0.5px solid rgba(0, 0, 0, 0.08) !important;
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
-        letter-spacing: -0.01em !important;
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      // Cleanup: no removemos el script porque puede ser reutilizado
-    };
   }, []);
 
   // Initialize map
@@ -129,19 +115,19 @@ export default function GoogleMapComponent({
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
 
-    // Custom purple pin SVG for ALL motels
+    // Custom purple pin SVG with heart for ALL motels
     const purplePinSVG = `
       <svg width="32" height="45" viewBox="0 0 32 45" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 29 16 29s16-17 16-29c0-8.837-7.163-16-16-16z" fill="#8E2DE2"/>
-        <circle cx="16" cy="16" r="6" fill="white"/>
+        <circle cx="16" cy="16" r="13" fill="#8E2DE2" stroke="white" stroke-width="3"/>
+        <path d="M16 20.5C16 20.5 11.5 17.5 11.5 14.5C11.5 12.5 13 11 14.5 11C15.5 11 16 11.5 16 11.5C16 11.5 16.5 11 17.5 11C19 11 20.5 12.5 20.5 14.5C20.5 17.5 16 20.5 16 20.5Z" fill="white"/>
       </svg>
     `;
 
-    // Red pin for user location ONLY
+    // Red pin with heart for user location ONLY
     const redPinSVG = `
       <svg width="32" height="45" viewBox="0 0 32 45" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 29 16 29s16-17 16-29c0-8.837-7.163-16-16-16z" fill="#EF4444"/>
-        <circle cx="16" cy="16" r="6" fill="white"/>
+        <circle cx="16" cy="16" r="13" fill="#EF4444" stroke="white" stroke-width="3"/>
+        <path d="M16 20.5C16 20.5 11.5 17.5 11.5 14.5C11.5 12.5 13 11 14.5 11C15.5 11 16 11.5 16 11.5C16 11.5 16.5 11 17.5 11C19 11 20.5 12.5 20.5 14.5C20.5 17.5 16 20.5 16 20.5Z" fill="white"/>
       </svg>
     `;
 
@@ -149,14 +135,14 @@ export default function GoogleMapComponent({
       url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(purplePinSVG)}`,
       scaledSize: new window.google.maps.Size(32, 45),
       anchor: new window.google.maps.Point(16, 45),
-      labelOrigin: new window.google.maps.Point(16, -8),
+      labelOrigin: new window.google.maps.Point(16, -14),
     };
 
     const redPinIcon = {
       url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(redPinSVG)}`,
       scaledSize: new window.google.maps.Size(32, 45),
       anchor: new window.google.maps.Point(16, 45),
-      labelOrigin: new window.google.maps.Point(16, -8),
+      labelOrigin: new window.google.maps.Point(16, -14),
     };
 
     // Create markers for each motel
@@ -164,16 +150,74 @@ export default function GoogleMapComponent({
       const marker = new window.google.maps.Marker({
         position: { lat: motel.latitude, lng: motel.longitude },
         map: googleMapRef.current,
-        title: motel.name,
         icon: purplePinIcon, // ALL motels have purple pin
-        label: {
-          text: motel.name,
-          color: '#1C1C1E',
-          fontSize: '13px',
-          fontWeight: '500',
-          className: 'map-marker-label',
-        },
+        // NO usamos label para evitar tooltip nativo
       });
+
+      // Crear etiqueta HTML personalizada como overlay
+      class CustomLabel extends window.google.maps.OverlayView {
+        position: any;
+        text: string;
+        div: HTMLDivElement | null = null;
+
+        constructor(position: any, text: string) {
+          super();
+          this.position = position;
+          this.text = text;
+        }
+
+        onAdd() {
+          this.div = document.createElement('div');
+          this.div.style.position = 'absolute';
+          this.div.style.background = '#8E2DE2';
+          this.div.style.color = '#FFFFFF';
+          this.div.style.padding = '6px 12px';
+          this.div.style.borderRadius = '10px';
+          this.div.style.border = '2px solid #FFFFFF';
+          this.div.style.fontSize = '13px';
+          this.div.style.fontWeight = '500';
+          this.div.style.whiteSpace = 'nowrap';
+          this.div.style.cursor = 'pointer';
+          this.div.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
+          this.div.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          this.div.textContent = this.text;
+          this.div.style.pointerEvents = 'auto';
+
+          // Click en la etiqueta también abre el InfoWindow
+          this.div.addEventListener('click', () => {
+            markersRef.current.forEach(m => {
+              if (m.infoWindow) m.infoWindow.close();
+            });
+            marker.infoWindow.open(googleMapRef.current, marker);
+          });
+
+          const panes = this.getPanes();
+          panes.overlayLayer.appendChild(this.div);
+        }
+
+        draw() {
+          if (!this.div) return;
+          const overlayProjection = this.getProjection();
+          const position = overlayProjection.fromLatLngToDivPixel(
+            new window.google.maps.LatLng(this.position.lat, this.position.lng)
+          );
+          this.div.style.left = position.x - (this.div.offsetWidth / 2) + 'px';
+          this.div.style.top = position.y - 67 + 'px'; // 22px arriba del pin (45px altura pin + 22px separación)
+        }
+
+        onRemove() {
+          if (this.div) {
+            this.div.parentNode?.removeChild(this.div);
+            this.div = null;
+          }
+        }
+      }
+
+      const customLabel = new CustomLabel(
+        { lat: motel.latitude, lng: motel.longitude },
+        motel.name
+      );
+      customLabel.setMap(googleMapRef.current);
 
       // Create InfoWindow with custom content
       const infoWindowContent = `
@@ -236,11 +280,11 @@ export default function GoogleMapComponent({
       circleRef.current.setMap(null);
     }
 
-    // Red pin for user location ONLY
+    // Red pin with heart for user location ONLY
     const redUserPinSVG = `
       <svg width="32" height="45" viewBox="0 0 32 45" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 29 16 29s16-17 16-29c0-8.837-7.163-16-16-16z" fill="#EF4444"/>
-        <circle cx="16" cy="16" r="6" fill="white"/>
+        <circle cx="16" cy="16" r="13" fill="#EF4444" stroke="white" stroke-width="3"/>
+        <path d="M16 20.5C16 20.5 11.5 17.5 11.5 14.5C11.5 12.5 13 11 14.5 11C15.5 11 16 11.5 16 11.5C16 11.5 16.5 11 17.5 11C19 11 20.5 12.5 20.5 14.5C20.5 17.5 16 20.5 16 20.5Z" fill="white"/>
       </svg>
     `;
 
@@ -248,24 +292,80 @@ export default function GoogleMapComponent({
       url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(redUserPinSVG)}`,
       scaledSize: new window.google.maps.Size(32, 45),
       anchor: new window.google.maps.Point(16, 45),
-      labelOrigin: new window.google.maps.Point(16, -8),
+      labelOrigin: new window.google.maps.Point(16, -14),
     };
 
     const marker = new window.google.maps.Marker({
       position: { lat: location[0], lng: location[1] },
       map: googleMapRef.current,
-      title: 'Tu ubicación',
       icon: redUserPinIcon,
-      label: {
-        text: 'Tu ubicación',
-        color: '#DC2626',
-        fontSize: '13px',
-        fontWeight: '500',
-      },
+      // NO usamos label para evitar tooltip nativo
     });
 
+    // Crear etiqueta HTML personalizada para ubicación de usuario
+    class UserLabel extends window.google.maps.OverlayView {
+      position: any;
+      div: HTMLDivElement | null = null;
+
+      constructor(position: any) {
+        super();
+        this.position = position;
+      }
+
+      onAdd() {
+        this.div = document.createElement('div');
+        this.div.style.position = 'absolute';
+        this.div.style.background = '#8E2DE2';
+        this.div.style.color = '#FFFFFF';
+        this.div.style.padding = '6px 12px';
+        this.div.style.borderRadius = '10px';
+        this.div.style.border = '2px solid #FFFFFF';
+        this.div.style.fontSize = '13px';
+        this.div.style.fontWeight = '500';
+        this.div.style.whiteSpace = 'nowrap';
+        this.div.style.cursor = 'pointer';
+        this.div.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
+        this.div.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        this.div.textContent = 'Tu ubicación';
+        this.div.style.pointerEvents = 'auto';
+
+        const panes = this.getPanes();
+        panes.overlayLayer.appendChild(this.div);
+      }
+
+      draw() {
+        if (!this.div) return;
+        const overlayProjection = this.getProjection();
+        const position = overlayProjection.fromLatLngToDivPixel(
+          new window.google.maps.LatLng(this.position.lat, this.position.lng)
+        );
+        this.div.style.left = position.x - (this.div.offsetWidth / 2) + 'px';
+        this.div.style.top = position.y - 67 + 'px'; // 22px arriba del pin (45px altura pin + 22px separación)
+      }
+
+      onRemove() {
+        if (this.div) {
+          this.div.parentNode?.removeChild(this.div);
+          this.div = null;
+        }
+      }
+    }
+
+    const userLabel = new UserLabel({ lat: location[0], lng: location[1] });
+    userLabel.setMap(googleMapRef.current);
+
     const infoWindow = new window.google.maps.InfoWindow({
-      content: '<div style="padding: 8px;"><p style="font-weight: 600; color: #EF4444; margin: 0;">Tu ubicación</p></div>',
+      content: `
+        <div style="max-width: 200px; padding: 12px; text-align: center;">
+          <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #FEE2E2; border-radius: 50%; margin-bottom: 12px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+          </div>
+          <h3 style="font-weight: 700; font-size: 16px; color: #EF4444; margin: 0;">Tu ubicación</h3>
+        </div>
+      `,
     });
 
     marker.addListener('click', () => {

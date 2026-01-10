@@ -58,7 +58,7 @@ function LoginForm() {
               <img
                 src="/logo-text-gradient.png"
                 alt="Jahatelo"
-                className="h-9 w-auto object-contain -ml-1"
+                className="h-9 w-auto object-contain -ml-0.5"
               />
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
