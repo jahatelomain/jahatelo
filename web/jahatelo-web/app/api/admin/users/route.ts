@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { hashPassword, generateRandomPassword } from '@/lib/password';
-import { ADMIN_MODULES } from '@/lib/adminModules';
+import { ADMIN_MODULES, hasModuleAccess, AdminModule } from '@/lib/adminModules';
 import { logAuditEvent } from '@/lib/audit';
 
 /**
@@ -13,6 +13,25 @@ export async function GET(request: NextRequest) {
   try {
     const access = await requireAdminAccess(request, ['SUPERADMIN'], 'users');
     if (access.error) return access.error;
+
+    const searchParams = request.nextUrl.searchParams;
+    const roleFilter = searchParams.get('role');
+    const moduleFilter = searchParams.get('module');
+    const searchFilter = searchParams.get('search');
+
+    if (roleFilter && !['SUPERADMIN', 'MOTEL_ADMIN', 'USER'].includes(roleFilter)) {
+      return NextResponse.json(
+        { error: 'Rol inválido' },
+        { status: 400 }
+      );
+    }
+
+    if (moduleFilter && !ADMIN_MODULES.includes(moduleFilter as AdminModule)) {
+      return NextResponse.json(
+        { error: 'Módulo inválido' },
+        { status: 400 }
+      );
+    }
 
     const users = await prisma.user.findMany({
       select: {
@@ -39,7 +58,33 @@ export async function GET(request: NextRequest) {
       ],
     });
 
-    return NextResponse.json(users);
+    let filteredUsers = users;
+
+    if (roleFilter) {
+      filteredUsers = filteredUsers.filter((user) => user.role === roleFilter);
+    }
+
+    if (moduleFilter) {
+      filteredUsers = filteredUsers.filter((user) =>
+        hasModuleAccess(
+          { role: user.role, modulePermissions: user.modulePermissions },
+          moduleFilter as AdminModule
+        )
+      );
+    }
+
+    if (searchFilter) {
+      const query = searchFilter.trim().toLowerCase();
+      if (query) {
+        filteredUsers = filteredUsers.filter((user) => {
+          const name = user.name?.toLowerCase() ?? '';
+          const email = user.email?.toLowerCase() ?? '';
+          return name.includes(query) || email.includes(query);
+        });
+      }
+    }
+
+    return NextResponse.json(filteredUsers);
   } catch (error) {
     console.error('Error fetching users:', error);
     return NextResponse.json(

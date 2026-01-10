@@ -56,6 +56,6 @@ export function generateOrganizationSchema() {
     '@type': 'Organization',
     name: 'Jahatelo',
     url: 'https://jahatelo.vercel.app',
-    logo: 'https://jahatelo.vercel.app/logo-master.png',
+    logo: 'https://jahatelo.vercel.app/logo-icon.png',
   };
 }
