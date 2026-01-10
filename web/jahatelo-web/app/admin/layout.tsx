@@ -158,7 +158,7 @@ export default function AdminLayout({
       <div className="min-h-screen bg-slate-100 admin-theme text-slate-900">
         {/* Topbar Moderno */}
         <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-20">
-        <div className="px-6 py-3">
+        <div className="px-6 py-2">
           <div className="flex items-center justify-between">
             {/* Left: Brand + Mobile Menu Button */}
             <div className="flex items-center gap-4">
@@ -174,11 +174,13 @@ export default function AdminLayout({
                   )}
                 </svg>
               </button>
-              <div className="flex items-center gap-2">
-                <img src="/logo-32.png" alt="Jahatelo" className="w-8 h-8" />
-                <div>
-                  <h1 className="text-xl font-bold text-slate-900">Jahatelo Admin</h1>
-                  <p className="text-xs text-slate-500 hidden sm:block">Panel de administración</p>
+              <div className="flex items-center gap-1">
+                <img src="/logo-icon.png" alt="Jahatelo" className="w-20 h-20 object-contain" />
+                <div className="flex flex-col">
+                  <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-fuchsia-500 bg-clip-text text-transparent">
+                    Jahatelo
+                  </span>
+                  <span className="text-xs text-slate-500 -mt-1 hidden sm:block">Admin Panel</span>
                 </div>
               </div>
             </div>
@@ -229,7 +231,7 @@ export default function AdminLayout({
 
       {/* Mobile Menu Sidebar */}
       <aside
-        className={`fixed top-[57px] left-0 bottom-0 w-64 bg-white border-r border-slate-200 z-40 transform transition-transform duration-300 md:hidden ${
+        className={`fixed top-[88px] left-0 bottom-0 w-64 bg-white border-r border-slate-200 z-40 transform transition-transform duration-300 md:hidden ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -258,7 +260,7 @@ export default function AdminLayout({
 
       <div className="flex">
         {/* Sidebar Moderno */}
-        <aside className="w-64 bg-slate-50 border-r border-slate-200 min-h-[calc(100vh-57px)] sticky top-[57px] hidden md:block">
+        <aside className="w-64 bg-slate-50 border-r border-slate-200 min-h-[calc(100vh-88px)] sticky top-[88px] hidden md:block">
           <nav className="p-4">
             <ul className="space-y-1">
               {filteredNavItems.map((item) => (
@@ -282,7 +284,7 @@ export default function AdminLayout({
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 p-6 md:p-8 bg-slate-100 h-[calc(100vh-57px)] overflow-y-scroll">
+        <main className="flex-1 p-6 md:p-8 bg-slate-100 h-[calc(100vh-88px)] overflow-y-scroll">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
