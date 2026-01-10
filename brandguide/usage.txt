@@ -1,0 +1,19 @@
+Jahatelo brand usage guide
+
+Use icon only
+- App icon and adaptive icon
+- App splash icon when text is not present
+- Small nav or tight spaces
+
+Use icon with Jahatelo text below
+- Splash full screen
+- Marketing and onboarding screens
+- Places where the brand can breathe
+
+Colors
+Primary pink and purple from the logo gradient
+Text color for Jahatelo in the logo should match the gradient
+
+Notes
+Keep backgrounds clean and white for the splash
+Avoid extra borders or boxes behind the icon

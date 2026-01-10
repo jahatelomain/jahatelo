@@ -71,6 +71,14 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
       onPress={onPress}
       tracksViewChanges={IS_ANDROID ? tracksChanges : false}
     >
+      {!IS_ANDROID && (
+        <View style={styles.iosLabelContainer} pointerEvents="none">
+          <Text style={styles.iosLabelText} numberOfLines={1}>
+            {motel.name}
+          </Text>
+        </View>
+      )}
+
       {/* Pin personalizado */}
       <View style={pinStyle}>
         <View style={styles.markerInner}>
@@ -451,6 +459,26 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     marginBottom: 4,
     textAlign: 'center',
+  },
+  iosLabelContainer: {
+    backgroundColor: COLORS.white,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 6,
+    maxWidth: 180,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  iosLabelText: {
+    fontSize: 12,
+    color: COLORS.text,
+    fontWeight: '600',
   },
   centerButton: {
     position: 'absolute',
