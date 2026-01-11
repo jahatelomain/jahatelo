@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
-import PromoCarousel from '@/components/public/PromoCarousel';
+import FeaturedCarousel from '@/components/public/FeaturedCarousel';
 import CategoriesGrid from '@/components/public/CategoriesGrid';
 import SocialLinks from '@/components/public/SocialLinks';
 import SearchBar from '@/components/public/SearchBar';
@@ -135,7 +135,7 @@ export default async function HomePage() {
 
             {featuredMotels.length > 0 && (
               <div className="max-w-4xl mx-auto">
-                <PromoCarousel promos={featuredMotels} />
+                <FeaturedCarousel featuredMotels={featuredMotels} />
               </div>
             )}
 
