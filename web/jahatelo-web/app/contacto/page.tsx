@@ -2,6 +2,8 @@
 
 import { useState, FormEvent } from 'react';
 import { useToast } from '@/contexts/ToastContext';
+import Navbar from '@/components/public/Navbar';
+import Footer from '@/components/public/Footer';
 
 export default function ContactoPage() {
   const [name, setName] = useState('');
@@ -71,7 +73,9 @@ export default function ContactoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white py-12 px-4 sm:px-6 lg:px-8">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -215,5 +219,7 @@ export default function ContactoPage() {
         </div>
       </div>
     </div>
+    <Footer />
+    </>
   );
 }
