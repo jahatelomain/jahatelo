@@ -90,6 +90,7 @@ export default function AdminLayout({
     if (pathname.startsWith('/admin/analytics')) return 'Analytics';
     if (pathname.startsWith('/admin/advertisements')) return 'Publicidad';
     if (pathname.startsWith('/admin/audit')) return 'Auditoría';
+    if (pathname.startsWith('/admin/inbox')) return 'Inbox';
     return 'Admin';
   };
 
@@ -105,6 +106,7 @@ export default function AdminLayout({
     { href: '/admin/analytics', label: 'Analytics', roles: ['SUPERADMIN'] },
     { href: '/admin/advertisements', label: 'Publicidad', roles: ['SUPERADMIN'] },
     { href: '/admin/audit', label: 'Auditoría', roles: ['SUPERADMIN'] },
+    { href: '/admin/inbox', label: 'Inbox', roles: ['SUPERADMIN'] },
   ];
 
   const getModuleFromPath = (path: string) => {
@@ -119,6 +121,7 @@ export default function AdminLayout({
     if (path.startsWith('/admin/analytics')) return 'analytics';
     if (path.startsWith('/admin/advertisements')) return 'advertisements';
     if (path.startsWith('/admin/audit')) return 'audit';
+    if (path.startsWith('/admin/inbox')) return 'inbox';
     return null;
   };
 

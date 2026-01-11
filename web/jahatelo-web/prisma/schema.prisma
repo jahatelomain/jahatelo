@@ -649,3 +649,20 @@ model AdAnalytics {
   @@index([advertisementId, timestamp])
   @@index([eventType, timestamp])
 }
+
+// ============================================
+// CONTACT MESSAGES (Inbox del admin)
+// ============================================
+
+model ContactMessage {
+  id          String    @id @default(cuid())
+  name        String
+  phone       String?
+  message     String
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([createdAt])
+  @@index([isRead, createdAt])
+}

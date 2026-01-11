@@ -76,6 +76,16 @@ export default function Navbar() {
             >
               Mapa
             </Link>
+            <Link
+              href="/contacto"
+              className={`font-medium transition-colors ${
+                isActive('/contacto')
+                  ? 'text-purple-600'
+                  : 'text-gray-600 hover:text-purple-600'
+              }`}
+            >
+              Contáctanos
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -155,6 +165,17 @@ export default function Navbar() {
                 }`}
               >
                 Mapa
+              </Link>
+              <Link
+                href="/contacto"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`font-medium transition-colors ${
+                  isActive('/contacto')
+                    ? 'text-purple-600'
+                    : 'text-gray-600 hover:text-purple-600'
+                }`}
+              >
+                Contáctanos
               </Link>
             </div>
           </div>

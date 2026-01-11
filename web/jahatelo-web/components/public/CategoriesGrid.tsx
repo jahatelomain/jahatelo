@@ -16,6 +16,91 @@ interface CategoriesGridProps {
   categories: Category[];
 }
 
+// Patrones de fondo SVG (iguales a la app)
+const CitiesPattern = () => (
+  <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <pattern id="citiesPattern" patternUnits="userSpaceOnUse" width="120" height="120">
+        <rect width="120" height="120" fill="#1a0a2e" />
+        {/* Edificios con diferentes alturas */}
+        <rect x="5" y="70" width="15" height="50" fill="#3d1f5c" opacity="0.75" />
+        <rect x="5" y="68" width="15" height="2" fill="#5a3380" opacity="0.75" />
+        <rect x="25" y="50" width="18" height="70" fill="#3d1f5c" opacity="0.75" />
+        <rect x="25" y="48" width="18" height="2" fill="#5a3380" opacity="0.75" />
+        <rect x="48" y="60" width="14" height="60" fill="#3d1f5c" opacity="0.75" />
+        <rect x="48" y="58" width="14" height="2" fill="#5a3380" opacity="0.75" />
+        <rect x="67" y="45" width="20" height="75" fill="#3d1f5c" opacity="0.75" />
+        <rect x="67" y="43" width="20" height="2" fill="#5a3380" opacity="0.75" />
+        <rect x="92" y="65" width="16" height="55" fill="#3d1f5c" opacity="0.75" />
+        <rect x="92" y="63" width="16" height="2" fill="#5a3380" opacity="0.75" />
+        {/* Ventanas pequeñas */}
+        <rect x="8" y="75" width="3" height="4" fill="#8b5fb8" opacity="0.5" />
+        <rect x="14" y="75" width="3" height="4" fill="#8b5fb8" opacity="0.5" />
+        <rect x="8" y="85" width="3" height="4" fill="#8b5fb8" opacity="0.5" />
+        <rect x="14" y="85" width="3" height="4" fill="#8b5fb8" opacity="0.5" />
+        <rect x="30" y="55" width="3" height="4" fill="#8b5fb8" opacity="0.5" />
+        <rect x="37" y="55" width="3" height="4" fill="#8b5fb8" opacity="0.5" />
+        <rect x="30" y="65" width="3" height="4" fill="#8b5fb8" opacity="0.5" />
+        <rect x="37" y="65" width="3" height="4" fill="#8b5fb8" opacity="0.5" />
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#citiesPattern)" />
+  </svg>
+);
+
+const MapPattern = () => (
+  <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <pattern id="mapPattern" patternUnits="userSpaceOnUse" width="100" height="100">
+        <rect width="100" height="100" fill="#0a1a2e" />
+        {/* Líneas de contorno topográficas curvas */}
+        <path d="M0,20 Q25,18 50,20 T100,20" stroke="#1e4d6b" strokeWidth="1.5" fill="none" opacity="0.75" />
+        <path d="M0,35 Q25,33 50,35 T100,35" stroke="#1e4d6b" strokeWidth="1.5" fill="none" opacity="0.75" />
+        <path d="M0,50 Q25,48 50,50 T100,50" stroke="#2a6f8f" strokeWidth="2" fill="none" opacity="0.75" />
+        <path d="M0,65 Q25,63 50,65 T100,65" stroke="#1e4d6b" strokeWidth="1.5" fill="none" opacity="0.75" />
+        <path d="M0,80 Q25,78 50,80 T100,80" stroke="#1e4d6b" strokeWidth="1.5" fill="none" opacity="0.75" />
+        {/* Puntos de marcadores */}
+        <circle cx="20" cy="35" r="2.5" fill="#3a8fb7" opacity="0.75" />
+        <circle cx="50" cy="50" r="3" fill="#3a8fb7" opacity="0.8" />
+        <circle cx="75" cy="65" r="2.5" fill="#3a8fb7" opacity="0.75" />
+        {/* Líneas de grilla sutiles */}
+        <line x1="33" y1="0" x2="33" y2="100" stroke="#1e4d6b" strokeWidth="0.5" opacity="0.5" />
+        <line x1="66" y1="0" x2="66" y2="100" stroke="#1e4d6b" strokeWidth="0.5" opacity="0.5" />
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#mapPattern)" />
+  </svg>
+);
+
+const PromoPattern = () => (
+  <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <pattern id="promoPattern" patternUnits="userSpaceOnUse" width="120" height="120">
+        <rect width="120" height="120" fill="#2b0f2f" />
+        {/* Etiquetas inclinadas */}
+        <rect x="5" y="15" width="40" height="12" rx="6" fill="#6b1f7a" opacity="0.8" />
+        <rect x="60" y="10" width="45" height="12" rx="6" fill="#8b2fb0" opacity="0.8" />
+        <rect x="15" y="55" width="50" height="12" rx="6" fill="#6b1f7a" opacity="0.8" />
+        <rect x="70" y="65" width="40" height="12" rx="6" fill="#8b2fb0" opacity="0.8" />
+        {/* Círculos de descuento */}
+        <circle cx="25" cy="95" r="9" fill="#a855f7" opacity="0.7" />
+        <circle cx="85" cy="95" r="7" fill="#f59e0b" opacity="0.7" />
+        {/* Líneas diagonales suaves */}
+        <line x1="0" y1="35" x2="120" y2="25" stroke="#3f1647" strokeWidth="1" opacity="0.6" />
+        <line x1="0" y1="85" x2="120" y2="75" stroke="#3f1647" strokeWidth="1" opacity="0.6" />
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#promoPattern)" />
+  </svg>
+);
+
+// Mapeo de patrones por categoría
+const patterns: Record<string, ReactElement> = {
+  'location-outline': <CitiesPattern />,
+  'map-outline': <MapPattern />,
+  pricetag: <PromoPattern />,
+};
+
 // Mapeo de iconos SVG
 const icons: Record<string, ReactElement> = {
   'location-outline': (
@@ -53,21 +138,19 @@ export default function CategoriesGrid({ categories }: CategoriesGridProps) {
       {mapCategory && (
         <Link
           href={mapCategory.href}
-          className="block bg-white border-2 border-purple-600 rounded-2xl p-6 hover:bg-purple-50 transition-all duration-300 shadow-sm hover:shadow-md group"
+          className="relative block rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group h-20"
         >
-          <div className="flex items-center justify-between">
+          {/* Patrón de fondo */}
+          {patterns[mapCategory.iconName]}
+
+          {/* Contenido */}
+          <div className="relative flex items-center justify-center h-full px-6">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600">
+              <div className="w-12 h-12 bg-white/25 rounded-xl flex items-center justify-center text-white border-2 border-white/40">
                 {icons[mapCategory.iconName] || icons['map-outline']}
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors">{mapCategory.label}</h3>
-                <p className="text-gray-600 text-sm">Explora moteles en el mapa interactivo</p>
-              </div>
+              <h3 className="text-lg font-bold text-white drop-shadow-md">{mapCategory.label}</h3>
             </div>
-            <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
           </div>
         </Link>
       )}
@@ -78,20 +161,19 @@ export default function CategoriesGrid({ categories }: CategoriesGridProps) {
           <Link
             key={category.id}
             href={category.href}
-            className="bg-white border-2 border-purple-600 rounded-2xl p-6 hover:bg-purple-50 hover:shadow-md transition-all duration-300 group"
+            className="relative block rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group h-40"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 group-hover:bg-purple-200 transition-colors">
+            {/* Patrón de fondo */}
+            {patterns[category.iconName]}
+
+            {/* Contenido */}
+            <div className="relative flex flex-col items-center justify-center h-full px-6 py-8">
+              <div className="w-14 h-14 bg-white/25 rounded-xl flex items-center justify-center text-white border-2 border-white/40 mb-3">
                 {icons[category.iconName] || icons['location-outline']}
               </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
-                  {category.label}
-                </h3>
-              </div>
-              <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+              <h3 className="text-base font-bold text-white text-center drop-shadow-md">
+                {category.label}
+              </h3>
             </div>
           </Link>
         ))}

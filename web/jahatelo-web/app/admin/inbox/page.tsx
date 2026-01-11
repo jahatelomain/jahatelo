@@ -1,0 +1,271 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useToast } from '@/contexts/ToastContext';
+
+interface ContactMessage {
+  id: string;
+  name: string;
+  phone: string | null;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export default function InboxPage() {
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const { showToast } = useToast();
+
+  const fetchMessages = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/admin/inbox');
+      if (!response.ok) throw new Error('Error al cargar mensajes');
+      const data = await response.json();
+      setMessages(data);
+    } catch (error) {
+      showToast('Error al cargar mensajes', 'error');
+      console.error('Error fetching messages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const toggleReadStatus = async (id: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/admin/inbox/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isRead: !currentStatus }),
+      });
+
+      if (!response.ok) throw new Error('Error al actualizar mensaje');
+
+      await fetchMessages();
+      showToast(
+        !currentStatus ? 'Mensaje marcado como leído' : 'Mensaje marcado como no leído',
+        'success'
+      );
+    } catch (error) {
+      showToast('Error al actualizar mensaje', 'error');
+      console.error('Error toggling read status:', error);
+    }
+  };
+
+  const deleteMessage = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar este mensaje?')) return;
+
+    try {
+      const response = await fetch(`/api/admin/inbox/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Error al eliminar mensaje');
+
+      await fetchMessages();
+      showToast('Mensaje eliminado exitosamente', 'success');
+    } catch (error) {
+      showToast('Error al eliminar mensaje', 'error');
+      console.error('Error deleting message:', error);
+    }
+  };
+
+  const filteredMessages = messages.filter((msg) => {
+    if (filter === 'unread') return !msg.isRead;
+    if (filter === 'read') return msg.isRead;
+    return true;
+  });
+
+  const unreadCount = messages.filter((msg) => !msg.isRead).length;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Inbox</h1>
+          <p className="text-gray-600 mt-1">
+            Mensajes de contacto recibidos ({unreadCount} sin leer)
+          </p>
+        </div>
+
+        {/* Filtros */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'all'
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Todos ({messages.length})
+          </button>
+          <button
+            onClick={() => setFilter('unread')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'unread'
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            No leídos ({unreadCount})
+          </button>
+          <button
+            onClick={() => setFilter('read')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'read'
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Leídos ({messages.length - unreadCount})
+          </button>
+        </div>
+      </div>
+
+      {/* Loading */}
+      {loading && (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+          <p className="mt-4 text-gray-600">Cargando mensajes...</p>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && filteredMessages.length === 0 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+          <svg
+            className="mx-auto h-12 w-12 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+          <h3 className="mt-4 text-lg font-medium text-gray-900">
+            No hay mensajes {filter !== 'all' && filter === 'unread' ? 'sin leer' : 'leídos'}
+          </h3>
+          <p className="mt-2 text-gray-500">
+            {filter === 'all'
+              ? 'Aún no has recibido ningún mensaje de contacto.'
+              : 'Cambia el filtro para ver otros mensajes.'}
+          </p>
+        </div>
+      )}
+
+      {/* Messages List */}
+      {!loading && filteredMessages.length > 0 && (
+        <div className="space-y-4">
+          {filteredMessages.map((message) => (
+            <div
+              key={message.id}
+              className={`bg-white rounded-lg shadow-sm border-2 p-6 transition-all ${
+                message.isRead
+                  ? 'border-gray-200'
+                  : 'border-purple-300 bg-purple-50/30'
+              }`}
+            >
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  {/* Header */}
+                  <div className="flex items-start gap-3 mb-3">
+                    {/* Status Indicator */}
+                    <div className="mt-1">
+                      {message.isRead ? (
+                        <div className="w-3 h-3 rounded-full bg-gray-300" title="Leído" />
+                      ) : (
+                        <div className="w-3 h-3 rounded-full bg-purple-600" title="No leído" />
+                      )}
+                    </div>
+
+                    {/* Name and Date */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {message.name}
+                        </h3>
+                        <span className="text-sm text-gray-500">
+                          {new Date(message.createdAt).toLocaleString('es-PY', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                      {message.phone && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          📞 {message.phone}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Message */}
+                  <div className="pl-6">
+                    <p className="text-gray-700 whitespace-pre-wrap break-words">
+                      {message.message}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex lg:flex-col gap-2 lg:items-end">
+                  <button
+                    onClick={() => toggleReadStatus(message.id, message.isRead)}
+                    className="flex-1 lg:flex-initial px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                    title={message.isRead ? 'Marcar como no leído' : 'Marcar como leído'}
+                  >
+                    {message.isRead ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        No leído
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Leído
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => deleteMessage(message.id)}
+                    className="flex-1 lg:flex-initial px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm"
+                    title="Eliminar mensaje"
+                  >
+                    <span className="flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Eliminar
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

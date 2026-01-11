@@ -10,6 +10,7 @@ export const ADMIN_MODULES = [
   'analytics',
   'advertisements',
   'audit',
+  'inbox',
 ] as const;
 
 export type AdminModule = typeof ADMIN_MODULES[number];
@@ -26,6 +27,7 @@ export const ADMIN_MODULE_LABELS: Record<AdminModule, string> = {
   analytics: 'Analytics',
   advertisements: 'Publicidad',
   audit: 'Auditoría',
+  inbox: 'Inbox',
 };
 
 export function hasModuleAccess(
