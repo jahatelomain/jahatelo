@@ -299,10 +299,7 @@ export default function ProfileScreen() {
             <OptionRow
               icon="mail-outline"
               title="Contáctanos"
-              onPress={() => handleLegalPress(
-                'Contáctanos',
-                'Estamos aquí para ayudarte.\n\nPróximamente compartiremos nuestros canales de contacto para que puedas comunicarte con nosotros.'
-              )}
+              onPress={() => navigation.navigate('Contact')}
             />
             <OptionRow
               icon="document-text-outline"

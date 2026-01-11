@@ -6,6 +6,7 @@ import BottomTabs from './BottomTabs';
 import MotelDetailScreen from '../screens/MotelDetailScreen';
 import RegisterMotelScreen from '../screens/RegisterMotelScreen';
 import LegalScreen from '../screens/LegalScreen';
+import ContactScreen from '../screens/ContactScreen';
 import CitySelectorScreen from '../screens/CitySelectorScreen';
 import CityMotelsScreen from '../screens/CityMotelsScreen';
 import SearchScreen from '../screens/SearchScreen';
@@ -37,6 +38,7 @@ export default function RootNavigation() {
       <Stack.Screen name="NearbyMotels" component={NearbyMotelsScreen} />
       <Stack.Screen name="RegisterMotel" component={RegisterMotelScreen} />
       <Stack.Screen name="Legal" component={LegalScreen} />
+      <Stack.Screen name="Contact" component={ContactScreen} />
       <Stack.Screen name="CitySelector" component={CitySelectorScreen} />
       <Stack.Screen name="CityMotels" component={CityMotelsScreen} />
     </Stack.Navigator>
