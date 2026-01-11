@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
+    const isDev = process.env.NODE_ENV === 'development';
     const body = await request.json();
     const { email, password } = body;
 
@@ -19,13 +20,13 @@ export async function POST(request: NextRequest) {
 
     // Buscar usuario activo
     const normalizedEmail = email.toLowerCase().trim();
-    console.log('[LOGIN] Attempt:', normalizedEmail);
+    if (isDev) console.log('[LOGIN] Attempt:', normalizedEmail);
 
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
 
-    console.log('[LOGIN] User found?', !!user, 'isActive?', user?.isActive);
+    if (isDev) console.log('[LOGIN] User found?', !!user, 'isActive?', user?.isActive);
 
     if (!user || !user.isActive) {
       return NextResponse.json(
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     const isValid = await verifyPassword(password, user.passwordHash);
-    console.log('[LOGIN] Password valid?', isValid);
+    if (isDev) console.log('[LOGIN] Password valid?', isValid);
     if (!isValid) {
       return NextResponse.json(
         { error: 'Credenciales inválidas' },

@@ -7,6 +7,9 @@ import { filterMotelsByDistance } from '../utils/location';
 /**
  * Servicio de prefetch para pre-cargar datos en background
  */
+const debugLog = (...args) => {
+  if (__DEV__) console.log(...args);
+};
 
 /**
  * Pre-carga moteles destacados en background
@@ -16,13 +19,13 @@ export const prefetchFeaturedMotels = async () => {
   return new Promise((resolve) => {
     InteractionManager.runAfterInteractions(async () => {
       try {
-        console.log('🚀 Prefetch: Cargando moteles destacados...');
+        debugLog('🚀 Prefetch: Cargando moteles destacados...');
 
         // Obtener moteles destacados (usa caché si está disponible)
         const featuredMotels = await fetchMotels({ featured: true });
 
         if (featuredMotels && featuredMotels.length > 0) {
-          console.log(`✅ Prefetch: ${featuredMotels.length} moteles destacados cargados`);
+          debugLog(`✅ Prefetch: ${featuredMotels.length} moteles destacados cargados`);
 
           // Pre-cargar detalles de los primeros 3 destacados
           const topFeatured = featuredMotels.slice(0, 3);
@@ -34,7 +37,7 @@ export const prefetchFeaturedMotels = async () => {
 
         resolve(true);
       } catch (error) {
-        console.error('⚠️ Prefetch error (featured):', error.message);
+        debugLog('⚠️ Prefetch error (featured):', error.message);
         resolve(false);
       }
     });
@@ -54,12 +57,12 @@ export const prefetchNearbyMotels = async (allMotels = [], radiusKm = 10) => {
 
         // Si no hay permisos, no hacer nada (no queremos molestar al usuario)
         if (status !== 'granted') {
-          console.log('📍 Prefetch: Permisos de ubicación no otorgados, saltando prefetch cercanos');
+          debugLog('📍 Prefetch: Permisos de ubicación no otorgados, saltando prefetch cercanos');
           resolve(false);
           return;
         }
 
-        console.log('🚀 Prefetch: Obteniendo ubicación para moteles cercanos...');
+        debugLog('🚀 Prefetch: Obteniendo ubicación para moteles cercanos...');
 
         // Obtener ubicación actual
         const location = await Location.getCurrentPositionAsync({
@@ -72,7 +75,7 @@ export const prefetchNearbyMotels = async (allMotels = [], radiusKm = 10) => {
         const nearbyMotels = filterMotelsByDistance(allMotels, latitude, longitude, radiusKm);
 
         if (nearbyMotels && nearbyMotels.length > 0) {
-          console.log(`✅ Prefetch: ${nearbyMotels.length} moteles cercanos encontrados (${radiusKm}km)`);
+          debugLog(`✅ Prefetch: ${nearbyMotels.length} moteles cercanos encontrados (${radiusKm}km)`);
 
           // Pre-cargar detalles de los primeros 5 cercanos
           const topNearby = nearbyMotels.slice(0, 5);
@@ -81,12 +84,12 @@ export const prefetchNearbyMotels = async (allMotels = [], radiusKm = 10) => {
           // Pre-cargar imágenes
           await prefetchThumbnails(topNearby);
         } else {
-          console.log('📍 Prefetch: No hay moteles cercanos');
+          debugLog('📍 Prefetch: No hay moteles cercanos');
         }
 
         resolve(true);
       } catch (error) {
-        console.error('⚠️ Prefetch error (nearby):', error.message);
+        debugLog('⚠️ Prefetch error (nearby):', error.message);
         resolve(false);
       }
     });
@@ -101,7 +104,7 @@ export const prefetchMotelDetails = async (motels = []) => {
   if (!motels || motels.length === 0) return;
 
   try {
-    console.log(`🔍 Prefetch: Cargando detalles de ${motels.length} moteles...`);
+    debugLog(`🔍 Prefetch: Cargando detalles de ${motels.length} moteles...`);
 
     let cached = 0;
     let fetched = 0;
@@ -138,9 +141,9 @@ export const prefetchMotelDetails = async (motels = []) => {
       }
     }
 
-    console.log(`✅ Prefetch detalles: ${cached} en caché, ${fetched} nuevos`);
+    debugLog(`✅ Prefetch detalles: ${cached} en caché, ${fetched} nuevos`);
   } catch (error) {
-    console.error('⚠️ Prefetch error (details):', error.message);
+    debugLog('⚠️ Prefetch error (details):', error.message);
   }
 };
 
@@ -152,7 +155,7 @@ export const prefetchThumbnails = async (motels = []) => {
   if (!motels || motels.length === 0) return;
 
   try {
-    console.log(`🖼️ Prefetch: Cargando ${motels.length} thumbnails...`);
+    debugLog(`🖼️ Prefetch: Cargando ${motels.length} thumbnails...`);
 
     const thumbnailUrls = motels
       .map(motel => motel.thumbnail)
@@ -166,9 +169,9 @@ export const prefetchThumbnails = async (motels = []) => {
     );
 
     const succeeded = results.filter(r => r.status === 'fulfilled').length;
-    console.log(`✅ Prefetch thumbnails: ${succeeded}/${thumbnailUrls.length} cargados`);
+    debugLog(`✅ Prefetch thumbnails: ${succeeded}/${thumbnailUrls.length} cargados`);
   } catch (error) {
-    console.error('⚠️ Prefetch error (thumbnails):', error.message);
+    debugLog('⚠️ Prefetch error (thumbnails):', error.message);
   }
 };
 
@@ -180,7 +183,7 @@ export const prefetchMotelPhotos = async (motel) => {
   if (!motel || !motel.photos || motel.photos.length === 0) return;
 
   try {
-    console.log(`🖼️ Prefetch: Cargando ${motel.photos.length} fotos de ${motel.nombre}...`);
+    debugLog(`🖼️ Prefetch: Cargando ${motel.photos.length} fotos de ${motel.nombre}...`);
 
     const photoUrls = motel.photos.filter(url => url && typeof url === 'string');
 
@@ -192,9 +195,9 @@ export const prefetchMotelPhotos = async (motel) => {
     );
 
     const succeeded = results.filter(r => r.status === 'fulfilled').length;
-    console.log(`✅ Prefetch fotos: ${succeeded}/${photoUrls.length} cargados`);
+    debugLog(`✅ Prefetch fotos: ${succeeded}/${photoUrls.length} cargados`);
   } catch (error) {
-    console.error('⚠️ Prefetch error (photos):', error.message);
+    debugLog('⚠️ Prefetch error (photos):', error.message);
   }
 };
 
@@ -210,7 +213,7 @@ export const smartPrefetch = async (allMotels = [], options = {}) => {
   } = options;
 
   try {
-    console.log('🧠 Smart Prefetch: Iniciando estrategia inteligente...');
+    debugLog('🧠 Smart Prefetch: Iniciando estrategia inteligente...');
 
     const tasks = [];
 
@@ -230,10 +233,10 @@ export const smartPrefetch = async (allMotels = [], options = {}) => {
     // Ejecutar tareas de prioridad alta
     await Promise.all(tasks);
 
-    console.log('✅ Smart Prefetch: Completado');
+    debugLog('✅ Smart Prefetch: Completado');
     return true;
   } catch (error) {
-    console.error('⚠️ Smart Prefetch error:', error.message);
+    debugLog('⚠️ Smart Prefetch error:', error.message);
     return false;
   }
 };
@@ -265,17 +268,17 @@ export const clearImageCache = async () => {
   try {
     // React Native Image no tiene un método directo para limpiar caché
     // Pero podemos forzar garbage collection esperando
-    console.log('🗑️ Limpiando caché de imágenes...');
+    debugLog('🗑️ Limpiando caché de imágenes...');
 
     // Forzar recolección de basura (solo funciona en desarrollo)
     if (__DEV__ && global.gc) {
       global.gc();
     }
 
-    console.log('✅ Caché de imágenes limpiado');
+    debugLog('✅ Caché de imágenes limpiado');
     return true;
   } catch (error) {
-    console.error('⚠️ Error limpiando caché de imágenes:', error.message);
+    debugLog('⚠️ Error limpiando caché de imágenes:', error.message);
     return false;
   }
 };

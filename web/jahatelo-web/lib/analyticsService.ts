@@ -31,7 +31,9 @@ export const trackEvent = async ({ motelId, eventType, source, metadata }: Track
     });
   } catch (error) {
     // Silenciosamente fallar - no queremos interrumpir la experiencia del usuario
-    console.log('Analytics tracking failed (non-critical):', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Analytics tracking failed (non-critical):', error);
+    }
   }
 };
 

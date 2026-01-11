@@ -5,6 +5,10 @@ import NetInfo from '@react-native-community/netinfo';
  * Hook personalizado para monitorear el estado de la red
  * @returns {Object} Estado de la red
  */
+const debugLog = (...args) => {
+  if (__DEV__) console.log(...args);
+};
+
 export const useNetworkStatus = () => {
   const [isConnected, setIsConnected] = useState(true);
   const [isInternetReachable, setIsInternetReachable] = useState(true);
@@ -21,9 +25,9 @@ export const useNetworkStatus = () => {
 
       // Log para debugging
       if (!state.isConnected || !reachable) {
-        console.log('📡 Sin conexión a internet');
+        debugLog('📡 Sin conexión a internet');
       } else {
-        console.log(`📡 Conectado via ${state.type}`);
+        debugLog(`📡 Conectado via ${state.type}`);
       }
     });
 

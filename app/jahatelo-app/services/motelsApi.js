@@ -16,6 +16,10 @@ export const getApiBaseUrl = () => {
   return `${apiUrl}/api/mobile`;
 };
 
+const debugLog = (...args) => {
+  if (__DEV__) console.log(...args);
+};
+
 /**
  * Utilidad para hacer fetch con manejo de errores
  */
@@ -36,7 +40,7 @@ const fetchJson = async (url, options = {}) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Fetch error:', error);
+    debugLog('Fetch error:', error);
     throw error;
   }
 };
@@ -230,7 +234,7 @@ export const fetchMotels = async (params = {}, useCache = true) => {
   if (!hasFilters && useCache) {
     const cached = await getCachedMotelsList();
     if (cached) {
-      console.log('✅ Usando moteles del caché');
+      debugLog('✅ Usando moteles del caché');
       return cached;
     }
   }
@@ -248,10 +252,10 @@ export const fetchMotels = async (params = {}, useCache = true) => {
     return motels;
   } catch (error) {
     // Si falla el fetch, intentar devolver del caché
-    console.log('⚠️ Error al obtener moteles, intentando caché...');
+    debugLog('⚠️ Error al obtener moteles, intentando caché...');
     const cached = await getCachedMotelsList();
     if (cached) {
-      console.log('✅ Usando moteles del caché (offline)');
+      debugLog('✅ Usando moteles del caché (offline)');
       return cached;
     }
     throw error;
@@ -322,9 +326,9 @@ export const fetchMotelBySlug = async (slugOrId, useCache = true) => {
     return normalizedDetail;
   } catch (error) {
     // Si falla el fetch, intentar devolver del caché
-    console.log(`⚠️ Error al obtener motel ${slugOrId}, intentando caché...`);
+    debugLog(`⚠️ Error al obtener motel ${slugOrId}, intentando caché...`);
     if (cachedDetail) {
-      console.log(`✅ Usando detalle de motel del caché (offline): ${slugOrId}`);
+      debugLog(`✅ Usando detalle de motel del caché (offline): ${slugOrId}`);
       return cachedDetail;
     }
     throw error;

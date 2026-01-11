@@ -18,6 +18,9 @@ import { useNavigation } from '@react-navigation/native';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 const IS_ANDROID = Platform.OS === 'android';
+const debugLog = (...args) => {
+  if (__DEV__) console.log(...args);
+};
 
 // Marker con Callout solo en iOS para evitar etiquetas en Android
 const CustomMarker = React.memo(({ motel, onPress }) => {
@@ -152,7 +155,7 @@ export default function MapScreen() {
       // Usar cache si está disponible y es reciente
       const now = Date.now();
       if (cachedMapData && (now - cacheTimestamp) < CACHE_DURATION) {
-        console.log('📍 Usando datos del mapa cacheados');
+        debugLog('📍 Usando datos del mapa cacheados');
         setMotels(cachedMapData.motels);
 
         if (cachedMapData.motels.length > 0) {
@@ -168,7 +171,7 @@ export default function MapScreen() {
         return;
       }
 
-      console.log('📍 Cargando datos del mapa desde API...');
+      debugLog('📍 Cargando datos del mapa desde API...');
       const response = await fetch(`${API_URL}/api/mobile/motels/map`);
       const data = await response.json();
 
@@ -194,7 +197,7 @@ export default function MapScreen() {
         setError('No hay moteles con ubicación disponibles');
       }
     } catch (err) {
-      console.error('Error fetching map data:', err);
+      debugLog('Error fetching map data:', err);
       setError('Error al cargar el mapa');
     } finally {
       setLoading(false);
@@ -230,7 +233,7 @@ export default function MapScreen() {
 
       mapRef.current?.animateToRegion(newRegion, 1000);
     } catch (error) {
-      console.error('Error getting location:', error);
+      debugLog('Error getting location:', error);
       Alert.alert(
         'Error',
         'No pudimos obtener tu ubicación. Verifica que el GPS esté activado.',

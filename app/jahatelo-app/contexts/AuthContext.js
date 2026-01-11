@@ -1,6 +1,10 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import * as authApi from '../services/authApi';
 
+const debugLog = (...args) => {
+  if (__DEV__) console.log(...args);
+};
+
 const AuthContext = createContext({
   user: null,
   token: null,
@@ -47,12 +51,12 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (error) {
           // Si falla, limpiar datos (token inválido/expirado)
-          console.log('Token inválido o expirado, limpiando datos...');
+          debugLog('Token inválido o expirado, limpiando datos...');
           await handleLogout();
         }
       }
     } catch (error) {
-      console.error('Error loading auth data:', error);
+      debugLog('Error loading auth data:', error);
     } finally {
       setIsLoading(false);
     }

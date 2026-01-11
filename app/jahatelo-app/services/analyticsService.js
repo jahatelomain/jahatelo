@@ -4,6 +4,9 @@
  */
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const debugLog = (...args) => {
+  if (__DEV__) console.log(...args);
+};
 
 /**
  * Track un evento de analytics
@@ -31,7 +34,7 @@ export const trackEvent = async ({ motelId, eventType, source, metadata }) => {
     });
   } catch (error) {
     // Silenciosamente fallar - no queremos interrumpir la experiencia del usuario
-    console.log('Analytics tracking failed (non-critical):', error.message);
+    debugLog('Analytics tracking failed (non-critical):', error.message);
   }
 };
 

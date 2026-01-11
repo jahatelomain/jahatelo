@@ -22,6 +22,10 @@ export function calculateDistance(lat1, lon1, lat2, lon2) {
   return distance;
 }
 
+const debugLog = (...args) => {
+  if (__DEV__) console.log(...args);
+};
+
 /**
  * Convierte grados a radianes
  */
@@ -38,7 +42,7 @@ function toRad(degrees) {
  * @returns {Array} Moteles filtrados y ordenados por distancia
  */
 export function filterMotelsByDistance(motels, userLat, userLon, maxDistance = 10) {
-  console.log(`🔍 Filtrando ${motels.length} moteles cerca de [${userLat}, ${userLon}] - radio: ${maxDistance}km`);
+  debugLog(`🔍 Filtrando ${motels.length} moteles cerca de [${userLat}, ${userLon}] - radio: ${maxDistance}km`);
 
   const results = motels
     .map((motel, index) => {
@@ -53,7 +57,7 @@ export function filterMotelsByDistance(motels, userLat, userLon, maxDistance = 1
       // Validar que son números válidos
       if (!motelLat || !motelLon || isNaN(motelLat) || isNaN(motelLon)) {
         if (index < 3) { // Solo logear los primeros 3 para no saturar
-          console.log(`⚠️ Motel "${motel.nombre}" sin coordenadas válidas:`, {
+          debugLog(`⚠️ Motel "${motel.nombre}" sin coordenadas válidas:`, {
             lat: motelLat,
             lon: motelLon,
             rawLat: motel.latitude || motel.lat,
@@ -66,7 +70,7 @@ export function filterMotelsByDistance(motels, userLat, userLon, maxDistance = 1
       const distance = calculateDistance(userLat, userLon, motelLat, motelLon);
 
       if (index < 3) { // Log de los primeros 3 moteles procesados
-        console.log(`✓ Motel "${motel.nombre}": ${distance.toFixed(1)}km - [${motelLat}, ${motelLon}]`);
+        debugLog(`✓ Motel "${motel.nombre}": ${distance.toFixed(1)}km - [${motelLat}, ${motelLon}]`);
       }
 
       return {
@@ -81,7 +85,7 @@ export function filterMotelsByDistance(motels, userLat, userLon, maxDistance = 1
     })
     .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
 
-  console.log(`✅ Encontrados ${results.length} moteles dentro de ${maxDistance}km`);
+  debugLog(`✅ Encontrados ${results.length} moteles dentro de ${maxDistance}km`);
 
   return results;
 }

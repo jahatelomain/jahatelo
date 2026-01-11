@@ -27,6 +27,10 @@ const RADIUS_OPTIONS = [
   { value: null, label: 'Todos' },
 ];
 
+const debugLog = (...args) => {
+  if (__DEV__) console.log(...args);
+};
+
 export default function NearbyMotelsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [motels, setMotels] = useState([]);
@@ -63,18 +67,18 @@ export default function NearbyMotelsScreen({ navigation }) {
       }
 
       // Obtener ubicación actual
-      console.log('📍 Obteniendo ubicación del usuario...');
+      debugLog('📍 Obteniendo ubicación del usuario...');
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
 
       const { latitude, longitude } = location.coords;
       setUserLocation({ latitude, longitude });
-      console.log(`📍 Ubicación del usuario: [${latitude}, ${longitude}]`);
+      debugLog(`📍 Ubicación del usuario: [${latitude}, ${longitude}]`);
 
       // Obtener todos los moteles
       const fetchedMotels = await fetchMotels();
-      console.log(`📊 Total de moteles disponibles: ${fetchedMotels.length}`);
+      debugLog(`📊 Total de moteles disponibles: ${fetchedMotels.length}`);
 
       // Guardar todos los moteles
       setAllMotels(fetchedMotels);
@@ -82,7 +86,7 @@ export default function NearbyMotelsScreen({ navigation }) {
       // Filtrar moteles cercanos con el radio por defecto
       filterMotelsByRadius(selectedRadius, fetchedMotels, { latitude, longitude });
     } catch (err) {
-      console.error('❌ Error al obtener moteles cercanos:', err);
+      debugLog('❌ Error al obtener moteles cercanos:', err);
       setError('No pudimos obtener tu ubicación. Verifica que el GPS esté activado.');
     } finally {
       setLoading(false);
@@ -113,12 +117,12 @@ export default function NearbyMotelsScreen({ navigation }) {
       .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
 
       setMotels(motelsWithDistance);
-      console.log(`🎯 Mostrando todos los ${motelsWithDistance.length} moteles`);
+      debugLog(`🎯 Mostrando todos los ${motelsWithDistance.length} moteles`);
     } else {
       // Filtrar por radio específico
       const filtered = filterMotelsByDistance(motelsToFilter, latitude, longitude, radius);
       setMotels(filtered);
-      console.log(`🎯 Mostrando ${filtered.length} moteles dentro de ${radius}km`);
+      debugLog(`🎯 Mostrando ${filtered.length} moteles dentro de ${radius}km`);
 
       if (filtered.length === 0) {
         setError(`No encontramos moteles a menos de ${radius} km de tu ubicación.`);
