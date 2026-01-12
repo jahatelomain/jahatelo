@@ -15,7 +15,6 @@ import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { useNavigation } from '@react-navigation/native';
-import PremiumMarkerPin from '../components/PremiumMarkerPin';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 const IS_ANDROID = Platform.OS === 'android';
@@ -65,12 +64,29 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
           </View>
         )}
 
-        {/* Pin animado con componente */}
-        <PremiumMarkerPin
-          plan={plan}
-          isDisabled={isDisabled}
-          size={36}
-        />
+        {/* Pin del marker */}
+        <View
+          style={[
+            styles.markerPin,
+            isDisabled && styles.disabledMarker,
+            isPlatinum && styles.platinumMarker,
+          ]}
+        >
+          <View style={styles.markerInner}>
+            <Ionicons
+              name="heart"
+              size={isPremium || isPlatinum ? 18 : 14}
+              color={COLORS.white}
+            />
+          </View>
+
+          {/* Badge para Platinum */}
+          {isPlatinum && !isDisabled && (
+            <View style={styles.platinumBadge}>
+              <Ionicons name="star" size={12} color="#FCD34D" />
+            </View>
+          )}
+        </View>
       </View>
 
       {!IS_ANDROID && (
