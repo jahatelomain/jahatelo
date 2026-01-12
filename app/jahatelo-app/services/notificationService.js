@@ -48,9 +48,17 @@ export async function registerForPushNotificationsAsync() {
     }
 
     // Obtener el token de Expo
-    token = await Notifications.getExpoPushTokenAsync({
-      projectId: Constants.expoConfig?.extra?.eas?.projectId || 'default-project-id',
-    });
+    const projectId =
+      Constants.easConfig?.projectId ||
+      Constants.expoConfig?.extra?.eas?.projectId ||
+      Constants.expoConfig?.extra?.projectId;
+
+    if (!projectId) {
+      console.log('projectId faltante para Expo Push');
+      return null;
+    }
+
+    token = await Notifications.getExpoPushTokenAsync({ projectId });
 
     // Configurar canal de notificaciones en Android
     if (Platform.OS === 'android') {
