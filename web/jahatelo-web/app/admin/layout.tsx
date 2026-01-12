@@ -64,6 +64,12 @@ export default function AdminLayout({
     if (pathname.startsWith('/admin/users') || pathname.startsWith('/admin/roles') || pathname.startsWith('/admin/audit')) {
       setExpandedSections(prev => ({ ...prev, 'Configuración': true }));
     }
+    if (pathname.startsWith('/admin/motels') || pathname.startsWith('/admin/amenities') || pathname.startsWith('/admin/promos')) {
+      setExpandedSections(prev => ({ ...prev, 'Gestión de moteles': true }));
+    }
+    if (pathname.startsWith('/admin/prospects') || pathname.startsWith('/admin/analytics')) {
+      setExpandedSections(prev => ({ ...prev, 'Comercial': true }));
+    }
   }, [pathname]);
 
   const handleLogout = async () => {
@@ -132,12 +138,24 @@ export default function AdminLayout({
 
   const navStructure: NavElement[] = [
     { href: '/admin', label: 'Dashboard', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
-    { href: '/admin/motels', label: 'Moteles', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
-    { href: '/admin/promos', label: 'Promos', roles: ['SUPERADMIN'] },
-    { href: '/admin/amenities', label: 'Amenities', roles: ['SUPERADMIN'] },
-    { href: '/admin/prospects', label: 'Prospects', roles: ['SUPERADMIN'] },
+    {
+      section: 'Gestión de moteles',
+      collapsible: true,
+      items: [
+        { href: '/admin/motels', label: 'Moteles', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
+        { href: '/admin/amenities', label: 'Amenities', roles: ['SUPERADMIN'] },
+        { href: '/admin/promos', label: 'Promos', roles: ['SUPERADMIN'] },
+      ],
+    },
+    {
+      section: 'Comercial',
+      collapsible: true,
+      items: [
+        { href: '/admin/prospects', label: 'Prospects', roles: ['SUPERADMIN'] },
+        { href: '/admin/analytics', label: 'Analytics', roles: ['SUPERADMIN'] },
+      ],
+    },
     { href: '/admin/financiero', label: 'Financiero', roles: ['SUPERADMIN'] },
-    { href: '/admin/analytics', label: 'Analytics', roles: ['SUPERADMIN'] },
     {
       section: 'Publicidad',
       collapsible: true,

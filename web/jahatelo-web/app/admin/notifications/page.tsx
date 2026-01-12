@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 
@@ -16,7 +17,15 @@ type ScheduledNotification = {
   totalSent: number;
   totalFailed: number;
   totalSkipped: number;
+  targetRole?: string | null;
+  targetMotelId?: string | null;
+  targetUserIds?: string[] | null;
   createdAt: string;
+};
+
+type MotelOption = {
+  id: string;
+  name: string;
 };
 
 export default function NotificationsAdminPage() {
@@ -26,6 +35,8 @@ export default function NotificationsAdminPage() {
   const [showForm, setShowForm] = useState(false);
   const [filterCategory, setFilterCategory] = useState<'ALL' | 'advertising' | 'security' | 'maintenance'>('ALL');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'SENT' | 'PENDING'>('ALL');
+  const [motels, setMotels] = useState<MotelOption[]>([]);
+  const [loadingMotels, setLoadingMotels] = useState(false);
 
   const toast = useToast();
 
@@ -34,11 +45,50 @@ export default function NotificationsAdminPage() {
     body: '',
     category: 'advertising',
     sendNow: true,
-    scheduledFor: '',
+    scheduledDate: '',
+    scheduledTime: '09:00',
+    segmentType: 'ALL',
+    targetRole: '',
+    targetMotelId: '',
   });
 
   useEffect(() => {
     fetchNotifications();
+  }, []);
+
+  useEffect(() => {
+    if (formData.segmentType !== 'MOTEL' || motels.length > 0) {
+      return;
+    }
+
+    const fetchMotels = async () => {
+      setLoadingMotels(true);
+      try {
+        const res = await fetch('/api/admin/motels');
+        if (!res.ok) {
+          throw new Error('Error al cargar moteles');
+        }
+        const data = await res.json();
+        setMotels((data.motels || []).map((m: any) => ({ id: m.id, name: m.name })));
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error('Error al cargar moteles');
+      } finally {
+        setLoadingMotels(false);
+      }
+    };
+
+    fetchMotels();
+  }, [formData.segmentType, motels.length, toast]);
+
+  const timeOptions = useMemo(() => {
+    const options: string[] = [];
+    for (let hour = 0; hour < 24; hour += 1) {
+      const hourLabel = String(hour).padStart(2, '0');
+      options.push(`${hourLabel}:00`);
+      options.push(`${hourLabel}:30`);
+    }
+    return options;
   }, []);
 
   const fetchNotifications = async () => {
@@ -63,8 +113,18 @@ export default function NotificationsAdminPage() {
       return;
     }
 
-    if (!formData.sendNow && !formData.scheduledFor) {
+    if (!formData.sendNow && !formData.scheduledDate) {
       toast.warning('Selecciona una fecha para programar o envía ahora');
+      return;
+    }
+
+    if (formData.segmentType === 'ROLE' && !formData.targetRole) {
+      toast.warning('Selecciona un rol para segmentar');
+      return;
+    }
+
+    if (formData.segmentType === 'MOTEL' && !formData.targetMotelId) {
+      toast.warning('Selecciona un motel para segmentar');
       return;
     }
 
@@ -79,8 +139,16 @@ export default function NotificationsAdminPage() {
         sendNow: formData.sendNow,
       };
 
-      if (!formData.sendNow && formData.scheduledFor) {
-        payload.scheduledFor = new Date(formData.scheduledFor).toISOString();
+      if (!formData.sendNow && formData.scheduledDate) {
+        payload.scheduledFor = new Date(`${formData.scheduledDate}T${formData.scheduledTime}:00`).toISOString();
+      }
+
+      if (formData.segmentType === 'ROLE' && formData.targetRole) {
+        payload.targetRole = formData.targetRole;
+      }
+
+      if (formData.segmentType === 'MOTEL' && formData.targetMotelId) {
+        payload.targetMotelId = formData.targetMotelId;
       }
 
       const res = await fetch('/api/notifications/schedule', {
@@ -118,7 +186,11 @@ export default function NotificationsAdminPage() {
       body: '',
       category: 'advertising',
       sendNow: true,
-      scheduledFor: '',
+      scheduledDate: '',
+      scheduledTime: '09:00',
+      segmentType: 'ALL',
+      targetRole: '',
+      targetMotelId: '',
     });
   };
 
@@ -146,6 +218,23 @@ export default function NotificationsAdminPage() {
       default:
         return 'bg-slate-100 text-slate-700';
     }
+  };
+
+  const getAudienceLabel = (notif: ScheduledNotification) => {
+    if (notif.targetUserIds && notif.targetUserIds.length > 0) {
+      return 'Usuarios específicos';
+    }
+    if (notif.targetRole) {
+      return notif.targetRole === 'SUPERADMIN'
+        ? 'Solo superadmin'
+        : notif.targetRole === 'MOTEL_ADMIN'
+          ? 'Solo admins de motel'
+          : 'Solo usuarios';
+    }
+    if (notif.targetMotelId) {
+      return 'Favoritos de un motel';
+    }
+    return 'Todos los usuarios';
   };
 
   // Filtros
@@ -344,14 +433,88 @@ export default function NotificationsAdminPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Fecha y hora de envío
                   </label>
-                  <input
-                    type="datetime-local"
-                    value={formData.scheduledFor}
-                    onChange={(e) => setFormData({ ...formData, scheduledFor: e.target.value })}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input
+                      type="date"
+                      value={formData.scheduledDate}
+                      onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      min={new Date().toISOString().slice(0, 10)}
+                      required={!formData.sendNow}
+                    />
+                    <select
+                      value={formData.scheduledTime}
+                      onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      required={!formData.sendNow}
+                    >
+                      {timeOptions.map((time) => (
+                        <option key={time} value={time}>
+                          {time}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Solo se permiten horarios en punto y media hora
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Segmentación */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Segmento de envío
+              </label>
+              <select
+                value={formData.segmentType}
+                onChange={(e) => setFormData({ ...formData, segmentType: e.target.value })}
+                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+              >
+                <option value="ALL">Todos los usuarios</option>
+                <option value="ROLE">Por rol</option>
+                <option value="MOTEL">Por motel favorito</option>
+              </select>
+
+              {formData.segmentType === 'ROLE' && (
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Selecciona un rol
+                  </label>
+                  <select
+                    value={formData.targetRole}
+                    onChange={(e) => setFormData({ ...formData, targetRole: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    min={new Date().toISOString().slice(0, 16)}
-                    required={!formData.sendNow}
-                  />
+                  >
+                    <option value="">Seleccionar rol</option>
+                    <option value="USER">Usuarios</option>
+                    <option value="MOTEL_ADMIN">Admins de motel</option>
+                    <option value="SUPERADMIN">Superadmin</option>
+                  </select>
+                </div>
+              )}
+
+              {formData.segmentType === 'MOTEL' && (
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Selecciona un motel
+                  </label>
+                  <select
+                    value={formData.targetMotelId}
+                    onChange={(e) => setFormData({ ...formData, targetMotelId: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    disabled={loadingMotels}
+                  >
+                    <option value="">
+                      {loadingMotels ? 'Cargando moteles...' : 'Seleccionar motel'}
+                    </option>
+                    {motels.map((motel) => (
+                      <option key={motel.id} value={motel.id}>
+                        {motel.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
             </div>
@@ -458,6 +621,7 @@ export default function NotificationsAdminPage() {
                       <div>
                         <p className="font-medium text-slate-900">{notif.title}</p>
                         <p className="text-sm text-slate-500 line-clamp-2 mt-0.5">{notif.body}</p>
+                        <p className="text-xs text-slate-400 mt-1">{getAudienceLabel(notif)}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -486,22 +650,36 @@ export default function NotificationsAdminPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {notif.sent ? (
-                        <div className="space-y-0.5">
-                          <p className="text-green-600">✓ Enviadas: {notif.totalSent}</p>
-                          {notif.totalFailed > 0 && (
-                            <p className="text-red-600">✗ Fallidas: {notif.totalFailed}</p>
-                          )}
-                          {notif.totalSkipped > 0 && (
-                            <p className="text-slate-500">○ Omitidas: {notif.totalSkipped}</p>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-slate-400">-</span>
+                  {notif.sent ? (
+                    <div className="space-y-0.5">
+                      <p className="text-green-600">✓ Enviadas: {notif.totalSent}</p>
+                      {notif.totalFailed > 0 && (
+                        <p className="text-red-600">✗ Fallidas: {notif.totalFailed}</p>
                       )}
-                    </td>
-                  </tr>
-                ))
+                      {notif.totalSkipped > 0 && (
+                        <p className="text-slate-500">○ Omitidas: {notif.totalSkipped}</p>
+                      )}
+                      <Link
+                        href={`/admin/notifications/${notif.id}`}
+                        className="inline-flex text-xs text-purple-600 hover:text-purple-700 font-semibold"
+                      >
+                        Ver detalles
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <span className="text-slate-400 block">Pendiente</span>
+                      <Link
+                        href={`/admin/notifications/${notif.id}`}
+                        className="inline-flex text-xs text-purple-600 hover:text-purple-700 font-semibold"
+                      >
+                        Ver detalles
+                      </Link>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))
               )}
             </tbody>
           </table>

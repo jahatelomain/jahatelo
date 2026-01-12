@@ -443,6 +443,178 @@ function shouldSendNotificationByCategory(
   }
 }
 
+async function deliverScheduledNotification(notification: {
+  id: string;
+  title: string;
+  body: string;
+  data: unknown;
+  category: string;
+  targetUserIds: string[];
+  targetRole: string | null;
+  targetMotelId: string | null;
+}) {
+  let tokens: string[] = [];
+  let skipped = 0;
+  const category = notification.category || 'advertising';
+
+  if (notification.targetUserIds.length > 0) {
+    const users = await prisma.user.findMany({
+      where: {
+        id: {
+          in: notification.targetUserIds,
+        },
+        isActive: true,
+      },
+      include: {
+        pushTokens: {
+          where: {
+            isActive: true,
+          },
+        },
+        notificationPreferences: true,
+      },
+    });
+
+    for (const user of users) {
+      if (shouldSendNotificationByCategory(user, category)) {
+        tokens.push(...user.pushTokens.map((pt) => pt.token));
+      } else {
+        skipped += user.pushTokens.length;
+      }
+    }
+  } else if (notification.targetRole) {
+    const users = await prisma.user.findMany({
+      where: {
+        role: notification.targetRole as any,
+        isActive: true,
+      },
+      include: {
+        pushTokens: {
+          where: {
+            isActive: true,
+          },
+        },
+        notificationPreferences: true,
+      },
+    });
+
+    for (const user of users) {
+      if (shouldSendNotificationByCategory(user, category)) {
+        tokens.push(...user.pushTokens.map((pt) => pt.token));
+      } else {
+        skipped += user.pushTokens.length;
+      }
+    }
+  } else if (notification.targetMotelId) {
+    const favorites = await prisma.favorite.findMany({
+      where: {
+        motelId: notification.targetMotelId,
+      },
+      include: {
+        user: {
+          include: {
+            pushTokens: {
+              where: {
+                isActive: true,
+              },
+            },
+            notificationPreferences: true,
+          },
+        },
+      },
+    });
+
+    for (const fav of favorites) {
+      if (shouldSendNotificationByCategory(fav.user, category)) {
+        tokens.push(...fav.user.pushTokens.map((pt) => pt.token));
+      } else {
+        skipped += fav.user.pushTokens.length;
+      }
+    }
+  } else {
+    const users = await prisma.user.findMany({
+      where: {
+        isActive: true,
+      },
+      include: {
+        pushTokens: {
+          where: {
+            isActive: true,
+          },
+        },
+        notificationPreferences: true,
+      },
+    });
+
+    for (const user of users) {
+      if (shouldSendNotificationByCategory(user, category)) {
+        tokens.push(...user.pushTokens.map((pt) => pt.token));
+      } else {
+        skipped += user.pushTokens.length;
+      }
+    }
+  }
+
+  if (tokens.length > 0) {
+    const results = await sendPushNotifications(tokens, {
+      title: notification.title,
+      body: notification.body,
+      data: (notification.data as Record<string, any>) || {},
+      sound: 'default',
+    });
+
+    const sent = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
+
+    await prisma.scheduledNotification.update({
+      where: { id: notification.id },
+      data: {
+        sent: true,
+        sentAt: new Date(),
+        totalSent: sent,
+        totalFailed: failed,
+        totalSkipped: skipped,
+      },
+    });
+
+    return { sent, failed, skipped };
+  }
+
+  await prisma.scheduledNotification.update({
+    where: { id: notification.id },
+    data: {
+      sent: true,
+      sentAt: new Date(),
+      totalSent: 0,
+      totalFailed: 0,
+      totalSkipped: skipped,
+      errorMessage: skipped > 0 ? 'All users opted out of this category' : 'No recipients found',
+    },
+  });
+
+  return { sent: 0, failed: 0, skipped };
+}
+
+export async function processScheduledNotificationById(id: string) {
+  const notification = await prisma.scheduledNotification.findUnique({
+    where: { id },
+  });
+
+  if (!notification) {
+    return null;
+  }
+
+  if (notification.sent) {
+    return {
+      sent: notification.totalSent,
+      failed: notification.totalFailed,
+      skipped: notification.totalSkipped,
+    };
+  }
+
+  return deliverScheduledNotification(notification);
+}
+
 /**
  * Procesa y envía notificaciones programadas que ya llegaron a su fecha
  * Esta función debe ejecutarse periódicamente (ej: cada minuto con un cron job)
@@ -469,129 +641,9 @@ export async function processScheduledNotifications(): Promise<{
 
     for (const notification of pendingNotifications) {
       try {
-        let tokens: string[] = [];
-        let skipped = 0;
-        const category = notification.category || 'advertising';
-
-        // Determinar audiencia
-        if (notification.targetUserIds.length > 0) {
-          // Enviar a usuarios específicos
-          const users = await prisma.user.findMany({
-            where: {
-              id: {
-                in: notification.targetUserIds,
-              },
-              isActive: true,
-            },
-            include: {
-              pushTokens: {
-                where: {
-                  isActive: true,
-                },
-              },
-              notificationPreferences: true,
-            },
-          });
-
-          for (const user of users) {
-            if (shouldSendNotificationByCategory(user, category)) {
-              tokens.push(...user.pushTokens.map((pt) => pt.token));
-            } else {
-              skipped += user.pushTokens.length;
-            }
-          }
-        } else if (notification.targetRole) {
-          // Enviar a usuarios de un rol específico
-          const users = await prisma.user.findMany({
-            where: {
-              role: notification.targetRole as any,
-              isActive: true,
-            },
-            include: {
-              pushTokens: {
-                where: {
-                  isActive: true,
-                },
-              },
-              notificationPreferences: true,
-            },
-          });
-
-          for (const user of users) {
-            if (shouldSendNotificationByCategory(user, category)) {
-              tokens.push(...user.pushTokens.map((pt) => pt.token));
-            } else {
-              skipped += user.pushTokens.length;
-            }
-          }
-        } else if (notification.targetMotelId) {
-          // Enviar a usuarios que favoritearon un motel
-          const favorites = await prisma.favorite.findMany({
-            where: {
-              motelId: notification.targetMotelId,
-            },
-            include: {
-              user: {
-                include: {
-                  pushTokens: {
-                    where: {
-                      isActive: true,
-                    },
-                  },
-                  notificationPreferences: true,
-                },
-              },
-            },
-          });
-
-          for (const fav of favorites) {
-            if (shouldSendNotificationByCategory(fav.user, category)) {
-              tokens.push(...fav.user.pushTokens.map((pt) => pt.token));
-            } else {
-              skipped += fav.user.pushTokens.length;
-            }
-          }
-        }
-
-        if (tokens.length > 0) {
-          const results = await sendPushNotifications(tokens, {
-            title: notification.title,
-            body: notification.body,
-            data: (notification.data as Record<string, any>) || {},
-            sound: 'default',
-          });
-
-          const sent = results.filter((r) => r.success).length;
-          const failed = results.filter((r) => !r.success).length;
-
-          totalSent += sent;
-          totalFailed += failed;
-
-          // Actualizar notificación como enviada
-          await prisma.scheduledNotification.update({
-            where: { id: notification.id },
-            data: {
-              sent: true,
-              sentAt: new Date(),
-              totalSent: sent,
-              totalFailed: failed,
-              totalSkipped: skipped,
-            },
-          });
-        } else {
-          // No hay destinatarios
-          await prisma.scheduledNotification.update({
-            where: { id: notification.id },
-            data: {
-              sent: true,
-              sentAt: new Date(),
-              totalSent: 0,
-              totalFailed: 0,
-              totalSkipped: skipped,
-              errorMessage: skipped > 0 ? 'All users opted out of this category' : 'No recipients found',
-            },
-          });
-        }
+        const result = await deliverScheduledNotification(notification);
+        totalSent += result.sent;
+        totalFailed += result.failed;
       } catch (error) {
         console.error(`Error processing scheduled notification ${notification.id}:`, error);
         totalFailed++;

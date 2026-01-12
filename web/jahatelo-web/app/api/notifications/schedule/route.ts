@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { scheduleNotification, sendPromoNotificationToFavorites } from '@/lib/push-notifications';
+import { scheduleNotification, sendPromoNotificationToFavorites, processScheduledNotificationById } from '@/lib/push-notifications';
 
 /**
  * POST /api/notifications/schedule
@@ -57,6 +57,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!sendNow && scheduledFor) {
+      const scheduledDate = new Date(scheduledFor);
+      const minutes = scheduledDate.getMinutes();
+      if (minutes !== 0 && minutes !== 30) {
+        return NextResponse.json(
+          { error: 'Solo se permiten horarios en punto y media hora' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Si es para enviar ahora y es de tipo promo para un motel
     if (sendNow && type === 'promo' && targetMotelId && relatedEntityId) {
       const result = await sendPromoNotificationToFavorites(targetMotelId, {
@@ -81,12 +92,35 @@ export async function POST(request: NextRequest) {
       body: notificationBody,
       scheduledFor: scheduledDate,
       type,
+      category: body.category,
       targetUserIds,
       targetRole,
       targetMotelId,
       relatedEntityId,
       notificationData,
     });
+
+    if (sendNow) {
+      const sendResult = await processScheduledNotificationById(result.id);
+      if (!sendResult) {
+        return NextResponse.json(
+          { error: 'No se pudo procesar la notificación' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          id: result.id,
+          sent: sendResult.sent,
+          failed: sendResult.failed,
+          skipped: sendResult.skipped,
+          message: `Notificación enviada: ${sendResult.sent} éxitos, ${sendResult.failed} fallos`,
+        },
+        { status: 201 }
+      );
+    }
 
     return NextResponse.json(
       {

@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desarrollo Jahatelo - Resumen de Implementaciones</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .page {
+            background: white;
+            width: 210mm;
+            min-height: 297mm;
+            margin: 20px auto;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            page-break-after: always;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .page {
+                margin: 0;
+                box-shadow: none;
+                page-break-after: always;
+            }
+        }
+
+        h1 {
+            color: #822DE2;
+            font-size: 36px;
+            margin-bottom: 20px;
+            border-bottom: 4px solid #822DE2;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #822DE2;
+            font-size: 28px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 5px solid #822DE2;
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #555;
+            font-size: 20px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        h4 {
+            color: #666;
+            font-size: 16px;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+
+        p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #c7254e;
+        }
+
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin-bottom: 15px;
+        }
+
+        .success {
+            background: #d4edda;
+            padding: 15px;
+            border-left: 4px solid #28a745;
+            margin-bottom: 15px;
+        }
+
+        .info {
+            background: #d1ecf1;
+            padding: 15px;
+            border-left: 4px solid #17a2b8;
+            margin-bottom: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #822DE2;
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .cover {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 800px;
+        }
+
+        .cover h1 {
+            font-size: 48px;
+            border: none;
+            margin-bottom: 30px;
+        }
+
+        .cover .subtitle {
+            font-size: 24px;
+            color: #666;
+            margin-bottom: 50px;
+        }
+
+        .cover .metadata {
+            font-size: 16px;
+            color: #999;
+            margin-top: 100px;
+        }
+
+        .toc {
+            margin-top: 40px;
+        }
+
+        .toc ul {
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .toc li {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .toc a {
+            color: #822DE2;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<!-- PORTADA -->
+<div class="page cover">
+    <h1>Jahatelo</h1>
+    <div class="subtitle">Resumen de Desarrollo e Implementaciones</div>
+    <div class="subtitle">Enero 2026</div>
+    <div class="metadata">
+        <p>MBARETECH</p>
+        <p>Desarrollo Backend & Mobile</p>
+    </div>
+</div>
+
+<!-- ÍNDICE -->
+<div class="page">
+    <h1>Índice</h1>
+    <div class="toc">
+        <ul>
+            <li>1. Resumen Ejecutivo</li>
+            <li>2. Implementaciones Web Admin</li>
+            <li>3. Sistema de Contacto e Inbox</li>
+            <li>4. Mejoras Mobile App</li>
+            <li>5. Sistema de Splash Screen</li>
+            <li>6. Archivos Técnicos Clave</li>
+            <li>7. Errores y Resoluciones</li>
+            <li>8. Stack Tecnológico</li>
+        </ul>
+    </div>
+</div>
+
+<!-- RESUMEN EJECUTIVO -->
+<div class="page">
+    <h1>1. Resumen Ejecutivo</h1>
+
+    <div class="success">
+        <strong>Proyecto:</strong> Jahatelo App & Web Platform<br>
+        <strong>Período:</strong> Enero 2026<br>
+        <strong>Implementaciones completadas:</strong> 7 módulos principales
+    </div>
+
+    <h2>Objetivos Alcanzados</h2>
+
+    <h3>🎯 Mejoras Administrativas</h3>
+    <ul>
+        <li>Reorganización del menú de administración con sección "Configuración"</li>
+        <li>Sistema de carga de imágenes mejorado para publicidad</li>
+        <li>Sistema de inbox para gestión de mensajes de contacto</li>
+    </ul>
+
+    <h3>📱 Mejoras Mobile</h3>
+    <ul>
+        <li>Reorganización de la pantalla de perfil</li>
+        <li>Implementación de formulario de contacto</li>
+        <li>Optimización del splash screen con animación Lottie</li>
+    </ul>
+
+    <h3>🔧 Infraestructura</h3>
+    <ul>
+        <li>Endpoint genérico de upload a S3</li>
+        <li>Modelo de base de datos para mensajes de contacto</li>
+        <li>APIs REST para gestión de contactos</li>
+    </ul>
+</div>
+
+<!-- IMPLEMENTACIONES WEB ADMIN -->
+<div class="page">
+    <h1>2. Implementaciones Web Admin</h1>
+
+    <h2>2.1 Reorganización del Menú Admin</h2>
+
+    <div class="highlight">
+        <strong>Archivo:</strong> <code>app/admin/layout.tsx</code>
+    </div>
+
+    <h3>Estructura Implementada</h3>
+    <ul>
+        <li><strong>Dashboard</strong> - Vista principal</li>
+        <li><strong>Moteles</strong> - Gestión de establecimientos</li>
+        <li><strong>Prospectos</strong> - Leads y contactos comerciales</li>
+        <li><strong>Publicidad</strong> - Gestión de anuncios</li>
+        <li><strong>Inbox</strong> - Mensajes de contacto</li>
+        <li><strong>Configuración</strong> (Sección)
+            <ul>
+                <li>Usuarios</li>
+                <li>Roles y Permisos</li>
+                <li>Auditoría</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h3>Características Técnicas</h3>
+    <ul>
+        <li>Implementación con TypeScript usando type guards</li>
+        <li>Navegación jerárquica con secciones</li>
+        <li>Control de acceso basado en roles (RBAC)</li>
+        <li>Responsive design (móvil y escritorio)</li>
+    </ul>
+
+    <h3>Código Clave</h3>
+    <pre>type NavItem = {
+  href: string;
+  label: string;
+  roles: ('SUPERADMIN' | 'MOTEL_ADMIN')[];
+};
+
+type NavSection = {
+  section: string;
+  items: NavItem[];
+};
+
+type NavElement = NavItem | NavSection;</pre>
+</div>
+
+<!-- SISTEMA DE IMÁGENES -->
+<div class="page">
+    <h2>2.2 Sistema de Carga de Imágenes</h2>
+
+    <div class="highlight">
+        <strong>Archivos:</strong>
+        <ul>
+            <li><code>app/api/upload/route.ts</code> (nuevo)</li>
+            <li><code>app/admin/advertisements/new/page.tsx</code></li>
+            <li><code>app/admin/advertisements/[id]/page.tsx</code></li>
+        </ul>
+    </div>
+
+    <h3>Características</h3>
+    <ul>
+        <li><strong>Endpoint genérico:</strong> <code>/api/upload</code></li>
+        <li><strong>Almacenamiento:</strong> AWS S3</li>
+        <li><strong>Límite de tamaño:</strong> 10MB por archivo</li>
+        <li><strong>Organización:</strong> Carpetas por fecha (YYYY-MM-DD)</li>
+        <li><strong>Formatos soportados:</strong> Todos los tipos de imagen</li>
+    </ul>
+
+    <h3>Funcionalidad Dual</h3>
+    <div class="info">
+        Los formularios de publicidad ahora permiten dos métodos de entrada:
+        <ol>
+            <li><strong>Subida de archivo:</strong> Botón para seleccionar imagen desde el equipo</li>
+            <li><strong>URL externa:</strong> Campo de texto para pegar URLs</li>
+        </ol>
+        Ambos métodos incluyen vista previa en tiempo real.
+    </div>
+
+    <h3>Estructura de Carpetas S3</h3>
+    <pre>uploads/
+  advertisements/
+    2026-01-12/
+      abc123.jpg
+      def456.png
+    2026-01-13/
+      ghi789.jpg</pre>
+</div>
+
+<!-- SISTEMA DE CONTACTO -->
+<div class="page">
+    <h1>3. Sistema de Contacto e Inbox</h1>
+
+    <h2>3.1 Arquitectura del Sistema</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Componente</th>
+                <th>Archivo</th>
+                <th>Función</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Modelo de datos</td>
+                <td><code>prisma/schema.prisma</code></td>
+                <td>ContactMessage model</td>
+            </tr>
+            <tr>
+                <td>API pública</td>
+                <td><code>app/api/contact/route.ts</code></td>
+                <td>POST - crear mensaje</td>
+            </tr>
+            <tr>
+                <td>API admin (lista)</td>
+                <td><code>app/api/admin/inbox/route.ts</code></td>
+                <td>GET - listar mensajes</td>
+            </tr>
+            <tr>
+                <td>API admin (acciones)</td>
+                <td><code>app/api/admin/inbox/[id]/route.ts</code></td>
+                <td>PATCH/DELETE</td>
+            </tr>
+            <tr>
+                <td>Formulario web</td>
+                <td><code>app/contacto/page.tsx</code></td>
+                <td>Interfaz pública</td>
+            </tr>
+            <tr>
+                <td>Formulario mobile</td>
+                <td><code>screens/ContactScreen.js</code></td>
+                <td>React Native</td>
+            </tr>
+            <tr>
+                <td>Panel admin</td>
+                <td><code>app/admin/inbox/page.tsx</code></td>
+                <td>Gestión de mensajes</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>3.2 Modelo de Datos</h2>
+
+    <pre>model ContactMessage {
+  id          String    @id @default(cuid())
+  name        String    // 2-100 caracteres
+  phone       String?   // Opcional, max 50 caracteres
+  message     String    // 10-1000 caracteres
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([createdAt])
+  @@index([isRead, createdAt])
+}</pre>
+
+    <h2>3.3 Validaciones</h2>
+    <ul>
+        <li><strong>Nombre:</strong> Mínimo 2, máximo 100 caracteres (requerido)</li>
+        <li><strong>Teléfono:</strong> Opcional, máximo 50 caracteres</li>
+        <li><strong>Mensaje:</strong> Mínimo 10, máximo 1000 caracteres (requerido)</li>
+        <li><strong>Sanitización:</strong> Trim automático en todos los campos</li>
+    </ul>
+</div>
+
+<!-- PANEL DE INBOX -->
+<div class="page">
+    <h2>3.4 Panel de Administración - Inbox</h2>
+
+    <h3>Funcionalidades</h3>
+    <ul>
+        <li>✅ Filtrado por estado (todos/leídos/no leídos)</li>
+        <li>✅ Marcar como leído/no leído</li>
+        <li>✅ Eliminar mensajes</li>
+        <li>✅ Visualización de fecha y hora</li>
+        <li>✅ Contador de mensajes por estado</li>
+        <li>✅ Acceso restringido a SUPERADMIN</li>
+    </ul>
+
+    <h3>Interfaz de Usuario</h3>
+    <div class="info">
+        <strong>Estados visuales:</strong>
+        <ul>
+            <li>Mensajes no leídos: Fondo amarillo claro</li>
+            <li>Mensajes leídos: Fondo blanco</li>
+            <li>Badge de estado: Verde (leído) / Amarillo (no leído)</li>
+        </ul>
+    </div>
+
+    <h3>Endpoints API</h3>
+
+    <h4>GET /api/admin/inbox</h4>
+    <pre>// Query params
+?status=all|read|unread
+
+// Response
+{
+  "success": true,
+  "messages": [
+    {
+      "id": "clx...",
+      "name": "Juan Pérez",
+      "phone": "+595...",
+      "message": "...",
+      "isRead": false,
+      "createdAt": "2026-01-12T..."
+    }
+  ]
+}</pre>
+
+    <h4>PATCH /api/admin/inbox/[id]</h4>
+    <pre>// Body
+{
+  "isRead": true
+}
+
+// Response
+{
+  "success": true,
+  "message": { ... }
+}</pre>
+
+    <h4>DELETE /api/admin/inbox/[id]</h4>
+    <pre>// Response
+{
+  "success": true,
+  "message": "Mensaje eliminado exitosamente"
+}</pre>
+</div>
+
+<!-- MEJORAS MOBILE -->
+<div class="page">
+    <h1>4. Mejoras Mobile App</h1>
+
+    <h2>4.1 Reorganización Pantalla de Perfil</h2>
+
+    <div class="highlight">
+        <strong>Archivo:</strong> <code>app/jahatelo-app/screens/ProfileScreen.js</code>
+    </div>
+
+    <h3>Estructura Nueva</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Elemento</th>
+                <th>Tipo</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Registrar tu motel</td>
+                <td>Standalone</td>
+                <td>Navegación a formulario</td>
+            </tr>
+            <tr>
+                <td colspan="3" style="background: #f0f0f0; font-weight: bold;">Almacenamiento y datos</td>
+            </tr>
+            <tr>
+                <td>- Almacenamiento</td>
+                <td>Info</td>
+                <td>Solo lectura</td>
+            </tr>
+            <tr>
+                <td>- Caché de imágenes</td>
+                <td>Info</td>
+                <td>Solo lectura</td>
+            </tr>
+            <tr>
+                <td>- Archivos temporales</td>
+                <td>Info</td>
+                <td>Solo lectura</td>
+            </tr>
+            <tr>
+                <td>- Limpiar caché</td>
+                <td>Acción</td>
+                <td>Función de limpieza</td>
+            </tr>
+            <tr>
+                <td>- Limpiar todo</td>
+                <td>Acción</td>
+                <td>Reset completo</td>
+            </tr>
+            <tr>
+                <td colspan="3" style="height: 10px;"></td>
+            </tr>
+            <tr>
+                <td>Contáctanos</td>
+                <td>Standalone</td>
+                <td>Navegación a ContactScreen</td>
+            </tr>
+            <tr>
+                <td>Bases y condiciones</td>
+                <td>Standalone</td>
+                <td>WebView</td>
+            </tr>
+            <tr>
+                <td>Política de privacidad</td>
+                <td>Standalone</td>
+                <td>WebView</td>
+            </tr>
+            <tr>
+                <td>Sobre Jahatelo</td>
+                <td>Standalone</td>
+                <td>Pantalla informativa</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Cambios Realizados</h3>
+    <ul>
+        <li>Eliminación de sección "Explora Jahatelo"</li>
+        <li>Eliminación de header "Legal y ayuda"</li>
+        <li>Único grupo de sección: "Almacenamiento y datos"</li>
+        <li>Todos los demás elementos son independientes</li>
+    </ul>
+</div>
+
+<!-- SISTEMA DE SPLASH -->
+<div class="page">
+    <h1>5. Sistema de Splash Screen</h1>
+
+    <h2>5.1 Problema Inicial</h2>
+
+    <div class="highlight">
+        <strong>Situación:</strong> El usuario reportó ver dos splash screens en Expo Go a pesar de cambiar las imágenes en <code>app.json</code>.
+    </div>
+
+    <h3>Causa Raíz Identificada</h3>
+    <p>Expo Go muestra su propio splash screen nativo antes de cargar la aplicación React Native. La configuración en <code>app.json</code> solo aplica en builds nativos (producción), no en Expo Go.</p>
+
+    <div class="info">
+        <strong>Aprendizaje clave:</strong>
+        <ul>
+            <li><strong>Expo Go:</strong> Muestra splash de Expo + splash de React (AnimatedSplash.js)</li>
+            <li><strong>Build nativo:</strong> Solo muestra splash configurado en app.json</li>
+        </ul>
+    </div>
+
+    <h2>5.2 Solución Implementada</h2>
+
+    <div class="highlight">
+        <strong>Archivo:</strong> <code>app/jahatelo-app/components/AnimatedSplash.js</code>
+    </div>
+
+    <h3>Evolución del Componente</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Versión</th>
+                <th>Implementación</th>
+                <th>Resultado</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>Imágenes estáticas (PNG)</td>
+                <td>Sin animación</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>Lottie animation solo</td>
+                <td>Animación sin texto</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>Lottie + wordmark PNG</td>
+                <td>Logo + marca de texto</td>
+            </tr>
+            <tr>
+                <td>4 (Final)</td>
+                <td>Lottie 30% más grande + timing optimizado</td>
+                <td>✅ Implementación actual</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Especificaciones Finales</h3>
+    <ul>
+        <li><strong>Logo Lottie:</strong> 338x338 px (30% más grande que original)</li>
+        <li><strong>Wordmark:</strong> 220x66 px</li>
+        <li><strong>Timing:</strong> Texto aparece 1 segundo antes (en paralelo con pin drop)</li>
+        <li><strong>Fondo:</strong> Blanco (#FFFFFF)</li>
+    </ul>
+</div>
+
+<!-- ANIMACIÓN DETALLADA -->
+<div class="page">
+    <h2>5.3 Secuencia de Animación</h2>
+
+    <pre>1. Fade in + Scale up del logo (500ms)
+   ├─ opacity: 0 → 1
+   └─ scale: 0.5 → 1 (spring animation)
+
+2. Pin drop + Texto en paralelo
+   ├─ Logo translateY: -50 → 0 (spring)
+   └─ Texto opacity: 0 → 1 (400ms, simultáneo)
+
+3. Delay final (150ms)
+
+4. onFinish() → App principal</pre>
+
+    <h3>Código de Animación</h3>
+    <pre>Animated.sequence([
+  // Fase 1: Entrada del logo
+  Animated.parallel([
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }),
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      tension: 40,
+      friction: 6,
+      useNativeDriver: true,
+    }),
+  ]),
+
+  // Fase 2: Pin drop + Texto (paralelo)
+  Animated.parallel([
+    Animated.spring(pinDropAnim, {
+      toValue: 0,
+      tension: 50,
+      friction: 7,
+      useNativeDriver: true,
+    }),
+    Animated.timing(textFadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }),
+  ]),
+
+  // Fase 3: Pausa breve
+  Animated.delay(150),
+]).start();</pre>
+
+    <h2>5.4 Configuración App.js</h2>
+
+    <pre>import * as SplashScreen from 'expo-splash-screen';
+
+// Prevenir auto-hide del splash nativo
+SplashScreen.preventAutoHideAsync();
+
+export default function App() {
+  useEffect(() => {
+    // Ocultar inmediatamente para mostrar AnimatedSplash
+    SplashScreen.hideAsync();
+  }, []);
+
+  // ...
+}</pre>
+</div>
+
+<!-- ARCHIVOS CLAVE -->
+<div class="page">
+    <h1>6. Archivos Técnicos Clave</h1>
+
+    <h2>6.1 Backend - Web Admin</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Archivo</th>
+                <th>Propósito</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>app/admin/layout.tsx</code></td>
+                <td>Navegación admin con secciones</td>
+                <td>✅ Completado</td>
+            </tr>
+            <tr>
+                <td><code>app/api/upload/route.ts</code></td>
+                <td>Endpoint genérico S3 upload</td>
+                <td>✅ Completado</td>
+            </tr>
+            <tr>
+                <td><code>app/api/contact/route.ts</code></td>
+                <td>API pública de contacto</td>
+                <td>✅ Completado</td>
+            </tr>
+            <tr>
+                <td><code>app/api/admin/inbox/route.ts</code></td>
+                <td>Listado de mensajes (admin)</td>
+                <td>✅ Completado</td>
+            </tr>
+            <tr>
+                <td><code>app/api/admin/inbox/[id]/route.ts</code></td>
+                <td>CRUD individual de mensajes</td>
+                <td>✅ Completado</td>
+            </tr>
+            <tr>
+                <td><code>app/admin/inbox/page.tsx</code></td>
+                <td>UI de gestión de inbox</td>
+                <td>✅ Completado</td>
+            </tr>
+            <tr>
+                <td><code>app/contacto/page.tsx</code></td>
+                <td>Formulario público de contacto</td>
+                <td>✅ Completado</td>
+            </tr>
+            <tr>
+                <td><code>app/admin/advertisements/new/page.tsx</code></td>
+                <td>Crear publicidad con upload</td>
+                <td>✅ Completado</td>
+            </tr>
+            <tr>
+                <td><code>app/admin/advertisements/[id]/page.tsx</code></td>
+                <td>Editar publicidad con upload</td>
+                <td>✅ Completado</td>
+            </tr>
+            <tr>
+                <td><code>prisma/schema.prisma</code></td>
+                <td>Modelo ContactMessage</td>
+                <td>✅ Completado</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>6.2 Mobile App</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Archivo</th>
+                <th>Propósito</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>screens/ProfileScreen.js</code></td>
+                <td>Perfil reorganizado</td>
+                <td>✅ Completado</td>
+            </tr>
+            <tr>
+                <td><code>screens/ContactScreen.js</code></td>
+                <td>Formulario de contacto mobile</td>
+                <td>✅ Completado</td>
+            </tr>
+            <tr>
+                <td><code>components/AnimatedSplash.js</code></td>
+                <td>Splash con Lottie + wordmark</td>
+                <td>✅ Completado</td>
+            </tr>
+            <tr>
+                <td><code>App.js</code></td>
+                <td>Control de splash nativo</td>
+                <td>✅ Completado</td>
+            </tr>
+            <tr>
+                <td><code>app.json</code></td>
+                <td>Config splash para builds nativos</td>
+                <td>✅ Completado</td>
+            </tr>
+            <tr>
+                <td><code>screens/MapScreen.js</code></td>
+                <td>Mapa con markers estándar</td>
+                <td>✅ Estado original</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ERRORES Y RESOLUCIONES -->
+<div class="page">
+    <h1>7. Errores y Resoluciones</h1>
+
+    <h2>7.1 Error de Migraciones Prisma</h2>
+
+    <div class="highlight">
+        <strong>Error:</strong> P3006 - Migration failed to apply cleanly<br>
+        <strong>Error:</strong> P1001 - Can't reach database server
+    </div>
+
+    <h3>Contexto</h3>
+    <p>Al intentar ejecutar <code>npx prisma migrate dev</code> para agregar el modelo ContactMessage, se presentaron fallos de conexión y aplicación de migraciones.</p>
+
+    <h3>Solución Aplicada</h3>
+    <pre>npx prisma generate</pre>
+
+    <div class="info">
+        <strong>Resultado:</strong> Se actualizó el cliente Prisma sin ejecutar migraciones, permitiendo usar el nuevo modelo ContactMessage sin modificar la base de datos directamente.
+    </div>
+
+    <h2>7.2 Conflicto de Edición de Archivo</h2>
+
+    <div class="highlight">
+        <strong>Error:</strong> File has been modified since read
+    </div>
+
+    <h3>Contexto</h3>
+    <p>Al intentar editar <code>AnimatedSplash.js</code>, el archivo había sido modificado manualmente por el usuario después de la última lectura.</p>
+
+    <h3>Solución</h3>
+    <ul>
+        <li>Re-leer el archivo inmediatamente antes de editar</li>
+        <li>Verificar timestamp de última modificación</li>
+        <li>Aplicar cambios sobre la versión más reciente</li>
+    </ul>
+
+    <h3>Prevención</h3>
+    <p>Siempre ejecutar <code>Read</code> tool inmediatamente antes de cualquier operación de <code>Edit</code> o <code>Write</code>.</p>
+
+    <h2>7.3 Doble Splash Screen</h2>
+
+    <div class="highlight">
+        <strong>Problema:</strong> Usuario reportó ver dos splash screens en Expo Go
+    </div>
+
+    <h3>Análisis</h3>
+    <p>No era un error, sino una limitación de Expo Go. La primera pantalla es el splash de Expo Go, y la segunda es el componente React <code>AnimatedSplash.js</code>.</p>
+
+    <h3>Resolución</h3>
+    <div class="success">
+        <strong>Explicación al usuario:</strong> En builds nativos (producción), solo aparecerá un splash configurado en app.json. Expo Go siempre muestra su propio splash primero.
+        <br><br>
+        <strong>Acción tomada:</strong> Se optimizó AnimatedSplash.js para mejorar la experiencia en el segundo splash.
+    </div>
+</div>
+
+<!-- STACK TECNOLÓGICO -->
+<div class="page">
+    <h1>8. Stack Tecnológico</h1>
+
+    <h2>8.1 Frontend Web</h2>
+    <table>
+        <tr>
+            <th>Tecnología</th>
+            <th>Versión/Info</th>
+            <th>Uso</th>
+        </tr>
+        <tr>
+            <td>Next.js</td>
+            <td>14+ (App Router)</td>
+            <td>Framework principal web</td>
+        </tr>
+        <tr>
+            <td>React</td>
+            <td>18+</td>
+            <td>Librería UI</td>
+        </tr>
+        <tr>
+            <td>TypeScript</td>
+            <td>5+</td>
+            <td>Tipado estático</td>
+        </tr>
+        <tr>
+            <td>Tailwind CSS</td>
+            <td>3+</td>
+            <td>Estilos</td>
+        </tr>
+    </table>
+
+    <h2>8.2 Backend</h2>
+    <table>
+        <tr>
+            <th>Tecnología</th>
+            <th>Uso</th>
+        </tr>
+        <tr>
+            <td>Next.js API Routes</td>
+            <td>RESTful endpoints</td>
+        </tr>
+        <tr>
+            <td>Prisma ORM</td>
+            <td>Database access layer</td>
+        </tr>
+        <tr>
+            <td>PostgreSQL</td>
+            <td>Base de datos relacional</td>
+        </tr>
+        <tr>
+            <td>AWS S3</td>
+            <td>Almacenamiento de archivos</td>
+        </tr>
+    </table>
+
+    <h2>8.3 Mobile App</h2>
+    <table>
+        <tr>
+            <th>Tecnología</th>
+            <th>Uso</th>
+        </tr>
+        <tr>
+            <td>React Native</td>
+            <td>Framework mobile</td>
+        </tr>
+        <tr>
+            <td>Expo</td>
+            <td>Tooling y desarrollo</td>
+        </tr>
+        <tr>
+            <td>React Navigation</td>
+            <td>Navegación entre pantallas</td>
+        </tr>
+        <tr>
+            <td>Lottie</td>
+            <td>Animaciones vectoriales</td>
+        </tr>
+        <tr>
+            <td>React Native Maps</td>
+            <td>Mapas y geolocalización</td>
+        </tr>
+        <tr>
+            <td>Expo Location</td>
+            <td>Permisos de ubicación</td>
+        </tr>
+    </table>
+
+    <h2>8.4 Infraestructura</h2>
+    <ul>
+        <li><strong>Hosting Web:</strong> Vercel / Railway</li>
+        <li><strong>Database:</strong> PostgreSQL (managed)</li>
+        <li><strong>Storage:</strong> AWS S3</li>
+        <li><strong>CDN:</strong> CloudFront (S3 integrado)</li>
+        <li><strong>Mobile:</strong> Expo Go (dev) / EAS Build (prod)</li>
+    </ul>
+</div>
+
+<!-- CONVENCIONES Y PATRONES -->
+<div class="page">
+    <h1>9. Convenciones y Patrones</h1>
+
+    <h2>9.1 Naming Conventions</h2>
+
+    <table>
+        <tr>
+            <th>Elemento</th>
+            <th>Convención</th>
+            <th>Ejemplo</th>
+        </tr>
+        <tr>
+            <td>Componentes React</td>
+            <td>PascalCase</td>
+            <td><code>AnimatedSplash.js</code></td>
+        </tr>
+        <tr>
+            <td>Screens</td>
+            <td>PascalCase + "Screen"</td>
+            <td><code>ContactScreen.js</code></td>
+        </tr>
+        <tr>
+            <td>API Routes</td>
+            <td>lowercase</td>
+            <td><code>/api/contact</code></td>
+        </tr>
+        <tr>
+            <td>Variables</td>
+            <td>camelCase</td>
+            <td><code>userLocation</code></td>
+        </tr>
+        <tr>
+            <td>Constantes</td>
+            <td>UPPER_SNAKE_CASE</td>
+            <td><code>API_URL</code></td>
+        </tr>
+        <tr>
+            <td>Archivos utilitarios</td>
+            <td>kebab-case</td>
+            <td><code>use-favorites.js</code></td>
+        </tr>
+    </table>
+
+    <h2>9.2 Estructura de Carpetas</h2>
+
+    <h3>Web (Next.js)</h3>
+    <pre>app/
+  ├── admin/              # Panel administrativo
+  │   ├── layout.tsx      # Layout con navegación
+  │   ├── inbox/          # Módulo inbox
+  │   └── advertisements/ # Módulo publicidad
+  ├── api/                # Backend endpoints
+  │   ├── contact/        # API pública
+  │   ├── admin/          # APIs protegidas
+  │   └── upload/         # Upload genérico
+  ├── contacto/           # Páginas públicas
+  └── components/         # Componentes compartidos
+
+prisma/
+  └── schema.prisma       # Modelos de datos</pre>
+
+    <h3>Mobile (React Native)</h3>
+    <pre>app/jahatelo-app/
+  ├── screens/            # Pantallas principales
+  │   ├── HomeScreen.js
+  │   ├── ProfileScreen.js
+  │   └── ContactScreen.js
+  ├── components/         # Componentes reutilizables
+  │   ├── AnimatedSplash.js
+  │   └── OfflineIndicator.js
+  ├── navigation/         # Configuración de navegación
+  ├── hooks/              # Custom hooks
+  ├── contexts/           # React contexts
+  └── constants/          # Constantes y temas</pre>
+</div>
+
+<!-- SEGURIDAD -->
+<div class="page">
+    <h2>9.3 Patrones de Seguridad</h2>
+
+    <h3>Control de Acceso</h3>
+    <ul>
+        <li><strong>Role-Based Access Control (RBAC)</strong>
+            <ul>
+                <li>SUPERADMIN: Acceso completo</li>
+                <li>MOTEL_ADMIN: Acceso limitado a su motel</li>
+            </ul>
+        </li>
+        <li><strong>Middleware de autenticación</strong> en todas las rutas admin</li>
+        <li><strong>Validación de sesión</strong> en cada request</li>
+    </ul>
+
+    <h3>Validación de Datos</h3>
+    <pre>// Ejemplo: Validación en API de contacto
+if (!name || name.trim().length < 2) {
+  return NextResponse.json(
+    { error: 'Nombre requerido (mín. 2 caracteres)' },
+    { status: 400 }
+  );
+}
+
+if (message.trim().length < 10 || message.length > 1000) {
+  return NextResponse.json(
+    { error: 'Mensaje debe tener 10-1000 caracteres' },
+    { status: 400 }
+  );
+}</pre>
+
+    <h3>Upload Seguro</h3>
+    <ul>
+        <li>Límite de tamaño: 10MB</li>
+        <li>Validación de tipo de archivo</li>
+        <li>Nombres únicos con timestamp</li>
+        <li>Almacenamiento en bucket privado S3</li>
+        <li>URLs presignadas para acceso controlado</li>
+    </ul>
+
+    <h2>9.4 Performance</h2>
+
+    <h3>Optimizaciones Web</h3>
+    <ul>
+        <li>Server Components por defecto (Next.js 14)</li>
+        <li>Lazy loading de componentes pesados</li>
+        <li>Caching de respuestas API</li>
+        <li>Optimización de imágenes automática (Next.js Image)</li>
+    </ul>
+
+    <h3>Optimizaciones Mobile</h3>
+    <ul>
+        <li><strong>React.memo</strong> en markers del mapa</li>
+        <li><strong>useNativeDriver: true</strong> en animaciones</li>
+        <li><strong>tracksViewChanges: false</strong> en markers estáticos</li>
+        <li>Cache en memoria para datos del mapa (5 minutos)</li>
+        <li>Lazy loading de screens con React Navigation</li>
+    </ul>
+</div>
+
+<!-- MÉTRICAS Y RESULTADOS -->
+<div class="page">
+    <h1>10. Métricas y Resultados</h1>
+
+    <h2>10.1 Archivos Creados</h2>
+
+    <div class="success">
+        <strong>Total: 7 archivos nuevos</strong>
+    </div>
+
+    <ul>
+        <li><code>app/api/upload/route.ts</code></li>
+        <li><code>app/api/contact/route.ts</code></li>
+        <li><code>app/api/admin/inbox/route.ts</code></li>
+        <li><code>app/api/admin/inbox/[id]/route.ts</code></li>
+        <li><code>app/admin/inbox/page.tsx</code></li>
+        <li><code>app/contacto/page.tsx</code></li>
+        <li><code>app/jahatelo-app/screens/ContactScreen.js</code></li>
+    </ul>
+
+    <h2>10.2 Archivos Modificados</h2>
+
+    <div class="info">
+        <strong>Total: 6 archivos modificados</strong>
+    </div>
+
+    <ul>
+        <li><code>app/admin/layout.tsx</code> - Navegación con secciones</li>
+        <li><code>app/admin/advertisements/new/page.tsx</code> - Upload de imágenes</li>
+        <li><code>app/admin/advertisements/[id]/page.tsx</code> - Upload de imágenes</li>
+        <li><code>app/jahatelo-app/screens/ProfileScreen.js</code> - Reorganización</li>
+        <li><code>app/jahatelo-app/components/AnimatedSplash.js</code> - Lottie + timing</li>
+        <li><code>app/jahatelo-app/App.js</code> - Control de splash</li>
+    </ul>
+
+    <h2>10.3 Cambios en Base de Datos</h2>
+
+    <table>
+        <tr>
+            <th>Modelo</th>
+            <th>Campos</th>
+            <th>Índices</th>
+        </tr>
+        <tr>
+            <td>ContactMessage</td>
+            <td>7</td>
+            <td>2</td>
+        </tr>
+    </table>
+
+    <h2>10.4 Endpoints API Creados</h2>
+
+    <table>
+        <tr>
+            <th>Endpoint</th>
+            <th>Método</th>
+            <th>Acceso</th>
+        </tr>
+        <tr>
+            <td>/api/upload</td>
+            <td>POST</td>
+            <td>Autenticado</td>
+        </tr>
+        <tr>
+            <td>/api/contact</td>
+            <td>POST</td>
+            <td>Público</td>
+        </tr>
+        <tr>
+            <td>/api/admin/inbox</td>
+            <td>GET</td>
+            <td>SUPERADMIN</td>
+        </tr>
+        <tr>
+            <td>/api/admin/inbox/[id]</td>
+            <td>PATCH</td>
+            <td>SUPERADMIN</td>
+        </tr>
+        <tr>
+            <td>/api/admin/inbox/[id]</td>
+            <td>DELETE</td>
+            <td>SUPERADMIN</td>
+        </tr>
+    </table>
+
+    <div class="success">
+        <strong>Total: 5 endpoints nuevos (3 rutas únicas)</strong>
+    </div>
+</div>
+
+<!-- PRÓXIMOS PASOS -->
+<div class="page">
+    <h1>11. Próximos Pasos Sugeridos</h1>
+
+    <h2>11.1 Funcionalidades Pendientes</h2>
+
+    <h3>Alta Prioridad</h3>
+    <ul>
+        <li>🔔 Sistema de notificaciones push para mensajes de contacto</li>
+        <li>📊 Dashboard con métricas de mensajes recibidos</li>
+        <li>📧 Auto-respuesta por email al enviar formulario de contacto</li>
+        <li>🔍 Búsqueda y filtros avanzados en inbox</li>
+    </ul>
+
+    <h3>Media Prioridad</h3>
+    <ul>
+        <li>📱 Deep linking para notificaciones mobile</li>
+        <li>🏷️ Sistema de etiquetas/categorías para mensajes</li>
+        <li>👥 Asignación de mensajes a usuarios específicos</li>
+        <li>📁 Archivado de mensajes antiguos</li>
+        <li>📈 Analytics de uso de la app</li>
+    </ul>
+
+    <h3>Baja Prioridad</h3>
+    <ul>
+        <li>🎨 Temas personalizables (dark mode)</li>
+        <li>🌐 Internacionalización (i18n)</li>
+        <li>🔊 Respuestas automáticas con IA</li>
+        <li>📊 Exportación de datos a Excel/CSV</li>
+    </ul>
+
+    <h2>11.2 Mejoras Técnicas</h2>
+
+    <h3>Performance</h3>
+    <ul>
+        <li>Implementar React Query para caché de API calls</li>
+        <li>Optimizar renders con useMemo/useCallback</li>
+        <li>Lazy loading de módulos admin</li>
+        <li>Service Worker para offline-first</li>
+    </ul>
+
+    <h3>Testing</h3>
+    <ul>
+        <li>Unit tests para componentes críticos (Jest)</li>
+        <li>Integration tests para flujos de usuario (Cypress)</li>
+        <li>E2E tests para formularios (Playwright)</li>
+        <li>API testing automatizado (Supertest)</li>
+    </ul>
+
+    <h3>DevOps</h3>
+    <ul>
+        <li>CI/CD pipeline completo (GitHub Actions)</li>
+        <li>Staging environment</li>
+        <li>Rollback automático en caso de errores</li>
+        <li>Monitoreo con Sentry/LogRocket</li>
+    </ul>
+
+    <h2>11.3 Documentación</h2>
+    <ul>
+        <li>📖 Documentación de APIs con Swagger/OpenAPI</li>
+        <li>📚 Guía de estilo de código (ESLint + Prettier)</li>
+        <li>🎓 Tutoriales para nuevos desarrolladores</li>
+        <li>📋 Runbook para operaciones comunes</li>
+    </ul>
+</div>
+
+<!-- CONCLUSIONES -->
+<div class="page">
+    <h1>12. Conclusiones</h1>
+
+    <h2>12.1 Logros Principales</h2>
+
+    <div class="success">
+        <h3>✅ Sistema Completo de Contacto</h3>
+        <p>Implementación end-to-end desde formulario público hasta panel de administración con gestión completa de mensajes.</p>
+    </div>
+
+    <div class="success">
+        <h3>✅ Mejora en Experiencia de Usuario</h3>
+        <p>Reorganización de interfaces mobile y web para mejor usabilidad y flujo de navegación.</p>
+    </div>
+
+    <div class="success">
+        <h3>✅ Infraestructura Escalable</h3>
+        <p>Endpoint genérico de upload permite agregar funcionalidad de imágenes a cualquier módulo futuro.</p>
+    </div>
+
+    <div class="success">
+        <h3>✅ Splash Screen Optimizado</h3>
+        <p>Animación profesional con Lottie que mejora la primera impresión de la aplicación.</p>
+    </div>
+
+    <h2>12.2 Lecciones Aprendidas</h2>
+
+    <h3>Expo Go vs Build Nativo</h3>
+    <p>La diferencia entre desarrollo en Expo Go y builds nativos es crítica para entender el comportamiento del splash screen y otras funcionalidades nativas.</p>
+
+    <h3>Validación en Múltiples Capas</h3>
+    <p>Implementar validación tanto en frontend como backend garantiza integridad de datos y mejor experiencia de usuario.</p>
+
+    <h3>TypeScript Type Guards</h3>
+    <p>Usar type guards permite crear estructuras de navegación flexibles y type-safe sin sacrificar DX.</p>
+
+    <h2>12.3 Calidad del Código</h2>
+
+    <table>
+        <tr>
+            <th>Aspecto</th>
+            <th>Estado</th>
+        </tr>
+        <tr>
+            <td>Tipado TypeScript</td>
+            <td>✅ 100% en archivos .ts/.tsx</td>
+        </tr>
+        <tr>
+            <td>Validación de datos</td>
+            <td>✅ Backend y frontend</td>
+        </tr>
+        <tr>
+            <td>Manejo de errores</td>
+            <td>✅ Try-catch + mensajes claros</td>
+        </tr>
+        <tr>
+            <td>Seguridad</td>
+            <td>✅ RBAC + validaciones</td>
+        </tr>
+        <tr>
+            <td>Performance</td>
+            <td>✅ Optimizaciones aplicadas</td>
+        </tr>
+        <tr>
+            <td>Documentación</td>
+            <td>⚠️ Comentarios inline presentes</td>
+        </tr>
+    </table>
+</div>
+
+<!-- CONTACTO Y REFERENCIAS -->
+<div class="page">
+    <h1>13. Referencias y Recursos</h1>
+
+    <h2>13.1 Documentación Oficial</h2>
+
+    <table>
+        <tr>
+            <th>Tecnología</th>
+            <th>URL</th>
+        </tr>
+        <tr>
+            <td>Next.js 14</td>
+            <td>https://nextjs.org/docs</td>
+        </tr>
+        <tr>
+            <td>React Native</td>
+            <td>https://reactnative.dev/docs</td>
+        </tr>
+        <tr>
+            <td>Expo</td>
+            <td>https://docs.expo.dev</td>
+        </tr>
+        <tr>
+            <td>Prisma</td>
+            <td>https://www.prisma.io/docs</td>
+        </tr>
+        <tr>
+            <td>Lottie</td>
+            <td>https://lottiefiles.com/docs</td>
+        </tr>
+        <tr>
+            <td>React Navigation</td>
+            <td>https://reactnavigation.org/docs</td>
+        </tr>
+    </table>
+
+    <h2>13.2 Herramientas de Desarrollo</h2>
+
+    <ul>
+        <li><strong>IDE:</strong> VS Code / WebStorm</li>
+        <li><strong>API Testing:</strong> Postman / Insomnia</li>
+        <li><strong>Database Client:</strong> Prisma Studio / pgAdmin</li>
+        <li><strong>Mobile Testing:</strong> Expo Go / Simuladores nativos</li>
+        <li><strong>Version Control:</strong> Git + GitHub</li>
+    </ul>
+
+    <h2>13.3 Comandos Útiles</h2>
+
+    <h3>Desarrollo Web</h3>
+    <pre>npm run dev              # Iniciar dev server
+npm run build            # Build de producción
+npm run lint             # Ejecutar linter
+npx prisma studio        # Abrir Prisma Studio
+npx prisma generate      # Generar cliente Prisma
+npx prisma migrate dev   # Ejecutar migraciones</pre>
+
+    <h3>Desarrollo Mobile</h3>
+    <pre>npx expo start           # Iniciar Expo dev server
+npx expo start -c        # Iniciar con cache limpio
+npx expo install         # Instalar dependencias compatibles
+npx expo prebuild        # Generar proyectos nativos
+eas build --platform all # Build de producción (EAS)</pre>
+
+    <h2>13.4 Información del Proyecto</h2>
+
+    <table>
+        <tr>
+            <th>Propiedad</th>
+            <th>Valor</th>
+        </tr>
+        <tr>
+            <td>Proyecto</td>
+            <td>Jahatelo</td>
+        </tr>
+        <tr>
+            <td>Empresa</td>
+            <td>MBARETECH</td>
+        </tr>
+        <tr>
+            <td>Fecha</td>
+            <td>Enero 2026</td>
+        </tr>
+        <tr>
+            <td>Repositorio</td>
+            <td>IA/MBARETECH/projects/jahatelo</td>
+        </tr>
+        <tr>
+            <td>Stack Principal</td>
+            <td>Next.js + React Native + Prisma</td>
+        </tr>
+    </table>
+
+    <div style="margin-top: 100px; padding-top: 50px; border-top: 2px solid #822DE2; text-align: center; color: #999;">
+        <p><strong>Fin del documento</strong></p>
+        <p>Este documento fue generado automáticamente como resumen de las implementaciones realizadas en el proyecto Jahatelo.</p>
+    </div>
+</div>
+
+</body>
+</html>
