@@ -456,6 +456,7 @@ async function deliverScheduledNotification(notification: {
   let tokens: string[] = [];
   let skipped = 0;
   const category = notification.category || 'advertising';
+  const includeGuests = (notification.data as any)?.includeGuests === true;
 
   if (notification.targetUserIds.length > 0) {
     const users = await prisma.user.findMany({
@@ -552,6 +553,19 @@ async function deliverScheduledNotification(notification: {
       } else {
         skipped += user.pushTokens.length;
       }
+    }
+
+    if (includeGuests) {
+      const guestTokens = await prisma.pushToken.findMany({
+        where: {
+          userId: null,
+          isActive: true,
+        },
+        select: {
+          token: true,
+        },
+      });
+      tokens.push(...guestTokens.map((pt) => pt.token));
     }
   }
 

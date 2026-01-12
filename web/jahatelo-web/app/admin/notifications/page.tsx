@@ -11,6 +11,7 @@ type ScheduledNotification = {
   body: string;
   category: string;
   type: string;
+  data?: any;
   scheduledFor: string;
   sent: boolean;
   sentAt: string | null;
@@ -151,6 +152,11 @@ export default function NotificationsAdminPage() {
         payload.targetMotelId = formData.targetMotelId;
       }
 
+      payload.data = {
+        ...(payload.data || {}),
+        includeGuests: formData.segmentType === 'ALL',
+      };
+
       const res = await fetch('/api/notifications/schedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -234,7 +240,10 @@ export default function NotificationsAdminPage() {
     if (notif.targetMotelId) {
       return 'Favoritos de un motel';
     }
-    return 'Todos los usuarios';
+    if (notif.data?.includeGuests) {
+      return 'Todos los usuarios';
+    }
+    return 'Solo registrados';
   };
 
   // Filtros
@@ -473,6 +482,7 @@ export default function NotificationsAdminPage() {
                 className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               >
                 <option value="ALL">Todos los usuarios</option>
+                <option value="REGISTERED">Solo registrados</option>
                 <option value="ROLE">Por rol</option>
                 <option value="MOTEL">Por motel favorito</option>
               </select>

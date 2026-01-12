@@ -10,6 +10,7 @@ type ScheduledNotification = {
   body: string;
   category: string;
   type: string;
+  data?: any;
   scheduledFor: string;
   sent: boolean;
   sentAt: string | null;
@@ -75,7 +76,10 @@ export default function NotificationDetailPage({ params }: { params: { id: strin
     if (notif.targetMotelId) {
       return 'Favoritos de un motel';
     }
-    return 'Todos los usuarios';
+    if (notif.data?.includeGuests) {
+      return 'Todos los usuarios';
+    }
+    return 'Solo registrados';
   };
 
   if (loading) {
