@@ -417,6 +417,7 @@ model User {
   favorites    Favorite[]
   auditLogs    AuditLog[]
   notificationPreferences UserNotificationPreferences?
+  pushTokens   PushToken[]
 
   @@index([email])
   @@index([provider, providerId])
@@ -464,12 +465,17 @@ model UserNotificationPreferences {
   user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId                  String   @unique
 
-  // Preferencias generales
+  // Preferencias por categoría de push
+  enableAdvertisingPush   Boolean  @default(true)  // Push de Publicidad (puede desactivar)
+  enableSecurityPush      Boolean  @default(true)  // Push de Seguridad (siempre se envía)
+  enableMaintenancePush   Boolean  @default(true)  // Push de Mantenimiento (siempre se envía)
+
+  // Preferencias generales (legacy - mantener compatibilidad)
   enableNotifications     Boolean  @default(true)
   enableEmail             Boolean  @default(true)
   enablePush              Boolean  @default(true)
 
-  // Alertas de favoritos
+  // Alertas de favoritos (usuarios normales)
   notifyNewPromos         Boolean  @default(true)  // Nuevas promos en favoritos
   notifyPriceDrops        Boolean  @default(true)  // Bajadas de precio
   notifyUpdates           Boolean  @default(true)  // Actualizaciones de motel
@@ -481,6 +487,12 @@ model UserNotificationPreferences {
   // Marketing
   notifyPromotions        Boolean  @default(true)  // Promociones generales
   notifyNewMotels         Boolean  @default(false) // Nuevos moteles cerca
+
+  // Preferencias para administradores (SUPERADMIN y MOTEL_ADMIN)
+  notifyContactMessages   Boolean  @default(true)  // Mensajes de contacto
+  notifyNewProspects      Boolean  @default(true)  // Nuevos prospectos
+  notifyPaymentReminders  Boolean  @default(true)  // Recordatorios de pago
+  notifyMotelApprovals    Boolean  @default(true)  // Aprobaciones de motel pendientes
 
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
@@ -665,4 +677,69 @@ model ContactMessage {
 
   @@index([createdAt])
   @@index([isRead, createdAt])
+}
+
+// ============================================
+// PUSH TOKENS (notificaciones push)
+// ============================================
+
+model PushToken {
+  id           String    @id @default(cuid())
+  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String?
+  token        String    @unique  // Expo push token
+  deviceId     String?              // Identificador único del dispositivo
+  deviceType   String?              // "ios", "android"
+  deviceName   String?              // Nombre del dispositivo
+  appVersion   String?              // Versión de la app
+  isActive     Boolean   @default(true)
+  lastUsedAt   DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([token])
+  @@index([isActive])
+}
+
+// ============================================
+// SCHEDULED NOTIFICATIONS (notificaciones programadas)
+// ============================================
+
+model ScheduledNotification {
+  id              String    @id @default(cuid())
+  title           String
+  body            String
+  data            Json?     // Datos adicionales para la notificación
+
+  // Programación
+  scheduledFor    DateTime  // Cuándo se debe enviar
+  sent            Boolean   @default(false)
+  sentAt          DateTime? // Cuándo se envió realmente
+
+  // Audience (a quién se envía)
+  targetUserIds   String[]  // IDs específicos de usuarios (opcional)
+  targetRole      String?   // "SUPERADMIN", "MOTEL_ADMIN", "USER" (opcional)
+  targetMotelId   String?   // Si es para usuarios que favoritearon un motel
+
+  // Categoría de notificación
+  category        String    @default("advertising")  // "advertising", "security", "maintenance"
+
+  // Metadata
+  type            String    // "promo", "reminder", "announcement", etc.
+  relatedEntityId String?   // ID de la promo, motel, etc.
+
+  // Resultados
+  totalSent       Int       @default(0)
+  totalFailed     Int       @default(0)
+  totalSkipped    Int       @default(0)  // Usuarios que desactivaron esa categoría
+  errorMessage    String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([scheduledFor, sent])
+  @@index([targetMotelId])
+  @@index([type])
+  @@index([category])
 }

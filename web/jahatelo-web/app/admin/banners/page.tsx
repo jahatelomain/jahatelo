@@ -37,7 +37,7 @@ export default function AdvertisementsAdminPage() {
 
   const fetchAds = async () => {
     try {
-      const res = await fetch('/api/admin/advertisements');
+      const res = await fetch('/api/admin/banners');
       if (!res.ok) throw new Error('Error al cargar anuncios');
       const data = await res.json();
       setAds(data);
@@ -56,7 +56,7 @@ export default function AdvertisementsAdminPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('¿Eliminar este anuncio?')) return;
     try {
-      const res = await fetch(`/api/admin/advertisements/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/banners/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Error al eliminar anuncio');
       toast.success('Anuncio eliminado');
       fetchAds();
@@ -69,7 +69,7 @@ export default function AdvertisementsAdminPage() {
   const handleToggleStatus = async (ad: Advertisement) => {
     try {
       const newStatus = ad.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
-      const res = await fetch(`/api/admin/advertisements/${ad.id}`, {
+      const res = await fetch(`/api/admin/banners/${ad.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
@@ -91,7 +91,7 @@ export default function AdvertisementsAdminPage() {
           <p className="text-slate-500">Gestiona anuncios y revisa su rendimiento.</p>
         </div>
         <Link
-          href="/admin/advertisements/new"
+          href="/admin/banners/new"
           className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
         >
           + Nuevo anuncio
@@ -150,13 +150,13 @@ export default function AdvertisementsAdminPage() {
                     <td className="px-4 py-3 text-right text-sm">
                       <div className="flex items-center justify-end gap-2">
                         <Link
-                          href={`/admin/advertisements/${ad.id}`}
+                          href={`/admin/banners/${ad.id}`}
                           className="text-purple-600 hover:text-purple-700"
                         >
                           Editar
                         </Link>
                         <Link
-                          href={`/admin/advertisements/${ad.id}/analytics`}
+                          href={`/admin/banners/${ad.id}/analytics`}
                           className="text-slate-600 hover:text-slate-900"
                         >
                           Analytics

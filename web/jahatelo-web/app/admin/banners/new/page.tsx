@@ -99,7 +99,7 @@ export default function NewAdvertisementPage() {
         endDate: form.endDate || null,
       };
 
-      const res = await fetch('/api/admin/advertisements', {
+      const res = await fetch('/api/admin/banners', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -111,7 +111,7 @@ export default function NewAdvertisementPage() {
       }
 
       toast.success('Anuncio creado');
-      router.push('/admin/advertisements');
+      router.push('/admin/banners');
       router.refresh();
     } catch (error: any) {
       toast.error(error.message || 'Error al crear anuncio');
@@ -367,7 +367,7 @@ export default function NewAdvertisementPage() {
           </button>
           <button
             type="button"
-            onClick={() => router.push('/admin/advertisements')}
+            onClick={() => router.push('/admin/banners')}
             className="px-5 py-2 border border-slate-300 rounded-lg text-slate-700"
           >
             Cancelar

@@ -7,7 +7,7 @@ const VALID_PERIODS = new Set([7, 30, 90]);
 // GET /api/admin/advertisements/[id]/analytics?period=30
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'advertisements');
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'banners');
     if (access.error) return access.error;
 
     const { id } = await params;

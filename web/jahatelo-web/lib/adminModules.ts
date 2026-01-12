@@ -8,7 +8,8 @@ export const ADMIN_MODULES = [
   'prospects',
   'financiero',
   'analytics',
-  'advertisements',
+  'notifications',
+  'banners',
   'audit',
   'inbox',
 ] as const;
@@ -25,7 +26,8 @@ export const ADMIN_MODULE_LABELS: Record<AdminModule, string> = {
   prospects: 'Prospects',
   financiero: 'Financiero',
   analytics: 'Analytics',
-  advertisements: 'Publicidad',
+  notifications: 'Notificaciones Masivas',
+  banners: 'Banners Publicitarios',
   audit: 'Auditoría',
   inbox: 'Inbox',
 };

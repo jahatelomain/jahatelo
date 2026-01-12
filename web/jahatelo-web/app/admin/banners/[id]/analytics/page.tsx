@@ -30,7 +30,7 @@ export default function AdvertisementAnalyticsPage() {
   const fetchAnalytics = async (selectedPeriod: number) => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/admin/advertisements/${id}/analytics?period=${selectedPeriod}`);
+      const res = await fetch(`/api/admin/banners/${id}/analytics?period=${selectedPeriod}`);
       if (!res.ok) throw new Error('Error al cargar analíticas');
       const result = await res.json();
       setData(result);
@@ -44,7 +44,7 @@ export default function AdvertisementAnalyticsPage() {
 
   const fetchTitle = async () => {
     try {
-      const res = await fetch(`/api/admin/advertisements/${id}`);
+      const res = await fetch(`/api/admin/banners/${id}`);
       if (!res.ok) return;
       const ad = await res.json();
       setTitle(ad.title || 'Anuncio');

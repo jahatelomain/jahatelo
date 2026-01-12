@@ -6,7 +6,7 @@ import { logAuditEvent } from '@/lib/audit';
 // GET /api/admin/advertisements?status=ACTIVE&placement=POPUP_HOME
 export async function GET(request: NextRequest) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'advertisements');
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'banners');
     if (access.error) return access.error;
 
     const { searchParams } = new URL(request.url);
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 // POST /api/admin/advertisements
 export async function POST(request: NextRequest) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'advertisements');
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'banners');
     if (access.error) return access.error;
 
     const body = await request.json();

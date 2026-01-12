@@ -19,6 +19,10 @@ export default function AdminLayout({
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    'Publicidad': false,
+    'Configuración': false,
+  });
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -52,6 +56,16 @@ export default function AdminLayout({
     };
   }, [isLoginPage, pathname]);
 
+  // Auto-expand section if current path matches
+  useEffect(() => {
+    if (pathname.startsWith('/admin/notifications') || pathname.startsWith('/admin/banners')) {
+      setExpandedSections(prev => ({ ...prev, 'Publicidad': true }));
+    }
+    if (pathname.startsWith('/admin/users') || pathname.startsWith('/admin/roles') || pathname.startsWith('/admin/audit')) {
+      setExpandedSections(prev => ({ ...prev, 'Configuración': true }));
+    }
+  }, [pathname]);
+
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -79,6 +93,13 @@ export default function AdminLayout({
     return pathname.startsWith(path);
   };
 
+  const toggleSection = (sectionName: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionName]: !prev[sectionName]
+    }));
+  };
+
   const getBreadcrumb = () => {
     if (pathname === '/admin') return 'Dashboard';
     if (pathname.startsWith('/admin/motels')) return 'Moteles';
@@ -88,7 +109,8 @@ export default function AdminLayout({
     if (pathname.startsWith('/admin/prospects')) return 'Prospects';
     if (pathname.startsWith('/admin/financiero')) return 'Financiero';
     if (pathname.startsWith('/admin/analytics')) return 'Analytics';
-    if (pathname.startsWith('/admin/advertisements')) return 'Publicidad';
+    if (pathname.startsWith('/admin/notifications')) return 'Notificaciones Masivas';
+    if (pathname.startsWith('/admin/banners')) return 'Banners Publicitarios';
     if (pathname.startsWith('/admin/audit')) return 'Auditoría';
     if (pathname.startsWith('/admin/inbox')) return 'Inbox';
     return 'Admin';
@@ -103,6 +125,7 @@ export default function AdminLayout({
   type NavSection = {
     section: string;
     items: NavItem[];
+    collapsible?: boolean;
   };
 
   type NavElement = NavItem | NavSection;
@@ -115,10 +138,18 @@ export default function AdminLayout({
     { href: '/admin/prospects', label: 'Prospects', roles: ['SUPERADMIN'] },
     { href: '/admin/financiero', label: 'Financiero', roles: ['SUPERADMIN'] },
     { href: '/admin/analytics', label: 'Analytics', roles: ['SUPERADMIN'] },
-    { href: '/admin/advertisements', label: 'Publicidad', roles: ['SUPERADMIN'] },
+    {
+      section: 'Publicidad',
+      collapsible: true,
+      items: [
+        { href: '/admin/notifications', label: 'Notificaciones Masivas', roles: ['SUPERADMIN'] },
+        { href: '/admin/banners', label: 'Banners Publicitarios', roles: ['SUPERADMIN'] },
+      ],
+    },
     { href: '/admin/inbox', label: 'Inbox', roles: ['SUPERADMIN'] },
     {
       section: 'Configuración',
+      collapsible: true,
       items: [
         { href: '/admin/users', label: 'Usuarios', roles: ['SUPERADMIN'] },
         { href: '/admin/roles', label: 'Roles y Permisos', roles: ['SUPERADMIN'] },
@@ -141,7 +172,8 @@ export default function AdminLayout({
     if (path.startsWith('/admin/prospects')) return 'prospects';
     if (path.startsWith('/admin/financiero')) return 'financiero';
     if (path.startsWith('/admin/analytics')) return 'analytics';
-    if (path.startsWith('/admin/advertisements')) return 'advertisements';
+    if (path.startsWith('/admin/notifications')) return 'notifications';
+    if (path.startsWith('/admin/banners')) return 'banners';
     if (path.startsWith('/admin/audit')) return 'audit';
     if (path.startsWith('/admin/inbox')) return 'inbox';
     return null;
@@ -192,6 +224,77 @@ export default function AdminLayout({
         .slice(0, 2)
         .toUpperCase()
     : 'AD';
+
+  const renderNavItem = (item: NavItem, onClick?: () => void) => (
+    <Link
+      key={item.href}
+      href={item.href}
+      onClick={onClick}
+      className={`group flex items-center px-4 py-3 rounded-lg transition-all ${
+        isActive(item.href)
+          ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
+          : 'text-slate-600 hover:bg-white hover:shadow-sm'
+      }`}
+    >
+      <span className={`font-medium ${isActive(item.href) ? 'text-white' : 'group-hover:text-slate-900'}`}>
+        {item.label}
+      </span>
+    </Link>
+  );
+
+  const renderSection = (section: NavSection, isMobile: boolean = false) => {
+    const isExpanded = expandedSections[section.section];
+    const isCollapsible = section.collapsible;
+
+    if (!isCollapsible) {
+      // Non-collapsible section (original behavior)
+      return (
+        <div key={section.section}>
+          <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            {section.section}
+          </div>
+          <ul className="space-y-1">
+            {section.items.map((item) => (
+              <li key={item.href}>
+                {renderNavItem(item, isMobile ? () => setMobileMenuOpen(false) : undefined)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    // Collapsible section
+    return (
+      <div key={section.section}>
+        <button
+          onClick={() => toggleSection(section.section)}
+          className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-slate-700 hover:bg-white hover:shadow-sm transition-all group"
+        >
+          <span className="font-medium">{section.section}</span>
+          <svg
+            className={`w-4 h-4 text-slate-400 transition-transform ${
+              isExpanded ? 'rotate-180' : ''
+            }`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {isExpanded && (
+          <ul className="space-y-1 mt-1 ml-4">
+            {section.items.map((item) => (
+              <li key={item.href}>
+                {renderNavItem(item, isMobile ? () => setMobileMenuOpen(false) : undefined)}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  };
 
   return (
     <ToastProvider>
@@ -278,52 +381,15 @@ export default function AdminLayout({
         }`}
       >
         <nav className="p-4">
-          <div className="space-y-4">
+          <div className="space-y-2">
             {filteredNavStructure.map((element, index) => {
               if (isNavSection(element)) {
-                return (
-                  <div key={`section-${index}`}>
-                    <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      {element.section}
-                    </div>
-                    <ul className="space-y-1">
-                      {element.items.map((item) => (
-                        <li key={item.href}>
-                          <Link
-                            href={item.href}
-                            onClick={() => setMobileMenuOpen(false)}
-                            className={`group flex items-center px-4 py-3 rounded-lg transition-all ${
-                              isActive(item.href)
-                                ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
-                                : 'text-slate-600 hover:bg-slate-100'
-                            }`}
-                          >
-                            <span className={`font-medium ${isActive(item.href) ? 'text-white' : 'group-hover:text-slate-900'}`}>
-                              {item.label}
-                            </span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
+                return renderSection(element, true);
               } else {
                 return (
                   <ul key={element.href} className="space-y-1">
                     <li>
-                      <Link
-                        href={element.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`group flex items-center px-4 py-3 rounded-lg transition-all ${
-                          isActive(element.href)
-                            ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
-                            : 'text-slate-600 hover:bg-slate-100'
-                        }`}
-                      >
-                        <span className={`font-medium ${isActive(element.href) ? 'text-white' : 'group-hover:text-slate-900'}`}>
-                          {element.label}
-                        </span>
-                      </Link>
+                      {renderNavItem(element, () => setMobileMenuOpen(false))}
                     </li>
                   </ul>
                 );
@@ -337,50 +403,15 @@ export default function AdminLayout({
         {/* Sidebar Moderno */}
         <aside className="w-64 bg-slate-50 border-r border-slate-200 min-h-[calc(100vh-88px)] sticky top-[88px] hidden md:block">
           <nav className="p-4">
-            <div className="space-y-4">
+            <div className="space-y-2">
               {filteredNavStructure.map((element, index) => {
                 if (isNavSection(element)) {
-                  return (
-                    <div key={`section-${index}`}>
-                      <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                        {element.section}
-                      </div>
-                      <ul className="space-y-1">
-                        {element.items.map((item) => (
-                          <li key={item.href}>
-                            <Link
-                              href={item.href}
-                              className={`group flex items-center px-4 py-3 rounded-lg transition-all ${
-                                isActive(item.href)
-                                  ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
-                                  : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                              }`}
-                            >
-                              <span className={`font-medium ${isActive(item.href) ? 'text-white' : 'group-hover:text-slate-900'}`}>
-                                {item.label}
-                              </span>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  );
+                  return renderSection(element, false);
                 } else {
                   return (
                     <ul key={element.href} className="space-y-1">
                       <li>
-                        <Link
-                          href={element.href}
-                          className={`group flex items-center px-4 py-3 rounded-lg transition-all ${
-                            isActive(element.href)
-                              ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
-                              : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                          }`}
-                        >
-                          <span className={`font-medium ${isActive(element.href) ? 'text-white' : 'group-hover:text-slate-900'}`}>
-                            {element.label}
-                          </span>
-                        </Link>
+                        {renderNavItem(element)}
                       </li>
                     </ul>
                   );

@@ -38,7 +38,7 @@ export default function AuditPage() {
       case 'PaymentHistory':
         return motelId ? `/admin/financiero/${motelId}` : null;
       case 'Advertisement':
-        return log.entityId ? `/admin/advertisements/${log.entityId}` : '/admin/advertisements';
+        return log.entityId ? `/admin/banners/${log.entityId}` : '/admin/banners';
       case 'Promo':
         return '/admin/promos';
       case 'Amenity':

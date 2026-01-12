@@ -6,7 +6,7 @@ import { logAuditEvent } from '@/lib/audit';
 // GET /api/admin/advertisements/[id]
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'advertisements');
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'banners');
     if (access.error) return access.error;
 
     const { id } = await params;
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 // PATCH /api/admin/advertisements/[id]
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'advertisements');
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'banners');
     if (access.error) return access.error;
 
     const { id } = await params;
@@ -91,7 +91,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 // DELETE /api/admin/advertisements/[id]
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'advertisements');
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'banners');
     if (access.error) return access.error;
 
     const { id } = await params;

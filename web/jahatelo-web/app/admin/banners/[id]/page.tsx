@@ -42,7 +42,7 @@ export default function EditAdvertisementPage() {
     if (!id) return;
     const fetchAd = async () => {
       try {
-        const res = await fetch(`/api/admin/advertisements/${id}`);
+        const res = await fetch(`/api/admin/banners/${id}`);
         if (!res.ok) throw new Error('Error al cargar anuncio');
         const data = await res.json();
         setForm({
@@ -132,7 +132,7 @@ export default function EditAdvertisementPage() {
         endDate: form.endDate || null,
       };
 
-      const res = await fetch(`/api/admin/advertisements/${id}`, {
+      const res = await fetch(`/api/admin/banners/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -144,7 +144,7 @@ export default function EditAdvertisementPage() {
       }
 
       toast.success('Anuncio actualizado');
-      router.push('/admin/advertisements');
+      router.push('/admin/banners');
       router.refresh();
     } catch (error: any) {
       toast.error(error.message || 'Error al actualizar anuncio');
@@ -401,7 +401,7 @@ export default function EditAdvertisementPage() {
           </button>
           <button
             type="button"
-            onClick={() => router.push('/admin/advertisements')}
+            onClick={() => router.push('/admin/banners')}
             className="px-5 py-2 border border-slate-300 rounded-lg text-slate-700"
           >
             Volver
