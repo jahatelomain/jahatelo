@@ -189,9 +189,8 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Explora Jahatelo Section */}
+        {/* Registrar tu motel */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Explora Jahatelo</Text>
           <View style={styles.optionsContainer}>
             <OptionRow
               icon="business"
@@ -200,20 +199,6 @@ export default function ProfileScreen() {
             />
           </View>
         </View>
-
-        {/* Cuenta Section (solo para usuarios autenticados) */}
-        {isAuthenticated && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Tu cuenta</Text>
-            <View style={styles.optionsContainer}>
-              <OptionRow
-                icon="notifications-outline"
-                title="Notificaciones"
-                onPress={() => navigation.navigate('NotificationPreferences')}
-              />
-            </View>
-          </View>
-        )}
 
         {/* Almacenamiento y datos Section */}
         <View style={styles.section}>
@@ -292,15 +277,20 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Legal y ayuda Section */}
+        {/* Contáctanos */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Legal y ayuda</Text>
           <View style={styles.optionsContainer}>
             <OptionRow
               icon="mail-outline"
               title="Contáctanos"
               onPress={() => navigation.navigate('Contact')}
             />
+          </View>
+        </View>
+
+        {/* Bases y condiciones */}
+        <View style={styles.section}>
+          <View style={styles.optionsContainer}>
             <OptionRow
               icon="document-text-outline"
               title="Bases y condiciones"
@@ -309,6 +299,12 @@ export default function ProfileScreen() {
                 'Aquí irán las bases y condiciones de uso de Jahatelo.\n\nPróximamente estarán disponibles los términos completos de servicio.'
               )}
             />
+          </View>
+        </View>
+
+        {/* Política de privacidad */}
+        <View style={styles.section}>
+          <View style={styles.optionsContainer}>
             <OptionRow
               icon="shield-checkmark-outline"
               title="Política de privacidad"
@@ -317,6 +313,12 @@ export default function ProfileScreen() {
                 'Aquí irá la política de privacidad de Jahatelo.\n\nPróximamente estará disponible el detalle completo sobre cómo manejamos tus datos.'
               )}
             />
+          </View>
+        </View>
+
+        {/* Sobre Jahatelo */}
+        <View style={styles.section}>
+          <View style={styles.optionsContainer}>
             <OptionRow
               icon="information-circle-outline"
               title="Sobre Jahatelo"

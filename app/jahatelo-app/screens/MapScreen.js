@@ -15,6 +15,7 @@ import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { useNavigation } from '@react-navigation/native';
+import PremiumMarkerPin from '../components/PremiumMarkerPin';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 const IS_ANDROID = Platform.OS === 'android';
@@ -31,27 +32,6 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
   // Configuración según plan
   const isPremium = plan === 'PREMIUM';
   const isPlatinum = plan === 'PLATINUM';
-  const pinSize = isPlatinum ? 48 : 36; // PLATINUM 2x más grande
-  const iconSize = isPlatinum ? 20 : 14;
-
-  // Colores según plan
-  let pinColor = COLORS.primary; // BASIC
-  if (isPremium) pinColor = '#8B5CF6'; // Violeta brillante
-  if (isPlatinum) pinColor = '#F59E0B'; // Dorado
-
-  const pinStyle = [
-    styles.markerPin,
-    {
-      width: pinSize,
-      height: pinSize,
-      backgroundColor: isDisabled ? '#CCCCCC' : pinColor,
-      borderRadius: pinSize / 2,
-      borderWidth: 3,
-      borderColor: COLORS.white,
-    },
-    isDisabled && styles.disabledMarker,
-    isPlatinum && styles.platinumMarker,
-  ];
 
   const calloutStyle = [
     styles.calloutContainer,
@@ -85,17 +65,12 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
           </View>
         )}
 
-        {/* Pin personalizado */}
-        <View style={pinStyle}>
-          <View style={styles.markerInner}>
-            <Ionicons name="heart" size={iconSize} color={COLORS.white} />
-          </View>
-          {isPlatinum && (
-            <View style={styles.platinumBadge}>
-              <Ionicons name="star" size={10} color="#F59E0B" />
-            </View>
-          )}
-        </View>
+        {/* Pin animado con componente */}
+        <PremiumMarkerPin
+          plan={plan}
+          isDisabled={isDisabled}
+          size={36}
+        />
       </View>
 
       {!IS_ANDROID && (

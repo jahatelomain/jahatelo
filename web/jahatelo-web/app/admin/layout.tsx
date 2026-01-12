@@ -94,20 +94,42 @@ export default function AdminLayout({
     return 'Admin';
   };
 
-  const navItems = [
+  type NavItem = {
+    href: string;
+    label: string;
+    roles: ('SUPERADMIN' | 'MOTEL_ADMIN')[];
+  };
+
+  type NavSection = {
+    section: string;
+    items: NavItem[];
+  };
+
+  type NavElement = NavItem | NavSection;
+
+  const navStructure: NavElement[] = [
     { href: '/admin', label: 'Dashboard', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
     { href: '/admin/motels', label: 'Moteles', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
     { href: '/admin/promos', label: 'Promos', roles: ['SUPERADMIN'] },
     { href: '/admin/amenities', label: 'Amenities', roles: ['SUPERADMIN'] },
-    { href: '/admin/users', label: 'Usuarios', roles: ['SUPERADMIN'] },
-    { href: '/admin/roles', label: 'Roles y Permisos', roles: ['SUPERADMIN'] },
     { href: '/admin/prospects', label: 'Prospects', roles: ['SUPERADMIN'] },
     { href: '/admin/financiero', label: 'Financiero', roles: ['SUPERADMIN'] },
     { href: '/admin/analytics', label: 'Analytics', roles: ['SUPERADMIN'] },
     { href: '/admin/advertisements', label: 'Publicidad', roles: ['SUPERADMIN'] },
-    { href: '/admin/audit', label: 'Auditoría', roles: ['SUPERADMIN'] },
     { href: '/admin/inbox', label: 'Inbox', roles: ['SUPERADMIN'] },
+    {
+      section: 'Configuración',
+      items: [
+        { href: '/admin/users', label: 'Usuarios', roles: ['SUPERADMIN'] },
+        { href: '/admin/roles', label: 'Roles y Permisos', roles: ['SUPERADMIN'] },
+        { href: '/admin/audit', label: 'Auditoría', roles: ['SUPERADMIN'] },
+      ],
+    },
   ];
+
+  const isNavSection = (element: NavElement): element is NavSection => {
+    return 'section' in element;
+  };
 
   const getModuleFromPath = (path: string) => {
     if (path === '/admin') return 'dashboard';
@@ -125,12 +147,24 @@ export default function AdminLayout({
     return null;
   };
 
-  // Filtrar items según el rol del usuario
-  const filteredNavItems = navItems.filter(item =>
-    !user?.role ||
-    (item.roles.includes(user.role as 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER') &&
-      hasModuleAccess(user, getModuleFromPath(item.href) || 'dashboard'))
-  );
+  // Filtrar navegación según el rol del usuario
+  const filterNavItem = (item: NavItem) => {
+    if (!user?.role) return false;
+    const module = getModuleFromPath(item.href);
+    return item.roles.includes(user.role as 'SUPERADMIN' | 'MOTEL_ADMIN') &&
+           hasModuleAccess(user, module || 'dashboard');
+  };
+
+  const filteredNavStructure: NavElement[] = navStructure
+    .map((element) => {
+      if (isNavSection(element)) {
+        const filteredItems = element.items.filter(filterNavItem);
+        return filteredItems.length > 0 ? { ...element, items: filteredItems } : null;
+      } else {
+        return filterNavItem(element) ? element : null;
+      }
+    })
+    .filter((element): element is NavElement => element !== null);
 
   if (isLoginPage) {
     return <>{children}</>;
@@ -244,25 +278,58 @@ export default function AdminLayout({
         }`}
       >
         <nav className="p-4">
-          <ul className="space-y-1">
-            {filteredNavItems.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`group flex items-center px-4 py-3 rounded-lg transition-all ${
-                    isActive(item.href)
-                      ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <span className={`font-medium ${isActive(item.href) ? 'text-white' : 'group-hover:text-slate-900'}`}>
-                    {item.label}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div className="space-y-4">
+            {filteredNavStructure.map((element, index) => {
+              if (isNavSection(element)) {
+                return (
+                  <div key={`section-${index}`}>
+                    <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      {element.section}
+                    </div>
+                    <ul className="space-y-1">
+                      {element.items.map((item) => (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={`group flex items-center px-4 py-3 rounded-lg transition-all ${
+                              isActive(item.href)
+                                ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
+                                : 'text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            <span className={`font-medium ${isActive(item.href) ? 'text-white' : 'group-hover:text-slate-900'}`}>
+                              {item.label}
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              } else {
+                return (
+                  <ul key={element.href} className="space-y-1">
+                    <li>
+                      <Link
+                        href={element.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`group flex items-center px-4 py-3 rounded-lg transition-all ${
+                          isActive(element.href)
+                            ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
+                            : 'text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span className={`font-medium ${isActive(element.href) ? 'text-white' : 'group-hover:text-slate-900'}`}>
+                          {element.label}
+                        </span>
+                      </Link>
+                    </li>
+                  </ul>
+                );
+              }
+            })}
+          </div>
         </nav>
       </aside>
 
@@ -270,24 +337,56 @@ export default function AdminLayout({
         {/* Sidebar Moderno */}
         <aside className="w-64 bg-slate-50 border-r border-slate-200 min-h-[calc(100vh-88px)] sticky top-[88px] hidden md:block">
           <nav className="p-4">
-            <ul className="space-y-1">
-              {filteredNavItems.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={`group flex items-center px-4 py-3 rounded-lg transition-all ${
-                      isActive(item.href)
-                        ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
-                        : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                    }`}
-                  >
-                    <span className={`font-medium ${isActive(item.href) ? 'text-white' : 'group-hover:text-slate-900'}`}>
-                      {item.label}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-4">
+              {filteredNavStructure.map((element, index) => {
+                if (isNavSection(element)) {
+                  return (
+                    <div key={`section-${index}`}>
+                      <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        {element.section}
+                      </div>
+                      <ul className="space-y-1">
+                        {element.items.map((item) => (
+                          <li key={item.href}>
+                            <Link
+                              href={item.href}
+                              className={`group flex items-center px-4 py-3 rounded-lg transition-all ${
+                                isActive(item.href)
+                                  ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
+                                  : 'text-slate-600 hover:bg-white hover:shadow-sm'
+                              }`}
+                            >
+                              <span className={`font-medium ${isActive(item.href) ? 'text-white' : 'group-hover:text-slate-900'}`}>
+                                {item.label}
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <ul key={element.href} className="space-y-1">
+                      <li>
+                        <Link
+                          href={element.href}
+                          className={`group flex items-center px-4 py-3 rounded-lg transition-all ${
+                            isActive(element.href)
+                              ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
+                              : 'text-slate-600 hover:bg-white hover:shadow-sm'
+                          }`}
+                        >
+                          <span className={`font-medium ${isActive(element.href) ? 'text-white' : 'group-hover:text-slate-900'}`}>
+                            {element.label}
+                          </span>
+                        </Link>
+                      </li>
+                    </ul>
+                  );
+                }
+              })}
+            </div>
           </nav>
         </aside>
 
