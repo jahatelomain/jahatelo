@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
+import { ReviewSchema } from '@/lib/validations/schemas';
+import { sanitizeText } from '@/lib/sanitize';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
@@ -125,22 +128,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { motelId, score, comment, isAnonymous = false } = body;
 
-    // Validaciones
-    if (!motelId) {
-      return NextResponse.json(
-        { error: 'motelId es requerido' },
-        { status: 400 }
-      );
-    }
+    // Validar con Zod (rating es score en el schema)
+    const validated = ReviewSchema.parse({
+      ...body,
+      rating: body.score, // Mapear score a rating
+    });
+    const { motelId, rating, comment } = validated;
+    const isAnonymous = body.isAnonymous !== undefined ? body.isAnonymous : false;
 
-    if (!score || score < 1 || score > 5) {
-      return NextResponse.json(
-        { error: 'El score debe ser entre 1 y 5' },
-        { status: 400 }
-      );
-    }
+    // Sanitizar comment si existe
+    const sanitizedComment = comment ? sanitizeText(comment) : null;
 
     // Verificar que el motel existe
     const motel = await prisma.motel.findUnique({
@@ -188,8 +186,8 @@ export async function POST(request: NextRequest) {
       data: {
         userId: payload.id,
         motelId,
-        score,
-        comment: comment?.trim() || null,
+        score: rating, // Usamos rating validado
+        comment: sanitizedComment,
         isVerified: true, // Usuarios registrados tienen reviews verificadas
         isAnonymous,
       },
@@ -245,6 +243,17 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
 
   } catch (error) {
+    // Errores de validación Zod
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Datos inválidos',
+          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message }))
+        },
+        { status: 400 }
+      );
+    }
+
     console.error('Error in POST /api/mobile/reviews:', error);
     return NextResponse.json(
       { error: 'Error al crear review' },

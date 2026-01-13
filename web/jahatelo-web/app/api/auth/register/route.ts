@@ -1,28 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { hashPassword, validatePassword } from '@/lib/password';
+import { hashPassword } from '@/lib/password';
+import { RegisterSchema } from '@/lib/validations/schemas';
+import { sanitizeText } from '@/lib/sanitize';
+import { z } from 'zod';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, name, motelId } = body;
 
-    // Validación básica
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email y password son requeridos' },
-        { status: 400 }
-      );
-    }
+    // Validación con Zod (ya incluye validación de password fuerte)
+    const validated = RegisterSchema.parse(body);
+    const { email, password, name, telefono, phone } = validated;
 
-    // Validar formato de password
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.valid) {
-      return NextResponse.json(
-        { error: 'Password no cumple requisitos', details: passwordValidation.errors },
-        { status: 400 }
-      );
-    }
+    // Sanitizar nombre
+    const sanitizedName = name ? sanitizeText(name) : null;
 
     // Verificar que el email no exista
     const existingUser = await prisma.user.findUnique({
@@ -36,31 +28,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Si se proporciona motelId, verificar que existe
-    if (motelId) {
-      const motel = await prisma.motel.findUnique({
-        where: { id: motelId },
-      });
-
-      if (!motel) {
-        return NextResponse.json(
-          { error: 'Motel no encontrado' },
-          { status: 404 }
-        );
-      }
-    }
-
     // Hashear password
     const passwordHash = await hashPassword(password);
 
-    // Crear usuario (por defecto USER, o MOTEL_ADMIN si tiene motelId)
+    // Crear usuario (por defecto USER)
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase().trim(),
         passwordHash,
-        name: name || null,
-        role: motelId ? 'MOTEL_ADMIN' : 'USER',
-        motelId: motelId || null,
+        name: sanitizedName,
+        phone: telefono || phone || null,
+        role: 'USER',
         isActive: true,
       },
       select: {
@@ -68,12 +46,23 @@ export async function POST(request: NextRequest) {
         email: true,
         name: true,
         role: true,
-        motelId: true,
+        phone: true,
       },
     });
 
     return NextResponse.json({ user }, { status: 201 });
   } catch (error) {
+    // Errores de validación Zod
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Datos inválidos',
+          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message }))
+        },
+        { status: 400 }
+      );
+    }
+
     console.error('Register error:', error);
     return NextResponse.json(
       { error: 'Error al crear usuario' },

@@ -3,20 +3,17 @@ import { prisma } from '@/lib/prisma';
 import { verifyPassword } from '@/lib/password';
 import { createToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { LoginSchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 export async function POST(request: NextRequest) {
   try {
     const isDev = process.env.NODE_ENV === 'development';
     const body = await request.json();
-    const { email, password } = body;
 
-    // Validación básica
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email y password son requeridos' },
-        { status: 400 }
-      );
-    }
+    // Validación con Zod
+    const validated = LoginSchema.parse(body);
+    const { email, password } = validated;
 
     // Buscar usuario activo
     const normalizedEmail = email.toLowerCase().trim();
@@ -84,6 +81,17 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    // Errores de validación Zod
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Datos inválidos',
+          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message }))
+        },
+        { status: 400 }
+      );
+    }
+
     console.error('Login error:', error);
     return NextResponse.json(
       { error: 'Error al procesar login' },

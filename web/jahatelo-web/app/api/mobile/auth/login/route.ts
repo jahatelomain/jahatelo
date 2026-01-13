@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { createToken } from '@/lib/auth';
+import { LoginSchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,26 +16,15 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, provider, providerId, name, pushToken, deviceInfo } = body;
-
-    // Validaciones básicas
-    if (!email || email.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'El email es requerido' },
-        { status: 400 }
-      );
-    }
-
-    const emailLower = email.toLowerCase().trim();
+    const { provider, providerId, name, pushToken, deviceInfo } = body;
 
     // Login con email/password
     if (!provider || provider === 'email') {
-      if (!password) {
-        return NextResponse.json(
-          { error: 'La contraseña es requerida' },
-          { status: 400 }
-        );
-      }
+      // Validar con Zod
+      const validated = LoginSchema.parse(body);
+      const { email, password } = validated;
+
+      const emailLower = email.toLowerCase().trim();
 
       // Buscar usuario
       const user = await prisma.user.findUnique({
@@ -114,6 +105,17 @@ export async function POST(request: NextRequest) {
 
     // Login con OAuth (Google, Facebook, Apple)
     if (provider && providerId) {
+      // Validación básica para OAuth
+      const email = body.email;
+      if (!email || email.trim().length === 0) {
+        return NextResponse.json(
+          { error: 'El email es requerido' },
+          { status: 400 }
+        );
+      }
+
+      const emailLower = email.toLowerCase().trim();
+
       let user = await prisma.user.findFirst({
         where: {
           provider,
@@ -204,6 +206,17 @@ export async function POST(request: NextRequest) {
     );
 
   } catch (error) {
+    // Errores de validación Zod
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Datos inválidos',
+          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message }))
+        },
+        { status: 400 }
+      );
+    }
+
     console.error('Error in POST /api/mobile/auth/login:', error);
     return NextResponse.json(
       { error: 'Error al iniciar sesión' },

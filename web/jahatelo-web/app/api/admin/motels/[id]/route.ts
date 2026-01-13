@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { canAccessMotel } from '@/lib/auth';
 import { logAuditEvent } from '@/lib/audit';
+import { UpdateMotelSchema } from '@/lib/validations/schemas';
+import { sanitizeText } from '@/lib/sanitize';
+import { z } from 'zod';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -87,11 +90,20 @@ export async function PATCH(
 
     const body = await request.json();
 
-    const data = { ...body };
-    if (!data.nextBillingAt) {
-      data.nextBillingAt = null;
-    } else {
-      data.nextBillingAt = new Date(data.nextBillingAt).toISOString();
+    // Validar con Zod
+    const validated = UpdateMotelSchema.parse(body);
+
+    // Sanitizar campos de texto
+    const data: any = { ...validated };
+    if (data.name) data.name = sanitizeText(data.name);
+    if (data.description) data.description = sanitizeText(data.description);
+    if (data.city) data.city = sanitizeText(data.city);
+    if (data.neighborhood) data.neighborhood = sanitizeText(data.neighborhood);
+    if (data.address) data.address = sanitizeText(data.address);
+
+    // Manejar nextBillingAt si existe
+    if (body.nextBillingAt !== undefined) {
+      data.nextBillingAt = body.nextBillingAt ? new Date(body.nextBillingAt).toISOString() : null;
     }
 
     const motel = await prisma.motel.update({
@@ -109,6 +121,17 @@ export async function PATCH(
 
     return NextResponse.json(motel);
   } catch (error) {
+    // Errores de validación Zod
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Datos inválidos',
+          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message }))
+        },
+        { status: 400 }
+      );
+    }
+
     console.error('Error updating motel:', error);
     return NextResponse.json(
       { error: 'Error al actualizar motel' },
