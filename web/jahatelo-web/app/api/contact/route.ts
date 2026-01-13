@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { sendNewContactMessageNotification } from '@/lib/push-notifications';
 
 /**
  * POST /api/contact
@@ -47,16 +46,6 @@ export async function POST(request: NextRequest) {
         phone: phone ? phone.trim() : null,
         message: message.trim(),
       },
-    });
-
-    // Enviar notificación push a administradores
-    // No esperamos la respuesta para no retrasar la respuesta al usuario
-    sendNewContactMessageNotification({
-      id: contactMessage.id,
-      name: contactMessage.name,
-      message: contactMessage.message,
-    }).catch((error) => {
-      console.error('Error sending push notification:', error);
     });
 
     return NextResponse.json(
