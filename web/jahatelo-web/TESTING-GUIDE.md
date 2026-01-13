@@ -18,7 +18,7 @@ Sistema de testing completo con Jest (unit tests) y Playwright (E2E tests).
    - escapeHtml (HTML entities)
 ```
 
-### **E2E Tests (Playwright)** - 7 tests
+### **E2E Tests (Playwright)** - 13 tests
 ```
 ✅ Authentication Flow (4 tests)
    - Load login page
@@ -26,10 +26,19 @@ Sistema de testing completo con Jest (unit tests) y Playwright (E2E tests).
    - Email validation
    - Successful login
 
-✅ Public Website (3 tests)
+✅ Public Website (4 tests)
    - Load homepage
    - Display motels
    - Navigate to detail
+   - Perform search
+
+✅ Admin Notifications (6 tests)
+   - Load notifications page
+   - Show notification form
+   - Validate required fields
+   - Filter by category
+   - Handle missing IDs gracefully
+   - Navigate to detail with valid ID
 ```
 
 ---
@@ -70,7 +79,10 @@ Jest Tests:
 ⏱️  0.61s execution time
 
 Playwright Tests:
-✅ 7 E2E tests configured
+✅ 13 E2E tests configured
+   - 4 tests de autenticación
+   - 4 tests de website público
+   - 6 tests de admin (notificaciones)
 ⚠️  Requieren servidor corriendo
 ```
 

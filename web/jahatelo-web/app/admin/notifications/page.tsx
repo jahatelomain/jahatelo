@@ -97,7 +97,15 @@ export default function NotificationsAdminPage() {
       const res = await fetch('/api/notifications/schedule');
       if (!res.ok) throw new Error('Error al cargar notificaciones');
       const data = await res.json();
-      setNotifications(data.notifications || []);
+      const notifications = data.notifications || [];
+
+      // Validar que todas las notificaciones tengan ID
+      const invalidNotifications = notifications.filter((n: any) => !n.id);
+      if (invalidNotifications.length > 0) {
+        console.error('Notificaciones sin ID:', invalidNotifications);
+      }
+
+      setNotifications(notifications);
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al cargar notificaciones');
@@ -669,22 +677,30 @@ export default function NotificationsAdminPage() {
                       {notif.totalSkipped > 0 && (
                         <p className="text-slate-500">○ Omitidas: {notif.totalSkipped}</p>
                       )}
-                      <Link
-                        href={`/admin/notifications/${notif.id}`}
-                        className="inline-flex text-xs text-purple-600 hover:text-purple-700 font-semibold"
-                      >
-                        Ver detalles
-                      </Link>
+                      {notif.id ? (
+                        <Link
+                          href={`/admin/notifications/${notif.id}`}
+                          className="inline-flex text-xs text-purple-600 hover:text-purple-700 font-semibold"
+                        >
+                          Ver detalles
+                        </Link>
+                      ) : (
+                        <span className="text-xs text-red-500">ID no disponible</span>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-1">
                       <span className="text-slate-400 block">Pendiente</span>
-                      <Link
-                        href={`/admin/notifications/${notif.id}`}
-                        className="inline-flex text-xs text-purple-600 hover:text-purple-700 font-semibold"
-                      >
-                        Ver detalles
-                      </Link>
+                      {notif.id ? (
+                        <Link
+                          href={`/admin/notifications/${notif.id}`}
+                          className="inline-flex text-xs text-purple-600 hover:text-purple-700 font-semibold"
+                        >
+                          Ver detalles
+                        </Link>
+                      ) : (
+                        <span className="text-xs text-red-500">ID no disponible</span>
+                      )}
                     </div>
                   )}
                 </td>
