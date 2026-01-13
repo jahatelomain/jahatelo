@@ -1,33 +1,51 @@
-import pino from 'pino';
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
-/**
- * Logger estructurado con Pino
- * Usa formato pretty en desarrollo, JSON en producción
- */
-const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  transport: process.env.NODE_ENV === 'development'
-    ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'HH:MM:ss',
-          ignore: 'pid,hostname',
-        },
-      }
-    : undefined,
-  base: {
+const LEVEL_ORDER: Record<LogLevel, number> = {
+  debug: 10,
+  info: 20,
+  warn: 30,
+  error: 40,
+};
+
+const currentLevel = (process.env.LOG_LEVEL as LogLevel) || 'info';
+
+const shouldLog = (level: LogLevel) =>
+  LEVEL_ORDER[level] >= LEVEL_ORDER[currentLevel];
+
+const log = (level: LogLevel, payload: Record<string, unknown>) => {
+  if (!shouldLog(level)) return;
+  const entry = {
+    level,
     env: process.env.NODE_ENV,
-  },
-});
+    timestamp: new Date().toISOString(),
+    ...payload,
+  };
+
+  if (level === 'error') {
+    console.error(entry);
+    return;
+  }
+
+  if (level === 'warn') {
+    console.warn(entry);
+    return;
+  }
+
+  console.log(entry);
+};
+
+const logger = {
+  debug: (payload: Record<string, unknown>) => log('debug', payload),
+  info: (payload: Record<string, unknown>) => log('info', payload),
+  warn: (payload: Record<string, unknown>) => log('warn', payload),
+  error: (payload: Record<string, unknown>) => log('error', payload),
+};
 
 export default logger;
 
-/**
- * Log de errores con contexto adicional
- */
-export const logError = (error: Error, context?: Record<string, any>) => {
+export const logError = (error: Error, context?: Record<string, unknown>) => {
   logger.error({
+    type: 'error',
     error: {
       message: error.message,
       stack: error.stack,
@@ -37,9 +55,6 @@ export const logError = (error: Error, context?: Record<string, any>) => {
   });
 };
 
-/**
- * Log de requests HTTP
- */
 export const logRequest = (
   method: string,
   url: string,
@@ -57,14 +72,11 @@ export const logRequest = (
   });
 };
 
-/**
- * Log de eventos de autenticación
- */
 export const logAuth = (
   action: 'login' | 'logout' | 'register' | 'failed_login',
   userId?: string,
   success?: boolean,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ) => {
   logger.info({
     type: 'auth',
@@ -75,9 +87,6 @@ export const logAuth = (
   });
 };
 
-/**
- * Log de operaciones de base de datos
- */
 export const logDatabase = (
   operation: 'create' | 'read' | 'update' | 'delete',
   entity: string,
@@ -93,12 +102,9 @@ export const logDatabase = (
   });
 };
 
-/**
- * Log de eventos de negocio importantes
- */
 export const logBusiness = (
   event: string,
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
 ) => {
   logger.info({
     type: 'business',
@@ -107,12 +113,9 @@ export const logBusiness = (
   });
 };
 
-/**
- * Log de advertencias de seguridad
- */
 export const logSecurity = (
   event: 'rate_limit_exceeded' | 'invalid_token' | 'unauthorized_access' | 'suspicious_activity',
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
 ) => {
   logger.warn({
     type: 'security',
