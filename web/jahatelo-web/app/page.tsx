@@ -47,7 +47,7 @@ export default async function HomePage() {
       status: 'APPROVED',
       isActive: true,
       city: {
-        not: null,
+        not: '',
       },
     },
     _count: {
