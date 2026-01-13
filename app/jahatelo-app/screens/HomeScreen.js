@@ -15,6 +15,9 @@ import { fetchMotels } from '../services/motelsApi';
 import HomeCategoriesGrid from '../components/HomeCategoriesGrid';
 import HomeHeader from '../components/HomeHeader';
 import PromoCarousel from '../components/PromoCarousel';
+import AdPopup from '../components/AdPopup';
+import AdBanner from '../components/AdBanner';
+import { useAdvertisements } from '../hooks/useAdvertisements';
 import { COLORS } from '../constants/theme';
 
 export default function HomeScreen() {
@@ -24,6 +27,11 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [showAdPopup, setShowAdPopup] = useState(false);
+
+  // Cargar anuncios
+  const { ads: popupAds, trackAdEvent: trackPopupEvent } = useAdvertisements('POPUP_HOME');
+  const { ads: bannerAds, trackAdEvent: trackBannerEvent } = useAdvertisements('SECTION_BANNER');
 
   const loadMotels = async (isRefreshing = false) => {
     try {
@@ -43,6 +51,17 @@ export default function HomeScreen() {
   useEffect(() => {
     loadMotels();
   }, []);
+
+  // Mostrar popup de anuncio si hay disponibles (después de 1 segundo)
+  useEffect(() => {
+    if (popupAds.length > 0 && !loading) {
+      const timer = setTimeout(() => {
+        setShowAdPopup(true);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [popupAds, loading]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -155,8 +174,29 @@ export default function HomeScreen() {
             badgeLabel="DESTACADO"
             badgeIconName="star"
           />
+
+          {/* Banner publicitario */}
+          {bannerAds.length > 0 && (
+            <AdBanner
+              ad={bannerAds[0]}
+              onTrackView={trackBannerEvent}
+              onTrackClick={trackBannerEvent}
+            />
+          )}
+
           <HomeCategoriesGrid categories={categories} />
         </ScrollView>
+
+        {/* Popup publicitario */}
+        {popupAds.length > 0 && (
+          <AdPopup
+            ad={popupAds[0]}
+            visible={showAdPopup}
+            onClose={() => setShowAdPopup(false)}
+            onTrackView={trackPopupEvent}
+            onTrackClick={trackPopupEvent}
+          />
+        )}
       </View>
     </>
   );
