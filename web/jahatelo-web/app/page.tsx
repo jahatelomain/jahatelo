@@ -8,7 +8,8 @@ import SearchBar from '@/components/public/SearchBar';
 import FeaturedMotels from '@/components/public/FeaturedMotels';
 import RecentMotels from '@/components/public/RecentMotels';
 import AdPopup from '@/components/public/AdPopup';
-import MotelCard from '@/components/public/MotelCard';
+import PromoListWithAds from '@/components/public/PromoListWithAds';
+import CityListWithAds from '@/components/public/CityListWithAds';
 import { prisma } from '@/lib/prisma';
 
 export default async function HomePage() {
@@ -39,6 +40,31 @@ export default async function HomePage() {
       kind: photo.kind ?? 'OTHER',
     })),
   }));
+
+  const citiesRaw = await prisma.motel.groupBy({
+    by: ['city'],
+    where: {
+      status: 'APPROVED',
+      isActive: true,
+      city: {
+        not: null,
+      },
+    },
+    _count: {
+      city: true,
+    },
+    orderBy: {
+      city: 'asc',
+    },
+    take: 12,
+  });
+
+  const cities = citiesRaw
+    .filter((item) => item.city && item.city.trim().length > 0)
+    .map((item) => ({
+      name: item.city as string,
+      total: item._count.city,
+    }));
 
   const featuredMotelsRaw = await prisma.motel.findMany({
     where: {
@@ -150,6 +176,19 @@ export default async function HomePage() {
         </section>
 
         {featuredMotels.length > 0 && <FeaturedMotels motels={featuredMotels} />}
+        {cities.length > 0 && (
+          <section className="py-12 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Moteles por ciudad</h2>
+                <Link href="/motels" className="text-sm font-semibold text-purple-600 hover:text-purple-700">
+                  Ver todos
+                </Link>
+              </div>
+              <CityListWithAds cities={cities} />
+            </div>
+          </section>
+        )}
         {promosMotels.length > 0 && (
           <section className="py-12 bg-slate-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -159,11 +198,7 @@ export default async function HomePage() {
                   Ver todas
                 </Link>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {promosMotels.map((motel) => (
-                  <MotelCard key={motel.id} motel={motel} />
-                ))}
-              </div>
+              <PromoListWithAds motels={promosMotels} />
             </div>
           </section>
         )}

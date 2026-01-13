@@ -112,18 +112,6 @@ export default function MotelsAdminPage() {
 
   const pendingCount = motelsArray.filter((m) => m.status === 'PENDING').length;
 
-  const getMissingFields = (motel: Motel) => {
-    const missing: string[] = [];
-    const hasContact = motel.contactName || motel.contactEmail || motel.contactPhone || motel.phone || motel.whatsapp;
-    if (!motel.description) missing.push('Descripción');
-    if (!motel.address) missing.push('Dirección');
-    if (!hasContact) missing.push('Contacto');
-    if ((motel._count?.photos || 0) === 0) missing.push('Fotos');
-    if ((motel._count?.rooms || 0) === 0) missing.push('Habitaciones');
-    if ((motel._count?.motelAmenities || 0) === 0) missing.push('Amenities');
-    return missing;
-  };
-
   if (loading) {
     return (
       <div className="space-y-6">
@@ -341,9 +329,6 @@ export default function MotelsAdminPage() {
                 Activo
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Alertas
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Acciones
               </th>
             </tr>
@@ -351,7 +336,7 @@ export default function MotelsAdminPage() {
           <tbody className="bg-white divide-y divide-slate-200">
             {filteredMotels.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center">
+                <td colSpan={6} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-4xl text-slate-300">🔍</span>
                     <p className="text-slate-500 font-medium">
@@ -370,10 +355,6 @@ export default function MotelsAdminPage() {
             ) : (
               filteredMotels.map((motel) => (
                 <tr key={motel.id} className="hover:bg-slate-50 transition-colors">
-                  {(() => {
-                    const missingFields = getMissingFields(motel);
-                    return (
-                      <>
                   <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-900">{motel.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                     {motel.neighborhood}, {motel.city}
@@ -395,43 +376,28 @@ export default function MotelsAdminPage() {
                       {motel.isActive ? 'Sí' : 'No'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {missingFields.length === 0 ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 px-2 py-1 rounded-full">
-                        Completo
-                      </span>
-                    ) : (
-                      <div className="flex flex-wrap gap-1">
-                        {missingFields.slice(0, 3).map((item) => (
-                          <span
-                            key={item}
-                            className="inline-flex items-center text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded-full"
-                          >
-                            {item}
-                          </span>
-                        ))}
-                        {missingFields.length > 3 && (
-                          <span className="inline-flex items-center text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded-full">
-                            +{missingFields.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <Link
-                      href={`/admin/motels/${motel.id}`}
-                      className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium"
-                    >
-                      Ver detalle
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
-                    </Link>
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={`/admin/motels/${motel.id}`}
+                        className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium"
+                      >
+                        Ver detalle
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </Link>
+                      <Link
+                        href={`/admin/motels/${motel.id}`}
+                        className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-800 font-medium"
+                      >
+                        Editar
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11 15l-4 1 1-4 8.586-8.586z" />
+                        </svg>
+                      </Link>
+                    </div>
                   </td>
-                      </>
-                    );
-                  })()}
                 </tr>
               ))
             )}
