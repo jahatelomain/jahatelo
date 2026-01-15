@@ -3,10 +3,11 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id?: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rawId = params?.id ?? '';
+    const resolvedParams = await params;
+    const rawId = resolvedParams?.id ?? '';
     const id = decodeURIComponent(rawId).trim();
 
     if (!id) {
