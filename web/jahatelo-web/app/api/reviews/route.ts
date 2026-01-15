@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
+import { ReviewSchema } from '@/lib/validations/schemas';
+import { sanitizeObject, sanitizeText } from '@/lib/sanitize';
+import { z } from 'zod';
 
 // GET /api/reviews?motelId=xxx
 export async function GET(request: NextRequest) {
@@ -52,16 +55,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { motelId, score, comment } = body;
-
-    if (!motelId || !score) {
-      return NextResponse.json({ error: 'motelId y score son requeridos' }, { status: 400 });
-    }
-
-    const numericScore = Number(score);
-    if (Number.isNaN(numericScore) || numericScore < 1 || numericScore > 5) {
-      return NextResponse.json({ error: 'score debe ser entre 1 y 5' }, { status: 400 });
-    }
+    const sanitized = sanitizeObject(body);
+    const normalizedComment =
+      typeof sanitized.comment === 'string' && sanitized.comment.trim() === ''
+        ? undefined
+        : sanitized.comment;
+    const validated = ReviewSchema.parse({
+      ...sanitized,
+      comment: normalizedComment,
+      rating: sanitized.score,
+    });
+    const { motelId, rating, comment } = validated;
+    const sanitizedComment = comment ? sanitizeText(comment) : null;
 
     const existing = await prisma.review.findFirst({
       where: { motelId, userId: user.id },
@@ -76,8 +81,8 @@ export async function POST(request: NextRequest) {
         data: {
           motelId,
           userId: user.id,
-          score: numericScore,
-          comment: comment || null,
+          score: rating,
+          comment: sanitizedComment,
         },
       });
 
@@ -98,6 +103,16 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Datos inválidos',
+          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })),
+        },
+        { status: 400 }
+      );
+    }
+
     console.error('Error creating review:', error);
     return NextResponse.json({ error: 'Error al crear reseña' }, { status: 500 });
   }

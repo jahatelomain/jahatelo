@@ -136,9 +136,9 @@ describe('Validation Schemas', () => {
       expect(() => ReviewSchema.parse(invalid)).toThrow('muy corto');
     });
 
-    it('should reject invalid motelId', () => {
+    it('should reject empty motelId', () => {
       const invalid = {
-        motelId: 'not-a-uuid',
+        motelId: '',
         rating: 5,
         comment: 'Excelente lugar para visitar',
       };

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+const IdSchema = z.string().min(1, 'ID inválido');
+
 // ============================================
 // AUTENTICACIÓN
 // ============================================
@@ -69,12 +71,22 @@ export const MotelRegisterSchema = z.object({
   message: z.string().max(1000).optional(),
 });
 
+export const PublicMotelRegisterSchema = z.object({
+  name: z.string().min(2).max(100),
+  city: z.string().min(2).max(100),
+  neighborhood: z.string().min(2).max(100),
+  address: z.string().min(10).max(200),
+  contactName: z.string().min(2).max(100).optional().nullable(),
+  contactEmail: z.string().email().max(255).optional().nullable(),
+  contactPhone: z.string().max(50).optional().nullable(),
+});
+
 // ============================================
 // HABITACIONES
 // ============================================
 
 export const RoomSchema = z.object({
-  motelId: z.string().uuid('ID de motel inválido'),
+  motelId: IdSchema,
   nombre: z.string().min(2, 'Nombre muy corto').max(100, 'Nombre muy largo'),
   descripcion: z.string().max(500, 'Descripción muy larga').optional().nullable(),
   precio30min: z.number().min(0, 'Precio debe ser positivo').optional().nullable(),
@@ -96,7 +108,7 @@ export const UpdateRoomSchema = RoomSchema.partial().omit({ motelId: true });
 export const ReviewSchema = z.object({
   rating: z.number().int().min(1, 'Rating mínimo 1').max(5, 'Rating máximo 5'),
   comment: z.string().min(10, 'Comentario muy corto').max(500, 'Comentario muy largo').optional().nullable(),
-  motelId: z.string().uuid('ID de motel inválido'),
+  motelId: IdSchema,
 });
 
 // ============================================
@@ -104,7 +116,7 @@ export const ReviewSchema = z.object({
 // ============================================
 
 export const PromoSchema = z.object({
-  motelId: z.string().uuid('ID de motel inválido'),
+  motelId: IdSchema,
   title: z.string().min(3, 'Título muy corto').max(100, 'Título muy largo'),
   description: z.string().max(500, 'Descripción muy larga').optional().nullable(),
   imageUrl: z.string().url('URL de imagen inválida').optional().nullable(),
@@ -127,6 +139,12 @@ export const ContactSchema = z.object({
   message: z.string().min(10, 'Mensaje muy corto').max(1000, 'Mensaje muy largo'),
 });
 
+export const ContactMessageSchema = z.object({
+  name: z.string().min(2, 'Nombre muy corto').max(100, 'Nombre muy largo'),
+  phone: z.string().max(50, 'Teléfono muy largo').optional().nullable(),
+  message: z.string().min(10, 'Mensaje muy corto').max(1000, 'Mensaje muy largo'),
+});
+
 // ============================================
 // NOTIFICACIONES
 // ============================================
@@ -138,7 +156,7 @@ export const NotificationSchema = z.object({
   sendNow: z.boolean(),
   scheduledFor: z.string().datetime('Fecha de envío inválida').optional().nullable(),
   targetRole: z.enum(['USER', 'MOTEL_ADMIN', 'SUPERADMIN']).optional().nullable(),
-  targetMotelId: z.string().uuid('ID de motel inválido').optional().nullable(),
+  targetMotelId: IdSchema.optional().nullable(),
 });
 
 // ============================================
@@ -164,8 +182,15 @@ export const AdvertisementSchema = z.object({
 export const UpdateAdvertisementSchema = AdvertisementSchema.partial();
 
 export const TrackAdvertisementSchema = z.object({
-  advertisementId: z.string().uuid('ID de anuncio inválido'),
+  advertisementId: IdSchema,
   eventType: z.enum(['VIEW', 'CLICK']),
+});
+
+export const AdvertisementTrackSchema = TrackAdvertisementSchema.extend({
+  deviceType: z.string().max(50).optional().nullable(),
+  userCity: z.string().max(100).optional().nullable(),
+  userCountry: z.string().max(100).optional().nullable(),
+  source: z.string().max(50).optional().nullable(),
 });
 
 // ============================================
@@ -183,7 +208,7 @@ export const CreateUserSchema = z.object({
     .regex(/[0-9]/, 'Debe contener al menos un número'),
   role: z.enum(['USER', 'MOTEL_ADMIN', 'SUPERADMIN']),
   telefono: z.string().regex(/^\+?[0-9]{9,15}$/).optional().nullable(),
-  motelId: z.string().uuid().optional().nullable(),
+  motelId: IdSchema.optional().nullable(),
 });
 
 export const UpdateUserSchema = z.object({
@@ -209,6 +234,19 @@ export const PushTokenSchema = z.object({
   token: z.string().min(1, 'Token requerido'),
   deviceId: z.string().optional().nullable(),
   platform: z.enum(['ios', 'android', 'web']).optional().nullable(),
+});
+
+export const PushTokenRegisterSchema = z.object({
+  token: z.string().min(1, 'Token requerido'),
+  userId: z.string().min(1).max(100).optional().nullable(),
+  deviceId: z.string().max(100).optional().nullable(),
+  deviceType: z.string().max(50).optional().nullable(),
+  deviceName: z.string().max(100).optional().nullable(),
+  appVersion: z.string().max(50).optional().nullable(),
+});
+
+export const PushTokenDeleteSchema = z.object({
+  token: z.string().min(1, 'Token requerido'),
 });
 
 // ============================================
@@ -251,6 +289,16 @@ export const ProspectSchema = z.object({
 
 export const UpdateProspectSchema = ProspectSchema.partial();
 
+export const PublicProspectSchema = z.object({
+  contactName: z.string().min(2).max(100),
+  phone: z.string().max(50),
+  motelName: z.string().min(2).max(100),
+  channel: z.enum(['WEB', 'APP', 'MANUAL']).optional(),
+}).refine(
+  (data) => data.phone.replace(/\D/g, '').length >= 7,
+  { message: 'Teléfono inválido', path: ['phone'] }
+);
+
 // ============================================
 // BÚSQUEDA
 // ============================================
@@ -260,7 +308,7 @@ export const SearchSchema = z.object({
   ciudad: z.string().max(100).optional(),
   precioMin: z.number().min(0).optional(),
   precioMax: z.number().min(0).optional(),
-  amenidades: z.array(z.string().uuid()).optional(),
+  amenidades: z.array(IdSchema).optional(),
   plan: z.enum(['FREE', 'BASIC', 'PREMIUM', 'PLATINUM']).optional(),
 });
 
@@ -275,11 +323,33 @@ export const CoordinatesSchema = z.object({
 });
 
 // ============================================
+// ANALYTICS
+// ============================================
+
+export const AnalyticsTrackSchema = z.object({
+  motelId: IdSchema,
+  eventType: z.enum([
+    'VIEW',
+    'CLICK_PHONE',
+    'CLICK_WHATSAPP',
+    'CLICK_MAP',
+    'CLICK_WEBSITE',
+    'FAVORITE_ADD',
+    'FAVORITE_REMOVE',
+  ]),
+  source: z.string().max(50).optional().nullable(),
+  userCity: z.string().max(100).optional().nullable(),
+  userCountry: z.string().max(100).optional().nullable(),
+  deviceType: z.string().max(50).optional().nullable(),
+  metadata: z.record(z.any()).optional().nullable(),
+});
+
+// ============================================
 // FINANCIERO/PAGOS
 // ============================================
 
 export const PaymentSchema = z.object({
-  motelId: z.string().uuid(),
+  motelId: IdSchema,
   amount: z.number().positive('Monto debe ser positivo'),
   currency: z.string().length(3).default('PYG'),
   method: z.enum(['cash', 'transfer', 'card', 'mercadopago']),

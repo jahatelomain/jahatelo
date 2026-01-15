@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { PushTokenDeleteSchema, PushTokenRegisterSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 /**
  * POST /api/push-tokens/register
@@ -8,15 +11,9 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { token, deviceId, deviceType, deviceName, appVersion, userId } = body;
-
-    // Validación básica
-    if (!token || typeof token !== 'string') {
-      return NextResponse.json(
-        { error: 'Token requerido' },
-        { status: 400 }
-      );
-    }
+    const sanitized = sanitizeObject(body);
+    const { token, deviceId, deviceType, deviceName, appVersion, userId } =
+      PushTokenRegisterSchema.parse(sanitized);
 
     // Validar que sea un token de Expo válido
     if (!token.startsWith('ExponentPushToken[') && !token.startsWith('ExpoPushToken[')) {
@@ -86,6 +83,16 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Datos inválidos',
+          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })),
+        },
+        { status: 400 }
+      );
+    }
+
     console.error('Error registering push token:', error);
     return NextResponse.json(
       { error: 'Error al registrar token de notificaciones' },
@@ -101,14 +108,8 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const body = await request.json();
-    const { token } = body;
-
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Token requerido' },
-        { status: 400 }
-      );
-    }
+    const sanitized = sanitizeObject(body);
+    const { token } = PushTokenDeleteSchema.parse(sanitized);
 
     await prisma.pushToken.updateMany({
       where: { token },
@@ -120,6 +121,16 @@ export async function DELETE(request: Request) {
       message: 'Token desactivado exitosamente',
     });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Datos inválidos',
+          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })),
+        },
+        { status: 400 }
+      );
+    }
+
     console.error('Error deleting push token:', error);
     return NextResponse.json(
       { error: 'Error al desactivar token' },

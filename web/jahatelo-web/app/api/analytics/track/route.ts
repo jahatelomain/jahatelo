@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { AnalyticsTrackSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 /**
  * POST /api/analytics/track
@@ -9,15 +12,9 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { motelId, eventType, source, userCity, userCountry, deviceType, metadata } = body;
-
-    // Validar campos requeridos
-    if (!motelId || !eventType) {
-      return NextResponse.json(
-        { error: 'motelId and eventType are required' },
-        { status: 400 }
-      );
-    }
+    const sanitized = sanitizeObject(body);
+    const { motelId, eventType, source, userCity, userCountry, deviceType, metadata } =
+      AnalyticsTrackSchema.parse(sanitized);
 
     // Validar que el motel existe
     const motel = await prisma.motel.findUnique({
@@ -29,24 +26,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Motel not found' },
         { status: 404 }
-      );
-    }
-
-    // Validar eventType
-    const validEventTypes = [
-      'VIEW',
-      'CLICK_PHONE',
-      'CLICK_WHATSAPP',
-      'CLICK_MAP',
-      'CLICK_WEBSITE',
-      'FAVORITE_ADD',
-      'FAVORITE_REMOVE',
-    ];
-
-    if (!validEventTypes.includes(eventType)) {
-      return NextResponse.json(
-        { error: 'Invalid eventType' },
-        { status: 400 }
       );
     }
 
@@ -68,6 +47,16 @@ export async function POST(request: NextRequest) {
       eventId: analyticsEvent.id,
     });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Datos inválidos',
+          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })),
+        },
+        { status: 400 }
+      );
+    }
+
     console.error('Error tracking analytics event:', error);
     return NextResponse.json(
       { error: 'Failed to track event' },

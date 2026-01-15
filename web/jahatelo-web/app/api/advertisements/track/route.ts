@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { AdvertisementTrackSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 // POST /api/advertisements/track
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { advertisementId, eventType, deviceType, userCity, userCountry, source } = body;
-
-    if (!advertisementId || !eventType) {
-      return NextResponse.json({ error: 'advertisementId y eventType son requeridos' }, { status: 400 });
-    }
+    const sanitized = sanitizeObject(body);
+    const { advertisementId, eventType, deviceType, userCity, userCountry, source } =
+      AdvertisementTrackSchema.parse(sanitized);
 
     const ad = await prisma.advertisement.findUnique({ where: { id: advertisementId } });
     if (!ad) {
@@ -54,6 +55,16 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Datos inválidos',
+          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })),
+        },
+        { status: 400 }
+      );
+    }
+
     console.error('Error tracking advertisement:', error);
     return NextResponse.json({ error: 'Error al registrar evento' }, { status: 500 });
   }

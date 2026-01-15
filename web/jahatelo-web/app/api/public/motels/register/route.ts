@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { PublicMotelRegisterSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 function generateSlug(name: string): string {
   return name
@@ -13,16 +16,9 @@ function generateSlug(name: string): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-
-    const { name, city, neighborhood, address, contactName, contactEmail, contactPhone } = body;
-
-    // Validación básica
-    if (!name || !city || !neighborhood || !address) {
-      return NextResponse.json(
-        { success: false, error: 'Faltan campos requeridos: name, city, neighborhood, address' },
-        { status: 400 }
-      );
-    }
+    const sanitized = sanitizeObject(body);
+    const { name, city, neighborhood, address, contactName, contactEmail, contactPhone } =
+      PublicMotelRegisterSchema.parse(sanitized);
 
     if (!contactEmail && !contactPhone) {
       return NextResponse.json(
@@ -64,6 +60,17 @@ export async function POST(request: NextRequest) {
       message: 'Solicitud de registro enviada. Será revisada por nuestro equipo.',
     });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Datos inválidos',
+          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })),
+        },
+        { status: 400 }
+      );
+    }
+
     console.error('Error creating motel registration:', error);
     return NextResponse.json(
       { success: false, error: 'Error al procesar la solicitud' },

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { ContactMessageSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 /**
  * POST /api/contact
@@ -8,36 +11,9 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, phone, message } = body;
-
-    // Validaciones
-    if (!name || !message) {
-      return NextResponse.json(
-        { error: 'Nombre y mensaje son requeridos' },
-        { status: 400 }
-      );
-    }
-
-    if (name.length < 2 || name.length > 100) {
-      return NextResponse.json(
-        { error: 'El nombre debe tener entre 2 y 100 caracteres' },
-        { status: 400 }
-      );
-    }
-
-    if (message.length < 10 || message.length > 1000) {
-      return NextResponse.json(
-        { error: 'El mensaje debe tener entre 10 y 1000 caracteres' },
-        { status: 400 }
-      );
-    }
-
-    if (phone && phone.length > 50) {
-      return NextResponse.json(
-        { error: 'El teléfono es demasiado largo' },
-        { status: 400 }
-      );
-    }
+    const sanitized = sanitizeObject(body);
+    const validated = ContactMessageSchema.parse(sanitized);
+    const { name, phone, message } = validated;
 
     // Crear mensaje de contacto
     const contactMessage = await prisma.contactMessage.create({
@@ -57,6 +33,16 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Datos inválidos',
+          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })),
+        },
+        { status: 400 }
+      );
+    }
+
     console.error('Error creating contact message:', error);
     return NextResponse.json(
       { error: 'Error al enviar el mensaje' },
