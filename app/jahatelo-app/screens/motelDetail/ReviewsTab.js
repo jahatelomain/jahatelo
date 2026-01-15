@@ -39,10 +39,24 @@ export default function ReviewsTab({ route, navigation }) {
     try {
       setLoading(true);
       const response = await fetch(`${API_URL}/api/mobile/reviews?motelId=${motel.id}`);
+
+      // Verificar si la respuesta es JSON antes de parsear
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Error: respuesta no es JSON', {
+          status: response.status,
+          contentType,
+          url: response.url,
+        });
+        return;
+      }
+
       const data = await response.json();
 
       if (response.ok) {
         setReviews(data.reviews || []);
+      } else {
+        console.error('Error al cargar reseñas:', data.error || 'Error desconocido');
       }
     } catch (error) {
       console.error('Error al cargar reseñas:', error);
@@ -67,17 +81,32 @@ export default function ReviewsTab({ route, navigation }) {
         }
       );
 
+      // Verificar si la respuesta es JSON antes de parsear
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Error: respuesta no es JSON en can-review', {
+          status: response.status,
+          contentType,
+        });
+        setUserCanReview(false);
+        return;
+      }
+
       const data = await response.json();
 
       if (response.status === 429) {
         setUserCanReview(false);
         setCooldownMessage(data.error || 'Debes esperar antes de dejar otra reseña');
-      } else {
+      } else if (response.ok) {
         setUserCanReview(true);
         setCooldownMessage('');
+      } else {
+        setUserCanReview(false);
+        console.error('Error al verificar si puede reseñar:', data.error);
       }
     } catch (error) {
       console.error('Error al verificar si puede reseñar:', error);
+      setUserCanReview(false);
     }
   };
 
@@ -119,6 +148,17 @@ export default function ReviewsTab({ route, navigation }) {
           isAnonymous,
         }),
       });
+
+      // Verificar si la respuesta es JSON antes de parsear
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Error: respuesta no es JSON al enviar reseña', {
+          status: response.status,
+          contentType,
+        });
+        Alert.alert('Error', 'Hubo un problema al enviar tu reseña. Por favor intenta de nuevo.');
+        return;
+      }
 
       const data = await response.json();
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import MotelCard from '../components/MotelCard';
+import AdListItem from '../components/AdListItem';
+import { useAdvertisements } from '../hooks/useAdvertisements';
+import { mixAdvertisements } from '../utils/mixAdvertisements';
 import { COLORS } from '../constants/theme';
 
 // Componente wrapper para cada card con animación de entrada escalonada
@@ -27,6 +30,15 @@ const AnimatedMotelCard = ({ item, index, onPress }) => {
   return (
     <Animated.View entering={FadeInDown.delay(index * 100).duration(500).springify()}>
       <MotelCard motel={item} onPress={() => onPress(item)} />
+    </Animated.View>
+  );
+};
+
+// Componente wrapper para anuncios con animación
+const AnimatedAdListItem = ({ item, index, onAdClick, onAdView }) => {
+  return (
+    <Animated.View entering={FadeInDown.delay(index * 100).duration(500).springify()}>
+      <AdListItem ad={item} onAdClick={onAdClick} onAdView={onAdView} />
     </Animated.View>
   );
 };
@@ -76,6 +88,14 @@ export default function MotelListScreen({ route, navigation }) {
   const { title, motels = [] } = route.params;
   const headerPaddingTop = insets.top + 12;
 
+  // Cargar anuncios de lista
+  const { ads: listAds, trackAdEvent } = useAdvertisements('LIST');
+
+  // Mezclar moteles con anuncios
+  const mixedItems = useMemo(() => {
+    return mixAdvertisements(motels, listAds);
+  }, [motels, listAds]);
+
   const handleMotelPress = (motel) => {
     navigation.navigate('MotelDetail', {
       motelSlug: motel.slug,
@@ -109,11 +129,28 @@ export default function MotelListScreen({ route, navigation }) {
         </Animated.View>
 
         <FlatList
-          data={motels}
-          keyExtractor={(item) => item.slug || item.id?.toString()}
-          renderItem={({ item, index }) => (
-            <AnimatedMotelCard item={item} index={index} onPress={handleMotelPress} />
-          )}
+          data={mixedItems}
+          keyExtractor={(item, index) => `${item.type}-${item.data.id || item.data.slug || index}`}
+          renderItem={({ item, index }) => {
+            if (item.type === 'ad') {
+              return (
+                <AnimatedAdListItem
+                  item={item.data}
+                  index={index}
+                  onAdClick={trackAdEvent}
+                  onAdView={trackAdEvent}
+                />
+              );
+            }
+
+            return (
+              <AnimatedMotelCard
+                item={item.data}
+                index={index}
+                onPress={handleMotelPress}
+              />
+            );
+          }}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={<AnimatedEmptyState />}

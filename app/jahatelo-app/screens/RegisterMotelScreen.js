@@ -61,6 +61,19 @@ export default function RegisterMotelScreen({ navigation }) {
         }),
       });
 
+      // Verificar si la respuesta es JSON antes de parsear
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Error: respuesta no es JSON', {
+          status: response.status,
+          contentType,
+          url: response.url,
+        });
+        Alert.alert('Error', 'Error al enviar los datos. Intenta nuevamente.');
+        setLoading(false);
+        return;
+      }
+
       const data = await response.json();
 
       if (response.ok) {

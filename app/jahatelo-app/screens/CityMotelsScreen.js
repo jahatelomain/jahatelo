@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,23 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import MotelCard from '../components/MotelCard';
+import AdListItem from '../components/AdListItem';
+import { useAdvertisements } from '../hooks/useAdvertisements';
+import { mixAdvertisements } from '../utils/mixAdvertisements';
 import { COLORS } from '../constants/theme';
 
 export default function CityMotelsScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const { cityName, motels = [] } = route.params;
   const headerPaddingTop = insets.top + 12;
+
+  // Cargar anuncios de lista
+  const { ads: listAds, trackAdEvent } = useAdvertisements('LIST');
+
+  // Mezclar moteles con anuncios
+  const mixedItems = useMemo(() => {
+    return mixAdvertisements(motels, listAds);
+  }, [motels, listAds]);
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
@@ -37,14 +48,26 @@ export default function CityMotelsScreen({ route, navigation }) {
         </Text>
 
         <FlatList
-          data={motels}
-          keyExtractor={(item) => item.id?.toString()}
-          renderItem={({ item }) => (
-            <MotelCard
-              motel={item}
-              onPress={() => navigation.navigate('MotelDetail', { motelId: item.id })}
-            />
-          )}
+          data={mixedItems}
+          keyExtractor={(item, index) => `${item.type}-${item.data.id || index}`}
+          renderItem={({ item }) => {
+            if (item.type === 'ad') {
+              return (
+                <AdListItem
+                  ad={item.data}
+                  onAdClick={trackAdEvent}
+                  onAdView={trackAdEvent}
+                />
+              );
+            }
+
+            return (
+              <MotelCard
+                motel={item.data}
+                onPress={() => navigation.navigate('MotelDetail', { motelId: item.data.id })}
+              />
+            );
+          }}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={

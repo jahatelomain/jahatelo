@@ -99,6 +99,13 @@ export default function NotificationsAdminPage() {
       const data = await res.json();
       const notifications = data.notifications || [];
 
+      // Log para debugging
+      console.log('📥 Notificaciones recibidas:', notifications.length);
+      if (notifications.length > 0) {
+        const sample = notifications.slice(0, 3).map((n: any) => ({ id: n.id, title: n.title }));
+        console.log('📋 Muestra de notificaciones:', sample);
+      }
+
       // Validar que todas las notificaciones tengan ID
       const invalidNotifications = notifications.filter((n: any) => !n.id);
       if (invalidNotifications.length > 0) {
@@ -680,6 +687,7 @@ export default function NotificationsAdminPage() {
                       {notif.id ? (
                         <Link
                           href={`/admin/notifications/${notif.id}`}
+                          onClick={() => console.log('🔗 Navegando a notificación con ID:', notif.id)}
                           className="inline-flex text-xs text-purple-600 hover:text-purple-700 font-semibold"
                         >
                           Ver detalles
@@ -694,6 +702,7 @@ export default function NotificationsAdminPage() {
                       {notif.id ? (
                         <Link
                           href={`/admin/notifications/${notif.id}`}
+                          onClick={() => console.log('🔗 Navegando a notificación con ID:', notif.id)}
                           className="inline-flex text-xs text-purple-600 hover:text-purple-700 font-semibold"
                         >
                           Ver detalles

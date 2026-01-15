@@ -72,7 +72,9 @@ function LoginForm() {
           {/* Error message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-sm text-red-600" data-testid="admin-login-error">
+                {error}
+              </p>
             </div>
           )}
 
@@ -87,6 +89,7 @@ function LoginForm() {
               </label>
               <input
                 id="email"
+                data-testid="admin-login-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -105,6 +108,7 @@ function LoginForm() {
               </label>
               <input
                 id="password"
+                data-testid="admin-login-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -117,6 +121,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
+              data-testid="admin-login-submit"
               className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}

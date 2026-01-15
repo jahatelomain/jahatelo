@@ -16,7 +16,7 @@ import HomeCategoriesGrid from '../components/HomeCategoriesGrid';
 import HomeHeader from '../components/HomeHeader';
 import PromoCarousel from '../components/PromoCarousel';
 import AdPopup from '../components/AdPopup';
-import AdBanner from '../components/AdBanner';
+import AdDetailModal from '../components/AdDetailModal';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { COLORS } from '../constants/theme';
 
@@ -28,6 +28,8 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [showAdPopup, setShowAdPopup] = useState(false);
+  const [selectedAd, setSelectedAd] = useState(null);
+  const [showAdDetailModal, setShowAdDetailModal] = useState(false);
 
   // Cargar anuncios
   const { ads: popupAds, trackAdEvent: trackPopupEvent } = useAdvertisements('POPUP_HOME');
@@ -89,6 +91,12 @@ export default function HomeScreen() {
 
   const handleMapPress = () => {
     navigation.navigate('Map');
+  };
+
+  const handleAdClick = (ad) => {
+    // Abrir modal con detalles del anuncio
+    setSelectedAd(ad);
+    setShowAdDetailModal(true);
   };
 
   const categories = [
@@ -169,20 +177,14 @@ export default function HomeScreen() {
         >
           <PromoCarousel
             promos={featured.length ? featured : motels.slice(0, 5)}
+            ads={bannerAds}
             onPromoPress={handleMotelPress}
+            onAdClick={handleAdClick}
+            onAdView={trackBannerEvent}
             title="Destacados"
             badgeLabel="DESTACADO"
             badgeIconName="star"
           />
-
-          {/* Banner publicitario */}
-          {bannerAds.length > 0 && (
-            <AdBanner
-              ad={bannerAds[0]}
-              onTrackView={trackBannerEvent}
-              onTrackClick={trackBannerEvent}
-            />
-          )}
 
           <HomeCategoriesGrid categories={categories} />
         </ScrollView>
@@ -197,6 +199,17 @@ export default function HomeScreen() {
             onTrackClick={trackPopupEvent}
           />
         )}
+
+        {/* Modal de detalle de anuncio del carrusel */}
+        <AdDetailModal
+          visible={showAdDetailModal}
+          ad={selectedAd}
+          onClose={() => {
+            setShowAdDetailModal(false);
+            setSelectedAd(null);
+          }}
+          onTrackClick={trackBannerEvent}
+        />
       </View>
     </>
   );

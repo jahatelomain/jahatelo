@@ -3,19 +3,24 @@ import { MotelStatus } from '@prisma/client';
 import Link from 'next/link';
 
 export default async function AdminDashboard() {
+  const e2eMode = process.env.E2E_MODE === '1';
+  let totalViews = 0;
+  let pendingMotels = 0;
+  let activeMotels = 0;
+  let activePromotions = 0;
+  let recentMotelsRaw: Array<{
+    id: string;
+    name: string;
+    city: string;
+    status: MotelStatus;
+    createdAt: Date;
+  }> = [];
+
   // Obtener métricas de la base de datos
-  const [
-    totalViews,
-    pendingMotels,
-    activeMotels,
-    activePromotions,
-    recentMotelsRaw,
-  ] = await Promise.all([
-    Promise.resolve(0), // Placeholder para vistas - implementar más adelante
-    prisma.motel.count({ where: { status: MotelStatus.PENDING } }),
-    prisma.motel.count({ where: { isActive: true } }),
-    Promise.resolve(0), // Placeholder para promociones - implementar más adelante
-    prisma.motel.findMany({
+  if (e2eMode) {
+    pendingMotels = await prisma.motel.count({ where: { status: MotelStatus.PENDING } });
+    activeMotels = await prisma.motel.count({ where: { isActive: true } });
+    recentMotelsRaw = await prisma.motel.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
       select: {
@@ -25,8 +30,32 @@ export default async function AdminDashboard() {
         status: true,
         createdAt: true,
       },
-    }),
-  ]);
+    });
+  } else {
+    [
+      totalViews,
+      pendingMotels,
+      activeMotels,
+      activePromotions,
+      recentMotelsRaw,
+    ] = await Promise.all([
+      Promise.resolve(0), // Placeholder para vistas - implementar más adelante
+      prisma.motel.count({ where: { status: MotelStatus.PENDING } }),
+      prisma.motel.count({ where: { isActive: true } }),
+      Promise.resolve(0), // Placeholder para promociones - implementar más adelante
+      prisma.motel.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          name: true,
+          city: true,
+          status: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+  }
 
   const recentMotels = recentMotelsRaw ?? [];
 

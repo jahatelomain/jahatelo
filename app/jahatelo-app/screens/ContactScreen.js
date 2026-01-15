@@ -60,6 +60,17 @@ export default function ContactScreen({ navigation }) {
         }),
       });
 
+      // Verificar si la respuesta es JSON antes de parsear
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Error: respuesta no es JSON', {
+          status: response.status,
+          contentType,
+          url: response.url,
+        });
+        throw new Error('Error al enviar el mensaje. Intenta nuevamente.');
+      }
+
       const data = await response.json();
 
       if (!response.ok) {

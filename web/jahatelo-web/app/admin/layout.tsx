@@ -39,6 +39,13 @@ export default function AdminLayout({
         const response = await fetch('/api/auth/me', { cache: 'no-store' });
         const data = await response.json();
         if (!mounted) return;
+        const module = getModuleFromPath(pathname);
+        if (module && data.user && !hasModuleAccess(data.user, module)) {
+          setUser(data.user);
+          setLoading(false);
+          router.push('/admin');
+          return;
+        }
         setUser(data.user || null);
       } catch (error) {
         console.error('Error fetching user:', error);
@@ -229,8 +236,7 @@ export default function AdminLayout({
   }
 
   const currentModule = getModuleFromPath(pathname);
-  if (currentModule && !hasModuleAccess(user, currentModule)) {
-    router.push('/admin');
+  if (!loading && !isLoginPage && currentModule && !hasModuleAccess(user, currentModule)) {
     return null;
   }
 

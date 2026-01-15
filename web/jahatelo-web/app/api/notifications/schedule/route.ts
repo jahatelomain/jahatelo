@@ -176,6 +176,19 @@ export async function GET(request: NextRequest) {
       take: limit,
     });
 
+    // Log para debugging
+    console.log('📨 Listando notificaciones. Total encontradas:', notifications.length);
+    if (notifications.length > 0) {
+      const sampleIds = notifications.slice(0, 3).map(n => ({ id: n.id, title: n.title }));
+      console.log('📋 Muestra de IDs:', sampleIds);
+    }
+
+    // Verificar si hay notificaciones sin ID (no debería pasar)
+    const withoutId = notifications.filter(n => !n.id);
+    if (withoutId.length > 0) {
+      console.error('⚠️ ALERTA: Se encontraron', withoutId.length, 'notificaciones sin ID válido');
+    }
+
     return NextResponse.json({
       success: true,
       notifications,

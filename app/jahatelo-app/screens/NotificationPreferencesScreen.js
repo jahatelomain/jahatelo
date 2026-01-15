@@ -51,6 +51,19 @@ export default function NotificationPreferencesScreen({ navigation }) {
       });
 
       if (response.ok) {
+        // Verificar si la respuesta es JSON antes de parsear
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.error('Error: respuesta no es JSON', {
+            status: response.status,
+            contentType,
+            url: response.url,
+          });
+          Alert.alert('Error', 'No se pudieron cargar las preferencias');
+          setLoading(false);
+          return;
+        }
+
         const data = await response.json();
         if (data.preferences) {
           setPreferences({

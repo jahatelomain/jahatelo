@@ -164,6 +164,20 @@ export default function MapScreen() {
 
       debugLog('📍 Cargando datos del mapa desde API...');
       const response = await fetch(`${API_URL}/api/mobile/motels/map`);
+
+      // Verificar si la respuesta es JSON antes de parsear
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        debugLog('❌ Error: respuesta no es JSON', {
+          status: response.status,
+          contentType,
+          url: response.url,
+        });
+        setError('Error al cargar datos del mapa. Intenta nuevamente.');
+        setLoading(false);
+        return;
+      }
+
       const data = await response.json();
 
       if (data.success && data.motels.length > 0) {

@@ -20,9 +20,15 @@ export type Advertisement = {
 export function useAdvertisements(placement: string) {
   const [ads, setAds] = useState<Advertisement[]>([]);
   const [loading, setLoading] = useState(true);
+  const e2eMode = process.env.NEXT_PUBLIC_E2E_MODE === '1';
 
   const fetchAds = useCallback(async () => {
     if (!placement) return;
+    if (e2eMode) {
+      setAds([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`/api/advertisements?placement=${placement}`);
@@ -53,6 +59,7 @@ export async function trackAdEvent({
   eventType: 'VIEW' | 'CLICK';
   source?: string;
 }) {
+  if (process.env.NEXT_PUBLIC_E2E_MODE === '1') return;
   try {
     await fetch('/api/advertisements/track', {
       method: 'POST',

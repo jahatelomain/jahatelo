@@ -40,8 +40,11 @@ export default function MotelsAdminPage() {
   }, []);
 
   const fetchMotels = async () => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+
     try {
-      const res = await fetch('/api/admin/motels');
+      const res = await fetch('/api/admin/motels', { signal: controller.signal });
       const data = await res.json();
 
       // Extraer array de moteles según el shape de la respuesta
@@ -53,9 +56,10 @@ export default function MotelsAdminPage() {
 
       setMotels(motelsData);
     } catch (error) {
-      // Error de red o parsing - asignar array vacío sin loguear
+      // Error de red, timeout o parsing - asignar array vacío sin loguear
       setMotels([]);
     } finally {
+      window.clearTimeout(timeoutId);
       setLoading(false);
     }
   };

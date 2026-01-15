@@ -143,7 +143,7 @@ export default async function HomePage() {
     <>
       <AdPopup />
       <Navbar />
-      <div>
+      <main data-testid="homepage-main">
         <section className="bg-white border-b-4 border-purple-600">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
             <div className="text-center max-w-3xl mx-auto mb-8">
@@ -223,7 +223,7 @@ export default async function HomePage() {
             </div>
           </section>
         )}
-      </div>
+      </main>
       <Footer />
     </>
   );
