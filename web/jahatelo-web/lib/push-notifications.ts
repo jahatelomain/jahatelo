@@ -62,16 +62,18 @@ export async function sendPushNotification(
     });
 
     const result = await response.json();
+    const data = result.data;
+    const entry = Array.isArray(data) ? data[0] : data;
 
-    if (response.ok && result.data?.[0]?.status === 'ok') {
+    if (response.ok && entry?.status === 'ok') {
       return {
         success: true,
-        details: result.data[0],
+        details: entry,
       };
     }
 
     // Si hay error, verificar si el token es inválido
-    if (result.data?.[0]?.details?.error === 'DeviceNotRegistered') {
+    if (entry?.details?.error === 'DeviceNotRegistered') {
       // Desactivar el token en la base de datos
       await prisma.pushToken.updateMany({
         where: { token },
@@ -81,8 +83,8 @@ export async function sendPushNotification(
 
     return {
       success: false,
-      error: result.data?.[0]?.message || 'Error desconocido',
-      details: result.data?.[0],
+      error: entry?.message || 'Error desconocido',
+      details: entry,
     };
   } catch (error) {
     console.error('Error sending push notification:', error);
