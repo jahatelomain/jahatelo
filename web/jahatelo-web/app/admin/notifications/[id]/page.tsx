@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 
 type ScheduledNotification = {
@@ -24,15 +25,25 @@ type ScheduledNotification = {
   errorMessage: string | null;
 };
 
-export default function NotificationDetailPage({ params }: { params: { id: string } }) {
+export default function NotificationDetailPage() {
   const [notification, setNotification] = useState<ScheduledNotification | null>(null);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
+  const params = useParams<{ id?: string }>();
+  const id = useMemo(() => {
+    const value = params?.id;
+    if (Array.isArray(value)) return value[0] ?? '';
+    return value ?? '';
+  }, [params]);
 
   useEffect(() => {
     const fetchNotification = async () => {
+      if (!id || id === 'undefined') {
+        setLoading(false);
+        return;
+      }
       try {
-        const res = await fetch(`/api/notifications/${params.id}`);
+        const res = await fetch(`/api/notifications/${id}`);
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           throw new Error(data.error || 'Error al cargar notificación');
@@ -47,7 +58,7 @@ export default function NotificationDetailPage({ params }: { params: { id: strin
     };
 
     fetchNotification();
-  }, [params.id]);
+  }, [id, toast]);
 
   const getCategoryLabel = (category: string) => {
     switch (category) {
