@@ -1,5 +1,13 @@
 # Configuración de Push Notifications en Producción
 
+## ⚠️ IMPORTANTE: Expo Go no soporta Push Notifications desde SDK 53
+
+Para probar push notifications en la app móvil, **debes usar un Development Build**, no Expo Go.
+
+Ver guía completa: `app/jahatelo-app/docs/DEVELOPMENT-BUILD.md`
+
+---
+
 ## Descripción General
 
 Jahatelo utiliza **Expo Push Notifications** para enviar notificaciones push a dispositivos móviles. El sistema soporta:
@@ -356,31 +364,103 @@ El sistema soporta 3 categorías con diferentes políticas:
 
 ## Testing
 
-### 1. Probar Registro de Token (desde app móvil)
+### 0. ⚠️ Requisito Previo: Development Build
+
+**IMPORTANTE:** Antes de probar push notifications, debes crear un **development build**:
+
+```bash
+# En el directorio de la app móvil
+cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app
+
+# Crear development build para Android
+eas build --profile development --platform android
+
+# Instalar el APK en tu dispositivo físico
+# (Recibirás un link de descarga cuando termine el build)
+```
+
+**No puedes usar Expo Go** para probar push notifications desde SDK 53.
+
+Ver guía completa: `app/jahatelo-app/docs/DEVELOPMENT-BUILD.md`
+
+---
+
+### 1. Iniciar Backend
+
+```bash
+# En el directorio web
+cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/web/jahatelo-web
+npm run dev
+```
+
+El servidor estará en: `http://0.0.0.0:3000`
+
+---
+
+### 2. Configurar API_URL en la App Móvil
+
+Edita el archivo `.env` o `app.json` con tu IP local:
+
+```bash
+# .env
+EXPO_PUBLIC_API_URL="http://192.168.10.83:3000"  # Reemplazar con tu IP
+```
+
+Para obtener tu IP:
+```bash
+# macOS/Linux
+ifconfig | grep "inet " | grep -v 127.0.0.1
+
+# Windows
+ipconfig
+```
+
+---
+
+### 3. Ejecutar la App con Development Build
+
+```bash
+# En el directorio de la app móvil
+npx expo start --dev-client
+```
+
+La app automáticamente registrará el token cuando se inicie.
+
+Verás en la consola:
+```
+📡 Registrando token en: http://192.168.10.83:3000/api/push-tokens/register
+✅ Token de push registrado exitosamente
+```
+
+---
+
+### 4. Probar Registro de Token Manualmente (Opcional)
 
 ```typescript
-// En la app móvil Expo
+// En la app móvil Expo (solo funciona en development build)
 import * as Notifications from 'expo-notifications';
 
 // Obtener token
-const token = (await Notifications.getExpoPushTokenAsync()).data;
+const token = (await Notifications.getExpoPushTokenAsync({
+  projectId: 'tu-project-id'  // Del app.json
+})).data;
 
 // Registrar en backend
-await fetch('http://localhost:3000/api/push-tokens/register', {
+await fetch('http://192.168.10.83:3000/api/push-tokens/register', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     token,
     deviceId: 'test-device-123',
-    deviceType: 'ios',
-    deviceName: 'iPhone Test',
+    deviceType: 'android',
+    deviceName: 'Samsung Test',
     appVersion: '1.0.0',
     userId: 'user-id-if-logged-in',
   }),
 });
 ```
 
-### 2. Probar Envío Inmediato
+### 5. Probar Envío Inmediato
 
 ```bash
 curl -X POST http://localhost:3000/api/notifications/schedule \
@@ -395,7 +475,7 @@ curl -X POST http://localhost:3000/api/notifications/schedule \
   }'
 ```
 
-### 3. Probar Notificación Programada
+### 6. Probar Notificación Programada
 
 ```bash
 curl -X POST http://localhost:3000/api/notifications/schedule \
@@ -411,7 +491,7 @@ curl -X POST http://localhost:3000/api/notifications/schedule \
   }'
 ```
 
-### 4. Probar Cron Job Manualmente
+### 7. Probar Cron Job Manualmente
 
 ```bash
 curl -X GET http://localhost:3000/api/cron/process-notifications \
@@ -429,7 +509,7 @@ curl -X GET http://localhost:3000/api/cron/process-notifications \
 }
 ```
 
-### 5. Verificar Notificaciones en Base de Datos
+### 8. Verificar Notificaciones en Base de Datos
 
 ```sql
 -- Ver notificaciones programadas pendientes
@@ -455,6 +535,62 @@ WHERE np."enableNotifications" = true;
 ---
 
 ## Troubleshooting
+
+### Error: "expo-notifications was removed from Expo Go with the release of SDK 53"
+
+**Causa:** Intentando usar push notifications en Expo Go (no soportado desde SDK 53).
+
+**Solución:** Usa un development build en lugar de Expo Go:
+
+```bash
+# Crear development build
+cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app
+eas build --profile development --platform android
+
+# Ejecutar con development build
+npx expo start --dev-client
+```
+
+Ver guía completa: `app/jahatelo-app/docs/DEVELOPMENT-BUILD.md`
+
+---
+
+### Error: "JSON Parse error: Unexpected end of input"
+
+**Causa:** El backend no está respondiendo o no está corriendo.
+
+**Solución:**
+
+1. **Verificar que el backend está corriendo:**
+```bash
+cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/web/jahatelo-web
+npm run dev
+```
+
+2. **Verificar conectividad desde el dispositivo:**
+```bash
+# Obtener tu IP local
+ifconfig | grep "inet " | grep -v 127.0.0.1
+
+# Resultado ejemplo: 192.168.10.83
+```
+
+3. **Configurar API_URL en la app:**
+```bash
+# Editar .env en la app móvil
+EXPO_PUBLIC_API_URL="http://192.168.10.83:3000"
+```
+
+4. **Probar desde el navegador del dispositivo móvil:**
+Abrir: `http://192.168.10.83:3000/api/health`
+Debe responder: `{"status":"ok"}`
+
+5. **Si no funciona, verificar firewall:**
+- macOS: System Preferences → Security & Privacy → Firewall → Allow Node
+- Windows: Firewall → Allow an app → Node.js
+- Router: Asegurar que dispositivo y PC están en la misma red WiFi
+
+---
 
 ### Error: "DeviceNotRegistered"
 
