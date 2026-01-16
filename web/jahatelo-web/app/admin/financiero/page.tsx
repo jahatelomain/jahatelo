@@ -97,78 +97,78 @@ export default function FinancieroPage() {
 
   if (loading || !currentUser) {
     return (
-      <div className="p-8">
-        <h1 className="text-2xl font-bold mb-6">Financiero</h1>
+      <div className="space-y-6">
+        <h1 className="text-2xl font-semibold text-slate-900">Financiero</h1>
         <TableSkeleton />
       </div>
     );
   }
 
   return (
-    <div className="p-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Financiero</h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <h1 className="text-2xl font-semibold text-slate-900">Financiero</h1>
+          <p className="text-sm text-slate-600 mt-1">
             Gestión de facturación y cobros de moteles
           </p>
         </div>
-        <div className="text-sm text-gray-600">
-          Total: <span className="font-semibold">{motels.length}</span> moteles
+        <div className="text-sm text-slate-600">
+          Total: <span className="font-semibold text-slate-900">{motels.length}</span> moteles
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Nombre
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Fecha de cobro
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Tipo de cobro
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-slate-200">
               {motels.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                     No hay moteles registrados
                   </td>
                 </tr>
               ) : (
                 motels.map((motel) => (
-                  <tr key={motel.id} className="hover:bg-gray-50">
+                  <tr key={motel.id} className="hover:bg-slate-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-semibold text-slate-900">
                         {motel.name}
                       </div>
                       {motel.adminContactName && (
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-slate-500">
                           Contacto: {motel.adminContactName}
                         </div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-slate-900">
                         {motel.billingDay ? `${motel.billingDay} de cada mes` : '-'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-slate-900">
                         {motel.paymentType ? PAYMENT_TYPE_LABELS[motel.paymentType] : '-'}
                       </div>
                     </td>
@@ -184,7 +184,7 @@ export default function FinancieroPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <Link
                         href={`/admin/financiero/${motel.id}`}
-                        className="text-purple-600 hover:text-purple-800 font-medium"
+                        className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-purple-200 hover:text-purple-700 transition-colors"
                       >
                         Editar
                       </Link>

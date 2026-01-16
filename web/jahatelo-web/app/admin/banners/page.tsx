@@ -148,31 +148,40 @@ export default function AdvertisementsAdminPage() {
                     <td className="px-4 py-3 text-sm text-slate-600">{ad.viewCount}</td>
                     <td className="px-4 py-3 text-sm text-slate-600">{ad.clickCount}</td>
                     <td className="px-4 py-3 text-right text-sm">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex flex-wrap items-center justify-end gap-2">
                         <Link
                           href={`/admin/banners/${ad.id}`}
-                          className="text-purple-600 hover:text-purple-700"
+                          className="inline-flex items-center rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
                         >
                           Editar
                         </Link>
-                        <Link
-                          href={`/admin/banners/${ad.id}/analytics`}
-                          className="text-slate-600 hover:text-slate-900"
-                        >
-                          Analytics
-                        </Link>
-                        <button
-                          onClick={() => handleToggleStatus(ad)}
-                          className="text-amber-600 hover:text-amber-700"
-                        >
-                          {ad.status === 'ACTIVE' ? 'Pausar' : 'Activar'}
-                        </button>
-                        <button
-                          onClick={() => handleDelete(ad.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          Eliminar
-                        </button>
+                        <details className="relative">
+                          <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
+                            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
+                            </svg>
+                          </summary>
+                          <div className="absolute right-0 mt-2 w-44 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
+                            <Link
+                              href={`/admin/banners/${ad.id}/analytics`}
+                              className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                            >
+                              Analytics
+                            </Link>
+                            <button
+                              onClick={() => handleToggleStatus(ad)}
+                              className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                            >
+                              {ad.status === 'ACTIVE' ? 'Pausar' : 'Activar'}
+                            </button>
+                            <button
+                              onClick={() => handleDelete(ad.id)}
+                              className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </details>
                       </div>
                     </td>
                   </tr>

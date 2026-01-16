@@ -239,14 +239,14 @@ export default function EditFinancieroPage() {
 
   if (loading) {
     return (
-      <div className="p-8">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="bg-white rounded-lg shadow p-6">
+      <div className="space-y-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-slate-200 rounded w-1/4"></div>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <div className="space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+              <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+              <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+              <div className="h-4 bg-slate-200 rounded w-5/6"></div>
             </div>
           </div>
         </div>
@@ -256,34 +256,34 @@ export default function EditFinancieroPage() {
 
   if (!motel) {
     return (
-      <div className="p-8">
-        <div className="text-center text-gray-500">Motel no encontrado</div>
+      <div className="space-y-6">
+        <div className="text-center text-slate-500">Motel no encontrado</div>
       </div>
     );
   }
 
   return (
-    <div className="p-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="mb-6">
         <Link
           href="/admin/financiero"
-          className="text-purple-600 hover:text-purple-800 text-sm mb-2 inline-block"
+          className="text-purple-600 hover:text-purple-700 text-sm mb-2 inline-block"
         >
           ← Volver a Financiero
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">{motel.name}</h1>
-        <p className="text-sm text-gray-600 mt-1">Editar datos financieros y de contacto</p>
+        <h1 className="text-2xl font-semibold text-slate-900">{motel.name}</h1>
+        <p className="text-sm text-slate-600 mt-1">Editar datos financieros y de contacto</p>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Datos de cobro */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Datos de Cobro</h2>
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Datos de Cobro</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Día de cobro (1-31)
               </label>
               <input
@@ -292,19 +292,19 @@ export default function EditFinancieroPage() {
                 max="31"
                 value={formData.billingDay}
                 onChange={(e) => setFormData({ ...formData, billingDay: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Ej: 3"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Tipo de cobro
               </label>
               <select
                 value={formData.paymentType}
                 onChange={(e) => setFormData({ ...formData, paymentType: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               >
                 <option value="">Seleccionar...</option>
                 <option value="DIRECT_DEBIT">Débito automático</option>
@@ -314,7 +314,7 @@ export default function EditFinancieroPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Status financiero
               </label>
               <select
@@ -322,7 +322,7 @@ export default function EditFinancieroPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, financialStatus: e.target.value as FinancialStatus })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               >
                 <option value="ACTIVE">Activo</option>
                 <option value="INACTIVE">Inactivo</option>
@@ -338,9 +338,9 @@ export default function EditFinancieroPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, isFinanciallyEnabled: e.target.checked })
                   }
-                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                  className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-600"
                 />
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-slate-700">
                   Habilitado financieramente
                 </span>
               </label>
@@ -349,31 +349,31 @@ export default function EditFinancieroPage() {
         </div>
 
         {/* Datos de facturación */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Datos de Facturación</h2>
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Datos de Facturación</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Razón Social
               </label>
               <input
                 type="text"
                 value={formData.billingCompanyName}
                 onChange={(e) => setFormData({ ...formData, billingCompanyName: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Ej: Empresa S.A."
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Nro. de RUC
               </label>
               <input
                 type="text"
                 value={formData.billingTaxId}
                 onChange={(e) => setFormData({ ...formData, billingTaxId: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Ej: 12345678-9"
               />
             </div>
@@ -381,40 +381,40 @@ export default function EditFinancieroPage() {
         </div>
 
         {/* Datos de contacto administrativo */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">
             Datos de Contacto Administrativo
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Nombre</label>
               <input
                 type="text"
                 value={formData.adminContactName}
                 onChange={(e) => setFormData({ ...formData, adminContactName: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Ej: Juan Pérez"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Teléfono</label>
               <input
                 type="text"
                 value={formData.adminContactPhone}
                 onChange={(e) => setFormData({ ...formData, adminContactPhone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Ej: 0981 123 456"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Correo</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Correo</label>
               <input
                 type="email"
                 value={formData.adminContactEmail}
                 onChange={(e) => setFormData({ ...formData, adminContactEmail: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Ej: admin@motel.com"
               />
             </div>
@@ -422,17 +422,17 @@ export default function EditFinancieroPage() {
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-4">
+        <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 px-4 -mx-4 sm:-mx-6 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
           <Link
             href="/admin/financiero"
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            className="px-6 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50"
           >
             Cancelar
           </Link>
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-purple-200"
           >
             {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
@@ -440,11 +440,11 @@ export default function EditFinancieroPage() {
       </form>
 
       {/* Historial de pagos */}
-      <div className="bg-white rounded-lg shadow p-6 mt-6">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Historial de Pagos</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="text-lg font-semibold text-slate-900">Historial de Pagos</h2>
+            <p className="text-sm text-slate-600">
               Registros de cobros realizados al motel
             </p>
           </div>
@@ -453,40 +453,40 @@ export default function EditFinancieroPage() {
         <form onSubmit={handleAddPayment} className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Monto</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Monto</label>
               <input
                 type="number"
                 min="1"
                 value={paymentForm.amount}
                 onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Ej: 250000"
               />
             </div>
 
             <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Moneda</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Moneda</label>
               <input
                 type="text"
                 value={paymentForm.currency}
                 onChange={(e) => setPaymentForm({ ...paymentForm, currency: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="PYG"
               />
             </div>
 
             <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Fecha</label>
               <input
                 type="date"
                 value={paymentForm.paidAt}
                 onChange={(e) => setPaymentForm({ ...paymentForm, paidAt: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               />
             </div>
 
             <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Estado</label>
               <select
                 value={paymentForm.status}
                 onChange={(e) =>
@@ -495,7 +495,7 @@ export default function EditFinancieroPage() {
                     status: e.target.value as PaymentStatus,
                   })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               >
                 <option value="PAID">Pagado</option>
                 <option value="PENDING">Pendiente</option>
@@ -505,13 +505,13 @@ export default function EditFinancieroPage() {
             </div>
 
             <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Tipo</label>
               <select
                 value={paymentForm.paymentType}
                 onChange={(e) =>
                   setPaymentForm({ ...paymentForm, paymentType: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               >
                 <option value="">Seleccionar...</option>
                 <option value="DIRECT_DEBIT">Débito automático</option>
@@ -531,25 +531,25 @@ export default function EditFinancieroPage() {
             </div>
 
             <div className="md:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Referencia</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Referencia</label>
               <input
                 type="text"
                 value={paymentForm.reference}
                 onChange={(e) =>
                   setPaymentForm({ ...paymentForm, reference: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Ej: Transferencia #123"
               />
             </div>
 
             <div className="md:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Notas</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Notas</label>
               <input
                 type="text"
                 value={paymentForm.notes}
                 onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Observaciones opcionales"
               />
             </div>
@@ -557,12 +557,12 @@ export default function EditFinancieroPage() {
         </form>
 
         {paymentHistory.length === 0 ? (
-          <div className="text-sm text-gray-500">Sin pagos registrados.</div>
+          <div className="text-sm text-slate-500">Sin pagos registrados.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="text-left text-gray-500 border-b">
+                <tr className="text-left text-slate-500 border-b border-slate-200">
                   <th className="py-2 pr-4">Fecha</th>
                   <th className="py-2 pr-4">Monto</th>
                   <th className="py-2 pr-4">Estado</th>
@@ -571,9 +571,9 @@ export default function EditFinancieroPage() {
                   <th className="py-2">Notas</th>
                 </tr>
               </thead>
-              <tbody className="text-gray-700">
+              <tbody className="text-slate-700">
                 {paymentHistory.map((payment) => (
-                  <tr key={payment.id} className="border-b last:border-0">
+                  <tr key={payment.id} className="border-b border-slate-100 last:border-0">
                     <td className="py-3 pr-4">{formatDate(payment.paidAt)}</td>
                     <td className="py-3 pr-4">
                       {formatAmount(payment.amount, payment.currency)}

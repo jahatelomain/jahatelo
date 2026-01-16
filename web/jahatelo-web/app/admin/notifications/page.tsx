@@ -569,11 +569,19 @@ export default function NotificationsAdminPage() {
             </div>
 
             {/* Botones */}
-            <div className="flex gap-3 pt-4">
+            <div className="sticky bottom-0 bg-white/95 backdrop-blur -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 pb-4 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={sending}
+                className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
               <button
                 type="submit"
                 disabled={sending}
-                className="flex-1 bg-purple-600 text-white px-4 py-2.5 rounded-lg hover:bg-purple-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm shadow-purple-200"
               >
                 {sending ? (
                   <>
@@ -585,14 +593,6 @@ export default function NotificationsAdminPage() {
                     {formData.sendNow ? 'Enviar ahora' : 'Programar'}
                   </>
                 )}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                disabled={sending}
-                className="px-6 bg-slate-100 text-slate-700 py-2.5 rounded-lg hover:bg-slate-200 font-medium transition-colors disabled:opacity-50"
-              >
-                Cancelar
               </button>
             </div>
           </form>
@@ -688,7 +688,7 @@ export default function NotificationsAdminPage() {
                         <Link
                           href={`/admin/notifications/${notif.id}`}
                           onClick={() => console.log('🔗 Navegando a notificación con ID:', notif.id)}
-                          className="inline-flex text-xs text-purple-600 hover:text-purple-700 font-semibold"
+                          className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-purple-200 hover:text-purple-700 transition-colors"
                         >
                           Ver detalles
                         </Link>
@@ -703,7 +703,7 @@ export default function NotificationsAdminPage() {
                         <Link
                           href={`/admin/notifications/${notif.id}`}
                           onClick={() => console.log('🔗 Navegando a notificación con ID:', notif.id)}
-                          className="inline-flex text-xs text-purple-600 hover:text-purple-700 font-semibold"
+                          className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-purple-200 hover:text-purple-700 transition-colors"
                         >
                           Ver detalles
                         </Link>

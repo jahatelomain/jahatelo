@@ -331,7 +331,7 @@ export default async function AdminDashboard() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <Link
                         href={`/admin/motels/${motel.id}`}
-                        className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium"
+                        className="inline-flex items-center gap-1 rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
                       >
                         Ver detalle
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

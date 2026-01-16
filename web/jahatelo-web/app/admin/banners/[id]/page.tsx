@@ -391,20 +391,20 @@ export default function EditAdvertisementPage() {
           </label>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-60"
-          >
-            {saving ? 'Guardando...' : 'Guardar cambios'}
-          </button>
+        <div className="sticky bottom-0 bg-white/95 backdrop-blur -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 pb-4 border-t border-slate-200">
           <button
             type="button"
             onClick={() => router.push('/admin/banners')}
-            className="px-5 py-2 border border-slate-300 rounded-lg text-slate-700"
+            className="px-5 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition"
           >
             Volver
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-60 shadow-sm shadow-purple-200"
+          >
+            {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
         </div>
       </form>

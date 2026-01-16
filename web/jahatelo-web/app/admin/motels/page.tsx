@@ -381,25 +381,31 @@ export default function MotelsAdminPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <Link
                         href={`/admin/motels/${motel.id}`}
-                        className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium"
+                        className="inline-flex items-center gap-1 rounded-full bg-purple-600 text-white px-3 py-1.5 text-xs font-semibold shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
                       >
                         Ver detalle
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
                       </Link>
-                      <Link
-                        href={`/admin/motels/${motel.id}`}
-                        className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-800 font-medium"
-                      >
-                        Editar
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11 15l-4 1 1-4 8.586-8.586z" />
-                        </svg>
-                      </Link>
+                      <details className="relative">
+                        <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
+                          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
+                          </svg>
+                        </summary>
+                        <div className="absolute right-0 mt-2 w-40 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
+                          <Link
+                            href={`/admin/motels/${motel.id}`}
+                            className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                          >
+                            Editar
+                          </Link>
+                        </div>
+                      </details>
                     </div>
                   </td>
                 </tr>

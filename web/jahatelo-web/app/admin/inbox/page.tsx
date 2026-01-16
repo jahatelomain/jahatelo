@@ -90,8 +90,8 @@ export default function InboxPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Inbox</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Inbox</h1>
+          <p className="text-slate-600 mt-1">
             Mensajes de contacto recibidos ({unreadCount} sin leer)
           </p>
         </div>
@@ -103,7 +103,7 @@ export default function InboxPage() {
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === 'all'
                 ? 'bg-purple-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             Todos ({messages.length})
@@ -113,7 +113,7 @@ export default function InboxPage() {
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === 'unread'
                 ? 'bg-purple-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             No leídos ({unreadCount})
@@ -123,7 +123,7 @@ export default function InboxPage() {
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === 'read'
                 ? 'bg-purple-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             Leídos ({messages.length - unreadCount})
@@ -135,15 +135,15 @@ export default function InboxPage() {
       {loading && (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-          <p className="mt-4 text-gray-600">Cargando mensajes...</p>
+          <p className="mt-4 text-slate-600">Cargando mensajes...</p>
         </div>
       )}
 
       {/* Empty State */}
       {!loading && filteredMessages.length === 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
           <svg
-            className="mx-auto h-12 w-12 text-gray-400"
+            className="mx-auto h-12 w-12 text-slate-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -155,10 +155,10 @@ export default function InboxPage() {
               d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
             />
           </svg>
-          <h3 className="mt-4 text-lg font-medium text-gray-900">
+          <h3 className="mt-4 text-lg font-semibold text-slate-900">
             No hay mensajes {filter !== 'all' && filter === 'unread' ? 'sin leer' : 'leídos'}
           </h3>
-          <p className="mt-2 text-gray-500">
+          <p className="mt-2 text-slate-500">
             {filter === 'all'
               ? 'Aún no has recibido ningún mensaje de contacto.'
               : 'Cambia el filtro para ver otros mensajes.'}
@@ -172,9 +172,9 @@ export default function InboxPage() {
           {filteredMessages.map((message) => (
             <div
               key={message.id}
-              className={`bg-white rounded-lg shadow-sm border-2 p-6 transition-all ${
+              className={`bg-white rounded-xl border-2 p-6 transition-all shadow-sm ${
                 message.isRead
-                  ? 'border-gray-200'
+                  ? 'border-slate-200'
                   : 'border-purple-300 bg-purple-50/30'
               }`}
             >
@@ -186,7 +186,7 @@ export default function InboxPage() {
                     {/* Status Indicator */}
                     <div className="mt-1">
                       {message.isRead ? (
-                        <div className="w-3 h-3 rounded-full bg-gray-300" title="Leído" />
+                        <div className="w-3 h-3 rounded-full bg-slate-300" title="Leído" />
                       ) : (
                         <div className="w-3 h-3 rounded-full bg-purple-600" title="No leído" />
                       )}
@@ -195,10 +195,10 @@ export default function InboxPage() {
                     {/* Name and Date */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 flex-wrap">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-semibold text-slate-900">
                           {message.name}
                         </h3>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-slate-500">
                           {new Date(message.createdAt).toLocaleString('es-PY', {
                             day: '2-digit',
                             month: '2-digit',
@@ -209,7 +209,7 @@ export default function InboxPage() {
                         </span>
                       </div>
                       {message.phone && (
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-slate-600 mt-1">
                           📞 {message.phone}
                         </p>
                       )}
@@ -218,7 +218,7 @@ export default function InboxPage() {
 
                   {/* Message */}
                   <div className="pl-6">
-                    <p className="text-gray-700 whitespace-pre-wrap break-words">
+                    <p className="text-slate-700 whitespace-pre-wrap break-words">
                       {message.message}
                     </p>
                   </div>
@@ -247,19 +247,21 @@ export default function InboxPage() {
                       </span>
                     )}
                   </button>
-
-                  <button
-                    onClick={() => deleteMessage(message.id)}
-                    className="flex-1 lg:flex-initial px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm"
-                    title="Eliminar mensaje"
-                  >
-                    <span className="flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <details className="relative">
+                    <summary className="list-none inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
+                      <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
                       </svg>
-                      Eliminar
-                    </span>
-                  </button>
+                    </summary>
+                    <div className="absolute right-0 mt-2 w-40 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
+                      <button
+                        onClick={() => deleteMessage(message.id)}
+                        className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </details>
                 </div>
               </div>
             </div>

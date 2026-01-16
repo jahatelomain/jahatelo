@@ -38,6 +38,8 @@ type Motel = {
   featuredPhoto: string | null;
   ratingAvg: number | null;
   ratingCount: number | null;
+  createdAt?: string;
+  updatedAt?: string;
   rooms?: RoomType[];
   menuCategories?: MenuCategory[];
 };
@@ -765,6 +767,9 @@ export default function MotelDetailPage() {
     return numPrice.toLocaleString();
   };
 
+  const whatsappLink = motel.whatsapp ? `https://wa.me/${motel.whatsapp.replace(/\D/g, '')}` : '';
+  const phoneLink = motel.phone ? `tel:${motel.phone}` : '';
+
   return (
     <div className="space-y-6">
       {saveStatus === 'success' && (
@@ -774,61 +779,146 @@ export default function MotelDetailPage() {
         </div>
       )}
       {/* Cabecera de la página */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          <div className="flex-1">
-            <h1 className="text-2xl font-semibold text-slate-900 mb-2">{motel.name}</h1>
-          <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-            {motel.country && (
-              <>
-                <span>{motel.country}</span>
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={`px-3 py-1.5 text-xs font-semibold rounded-full ${
+                  motel.status === 'PENDING'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : motel.status === 'APPROVED'
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-rose-100 text-rose-700'
+                }`}
+              >
+                {motel.status === 'PENDING' ? 'Pendiente' : motel.status === 'APPROVED' ? 'Aprobado' : 'Rechazado'}
+              </span>
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full ${
+                  motel.isActive
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                <span>{motel.isActive ? '✅' : '⏸'}</span>
+                {motel.isActive ? 'Activo' : 'Inactivo'}
+              </span>
+              {motel.plan && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-900 text-white">
+                  {motel.plan}
+                </span>
+              )}
+            </div>
+
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-900 mb-2">{motel.name}</h1>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                {motel.country && (
+                  <>
+                    <span>{motel.country}</span>
+                    <span className="text-slate-300">•</span>
+                  </>
+                )}
+                <span>{motel.city}</span>
                 <span className="text-slate-300">•</span>
-              </>
-            )}
-            <span>{motel.city}</span>
-            <span className="text-slate-300">•</span>
-            <span>{motel.neighborhood}</span>
-            {motel.address && (
-              <>
-                <span className="text-slate-300">•</span>
-                <span>{motel.address}</span>
-              </>
-            )}
-          </div>
+                <span>{motel.neighborhood}</span>
+                {motel.address && (
+                  <>
+                    <span className="text-slate-300">•</span>
+                    <span>{motel.address}</span>
+                  </>
+                )}
+              </div>
+              {motel.description && (
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed">{motel.description}</p>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {motel.mapUrl && (
+                <a
+                  href={motel.mapUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-purple-200 hover:text-purple-700 transition-colors"
+                >
+                  <LucideIcons.MapPin className="w-3.5 h-3.5" />
+                  Ver mapa
+                </a>
+              )}
+              {motel.website && (
+                <a
+                  href={motel.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-purple-200 hover:text-purple-700 transition-colors"
+                >
+                  <LucideIcons.Globe className="w-3.5 h-3.5" />
+                  Sitio web
+                </a>
+              )}
+              {whatsappLink && (
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
+                >
+                  <LucideIcons.MessageCircle className="w-3.5 h-3.5" />
+                  WhatsApp
+                </a>
+              )}
+              {phoneLink && (
+                <a
+                  href={phoneLink}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-purple-200 hover:text-purple-700 transition-colors"
+                >
+                  <LucideIcons.Phone className="w-3.5 h-3.5" />
+                  Llamar
+                </a>
+              )}
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {/* Badge de Status */}
-            <span
-              className={`px-3 py-1.5 text-xs font-semibold rounded-full ${
-                motel.status === 'PENDING'
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : motel.status === 'APPROVED'
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : 'bg-rose-100 text-rose-700'
-              }`}
-            >
-              {motel.status === 'PENDING' ? 'Pendiente' : motel.status === 'APPROVED' ? 'Aprobado' : 'Rechazado'}
-            </span>
-
-            {/* Badge de Activo */}
-            <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full ${
-                motel.isActive
-                  ? 'bg-purple-100 text-purple-700'
-                  : 'bg-slate-100 text-slate-600'
-              }`}
-            >
-              <span>{motel.isActive ? '✅' : '⏸'}</span>
-              {motel.isActive ? 'Activo' : 'Inactivo'}
-            </span>
+          <div className="relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+            {motel.featuredPhoto ? (
+              <img
+                src={motel.featuredPhoto}
+                alt={motel.name}
+                className="h-56 w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-56 items-center justify-center bg-gradient-to-br from-slate-100 via-white to-slate-200 text-slate-400">
+                <LucideIcons.Image className="h-10 w-10" />
+              </div>
+            )}
+            {motel.featuredPhoto && (
+              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-900/60 to-transparent" />
+            )}
           </div>
         </div>
 
-        {/* Mini info line */}
+        <div className="grid sm:grid-cols-3 gap-3 mt-6">
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Calificación</p>
+            <p className="mt-1 text-lg font-semibold text-slate-900">
+              {safeRatingAvg.toFixed(1)} <span className="text-sm font-medium text-slate-500">({safeRatingCount})</span>
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Habitaciones</p>
+            <p className="mt-1 text-lg font-semibold text-slate-900">{rooms.length}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Promos activas</p>
+            <p className="mt-1 text-lg font-semibold text-slate-900">{promos.length}</p>
+          </div>
+        </div>
+
         <div className="mt-4 pt-4 border-t border-slate-200">
           <p className="text-xs text-slate-500">
-            Creado el {new Date(motel.slug).toLocaleDateString('es-AR')} · Última actualización reciente
+            Creado el {motel.createdAt ? new Date(motel.createdAt).toLocaleDateString('es-AR') : '—'} · Última actualización {motel.updatedAt ? new Date(motel.updatedAt).toLocaleDateString('es-AR') : 'reciente'}
           </p>
         </div>
       </div>
@@ -1012,13 +1102,7 @@ export default function MotelDetailPage() {
                     </label>
                   </div>
                 )}
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="submit"
-                    className="bg-purple-600 text-white px-6 py-2.5 rounded-lg hover:bg-purple-700 font-medium transition-colors"
-                  >
-                    {editingPromoId ? 'Guardar Cambios' : 'Crear Promo'}
-                  </button>
+                <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -1026,9 +1110,15 @@ export default function MotelDetailPage() {
                       setEditingPromoId(null);
                       setPromoForm(createInitialPromoForm());
                     }}
-                    className="bg-slate-100 text-slate-700 px-6 py-2.5 rounded-lg hover:bg-slate-200 font-medium transition-colors"
+                    className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
                   >
                     Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors shadow-sm shadow-purple-200"
+                  >
+                    {editingPromoId ? 'Guardar Cambios' : 'Crear Promo'}
                   </button>
                 </div>
               </form>
@@ -1069,19 +1159,28 @@ export default function MotelDetailPage() {
                     {promo.description && (
                       <p className="text-sm text-slate-600 mb-3">{promo.description}</p>
                     )}
-                    <div className="flex gap-3 pt-3 border-t border-slate-200">
+                    <div className="flex items-center gap-2 pt-3 border-t border-slate-200">
                       <button
                         onClick={() => handleEditPromo(promo)}
-                        className="text-purple-600 hover:text-purple-800 text-sm font-medium transition-colors"
+                        className="inline-flex items-center rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
                       >
                         Editar
                       </button>
-                      <button
-                        onClick={() => handleDeletePromo(promo.id)}
-                        className="text-red-600 hover:text-red-700 text-sm font-medium transition-colors"
-                      >
-                        Eliminar
-                      </button>
+                      <details className="relative">
+                        <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
+                          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
+                          </svg>
+                        </summary>
+                        <div className="absolute right-0 mt-2 w-32 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
+                          <button
+                            onClick={() => handleDeletePromo(promo.id)}
+                            className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </details>
                     </div>
                   </div>
                 </div>
@@ -1096,98 +1195,102 @@ export default function MotelDetailPage() {
           {!editingMotel ? (
             <>
               {/* Card 1: Datos Generales */}
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Nombre</label>
-                    <p className="mt-1 text-slate-900">{motel.name}</p>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Datos generales</h3>
+                  <span className="text-xs text-slate-500">ID: {motel.id}</span>
+                </div>
+                <dl className="grid md:grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">Nombre</dt>
+                    <dd className="mt-1 text-sm font-semibold text-slate-900">{motel.name}</dd>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Slug</label>
-                    <p className="mt-1 font-mono text-sm text-slate-700">{motel.slug}</p>
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">Slug</dt>
+                    <dd className="mt-1 font-mono text-sm text-slate-700">{motel.slug}</dd>
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="text-xs font-medium text-slate-500 uppercase">Descripción</label>
-                    <p className="mt-1 text-slate-900">{motel.description || '-'}</p>
+                  <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">Descripción</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{motel.description || '-'}</dd>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Teléfono</label>
-                    <p className="mt-1 text-slate-900">{motel.phone || '-'}</p>
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">Teléfono</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{motel.phone || '-'}</dd>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">WhatsApp</label>
-                    <p className="mt-1 text-slate-900">{motel.whatsapp || '-'}</p>
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">WhatsApp</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{motel.whatsapp || '-'}</dd>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Sitio Web</label>
-                    <p className="mt-1 text-slate-900">{motel.website || '-'}</p>
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">Sitio web</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{motel.website || '-'}</dd>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Instagram</label>
-                    <p className="mt-1 text-slate-900">{motel.instagram || '-'}</p>
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">Instagram</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{motel.instagram || '-'}</dd>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Contacto usuarios</label>
-                    <p className="mt-1 text-slate-900">{motel.contactName || '-'}</p>
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">Contacto usuarios</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{motel.contactName || '-'}</dd>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Correo usuarios</label>
-                    <p className="mt-1 text-slate-900">{motel.contactEmail || '-'}</p>
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">Correo usuarios</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{motel.contactEmail || '-'}</dd>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Teléfono usuarios</label>
-                    <p className="mt-1 text-slate-900">{motel.contactPhone || '-'}</p>
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">Teléfono usuarios</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{motel.contactPhone || '-'}</dd>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Calificación</label>
-                    <p className="mt-1 text-slate-900">
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">Calificación</dt>
+                    <dd className="mt-1 text-sm text-slate-900">
                       {safeRatingAvg.toFixed(1)} ⭐ {safeRatingCount === 0 ? '(Sin reseñas aún)' : `(${safeRatingCount} ${safeRatingCount === 1 ? 'reseña' : 'reseñas'})`}
-                    </p>
+                    </dd>
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="text-xs font-medium text-slate-500 uppercase">Foto Principal</label>
+                  <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">Foto principal</dt>
                     {motel.featuredPhoto ? (
                       <div className="mt-2">
                         <img
                           src={motel.featuredPhoto}
                           alt={motel.name}
-                          className="w-full max-w-md h-48 object-cover rounded-lg border border-slate-200"
+                          className="w-full max-w-md h-48 object-cover rounded-xl border border-slate-200 shadow-sm"
                         />
-                        <p className="mt-1 text-xs text-slate-500 truncate">{motel.featuredPhoto}</p>
+                        <p className="mt-2 text-xs text-slate-500 truncate">{motel.featuredPhoto}</p>
                       </div>
                     ) : (
-                      <p className="mt-1 text-slate-400">Sin foto principal</p>
+                      <p className="mt-1 text-sm text-slate-400">Sin foto principal</p>
                     )}
                   </div>
-                </div>
+                </dl>
               </div>
 
               {/* Card 2: Ubicación */}
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                 <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
                   Ubicación
                 </h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">País</label>
-                    <p className="mt-1 text-slate-900">{motel.country || '-'}</p>
+                <dl className="grid md:grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">País</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{motel.country || '-'}</dd>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Ciudad</label>
-                    <p className="mt-1 text-slate-900">{motel.city}</p>
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">Ciudad</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{motel.city}</dd>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Barrio</label>
-                    <p className="mt-1 text-slate-900">{motel.neighborhood}</p>
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">Barrio</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{motel.neighborhood}</dd>
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="text-xs font-medium text-slate-500 uppercase">Dirección</label>
-                    <p className="mt-1 text-slate-900">{motel.address}</p>
+                  <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">Dirección</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{motel.address}</dd>
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="text-xs font-medium text-slate-500 uppercase">URL de Mapa</label>
+                  <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dt className="text-xs font-medium text-slate-500 uppercase">URL de Mapa</dt>
                     <div className="mt-1 flex items-center gap-3">
-                      <p className="text-slate-900 truncate flex-1">{motel.mapUrl || '-'}</p>
+                      <p className="text-sm text-slate-900 truncate flex-1">{motel.mapUrl || '-'}</p>
                       {motel.mapUrl && (
                         <a
                           href={motel.mapUrl}
@@ -1203,13 +1306,13 @@ export default function MotelDetailPage() {
                       )}
                     </div>
                   </div>
-                </div>
+                </dl>
               </div>
 
               <div className="flex justify-start">
                 <button
                   onClick={() => setEditingMotel(true)}
-                  className="inline-flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-lg hover:bg-purple-700 font-medium transition-colors"
+                  className="inline-flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-xl hover:bg-purple-700 font-medium transition-colors shadow-md shadow-purple-200"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1460,19 +1563,19 @@ export default function MotelDetailPage() {
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  className="bg-purple-600 text-white px-6 py-2.5 rounded-lg hover:bg-purple-700 font-medium transition-colors"
-                >
-                  Guardar Cambios
-                </button>
+              <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setEditingMotel(false)}
-                  className="bg-slate-100 text-slate-700 px-6 py-2.5 rounded-lg hover:bg-slate-200 font-medium transition-colors"
+                  className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
                 >
                   Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors shadow-sm shadow-purple-200"
+                >
+                  Guardar Cambios
                 </button>
               </div>
             </form>
@@ -1694,19 +1797,19 @@ export default function MotelDetailPage() {
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  className="bg-purple-600 text-white px-6 py-2.5 rounded-lg hover:bg-purple-700 font-medium transition-colors"
-                >
-                  Guardar configuración
-                </button>
+              <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setEditingCommercial(false)}
-                  className="bg-slate-100 text-slate-700 px-6 py-2.5 rounded-lg hover:bg-slate-200 font-medium transition-colors"
+                  className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
                 >
                   Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors shadow-sm shadow-purple-200"
+                >
+                  Guardar configuración
                 </button>
               </div>
             </form>
@@ -1972,13 +2075,7 @@ export default function MotelDetailPage() {
                   </div>
                 </details>
 
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="submit"
-                    className="bg-purple-600 text-white px-6 py-2.5 rounded-lg hover:bg-purple-700 font-medium transition-colors"
-                  >
-                    {editingRoomId ? 'Actualizar Habitación' : 'Crear Habitación'}
-                  </button>
+                <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -2003,9 +2100,15 @@ export default function MotelDetailPage() {
                         amenityIds: []
                       });
                     }}
-                    className="bg-slate-100 text-slate-700 px-6 py-2.5 rounded-lg hover:bg-slate-200 font-medium transition-colors"
+                    className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
                   >
                     Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors shadow-sm shadow-purple-200"
+                  >
+                    {editingRoomId ? 'Actualizar Habitación' : 'Crear Habitación'}
                   </button>
                 </div>
               </form>
@@ -2054,19 +2157,28 @@ export default function MotelDetailPage() {
                         <p className="text-sm text-slate-600 mt-3">{room.description}</p>
                       )}
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleEditRoom(room)}
-                        className="text-purple-600 hover:text-purple-800 text-sm font-medium transition-colors"
+                        className="inline-flex items-center rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
                       >
                         Editar
                       </button>
-                      <button
-                        onClick={() => handleDeleteRoom(room.id)}
-                        className="text-red-600 hover:text-red-700 text-sm font-medium transition-colors"
-                      >
-                        Eliminar
-                      </button>
+                      <details className="relative">
+                        <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
+                          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
+                          </svg>
+                        </summary>
+                        <div className="absolute right-0 mt-2 w-32 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
+                          <button
+                            onClick={() => handleDeleteRoom(room.id)}
+                            className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </details>
                     </div>
                   </div>
 
@@ -2335,22 +2447,22 @@ export default function MotelDetailPage() {
                     required
                   />
                 </div>
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="submit"
-                    className="bg-purple-600 text-white px-6 py-2.5 rounded-lg hover:bg-purple-700 font-medium transition-colors"
-                  >
-                    Crear Categoría
-                  </button>
+                <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => {
                       setShowCategoryForm(false);
                       setCategoryForm({ title: '', sortOrder: 0 });
                     }}
-                    className="bg-slate-100 text-slate-700 px-6 py-2.5 rounded-lg hover:bg-slate-200 font-medium transition-colors"
+                    className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
                   >
                     Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors shadow-sm shadow-purple-200"
+                  >
+                    Crear Categoría
                   </button>
                 </div>
               </form>
@@ -2414,13 +2526,7 @@ export default function MotelDetailPage() {
                     placeholder="Descripción del item"
                   />
                 </div>
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="submit"
-                    className="bg-purple-600 text-white px-6 py-2.5 rounded-lg hover:bg-purple-700 font-medium transition-colors"
-                  >
-                    Crear Item
-                  </button>
+                <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -2428,9 +2534,15 @@ export default function MotelDetailPage() {
                       setItemCategoryId(null);
                       setItemForm({ name: '', price: '', description: '' });
                     }}
-                    className="bg-slate-100 text-slate-700 px-6 py-2.5 rounded-lg hover:bg-slate-200 font-medium transition-colors"
+                    className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
                   >
                     Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors shadow-sm shadow-purple-200"
+                  >
+                    Crear Item
                   </button>
                 </div>
               </form>
@@ -2452,25 +2564,34 @@ export default function MotelDetailPage() {
                 <div key={category.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4 pb-4 border-b border-slate-200">
                     <h3 className="text-lg font-semibold text-slate-900">{category.title}</h3>
-                    <div className="flex gap-3">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
                           setItemCategoryId(category.id);
                           setShowItemForm(true);
                         }}
-                        className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-700 text-sm font-medium transition-colors"
+                        className="inline-flex items-center gap-1 rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                         </svg>
                         Agregar Item
                       </button>
-                      <button
-                        onClick={() => handleDeleteCategory(category.id)}
-                        className="text-red-600 hover:text-red-700 text-sm font-medium transition-colors"
-                      >
-                        Eliminar Categoría
-                      </button>
+                      <details className="relative">
+                        <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
+                          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
+                          </svg>
+                        </summary>
+                        <div className="absolute right-0 mt-2 w-40 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
+                          <button
+                            onClick={() => handleDeleteCategory(category.id)}
+                            className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                          >
+                            Eliminar Categoría
+                          </button>
+                        </div>
+                      </details>
                     </div>
                   </div>
                   {(category.items?.length ?? 0) === 0 ? (
@@ -2488,14 +2609,23 @@ export default function MotelDetailPage() {
                               <p className="text-sm text-slate-600 mt-1">{item.description}</p>
                             )}
                           </div>
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
                             <p className="font-semibold text-slate-900">Gs. {formatPrice(item.price)}</p>
-                            <button
-                              onClick={() => handleDeleteItem(item.id)}
-                              className="text-red-600 hover:text-red-700 text-sm font-medium transition-colors"
-                            >
-                              Eliminar
-                            </button>
+                            <details className="relative">
+                              <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
+                                <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                  <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
+                                </svg>
+                              </summary>
+                              <div className="absolute right-0 mt-2 w-32 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
+                                <button
+                                  onClick={() => handleDeleteItem(item.id)}
+                                  className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                                >
+                                  Eliminar
+                                </button>
+                              </div>
+                            </details>
                           </div>
                         </div>
                       ))}

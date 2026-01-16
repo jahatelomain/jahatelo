@@ -610,39 +610,41 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex flex-wrap items-center justify-end gap-2">
                         <button
                           onClick={() => openEditModal(user)}
-                          className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded transition"
+                          className="inline-flex items-center rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
                           title="Editar"
                         >
                           Editar
                         </button>
-                        <button
-                          onClick={() => handleResetPassword(user.id)}
-                          className="px-3 py-1 text-sm text-amber-600 hover:bg-amber-50 rounded transition"
-                          title="Resetear contraseña"
-                        >
-                          Reset
-                        </button>
-                        <button
-                          onClick={() => handleToggleActive(user.id, user.isActive)}
-                          className={`px-3 py-1 text-sm rounded transition ${
-                            user.isActive
-                              ? 'text-orange-600 hover:bg-orange-50'
-                              : 'text-green-600 hover:bg-green-50'
-                          }`}
-                          title={user.isActive ? 'Desactivar' : 'Activar'}
-                        >
-                          {user.isActive ? 'Desactivar' : 'Activar'}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition"
-                          title="Eliminar"
-                        >
-                          Eliminar
-                        </button>
+                        <details className="relative">
+                          <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
+                            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
+                            </svg>
+                          </summary>
+                          <div className="absolute right-0 mt-2 w-48 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
+                            <button
+                              onClick={() => handleResetPassword(user.id)}
+                              className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                            >
+                              Resetear contraseña
+                            </button>
+                            <button
+                              onClick={() => handleToggleActive(user.id, user.isActive)}
+                              className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                            >
+                              {user.isActive ? 'Desactivar' : 'Activar'}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </details>
                       </div>
                     </td>
                   </tr>
@@ -750,7 +752,7 @@ export default function UsersPage() {
                   ))}
                 </div>
               </div>
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => {
@@ -763,13 +765,13 @@ export default function UsersPage() {
                       modulePermissions: [],
                     });
                   }}
-                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition"
+                  className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition shadow-sm shadow-purple-200"
                 >
                   Crear Usuario
                 </button>
@@ -875,20 +877,20 @@ export default function UsersPage() {
                   ))}
                 </div>
               </div>
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => {
                     setShowEditModal(false);
                     setSelectedUser(null);
                   }}
-                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition"
+                  className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition shadow-sm shadow-purple-200"
                 >
                   Guardar Cambios
                 </button>

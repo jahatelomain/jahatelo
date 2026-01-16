@@ -507,19 +507,19 @@ export default function PromosAdminPage() {
             </div>
 
             {/* Botones */}
-            <div className="flex gap-3 pt-4">
-              <button
-                type="submit"
-                className="flex-1 bg-purple-600 text-white px-4 py-2.5 rounded-lg hover:bg-purple-700 font-medium transition-colors"
-              >
-                {editingId ? 'Actualizar' : 'Crear'} Promoción
-              </button>
+            <div className="sticky bottom-0 bg-white/95 backdrop-blur -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 pb-4 border-t border-slate-200">
               <button
                 type="button"
                 onClick={handleCancel}
-                className="px-6 bg-slate-100 text-slate-700 py-2.5 rounded-lg hover:bg-slate-200 font-medium transition-colors"
+                className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
               >
                 Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors shadow-sm shadow-purple-200"
+              >
+                {editingId ? 'Actualizar' : 'Crear'} Promoción
               </button>
             </div>
           </form>
@@ -626,29 +626,36 @@ export default function PromosAdminPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
-                      <button
-                        onClick={() => handleToggleActive(promo)}
-                        className={`inline-flex items-center gap-1 font-medium ${
-                          promo.isActive
-                            ? 'text-yellow-600 hover:text-yellow-700'
-                            : 'text-green-600 hover:text-green-700'
-                        }`}
-                      >
-                        {promo.isActive ? 'Desactivar' : 'Activar'}
-                      </button>
-                      <button
-                        onClick={() => handleEdit(promo)}
-                        className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(promo.id)}
-                        className="inline-flex items-center gap-1 text-red-600 hover:text-red-700 font-medium"
-                      >
-                        Eliminar
-                      </button>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEdit(promo)}
+                          className="inline-flex items-center gap-1 rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
+                        >
+                          Editar
+                        </button>
+                        <details className="relative">
+                          <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
+                            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
+                            </svg>
+                          </summary>
+                          <div className="absolute right-0 mt-2 w-44 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
+                            <button
+                              onClick={() => handleToggleActive(promo)}
+                              className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                            >
+                              {promo.isActive ? 'Desactivar' : 'Activar'}
+                            </button>
+                            <button
+                              onClick={() => handleDelete(promo.id)}
+                              className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </details>
+                      </div>
                     </td>
                   </tr>
                 ))
