@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { AnalyticsTrackSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
     const sanitized = sanitizeObject(body);
     const { motelId, eventType, source, userCity, userCountry, deviceType, metadata } =
       AnalyticsTrackSchema.parse(sanitized);
-    const metadataValue = metadata ?? undefined;
+    const metadataValue = metadata ? (metadata as Prisma.InputJsonValue) : undefined;
 
     // Validar que el motel existe
     const motel = await prisma.motel.findUnique({
