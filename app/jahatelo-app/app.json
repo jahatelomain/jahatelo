@@ -28,6 +28,10 @@
         "foregroundImage": "./assets/logo-icon.png",
         "backgroundColor": "#FFFFFF"
       },
+      "notification": {
+        "icon": "./assets/notification-icon.png",
+        "color": "#822DE2"
+      },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [

@@ -287,6 +287,22 @@ export PATH=$PATH:$ANDROID_HOME/platform-tools
 
 ---
 
+## Configuración del Ícono de Notificaciones (Opcional)
+
+Para que las notificaciones muestren el logo de Jahatelo en lugar del logo de Expo:
+
+```bash
+# Si tienes ImageMagick instalado
+./scripts/generate-notification-icon.sh
+
+# O sigue la guía manual
+# Ver: docs/NOTIFICATION-ICON.md
+```
+
+**Nota:** El ícono actual (`assets/notification-icon.png`) es temporal y tiene colores. Para un resultado óptimo, crea un ícono monocromático (blanco sobre transparente).
+
+---
+
 ## Próximos pasos
 
 1. ✅ Crear development build: `eas build --profile development --platform android`
@@ -295,3 +311,4 @@ export PATH=$PATH:$ANDROID_HOME/platform-tools
 4. ✅ Configurar `EXPO_PUBLIC_API_URL` con tu IP local
 5. ✅ Ejecutar app: `npx expo start --dev-client`
 6. ✅ Verificar que el token se registra correctamente en la base de datos
+7. 🎨 (Opcional) Generar ícono monocromático para notificaciones
