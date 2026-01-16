@@ -1,10 +1,17 @@
-import DOMPurify from 'isomorphic-dompurify';
-
 /**
  * Sanitiza HTML permitiendo solo tags seguros
  * Útil para campos que permiten formato básico (negrita, cursiva, etc.)
  */
 export function sanitizeHtml(dirty: string): string {
+  if (typeof window === 'undefined') {
+    return sanitizeText(dirty);
+  }
+
+  // Lazy-load to avoid server-side jsdom dependency.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const domPurifyModule = require('isomorphic-dompurify') as typeof import('isomorphic-dompurify');
+  const DOMPurify = (domPurifyModule as any).default ?? domPurifyModule;
+
   return DOMPurify.sanitize(dirty, {
     ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'br', 'p'],
     ALLOWED_ATTR: [],
