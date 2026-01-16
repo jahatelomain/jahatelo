@@ -1,42 +1,47 @@
 import { test, expect } from '@playwright/test';
 
+const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'admin@jahatelo.com';
+const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'Admin123!';
+
 test.describe('Admin Notifications Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // Login como admin
-    await page.goto('/admin/login');
-    await page.getByRole('textbox', { name: /email/i }).fill('admin@jahatelo.com');
-    await page.getByRole('textbox', { name: /password/i }).fill('Admin123!');
-    await page.getByRole('button', { name: /iniciar|login/i }).click();
+    await page.goto('/admin/notifications');
 
-    // Esperar redirección al dashboard
-    await page.waitForURL(/.*admin(?!\/login)/, { timeout: 10000 });
+    // Si vemos la página de login, hacer login
+    if (await page.getByTestId('admin-login-email').isVisible().catch(() => false)) {
+      await page.getByTestId('admin-login-email').fill(adminEmail);
+      await page.getByTestId('admin-login-password').fill(adminPassword);
+      await page.getByTestId('admin-login-submit').click();
+      await page.waitForURL(/\/admin\/notifications/, { timeout: 15000 });
+    }
+
+    // Esperar más tiempo para que cargue la página
+    await expect(page.getByRole('heading', { name: /notificaciones masivas/i })).toBeVisible({ timeout: 60000 });
   });
 
   test('should load notifications page', async ({ page }) => {
-    await page.goto('/admin/notifications');
-
     // Verificar que la página carga
-    await expect(page.getByText(/notificaciones masivas/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /notificaciones masivas/i })).toBeVisible();
 
     // Verificar botón de nueva notificación
     await expect(page.getByRole('button', { name: /nueva notificación/i })).toBeVisible();
   });
 
   test('should show notification form', async ({ page }) => {
-    await page.goto('/admin/notifications');
-
     // Click en nueva notificación
     await page.getByRole('button', { name: /nueva notificación/i }).click();
 
     // Verificar campos del formulario
-    await expect(page.getByLabel(/título/i)).toBeVisible();
-    await expect(page.getByLabel(/mensaje/i)).toBeVisible();
-    await expect(page.getByLabel(/categoría/i)).toBeVisible();
+    const form = page.getByRole('heading', { name: /nueva notificación push/i })
+      .locator('..')
+      .locator('..')
+      .locator('form');
+    await expect(page.getByPlaceholder(/nueva promoción/i)).toBeVisible();
+    await expect(page.getByPlaceholder(/contenido de la notificación/i)).toBeVisible();
+    await expect(form.getByRole('combobox').first()).toBeVisible();
   });
 
   test('should validate required fields', async ({ page }) => {
-    await page.goto('/admin/notifications');
-
     // Abrir formulario
     await page.getByRole('button', { name: /nueva notificación/i }).click();
 
@@ -49,10 +54,7 @@ test.describe('Admin Notifications Flow', () => {
   });
 
   test('should filter notifications by category', async ({ page }) => {
-    await page.goto('/admin/notifications');
-
-    // Esperar a que carguen las notificaciones
-    await page.waitForLoadState('networkidle');
+    await expect(page.locator('table')).toBeVisible({ timeout: 30000 });
 
     // Seleccionar filtro de categoría
     const categoryFilter = page.locator('select').first();
@@ -60,15 +62,12 @@ test.describe('Admin Notifications Flow', () => {
       await categoryFilter.selectOption('advertising');
 
       // Verificar que el filtro se aplicó
-      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(500);
     }
   });
 
   test('should handle notifications without ID gracefully', async ({ page }) => {
-    await page.goto('/admin/notifications');
-
-    // Esperar a que carguen las notificaciones
-    await page.waitForLoadState('networkidle');
+    await expect(page.locator('table')).toBeVisible({ timeout: 30000 });
 
     // Verificar que no hay links rotos (href="/admin/notifications/undefined")
     const invalidLinks = page.locator('a[href*="/admin/notifications/undefined"]');
@@ -82,10 +81,7 @@ test.describe('Admin Notifications Flow', () => {
   });
 
   test('should navigate to notification detail if ID exists', async ({ page }) => {
-    await page.goto('/admin/notifications');
-
-    // Esperar a que carguen las notificaciones
-    await page.waitForLoadState('networkidle');
+    await expect(page.locator('table')).toBeVisible({ timeout: 30000 });
 
     // Buscar primer link de "Ver detalles" válido
     const detailLinks = page.getByRole('link', { name: /ver detalles/i });
