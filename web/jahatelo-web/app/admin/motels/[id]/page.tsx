@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, ChangeEvent } from 'react';
+import { useEffect, useMemo, useState, ChangeEvent } from 'react';
 import Link from 'next/link';
-import { use } from 'react';
+import { useParams } from 'next/navigation';
 import * as LucideIcons from 'lucide-react';
 
 type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -106,12 +106,13 @@ type Promo = {
   isGlobal: boolean;
 };
 
-export default function MotelDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+export default function MotelDetailPage() {
+  const params = useParams<{ id?: string }>();
+  const id = useMemo(() => {
+    const value = params?.id;
+    if (Array.isArray(value)) return value[0] ?? '';
+    return value ?? '';
+  }, [params]);
   const [motel, setMotel] = useState<Motel | null>(null);
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -196,6 +197,11 @@ export default function MotelDetailPage({
   const [dragOverPhotoId, setDragOverPhotoId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!id || id === 'undefined') {
+      setLoading(false);
+      return;
+    }
+
     fetchMotel();
     fetchAmenities();
     fetchPromos();
@@ -214,6 +220,10 @@ export default function MotelDetailPage({
   const fetchMotel = async () => {
     try {
       const res = await fetch(`/api/admin/motels/${id}`);
+      if (!res.ok) {
+        setMotel(null);
+        return;
+      }
       const data = await res.json();
       setMotel(data);
       setMotelForm({
