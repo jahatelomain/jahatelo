@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
     const sanitized = sanitizeObject(body);
     const { motelId, eventType, source, userCity, userCountry, deviceType, metadata } =
       AnalyticsTrackSchema.parse(sanitized);
+    const metadataValue = metadata ?? undefined;
 
     // Validar que el motel existe
     const motel = await prisma.motel.findUnique({
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
         userCity: userCity || null,
         userCountry: userCountry || null,
         deviceType: deviceType || null,
-        metadata: metadata || null,
+        metadata: metadataValue,
       },
     });
 
