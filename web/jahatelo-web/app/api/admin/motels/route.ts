@@ -7,7 +7,15 @@ export async function GET(request: NextRequest) {
     const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
     if (access.error) return access.error;
 
+    const motelFilter =
+      access.user?.role === 'MOTEL_ADMIN'
+        ? access.user.motelId
+          ? { id: access.user.motelId }
+          : { id: '__invalid__' }
+        : undefined;
+
     const motels = await prisma.motel.findMany({
+      where: motelFilter,
       select: {
         id: true,
         name: true,
