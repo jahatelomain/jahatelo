@@ -341,7 +341,7 @@ export const AnalyticsTrackSchema = z.object({
   userCity: z.string().max(100).optional().nullable(),
   userCountry: z.string().max(100).optional().nullable(),
   deviceType: z.string().max(50).optional().nullable(),
-  metadata: z.record(z.any()).optional().nullable(),
+  metadata: z.record(z.string(), z.any()).optional().nullable(),
 });
 
 // ============================================
