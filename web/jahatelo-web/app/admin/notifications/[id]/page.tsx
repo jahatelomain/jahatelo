@@ -95,7 +95,7 @@ export default function NotificationDetailPage() {
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div className="space-y-6">
         <div className="text-slate-500">Cargando notificación...</div>
       </div>
     );
@@ -103,7 +103,7 @@ export default function NotificationDetailPage() {
 
   if (!notification) {
     return (
-      <div className="p-8 space-y-3">
+      <div className="space-y-3">
         <div className="text-slate-500">No se encontró la notificación</div>
         <Link href="/admin/notifications" className="text-purple-600 hover:text-purple-700">
           Volver a notificaciones
@@ -113,7 +113,7 @@ export default function NotificationDetailPage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Detalle de notificación</h1>

@@ -172,7 +172,7 @@ export default function RolesPage() {
 
   if (!currentUser || currentUser.role !== 'SUPERADMIN') {
     return (
-      <div className="bg-white rounded-lg p-8 text-center">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-center">
         <h2 className="text-xl font-bold text-slate-900 mb-2">Acceso Restringido</h2>
         <p className="text-slate-600">Solo los SUPERADMIN pueden gestionar roles y permisos.</p>
       </div>

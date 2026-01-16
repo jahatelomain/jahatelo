@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import Link from 'next/link';
+import DirtyBanner from '@/components/admin/DirtyBanner';
 
 type PaymentType = 'DIRECT_DEBIT' | 'TRANSFER' | 'EXCHANGE';
 type FinancialStatus = 'ACTIVE' | 'INACTIVE' | 'DISABLED';
@@ -66,6 +67,8 @@ export default function EditFinancieroPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [addingPayment, setAddingPayment] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
+  const formSnapshotRef = useRef('');
 
   const [formData, setFormData] = useState({
     billingDay: '',
@@ -103,7 +106,7 @@ export default function EditFinancieroPage() {
         const data = await response.json();
         setMotel(data);
         setPaymentHistory(data.paymentHistory || []);
-        setFormData({
+        const nextForm = {
           billingDay: data.billingDay?.toString() || '',
           paymentType: data.paymentType || '',
           financialStatus: data.financialStatus || 'ACTIVE',
@@ -113,7 +116,10 @@ export default function EditFinancieroPage() {
           adminContactName: data.adminContactName || '',
           adminContactEmail: data.adminContactEmail || '',
           adminContactPhone: data.adminContactPhone || '',
-        });
+        };
+        setFormData(nextForm);
+        formSnapshotRef.current = JSON.stringify(nextForm);
+        setFormDirty(false);
       } else {
         toast?.showToast('Error al cargar motel', 'error');
         router.push('/admin/financiero');
@@ -237,6 +243,12 @@ export default function EditFinancieroPage() {
     }
   };
 
+  useEffect(() => {
+    const snapshot = formSnapshotRef.current;
+    if (!snapshot) return;
+    setFormDirty(JSON.stringify(formData) !== snapshot);
+  }, [formData]);
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -278,6 +290,7 @@ export default function EditFinancieroPage() {
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
+        <DirtyBanner visible={formDirty} />
         {/* Datos de cobro */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Datos de Cobro</h2>

@@ -100,14 +100,14 @@ export default function AuditPage() {
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div className="space-y-6">
         <div className="text-slate-500">Cargando auditoría...</div>
       </div>
     );
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">Auditoría</h1>
         <p className="text-sm text-slate-600 mt-1">Últimos cambios registrados</p>

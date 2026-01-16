@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
+import ConfirmModal from '@/components/admin/ConfirmModal';
 
 type ProspectStatus = 'NEW' | 'CONTACTED' | 'IN_NEGOTIATION' | 'WON' | 'LOST';
 type ProspectChannel = 'WEB' | 'APP' | 'MANUAL';
@@ -62,6 +63,14 @@ export default function ProspectsPage() {
   const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [notes, setNotes] = useState('');
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    danger?: boolean;
+    onConfirm: () => void;
+  } | null>(null);
 
   // Estado para crear prospect manual
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -161,23 +170,32 @@ export default function ProspectsPage() {
   };
 
   const handleDelete = async (prospectId: string) => {
-    if (!confirm('¿Estás seguro de eliminar este prospect?')) return;
+    setConfirmAction({
+      title: 'Eliminar prospect',
+      message: '¿Estás seguro de eliminar este prospect? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/admin/prospects/${prospectId}`, {
+            method: 'DELETE',
+          });
 
-    try {
-      const response = await fetch(`/api/admin/prospects/${prospectId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        toast?.showToast('Prospect eliminado correctamente', 'success');
-        fetchProspects();
-      } else {
-        toast?.showToast('Error al eliminar prospect', 'error');
-      }
-    } catch (error) {
-      console.error('Error deleting prospect:', error);
-      toast?.showToast('Error al eliminar prospect', 'error');
-    }
+          if (response.ok) {
+            toast?.showToast('Prospect eliminado correctamente', 'success');
+            fetchProspects();
+          } else {
+            toast?.showToast('Error al eliminar prospect', 'error');
+          }
+        } catch (error) {
+          console.error('Error deleting prospect:', error);
+          toast?.showToast('Error al eliminar prospect', 'error');
+        } finally {
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
   const handleCreateProspect = async () => {
@@ -385,7 +403,7 @@ export default function ProspectsPage() {
       {/* Notes Modal */}
       {showNotesModal && selectedProspect && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xl max-w-lg w-full p-6">
             <h3 className="text-lg font-semibold text-slate-900 mb-4">
               Notas: {selectedProspect.motelName}
             </h3>
@@ -417,7 +435,7 @@ export default function ProspectsPage() {
       {/* Create Prospect Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xl max-w-lg w-full p-6">
             <h3 className="text-lg font-semibold text-slate-900 mb-4">
               Crear Prospect Manualmente
             </h3>
@@ -504,6 +522,16 @@ export default function ProspectsPage() {
           </div>
         </div>
       )}
+      <ConfirmModal
+        open={Boolean(confirmAction)}
+        title={confirmAction?.title || ''}
+        message={confirmAction?.message || ''}
+        confirmText={confirmAction?.confirmText}
+        cancelText={confirmAction?.cancelText}
+        danger={confirmAction?.danger}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => confirmAction?.onConfirm()}
+      />
     </div>
   );
 }

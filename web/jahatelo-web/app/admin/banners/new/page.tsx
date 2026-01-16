@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
+import DirtyBanner from '@/components/admin/DirtyBanner';
 
 const placements = [
   { value: 'POPUP_HOME', label: 'Popup Home' },
@@ -17,6 +18,8 @@ export default function NewAdvertisementPage() {
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingLargeImage, setUploadingLargeImage] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
+  const formSnapshotRef = useRef('');
   const [form, setForm] = useState({
     title: '',
     advertiser: '',
@@ -80,6 +83,17 @@ export default function NewAdvertisementPage() {
     }
   };
 
+  useEffect(() => {
+    const snapshot = formSnapshotRef.current;
+    const serialized = JSON.stringify(form);
+    if (!snapshot) {
+      formSnapshotRef.current = serialized;
+      setFormDirty(false);
+      return;
+    }
+    setFormDirty(serialized !== snapshot);
+  }, [form]);
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -121,11 +135,14 @@ export default function NewAdvertisementPage() {
   };
 
   return (
-    <div className="p-6 max-w-3xl">
-      <h2 className="text-2xl font-bold text-slate-900 mb-2">Nuevo anuncio</h2>
-      <p className="text-slate-500 mb-6">Crea un anuncio para las ubicaciones configuradas.</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900">Nuevo anuncio</h1>
+        <p className="text-sm text-slate-600 mt-1">Crea un anuncio para las ubicaciones configuradas.</p>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        <DirtyBanner visible={formDirty} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="text-sm text-slate-700">
             Título

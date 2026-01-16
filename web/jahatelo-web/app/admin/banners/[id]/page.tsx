@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
+import DirtyBanner from '@/components/admin/DirtyBanner';
 
 const placements = [
   { value: 'POPUP_HOME', label: 'Popup Home' },
@@ -22,6 +23,8 @@ export default function EditAdvertisementPage() {
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingLargeImage, setUploadingLargeImage] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
+  const formSnapshotRef = useRef('');
   const [form, setForm] = useState({
     title: '',
     advertiser: '',
@@ -45,7 +48,7 @@ export default function EditAdvertisementPage() {
         const res = await fetch(`/api/admin/banners/${id}`);
         if (!res.ok) throw new Error('Error al cargar anuncio');
         const data = await res.json();
-        setForm({
+        const nextForm = {
           title: data.title || '',
           advertiser: data.advertiser || '',
           imageUrl: data.imageUrl || '',
@@ -59,7 +62,10 @@ export default function EditAdvertisementPage() {
           endDate: data.endDate ? new Date(data.endDate).toISOString().slice(0, 10) : '',
           maxViews: data.maxViews !== null ? String(data.maxViews) : '',
           maxClicks: data.maxClicks !== null ? String(data.maxClicks) : '',
-        });
+        };
+        setForm(nextForm);
+        formSnapshotRef.current = JSON.stringify(nextForm);
+        setFormDirty(false);
       } catch (error) {
         console.error('Error:', error);
         toast.error('Error al cargar anuncio');
@@ -70,6 +76,12 @@ export default function EditAdvertisementPage() {
 
     fetchAd();
   }, [id, toast]);
+
+  useEffect(() => {
+    const snapshot = formSnapshotRef.current;
+    if (!snapshot) return;
+    setFormDirty(JSON.stringify(form) !== snapshot);
+  }, [form]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isLarge: boolean = false) => {
     const file = e.target.files?.[0];
@@ -156,11 +168,14 @@ export default function EditAdvertisementPage() {
   if (loading) return <TableSkeleton />;
 
   return (
-    <div className="p-6 max-w-3xl">
-      <h2 className="text-2xl font-bold text-slate-900 mb-2">Editar anuncio</h2>
-      <p className="text-slate-500 mb-6">Actualiza la información del anuncio.</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900">Editar anuncio</h1>
+        <p className="text-sm text-slate-600 mt-1">Actualiza la información del anuncio.</p>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        <DirtyBanner visible={formDirty} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="text-sm text-slate-700">
             Título

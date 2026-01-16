@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState, ChangeEvent } from 'react';
+import { useEffect, useMemo, useState, ChangeEvent, useRef } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import * as LucideIcons from 'lucide-react';
+import ConfirmModal from '@/components/admin/ConfirmModal';
+import DirtyBanner from '@/components/admin/DirtyBanner';
 
 type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -197,6 +199,24 @@ export default function MotelDetailPage() {
   const [uploadingPromo, setUploadingPromo] = useState(false);
   const [draggedPhotoId, setDraggedPhotoId] = useState<string | null>(null);
   const [dragOverPhotoId, setDragOverPhotoId] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    danger?: boolean;
+    onConfirm: () => void;
+  } | null>(null);
+  const [promoFormDirty, setPromoFormDirty] = useState(false);
+  const [motelFormDirty, setMotelFormDirty] = useState(false);
+  const [roomFormDirty, setRoomFormDirty] = useState(false);
+  const [categoryFormDirty, setCategoryFormDirty] = useState(false);
+  const [itemFormDirty, setItemFormDirty] = useState(false);
+  const promoFormSnapshotRef = useRef('');
+  const motelFormSnapshotRef = useRef('');
+  const roomFormSnapshotRef = useRef('');
+  const categoryFormSnapshotRef = useRef('');
+  const itemFormSnapshotRef = useRef('');
 
   useEffect(() => {
     if (!id || id === 'undefined') {
@@ -218,6 +238,76 @@ export default function MotelDetailPage() {
       setEditingCommercial(false);
     }
   }, [activeTab, editingMotel, editingCommercial]);
+
+  useEffect(() => {
+    if (showPromoForm) {
+      promoFormSnapshotRef.current = JSON.stringify(promoForm);
+      setPromoFormDirty(false);
+    }
+  }, [showPromoForm, promoForm]);
+
+  useEffect(() => {
+    if (!showPromoForm) return;
+    const snapshot = promoFormSnapshotRef.current;
+    if (!snapshot) return;
+    setPromoFormDirty(JSON.stringify(promoForm) !== snapshot);
+  }, [promoForm, showPromoForm]);
+
+  useEffect(() => {
+    if (editingMotel || editingCommercial) {
+      motelFormSnapshotRef.current = JSON.stringify(motelForm);
+      setMotelFormDirty(false);
+    }
+  }, [editingMotel, editingCommercial, motelForm]);
+
+  useEffect(() => {
+    if (!editingMotel && !editingCommercial) return;
+    const snapshot = motelFormSnapshotRef.current;
+    if (!snapshot) return;
+    setMotelFormDirty(JSON.stringify(motelForm) !== snapshot);
+  }, [motelForm, editingMotel, editingCommercial]);
+
+  useEffect(() => {
+    if (showRoomForm) {
+      roomFormSnapshotRef.current = JSON.stringify(roomForm);
+      setRoomFormDirty(false);
+    }
+  }, [showRoomForm, roomForm]);
+
+  useEffect(() => {
+    if (!showRoomForm) return;
+    const snapshot = roomFormSnapshotRef.current;
+    if (!snapshot) return;
+    setRoomFormDirty(JSON.stringify(roomForm) !== snapshot);
+  }, [roomForm, showRoomForm]);
+
+  useEffect(() => {
+    if (showCategoryForm) {
+      categoryFormSnapshotRef.current = JSON.stringify(categoryForm);
+      setCategoryFormDirty(false);
+    }
+  }, [showCategoryForm, categoryForm]);
+
+  useEffect(() => {
+    if (!showCategoryForm) return;
+    const snapshot = categoryFormSnapshotRef.current;
+    if (!snapshot) return;
+    setCategoryFormDirty(JSON.stringify(categoryForm) !== snapshot);
+  }, [categoryForm, showCategoryForm]);
+
+  useEffect(() => {
+    if (showItemForm) {
+      itemFormSnapshotRef.current = JSON.stringify(itemForm);
+      setItemFormDirty(false);
+    }
+  }, [showItemForm, itemForm]);
+
+  useEffect(() => {
+    if (!showItemForm) return;
+    const snapshot = itemFormSnapshotRef.current;
+    if (!snapshot) return;
+    setItemFormDirty(JSON.stringify(itemForm) !== snapshot);
+  }, [itemForm, showItemForm]);
 
   const fetchMotel = async () => {
     try {
@@ -329,15 +419,25 @@ export default function MotelDetailPage() {
   };
 
   const handleDeletePromo = async (promoId: string) => {
-    if (!confirm('¿Estás seguro de eliminar esta promo?')) return;
-    try {
-      const res = await fetch(`/api/admin/promos/${promoId}`, { method: 'DELETE' });
-      if (res.ok) {
-        fetchPromos();
-      }
-    } catch (error) {
-      console.error('Error deleting promo:', error);
-    }
+    setConfirmAction({
+      title: 'Eliminar promo',
+      message: '¿Estás seguro de eliminar esta promo? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/promos/${promoId}`, { method: 'DELETE' });
+          if (res.ok) {
+            fetchPromos();
+          }
+        } catch (error) {
+          console.error('Error deleting promo:', error);
+        } finally {
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
   const handleEditPromo = (promo: Promo) => {
@@ -492,24 +592,33 @@ export default function MotelDetailPage() {
   };
 
   const handleDeleteRoom = async (roomId: string) => {
-    if (!confirm('¿Eliminar esta habitación?')) return;
+    setConfirmAction({
+      title: 'Eliminar habitación',
+      message: '¿Eliminar esta habitación? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/rooms/${roomId}`, {
+            method: 'DELETE',
+          });
 
-    try {
-      const res = await fetch(`/api/admin/rooms/${roomId}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        fetchMotel();
-        setSaveStatus('success');
-        setTimeout(() => setSaveStatus('idle'), 2500);
-      } else {
-        alert('Error al eliminar habitación');
-      }
-    } catch (error) {
-      console.error('Error deleting room:', error);
-      alert('Error al eliminar habitación');
-    }
+          if (res.ok) {
+            fetchMotel();
+            setSaveStatus('success');
+            setTimeout(() => setSaveStatus('idle'), 2500);
+          } else {
+            alert('Error al eliminar habitación');
+          }
+        } catch (error) {
+          console.error('Error deleting room:', error);
+          alert('Error al eliminar habitación');
+        } finally {
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
   const handleSaveCategory = async (e: React.FormEvent) => {
@@ -540,24 +649,33 @@ export default function MotelDetailPage() {
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
-    if (!confirm('¿Eliminar esta categoría y todos sus items?')) return;
+    setConfirmAction({
+      title: 'Eliminar categoría',
+      message: '¿Eliminar esta categoría y todos sus items? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/menu-categories/${categoryId}`, {
+            method: 'DELETE',
+          });
 
-    try {
-      const res = await fetch(`/api/admin/menu-categories/${categoryId}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        fetchMotel();
-        setSaveStatus('success');
-        setTimeout(() => setSaveStatus('idle'), 2500);
-      } else {
-        alert('Error al eliminar categoría');
-      }
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      alert('Error al eliminar categoría');
-    }
+          if (res.ok) {
+            fetchMotel();
+            setSaveStatus('success');
+            setTimeout(() => setSaveStatus('idle'), 2500);
+          } else {
+            alert('Error al eliminar categoría');
+          }
+        } catch (error) {
+          console.error('Error deleting category:', error);
+          alert('Error al eliminar categoría');
+        } finally {
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
   const handleSaveItem = async (e: React.FormEvent) => {
@@ -591,24 +709,33 @@ export default function MotelDetailPage() {
   };
 
   const handleDeleteItem = async (itemId: string) => {
-    if (!confirm('¿Eliminar este item?')) return;
+    setConfirmAction({
+      title: 'Eliminar item',
+      message: '¿Eliminar este item? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/menu-items/${itemId}`, {
+            method: 'DELETE',
+          });
 
-    try {
-      const res = await fetch(`/api/admin/menu-items/${itemId}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        fetchMotel();
-        setSaveStatus('success');
-        setTimeout(() => setSaveStatus('idle'), 2500);
-      } else {
-        alert('Error al eliminar item');
-      }
-    } catch (error) {
-      console.error('Error deleting item:', error);
-      alert('Error al eliminar item');
-    }
+          if (res.ok) {
+            fetchMotel();
+            setSaveStatus('success');
+            setTimeout(() => setSaveStatus('idle'), 2500);
+          } else {
+            alert('Error al eliminar item');
+          }
+        } catch (error) {
+          console.error('Error deleting item:', error);
+          alert('Error al eliminar item');
+        } finally {
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
   const toggleAmenity = (amenityId: string) => {
@@ -648,24 +775,33 @@ export default function MotelDetailPage() {
   };
 
   const handleDeleteRoomPhoto = async (photoId: string) => {
-    if (!confirm('¿Eliminar esta foto?')) return;
+    setConfirmAction({
+      title: 'Eliminar foto',
+      message: '¿Eliminar esta foto? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/room-photos/${photoId}`, {
+            method: 'DELETE',
+          });
 
-    try {
-      const res = await fetch(`/api/admin/room-photos/${photoId}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        fetchMotel();
-        setSaveStatus('success');
-        setTimeout(() => setSaveStatus('idle'), 2500);
-      } else {
-        alert('Error al eliminar foto');
-      }
-    } catch (error) {
-      console.error('Error deleting room photo:', error);
-      alert('Error al eliminar foto');
-    }
+          if (res.ok) {
+            fetchMotel();
+            setSaveStatus('success');
+            setTimeout(() => setSaveStatus('idle'), 2500);
+          } else {
+            alert('Error al eliminar foto');
+          }
+        } catch (error) {
+          console.error('Error deleting room photo:', error);
+          alert('Error al eliminar foto');
+        } finally {
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
   const handleReorderRoomPhotos = async (roomId: string, photos: any[]) => {
@@ -1011,6 +1147,7 @@ export default function MotelDetailPage() {
                   </svg>
                 </button>
               </div>
+              <DirtyBanner visible={promoFormDirty} />
               <form onSubmit={handleSavePromo} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Título *</label>
@@ -1323,6 +1460,7 @@ export default function MotelDetailPage() {
             </>
           ) : (
             <form onSubmit={handleUpdateMotel} className="space-y-6">
+              <DirtyBanner visible={motelFormDirty} />
               {/* Formulario en 3 cards igual */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                 <div className="space-y-4">
@@ -1673,6 +1811,7 @@ export default function MotelDetailPage() {
             </>
           ) : (
             <form onSubmit={handleUpdateMotel} className="space-y-6">
+              <DirtyBanner visible={motelFormDirty} />
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                 <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
                   Contactos
@@ -1872,6 +2011,7 @@ export default function MotelDetailPage() {
                   </svg>
                 </button>
               </div>
+              <DirtyBanner visible={roomFormDirty} />
               <form onSubmit={handleSaveRoom} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Nombre *</label>
@@ -2433,6 +2573,7 @@ export default function MotelDetailPage() {
                   </svg>
                 </button>
               </div>
+              <DirtyBanner visible={categoryFormDirty} />
               <form onSubmit={handleSaveCategory} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -2487,6 +2628,7 @@ export default function MotelDetailPage() {
                   </svg>
                 </button>
               </div>
+              <DirtyBanner visible={itemFormDirty} />
               <form onSubmit={handleSaveItem} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -2637,6 +2779,16 @@ export default function MotelDetailPage() {
           </div>
         </div>
       )}
+      <ConfirmModal
+        open={Boolean(confirmAction)}
+        title={confirmAction?.title || ''}
+        message={confirmAction?.message || ''}
+        confirmText={confirmAction?.confirmText}
+        cancelText={confirmAction?.cancelText}
+        danger={confirmAction?.danger}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => confirmAction?.onConfirm()}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
+import ConfirmModal from '@/components/admin/ConfirmModal';
 
 const placementLabels: Record<string, string> = {
   POPUP_HOME: 'Popup Home',
@@ -34,6 +35,14 @@ export default function AdvertisementsAdminPage() {
   const toast = useToast();
   const [ads, setAds] = useState<Advertisement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    danger?: boolean;
+    onConfirm: () => void;
+  } | null>(null);
 
   const fetchAds = async () => {
     try {
@@ -54,16 +63,26 @@ export default function AdvertisementsAdminPage() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Eliminar este anuncio?')) return;
-    try {
-      const res = await fetch(`/api/admin/banners/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Error al eliminar anuncio');
-      toast.success('Anuncio eliminado');
-      fetchAds();
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error al eliminar anuncio');
-    }
+    setConfirmAction({
+      title: 'Eliminar anuncio',
+      message: '¿Eliminar este anuncio? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/banners/${id}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error('Error al eliminar anuncio');
+          toast.success('Anuncio eliminado');
+          fetchAds();
+        } catch (error) {
+          console.error('Error:', error);
+          toast.error('Error al eliminar anuncio');
+        } finally {
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
   const handleToggleStatus = async (ad: Advertisement) => {
@@ -191,6 +210,16 @@ export default function AdvertisementsAdminPage() {
           </table>
         </div>
       )}
+      <ConfirmModal
+        open={Boolean(confirmAction)}
+        title={confirmAction?.title || ''}
+        message={confirmAction?.message || ''}
+        confirmText={confirmAction?.confirmText}
+        cancelText={confirmAction?.cancelText}
+        danger={confirmAction?.danger}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => confirmAction?.onConfirm()}
+      />
     </div>
   );
 }

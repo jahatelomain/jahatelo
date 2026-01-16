@@ -5,6 +5,7 @@
 - Se corregio el error de React hooks en `web/jahatelo-web/app/admin/layout.tsx` moviendo la redireccion fuera del render.
 - Se agrego timeout con AbortController en `web/jahatelo-web/app/admin/motels/page.tsx` para no quedar en loading infinito.
 - Se ajustaron selectores y flujos E2E (Playwright) para estabilidad local.
+- Se mejoro el UI/UX del detalle de moteles en `web/jahatelo-web/app/admin/motels/[id]/page.tsx` con cabecera nueva, tarjetas de datos, badges y accesos rapidos (mapa, web, WhatsApp, llamada).
 
 ## Fix en progreso (notificaciones)
 - Problema reportado: al abrir cualquier detalle de notificacion en `/admin/notifications/:id`, aparece "Notificacion no encontrada".
@@ -22,3 +23,4 @@
 ## Siguiente paso sugerido
 - Deploy a Vercel y validar `/admin/notifications/:id`.
 - Si falla, revisar datos en DB o ajustar la API de detalle.
+- Unificar el nuevo estilo visual del detalle de moteles en todo el Admin (amenities, formularios y listados).

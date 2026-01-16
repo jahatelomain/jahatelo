@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/contexts/ToastContext';
+import ConfirmModal from '@/components/admin/ConfirmModal';
 
 interface ContactMessage {
   id: string;
@@ -17,6 +18,14 @@ export default function InboxPage() {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    danger?: boolean;
+    onConfirm: () => void;
+  } | null>(null);
   const { showToast } = useToast();
 
   const fetchMessages = async () => {
@@ -60,21 +69,30 @@ export default function InboxPage() {
   };
 
   const deleteMessage = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este mensaje?')) return;
+    setConfirmAction({
+      title: 'Eliminar mensaje',
+      message: '¿Estás seguro de eliminar este mensaje? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/admin/inbox/${id}`, {
+            method: 'DELETE',
+          });
 
-    try {
-      const response = await fetch(`/api/admin/inbox/${id}`, {
-        method: 'DELETE',
-      });
+          if (!response.ok) throw new Error('Error al eliminar mensaje');
 
-      if (!response.ok) throw new Error('Error al eliminar mensaje');
-
-      await fetchMessages();
-      showToast('Mensaje eliminado exitosamente', 'success');
-    } catch (error) {
-      showToast('Error al eliminar mensaje', 'error');
-      console.error('Error deleting message:', error);
-    }
+          await fetchMessages();
+          showToast('Mensaje eliminado exitosamente', 'success');
+        } catch (error) {
+          showToast('Error al eliminar mensaje', 'error');
+          console.error('Error deleting message:', error);
+        } finally {
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
   const filteredMessages = messages.filter((msg) => {
@@ -268,6 +286,16 @@ export default function InboxPage() {
           ))}
         </div>
       )}
+      <ConfirmModal
+        open={Boolean(confirmAction)}
+        title={confirmAction?.title || ''}
+        message={confirmAction?.message || ''}
+        confirmText={confirmAction?.confirmText}
+        cancelText={confirmAction?.cancelText}
+        danger={confirmAction?.danger}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => confirmAction?.onConfirm()}
+      />
     </div>
   );
 }

@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
+import ConfirmModal from '@/components/admin/ConfirmModal';
+import DirtyBanner from '@/components/admin/DirtyBanner';
 
 type Motel = {
   id: string;
@@ -29,10 +31,21 @@ export default function PromosAdminPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const formRef = useRef<HTMLDivElement | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [filterType, setFilterType] = useState<'ALL' | 'GLOBAL' | 'SPECIFIC'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const formSnapshotRef = useRef('');
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    danger?: boolean;
+    onConfirm: () => void;
+  } | null>(null);
 
   const toast = useToast();
 
@@ -110,8 +123,7 @@ export default function PromosAdminPage() {
   };
 
   const handleEdit = (promo: Promo) => {
-    setEditingId(promo.id);
-    setFormData({
+    const nextForm = {
       motelId: promo.motel.id,
       title: promo.title,
       description: promo.description || '',
@@ -120,21 +132,37 @@ export default function PromosAdminPage() {
       validUntil: promo.validUntil ? new Date(promo.validUntil).toISOString().split('T')[0] : '',
       isActive: promo.isActive,
       isGlobal: promo.isGlobal,
-    });
+    };
+    setEditingId(promo.id);
+    setFormData(nextForm);
     setShowForm(true);
+    formSnapshotRef.current = JSON.stringify(nextForm);
+    setFormDirty(false);
+    window.requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar esta promoción?')) return;
-
-    try {
-      const res = await fetch(`/api/admin/promos/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Error al eliminar');
-      toast.success('Promoción eliminada');
-      fetchPromos();
-    } catch (error: any) {
-      toast.error(error.message || 'Error al eliminar promoción');
-    }
+    setConfirmAction({
+      title: 'Eliminar promoción',
+      message: '¿Estás seguro de eliminar esta promoción? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/promos/${id}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error('Error al eliminar');
+          toast.success('Promoción eliminada');
+          fetchPromos();
+        } catch (error: any) {
+          toast.error(error.message || 'Error al eliminar promoción');
+        } finally {
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
   const handleToggleActive = async (promo: Promo) => {
@@ -156,7 +184,7 @@ export default function PromosAdminPage() {
   const handleCancel = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormData({
+    const nextForm = {
       motelId: '',
       title: '',
       description: '',
@@ -165,8 +193,39 @@ export default function PromosAdminPage() {
       validUntil: '',
       isActive: true,
       isGlobal: false,
+    };
+    setFormData(nextForm);
+    formSnapshotRef.current = JSON.stringify(nextForm);
+    setFormDirty(false);
+  };
+
+  const handleNew = () => {
+    setEditingId(null);
+    const nextForm = {
+      motelId: '',
+      title: '',
+      description: '',
+      imageUrl: '',
+      validFrom: '',
+      validUntil: '',
+      isActive: true,
+      isGlobal: false,
+    };
+    setFormData(nextForm);
+    setShowForm(true);
+    formSnapshotRef.current = JSON.stringify(nextForm);
+    setFormDirty(false);
+    window.requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   };
+
+  useEffect(() => {
+    if (!showForm) return;
+    const snapshot = formSnapshotRef.current;
+    if (!snapshot) return;
+    setFormDirty(JSON.stringify(formData) !== snapshot);
+  }, [formData, showForm]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -246,7 +305,7 @@ export default function PromosAdminPage() {
         </div>
         {!showForm && (
           <button
-            onClick={() => setShowForm(true)}
+            onClick={handleNew}
             className="inline-flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-lg hover:bg-purple-700 transition-colors font-medium shadow-md shadow-purple-200"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -325,7 +384,7 @@ export default function PromosAdminPage() {
 
       {/* Formulario */}
       {showForm && (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div ref={formRef} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-slate-900">
               {editingId ? 'Editar Promoción' : 'Nueva Promoción'}
@@ -339,6 +398,7 @@ export default function PromosAdminPage() {
               </svg>
             </button>
           </div>
+          <DirtyBanner visible={formDirty} />
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -664,6 +724,16 @@ export default function PromosAdminPage() {
           </table>
         </div>
       </div>
+      <ConfirmModal
+        open={Boolean(confirmAction)}
+        title={confirmAction?.title || ''}
+        message={confirmAction?.message || ''}
+        confirmText={confirmAction?.confirmText}
+        cancelText={confirmAction?.cancelText}
+        danger={confirmAction?.danger}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => confirmAction?.onConfirm()}
+      />
     </div>
   );
 }

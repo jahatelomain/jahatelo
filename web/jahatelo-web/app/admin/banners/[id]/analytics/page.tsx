@@ -62,14 +62,14 @@ export default function AdvertisementAnalyticsPage() {
   if (loading && !data) return <TableSkeleton />;
 
   return (
-    <div className="p-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Analytics de publicidad</h2>
-          <p className="text-slate-500">{title}</p>
+          <h1 className="text-2xl font-semibold text-slate-900">Analytics de publicidad</h1>
+          <p className="text-sm text-slate-600 mt-1">{title}</p>
         </div>
         <select
-          className="border border-slate-200 rounded-lg px-3 py-2"
+          className="border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
           value={period}
           onChange={(event) => setPeriod(Number(event.target.value))}
         >

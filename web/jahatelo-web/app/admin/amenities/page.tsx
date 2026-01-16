@@ -1,10 +1,12 @@
 'use client';
 
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import * as LucideIcons from 'lucide-react';
 import { AMENITY_ICONS, ICON_CATEGORIES } from '@/lib/amenityIcons';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
+import ConfirmModal from '@/components/admin/ConfirmModal';
+import DirtyBanner from '@/components/admin/DirtyBanner';
 
 type Amenity = {
   id: string;
@@ -40,6 +42,8 @@ export default function AmenitiesPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const formRef = useRef<HTMLDivElement | null>(null);
+  const [formDirty, setFormDirty] = useState(false);
   const [formData, setFormData] = useState({ name: '', type: '', icon: '' });
   const [expandedAmenity, setExpandedAmenity] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
@@ -106,6 +110,10 @@ export default function AmenitiesPage() {
     setEditingId(amenity.id);
     setFormData({ name: amenity.name, type: amenity.type || '', icon: amenity.icon || '' });
     setShowForm(true);
+    setFormDirty(false);
+    window.requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   };
 
   const handleDelete = (id: string, name: string) => {
@@ -141,6 +149,7 @@ export default function AmenitiesPage() {
     setShowForm(false);
     setEditingId(null);
     setFormData({ name: '', type: '', icon: '' });
+    setFormDirty(false);
   };
 
   const toggleExpanded = (id: string) => {
@@ -226,7 +235,7 @@ export default function AmenitiesPage() {
 
       {/* Formulario */}
       {showForm && (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div ref={formRef} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-slate-900">
               {editingId ? 'Editar Amenity' : 'Nuevo Amenity'}
@@ -240,6 +249,7 @@ export default function AmenitiesPage() {
               </svg>
             </button>
           </div>
+          <DirtyBanner visible={formDirty} />
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
@@ -249,7 +259,10 @@ export default function AmenitiesPage() {
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value });
+                    setFormDirty(true);
+                  }}
                   className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                   placeholder="Ej: WiFi, Aire acondicionado"
                   required
@@ -261,7 +274,10 @@ export default function AmenitiesPage() {
                 </label>
                 <select
                   value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, type: e.target.value });
+                    setFormDirty(true);
+                  }}
                   className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white"
                 >
                   <option value="">Sin especificar</option>
@@ -279,7 +295,10 @@ export default function AmenitiesPage() {
                 {formData.icon && (
                   <button
                     type="button"
-                    onClick={() => setFormData({ ...formData, icon: '' })}
+                    onClick={() => {
+                      setFormData({ ...formData, icon: '' });
+                      setFormDirty(true);
+                    }}
                     className="text-xs text-slate-400 hover:text-slate-600"
                   >
                     Quitar selección
@@ -299,7 +318,10 @@ export default function AmenitiesPage() {
                           <button
                             key={icon.value}
                             type="button"
-                            onClick={() => setFormData({ ...formData, icon: icon.value })}
+                            onClick={() => {
+                              setFormData({ ...formData, icon: icon.value });
+                              setFormDirty(true);
+                            }}
                             className={`aspect-square flex items-center justify-center rounded-lg border transition-all ${
                               isSelected
                                 ? 'bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-200'
@@ -607,33 +629,16 @@ export default function AmenitiesPage() {
         </table>
       </div>
 
-      {/* Modal de Confirmación */}
-      {confirmAction && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
-            <h2 className="text-xl font-bold text-slate-900 mb-2">{confirmAction.title}</h2>
-            <p className="text-slate-600 mb-6">{confirmAction.message}</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmAction(null)}
-                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition"
-              >
-                {confirmAction.cancelText}
-              </button>
-              <button
-                onClick={confirmAction.onConfirm}
-                className={`flex-1 px-4 py-2 text-white rounded-lg transition ${
-                  confirmAction.danger
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-purple-600 hover:bg-purple-700'
-                }`}
-              >
-                {confirmAction.confirmText}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={Boolean(confirmAction)}
+        title={confirmAction?.title || ''}
+        message={confirmAction?.message || ''}
+        confirmText={confirmAction?.confirmText}
+        cancelText={confirmAction?.cancelText}
+        danger={confirmAction?.danger}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => confirmAction?.onConfirm()}
+      />
     </div>
   );
 }

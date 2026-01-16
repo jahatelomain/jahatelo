@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
+import DirtyBanner from '@/components/admin/DirtyBanner';
 
 type ScheduledNotification = {
   id: string;
@@ -34,10 +35,12 @@ export default function NotificationsAdminPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   const [filterCategory, setFilterCategory] = useState<'ALL' | 'advertising' | 'security' | 'maintenance'>('ALL');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'SENT' | 'PENDING'>('ALL');
   const [motels, setMotels] = useState<MotelOption[]>([]);
   const [loadingMotels, setLoadingMotels] = useState(false);
+  const formSnapshotRef = useRef('');
 
   const toast = useToast();
 
@@ -202,7 +205,7 @@ export default function NotificationsAdminPage() {
 
   const handleCancel = () => {
     setShowForm(false);
-    setFormData({
+    const nextForm = {
       title: '',
       body: '',
       category: 'advertising',
@@ -212,8 +215,36 @@ export default function NotificationsAdminPage() {
       segmentType: 'ALL',
       targetRole: '',
       targetMotelId: '',
-    });
+    };
+    setFormData(nextForm);
+    formSnapshotRef.current = JSON.stringify(nextForm);
+    setFormDirty(false);
   };
+
+  const handleNew = () => {
+    const nextForm = {
+      title: '',
+      body: '',
+      category: 'advertising',
+      sendNow: true,
+      scheduledDate: '',
+      scheduledTime: '09:00',
+      segmentType: 'ALL',
+      targetRole: '',
+      targetMotelId: '',
+    };
+    setFormData(nextForm);
+    setShowForm(true);
+    formSnapshotRef.current = JSON.stringify(nextForm);
+    setFormDirty(false);
+  };
+
+  useEffect(() => {
+    if (!showForm) return;
+    const snapshot = formSnapshotRef.current;
+    if (!snapshot) return;
+    setFormDirty(JSON.stringify(formData) !== snapshot);
+  }, [formData, showForm]);
 
   const getCategoryLabel = (category: string) => {
     switch (category) {
@@ -302,7 +333,7 @@ export default function NotificationsAdminPage() {
         </div>
         {!showForm && (
           <button
-            onClick={() => setShowForm(true)}
+            onClick={handleNew}
             className="inline-flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-lg hover:bg-purple-700 transition-colors font-medium shadow-md shadow-purple-200"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -356,7 +387,7 @@ export default function NotificationsAdminPage() {
 
       {/* Formulario */}
       {showForm && (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-slate-900">Nueva Notificación Push</h3>
             <button
@@ -368,6 +399,7 @@ export default function NotificationsAdminPage() {
               </svg>
             </button>
           </div>
+          <DirtyBanner visible={formDirty} />
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Título */}
@@ -690,7 +722,7 @@ export default function NotificationsAdminPage() {
                           onClick={() => console.log('🔗 Navegando a notificación con ID:', notif.id)}
                           className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-purple-200 hover:text-purple-700 transition-colors"
                         >
-                          Ver detalles
+                          Editar
                         </Link>
                       ) : (
                         <span className="text-xs text-red-500">ID no disponible</span>
@@ -705,7 +737,7 @@ export default function NotificationsAdminPage() {
                           onClick={() => console.log('🔗 Navegando a notificación con ID:', notif.id)}
                           className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-purple-200 hover:text-purple-700 transition-colors"
                         >
-                          Ver detalles
+                          Editar
                         </Link>
                       ) : (
                         <span className="text-xs text-red-500">ID no disponible</span>
