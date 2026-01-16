@@ -95,8 +95,16 @@ export async function middleware(request: NextRequest) {
     });
   }
 
+  // 2.1. Health check sin rate limiting
+  if (pathname === '/api/health') {
+    return NextResponse.next();
+  }
+
   // 3. Rate Limiting para autenticación
   if (pathname.startsWith('/api/auth/login') || pathname.startsWith('/api/auth/register')) {
+    if (process.env.E2E_MODE === '1') {
+      return NextResponse.next();
+    }
     const { success, remaining } = rateLimit(ip, 5, 15 * 60 * 1000); // 5 requests per 15 min
 
     if (!success) {
@@ -128,6 +136,9 @@ export async function middleware(request: NextRequest) {
 
   // 4. Rate Limiting para API pública (no admin)
   if (pathname.startsWith('/api/') && !pathname.startsWith('/api/admin/')) {
+    if (process.env.E2E_MODE === '1') {
+      return NextResponse.next();
+    }
     const { success, remaining } = rateLimit(ip, 30, 60 * 1000); // 30 requests per minute
 
     if (!success) {
@@ -159,6 +170,9 @@ export async function middleware(request: NextRequest) {
 
   // 5. Rate Limiting para uploads
   if (pathname.startsWith('/api/upload')) {
+    if (process.env.E2E_MODE === '1') {
+      return NextResponse.next();
+    }
     const { success, remaining } = rateLimit(ip, 20, 60 * 60 * 1000); // 20 uploads per hour
 
     if (!success) {
