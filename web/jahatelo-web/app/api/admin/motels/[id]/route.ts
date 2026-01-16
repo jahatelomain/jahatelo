@@ -26,8 +26,29 @@ export async function GET(
 
     const motel = await prisma.motel.findUnique({
       where: { id },
-      include: {
-        rooms: {
+    });
+
+    if (!motel) {
+      return NextResponse.json(
+        { error: 'Motel no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    const safeFetch = async <T>(label: string, fetcher: () => Promise<T>, fallback: T) => {
+      try {
+        return await fetcher();
+      } catch (error) {
+        console.error(`Error fetching ${label} for motel ${id}:`, error);
+        return fallback;
+      }
+    };
+
+    const rooms = await safeFetch(
+      'rooms',
+      () =>
+        prisma.roomType.findMany({
+          where: { motelId: id },
           include: {
             amenities: {
               include: {
@@ -40,32 +61,54 @@ export async function GET(
               },
             },
           },
-        },
-        menuCategories: {
+        }),
+      []
+    );
+
+    const menuCategories = await safeFetch(
+      'menu categories',
+      () =>
+        prisma.menuCategory.findMany({
+          where: { motelId: id },
           include: {
             items: true,
           },
           orderBy: {
             sortOrder: 'asc',
           },
-        },
-        photos: true,
-        motelAmenities: {
+        }),
+      []
+    );
+
+    const photos = await safeFetch(
+      'photos',
+      () =>
+        prisma.photo.findMany({
+          where: { motelId: id },
+          orderBy: { order: 'asc' },
+        }),
+      []
+    );
+
+    const motelAmenities = await safeFetch(
+      'motel amenities',
+      () =>
+        prisma.motelAmenity.findMany({
+          where: { motelId: id },
           include: {
             amenity: true,
           },
-        },
-      },
+        }),
+      []
+    );
+
+    return NextResponse.json({
+      ...motel,
+      rooms,
+      menuCategories,
+      photos,
+      motelAmenities,
     });
-
-    if (!motel) {
-      return NextResponse.json(
-        { error: 'Motel no encontrado' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(motel);
   } catch (error) {
     console.error('Error fetching motel:', error);
     return NextResponse.json(
