@@ -120,19 +120,22 @@ Crear o actualizar `vercel.json`:
   "crons": [
     {
       "path": "/api/cron/process-notifications",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 3 * * *"
     }
   ]
 }
 ```
 
-**Significado:** Ejecuta cada 5 minutos (ajustar según necesidad)
+**Significado:** Ejecuta una vez por día (plan Hobby).
 
 **Opciones de schedule (cron syntax):**
 - `*/1 * * * *` - Cada minuto (máxima frecuencia)
 - `*/5 * * * *` - Cada 5 minutos (recomendado para producción)
 - `*/15 * * * *` - Cada 15 minutos
 - `0 * * * *` - Cada hora en punto
+
+**Importante (Hobby):** con cron diario, las notificaciones programadas se retrasan. 
+Por ahora solo usar envíos inmediatos. Pendiente: reactivar cron frecuente o mover a cron externo.
 
 ### Paso 3: Proteger el Endpoint con CRON_SECRET
 
