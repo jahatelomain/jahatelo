@@ -102,6 +102,8 @@ export async function registerPushToken(token, userId = null) {
       appVersion: Constants.expoConfig?.version || '1.0.0',
     };
 
+    console.log(`📡 Registrando token en: ${API_URL}/api/push-tokens/register`);
+
     const response = await fetch(`${API_URL}/api/push-tokens/register`, {
       method: 'POST',
       headers: {
@@ -114,17 +116,38 @@ export async function registerPushToken(token, userId = null) {
       }),
     });
 
+    // Verificar si la respuesta es JSON válido
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error('❌ El servidor no retornó JSON. Respuesta:', text.substring(0, 200));
+      console.error('💡 Verifica que el backend esté corriendo en:', API_URL);
+      return false;
+    }
+
     const data = await response.json();
 
     if (data.success) {
-      console.log('Token de push registrado exitosamente');
+      console.log('✅ Token de push registrado exitosamente');
       return true;
     } else {
-      console.error('Error registrando token:', data.error);
+      console.error('❌ Error registrando token:', data.error);
       return false;
     }
   } catch (error) {
-    console.error('Error al registrar token en el backend:', error);
+    console.error('❌ Error al registrar token en el backend:', error.message);
+
+    // Dar feedback específico según el tipo de error
+    if (error.message.includes('Network request failed') || error.message.includes('fetch')) {
+      console.error('💡 Verifica:');
+      console.error('   1. Backend corriendo en:', API_URL);
+      console.error('   2. Dispositivo y PC en la misma red');
+      console.error('   3. Firewall no está bloqueando conexiones');
+    } else if (error instanceof SyntaxError) {
+      console.error('💡 El backend retornó HTML en lugar de JSON.');
+      console.error('   Probablemente el endpoint no existe o hay un error 500.');
+    }
+
     return false;
   }
 }
