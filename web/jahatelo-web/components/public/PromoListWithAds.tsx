@@ -21,6 +21,9 @@ export default function PromoListWithAds({ motels }: { motels: any[] }) {
           </div>
         );
       })}
+      {motels.length < 5 && ads[adIndex] && (
+        <AdInlineCard ad={ads[adIndex]} placement="LIST_INLINE" />
+      )}
     </div>
   );
 }

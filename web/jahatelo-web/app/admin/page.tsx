@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
-import { MotelStatus } from '@prisma/client';
+import { MotelStatus, ProspectStatus, PlanType } from '@prisma/client';
 import Link from 'next/link';
+import QuickActions from './components/QuickActions';
+import AnalyticsMetrics from './components/AnalyticsMetrics';
 
 export default async function AdminDashboard() {
   const e2eMode = process.env.E2E_MODE === '1';
@@ -13,6 +15,13 @@ export default async function AdminDashboard() {
     name: string;
     city: string;
     status: MotelStatus;
+    createdAt: Date;
+  }> = [];
+  let pendingMotelsDetails: Array<{
+    id: string;
+    name: string;
+    city: string;
+    neighborhood: string;
     createdAt: Date;
   }> = [];
 
@@ -31,6 +40,18 @@ export default async function AdminDashboard() {
         createdAt: true,
       },
     });
+    pendingMotelsDetails = await prisma.motel.findMany({
+      where: { status: MotelStatus.PENDING },
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        city: true,
+        neighborhood: true,
+        createdAt: true,
+      },
+    });
   } else {
     [
       totalViews,
@@ -38,6 +59,7 @@ export default async function AdminDashboard() {
       activeMotels,
       activePromotions,
       recentMotelsRaw,
+      pendingMotelsDetails,
     ] = await Promise.all([
       Promise.resolve(0), // Placeholder para vistas - implementar más adelante
       prisma.motel.count({ where: { status: MotelStatus.PENDING } }),
@@ -54,10 +76,219 @@ export default async function AdminDashboard() {
           createdAt: true,
         },
       }),
+      prisma.motel.findMany({
+        where: { status: MotelStatus.PENDING },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          name: true,
+          city: true,
+          neighborhood: true,
+          createdAt: true,
+        },
+      }),
     ]);
   }
 
   const recentMotels = recentMotelsRaw ?? [];
+
+  // ============================================
+  // CÁLCULO DE ANALYTICS
+  // ============================================
+
+  // 1. Tasa de Conversión (Prospects WON / Total)
+  const totalProspects = await prisma.motelProspect.count();
+  const wonProspects = await prisma.motelProspect.count({
+    where: { status: ProspectStatus.WON },
+  });
+  const conversionRate = totalProspects > 0 ? Math.round((wonProspects / totalProspects) * 100) : 0;
+
+  // Tasa del mes anterior para comparar
+  const lastMonthStart = new Date();
+  lastMonthStart.setMonth(lastMonthStart.getMonth() - 2);
+  lastMonthStart.setDate(1);
+  const lastMonthEnd = new Date();
+  lastMonthEnd.setMonth(lastMonthEnd.getMonth() - 1);
+  lastMonthEnd.setDate(0);
+
+  const lastMonthProspectsTotal = await prisma.motelProspect.count({
+    where: {
+      createdAt: {
+        gte: lastMonthStart,
+        lte: lastMonthEnd,
+      },
+    },
+  });
+  const lastMonthProspectsWon = await prisma.motelProspect.count({
+    where: {
+      status: ProspectStatus.WON,
+      createdAt: {
+        gte: lastMonthStart,
+        lte: lastMonthEnd,
+      },
+    },
+  });
+  const lastMonthConversionRate =
+    lastMonthProspectsTotal > 0 ? Math.round((lastMonthProspectsWon / lastMonthProspectsTotal) * 100) : 0;
+  const conversionTrend = conversionRate - lastMonthConversionRate;
+
+  // 2. Tiempo Promedio de Aprobación
+  const approvedMotels = await prisma.motel.findMany({
+    where: { status: MotelStatus.APPROVED },
+    select: {
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  let avgApprovalTime = 0;
+  if (approvedMotels.length > 0) {
+    const totalDays = approvedMotels.reduce((sum, motel) => {
+      const days = Math.floor(
+        (new Date(motel.updatedAt).getTime() - new Date(motel.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+      );
+      return sum + days;
+    }, 0);
+    avgApprovalTime = Math.round(totalDays / approvedMotels.length);
+  }
+
+  // Tiempo promedio del mes anterior
+  const lastMonthApprovedMotels = await prisma.motel.findMany({
+    where: {
+      status: MotelStatus.APPROVED,
+      updatedAt: {
+        gte: lastMonthStart,
+        lte: lastMonthEnd,
+      },
+    },
+    select: {
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  let lastMonthAvgApprovalTime = 0;
+  if (lastMonthApprovedMotels.length > 0) {
+    const totalDays = lastMonthApprovedMotels.reduce((sum, motel) => {
+      const days = Math.floor(
+        (new Date(motel.updatedAt).getTime() - new Date(motel.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+      );
+      return sum + days;
+    }, 0);
+    lastMonthAvgApprovalTime = Math.round(totalDays / lastMonthApprovedMotels.length);
+  }
+  const approvalTimeTrend = avgApprovalTime - lastMonthAvgApprovalTime;
+
+  // 3. Crecimiento Mensual (moteles creados este mes vs mes anterior)
+  const thisMonthStart = new Date();
+  thisMonthStart.setDate(1);
+  thisMonthStart.setHours(0, 0, 0, 0);
+
+  const thisMonthMotels = await prisma.motel.count({
+    where: {
+      createdAt: {
+        gte: thisMonthStart,
+      },
+    },
+  });
+
+  const lastMonthMotels = await prisma.motel.count({
+    where: {
+      createdAt: {
+        gte: lastMonthStart,
+        lte: lastMonthEnd,
+      },
+    },
+  });
+
+  const monthlyGrowth = thisMonthMotels;
+  const growthTrend = lastMonthMotels > 0 ? Math.round(((thisMonthMotels - lastMonthMotels) / lastMonthMotels) * 100) : 0;
+
+  // 4. Revenue Potencial (precios ficticios por plan)
+  const planPrices = {
+    BASIC: 0, // Gratis
+    PREMIUM: 500000, // 500k PYG/mes
+    PLATINUM: 1000000, // 1M PYG/mes
+  };
+
+  const planCounts = await prisma.motel.groupBy({
+    by: ['plan'],
+    where: { isActive: true },
+    _count: true,
+  });
+
+  let revenueEstimate = 0;
+  planCounts.forEach((item) => {
+    const price = planPrices[item.plan as keyof typeof planPrices] || 0;
+    revenueEstimate += price * item._count;
+  });
+
+  // Revenue del mes anterior
+  const lastMonthPlanCounts = await prisma.motel.groupBy({
+    by: ['plan'],
+    where: {
+      isActive: true,
+      createdAt: {
+        lte: lastMonthEnd,
+      },
+    },
+    _count: true,
+  });
+
+  let lastMonthRevenue = 0;
+  lastMonthPlanCounts.forEach((item) => {
+    const price = planPrices[item.plan as keyof typeof planPrices] || 0;
+    lastMonthRevenue += price * item._count;
+  });
+
+  const revenueTrend =
+    lastMonthRevenue > 0 ? Math.round(((revenueEstimate - lastMonthRevenue) / lastMonthRevenue) * 100) : 0;
+
+  // 5. Moteles por Ciudad (top 5)
+  const motelsByCity = await prisma.motel.groupBy({
+    by: ['city'],
+    where: { isActive: true },
+    _count: true,
+    orderBy: {
+      _count: {
+        city: 'desc',
+      },
+    },
+    take: 5,
+  });
+
+  const motelsByCityFormatted = motelsByCity.map((item) => ({
+    city: item.city,
+    count: item._count,
+  }));
+
+  // 6. Distribución de Planes
+  const planDistribution = await prisma.motel.groupBy({
+    by: ['plan'],
+    where: { isActive: true },
+    _count: true,
+  });
+
+  const totalActivePlans = planDistribution.reduce((sum, item) => sum + item._count, 0);
+  const planDistributionFormatted = planDistribution.map((item) => ({
+    plan: item.plan,
+    count: item._count,
+    percentage: totalActivePlans > 0 ? Math.round((item._count / totalActivePlans) * 100) : 0,
+  }));
+
+  const analyticsData = {
+    conversionRate,
+    conversionTrend,
+    avgApprovalTime,
+    approvalTimeTrend,
+    monthlyGrowth,
+    growthTrend,
+    revenueEstimate,
+    revenueTrend,
+    motelsByCity: motelsByCityFormatted,
+    planDistribution: planDistributionFormatted,
+  };
 
   const kpis = [
     {
@@ -161,6 +392,15 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
+      {/* Analytics y Métricas Útiles */}
+      <div>
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-slate-900">Analytics y Métricas</h2>
+          <p className="text-sm text-slate-600">Datos en tiempo real del rendimiento de la plataforma</p>
+        </div>
+        <AnalyticsMetrics data={analyticsData} />
+      </div>
+
       {/* KPIs Grid Mejorado */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {kpis.map((kpi, index) => (
@@ -216,50 +456,8 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        {/* Próximos Pasos / Actividades */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Próximos Pasos</h3>
-          <div className="space-y-4">
-            {pendingMotels > 0 && (
-              <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                <span className="text-xl">⏳</span>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-yellow-900">
-                    Hay {pendingMotels} motel{pendingMotels !== 1 ? 'es' : ''} pendiente{pendingMotels !== 1 ? 's' : ''} de aprobación
-                  </p>
-                  <Link
-                    href="/admin/motels"
-                    className="text-xs text-yellow-700 hover:text-yellow-800 font-medium mt-1 inline-block"
-                  >
-                    Revisar ahora →
-                  </Link>
-                </div>
-              </div>
-            )}
-            <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
-              <span className="text-xl">📊</span>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-purple-900">
-                  Revisá las estadísticas de uso
-                </p>
-                <p className="text-xs text-purple-700 mt-1">
-                  Próximamente: gráficos y reportes
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
-              <span className="text-xl">🎯</span>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-slate-700">
-                  Todo en orden
-                </p>
-                <p className="text-xs text-slate-600 mt-1">
-                  El sistema funciona correctamente
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Widget de Acciones Rápidas */}
+        <QuickActions initialMotels={pendingMotelsDetails} />
       </div>
 
       {/* Tabla de moteles recientes */}

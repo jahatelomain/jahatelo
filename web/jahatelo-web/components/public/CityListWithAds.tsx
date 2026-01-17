@@ -39,6 +39,11 @@ export default function CityListWithAds({ cities }: { cities: CityItem[] }) {
           </div>
         );
       })}
+      {cities.length < 5 && ads[adIndex] && (
+        <div className="md:col-span-2 lg:col-span-3">
+          <AdInlineCard ad={ads[adIndex]} placement="LIST_INLINE" />
+        </div>
+      )}
     </div>
   );
 }

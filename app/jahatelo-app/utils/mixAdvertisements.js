@@ -25,7 +25,7 @@ export function mixAdvertisements(motels = [], ads = []) {
   });
 
   // Si no llegamos a 5 moteles, agregar anuncio al final
-  if (motels.length < itemsPerAd && motels.length > 0 && ads.length > 0) {
+  if (motels.length < itemsPerAd && ads.length > 0) {
     result.push({ type: 'ad', data: ads[0] });
   }
 

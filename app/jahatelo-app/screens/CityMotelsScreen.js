@@ -20,7 +20,7 @@ export default function CityMotelsScreen({ route, navigation }) {
   const headerPaddingTop = insets.top + 12;
 
   // Cargar anuncios de lista
-  const { ads: listAds, trackAdEvent } = useAdvertisements('LIST');
+  const { ads: listAds, trackAdEvent } = useAdvertisements('LIST_INLINE');
 
   // Mezclar moteles con anuncios
   const mixedItems = useMemo(() => {
