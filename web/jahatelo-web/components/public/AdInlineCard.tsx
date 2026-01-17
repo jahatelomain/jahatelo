@@ -25,9 +25,9 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
       <button
         type="button"
         onClick={handleOpen}
-        className="text-left w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group min-h-[420px] h-full flex flex-col"
+        className="text-left w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group min-h-[360px] h-full flex flex-col"
       >
-        <div className="relative h-48 bg-gray-200">
+        <div className="relative h-40 bg-gray-200">
           {photoUrl ? (
             <Image
               src={photoUrl}

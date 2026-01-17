@@ -48,10 +48,10 @@ export default function MotelCard({ motel }: MotelCardProps) {
 
   const cardContent = (
     <div
-      className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[420px] h-full flex flex-col ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-default' : 'cursor-pointer'}`}
+      className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[360px] h-full flex flex-col ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-default' : 'cursor-pointer'}`}
     >
         {/* Image */}
-        <div className="relative h-48 bg-gray-200">
+        <div className="relative h-40 bg-gray-200">
           {photoUrl ? (
             <Image
               src={photoUrl}

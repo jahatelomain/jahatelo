@@ -11,6 +11,7 @@ import ShareButton from '@/components/public/ShareButton';
 import ReviewsSection from '@/components/public/ReviewsSection';
 import PriceTable from '@/components/public/PriceTable';
 import JsonLd from '@/components/JsonLd';
+import * as LucideIcons from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { generateBreadcrumbSchema, generateMotelSchema } from '@/lib/seo';
 import Tabs from '@/components/public/Tabs';
@@ -21,6 +22,7 @@ interface MotelDetailPageProps {
 
 export default async function MotelDetailPage({ params }: MotelDetailPageProps) {
   const { slug } = await params;
+  const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>;
 
   const motel = await prisma.motel.findUnique({
     where: { slug },
@@ -109,11 +111,22 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           {motel.motelAmenities.length > 0 && (
             <div className="mb-8">
               <h3 className="text-xl font-semibold text-gray-900 mb-3">Servicios e instalaciones</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="flex flex-wrap gap-3">
                 {motel.motelAmenities.map((ma) => (
-                  <div key={ma.id} className="flex items-center gap-2 text-gray-700">
-                    {ma.amenity.icon && <span className="text-xl">{ma.amenity.icon}</span>}
-                    <span>{ma.amenity.name}</span>
+                  <div
+                    key={ma.id}
+                    title={ma.amenity.name}
+                    aria-label={ma.amenity.name}
+                    className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-purple-50 text-purple-600"
+                  >
+                    {(() => {
+                      const IconComponent = ma.amenity.icon ? iconLibrary[ma.amenity.icon] : undefined;
+                      return IconComponent ? (
+                        <IconComponent size={18} className="text-purple-600" />
+                      ) : (
+                        <span className="text-purple-600 text-base font-semibold">•</span>
+                      );
+                    })()}
                   </div>
                 ))}
               </div>
@@ -272,10 +285,18 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                               {room.amenities.map((ra) => (
                                 <span
                                   key={ra.id}
-                                  className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
+                                  title={ra.amenity.name}
+                                  aria-label={ra.amenity.name}
+                                  className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-50 text-purple-600"
                                 >
-                                  {ra.amenity.icon && <span>{ra.amenity.icon}</span>}
-                                  {ra.amenity.name}
+                                  {(() => {
+                                    const IconComponent = ra.amenity.icon ? iconLibrary[ra.amenity.icon] : undefined;
+                                    return IconComponent ? (
+                                      <IconComponent size={12} className="text-purple-600" />
+                                    ) : (
+                                      <span className="text-purple-600 text-[10px] font-semibold">•</span>
+                                    );
+                                  })()}
                                 </span>
                               ))}
                             </div>
