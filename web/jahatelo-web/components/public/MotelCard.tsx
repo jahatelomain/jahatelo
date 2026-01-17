@@ -24,7 +24,7 @@ interface MotelCardProps {
 }
 
 export default function MotelCard({ motel }: MotelCardProps) {
-  const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>;
+  const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
   const facadePhoto = motel.photos?.find((p) => p.kind === 'FACADE');
   const firstPhoto = motel.photos?.[0];
   const photoUrl = facadePhoto?.url || firstPhoto?.url;

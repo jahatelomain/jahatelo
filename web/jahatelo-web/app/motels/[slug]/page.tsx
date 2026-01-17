@@ -22,7 +22,7 @@ interface MotelDetailPageProps {
 
 export default async function MotelDetailPage({ params }: MotelDetailPageProps) {
   const { slug } = await params;
-  const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>;
+  const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
 
   const motel = await prisma.motel.findUnique({
     where: { slug },
