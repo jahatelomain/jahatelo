@@ -1,5 +1,6 @@
 'use client';
 
+import { Fragment } from 'react';
 import Link from 'next/link';
 import AdInlineCard from '@/components/public/AdInlineCard';
 import { useAdvertisements } from '@/hooks/useAdvertisements';
@@ -20,7 +21,7 @@ export default function CityListWithAds({ cities }: { cities: CityItem[] }) {
         const ad = showAd ? ads[adIndex++] : null;
 
         return (
-          <div key={city.name} className="space-y-6">
+          <Fragment key={city.name}>
             <Link
               href={`/motels?city=${encodeURIComponent(city.name)}`}
               className="block bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
@@ -33,10 +34,10 @@ export default function CityListWithAds({ cities }: { cities: CityItem[] }) {
             </Link>
             {ad && (
               <div className="md:col-span-2 lg:col-span-3">
-                <AdInlineCard ad={ad} placement="LIST_INLINE" />
+                <AdInlineCard key={`${city.name}-ad-${ad.id}`} ad={ad} placement="LIST_INLINE" />
               </div>
             )}
-          </div>
+          </Fragment>
         );
       })}
       {cities.length < 5 && ads[adIndex] && (

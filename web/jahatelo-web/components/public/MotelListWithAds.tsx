@@ -1,5 +1,6 @@
 'use client';
 
+import { Fragment } from 'react';
 import MotelCard from '@/components/public/MotelCard';
 import AdInlineCard from '@/components/public/AdInlineCard';
 import { useAdvertisements } from '@/hooks/useAdvertisements';
@@ -15,10 +16,10 @@ export default function MotelListWithAds({ motels }: { motels: any[] }) {
         const ad = showAd ? ads[adIndex++] : null;
 
         return (
-          <div key={motel.id} className="space-y-6">
+          <Fragment key={motel.id}>
             <MotelCard motel={motel} />
-            {ad && <AdInlineCard ad={ad} placement="LIST_INLINE" />}
-          </div>
+            {ad && <AdInlineCard key={`${motel.id}-ad-${ad.id}`} ad={ad} placement="LIST_INLINE" />}
+          </Fragment>
         );
       })}
       {motels.length < 5 && ads[adIndex] && (
