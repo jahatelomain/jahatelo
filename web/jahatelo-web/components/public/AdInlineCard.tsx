@@ -39,11 +39,19 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
           </div>
         </div>
         <div className="p-5">
-          <h4 className="font-bold text-lg text-gray-900 mb-1 group-hover:text-purple-600 transition-colors">
+          <h3 className="font-bold text-lg text-gray-900 mb-1 group-hover:text-purple-600 transition-colors">
             {ad.title}
-          </h4>
+          </h3>
           <p className="text-sm text-gray-500 mb-3">{ad.advertiser}</p>
-          {ad.description && <p className="text-sm text-gray-500">{ad.description}</p>}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-sm text-gray-400">Publicidad</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1 text-xs bg-purple-50 text-purple-600 px-2 py-1 rounded-full">
+              Anuncio
+            </span>
+          </div>
+          {ad.description && <p className="text-sm text-gray-500 mt-3">{ad.description}</p>}
         </div>
       </button>
 

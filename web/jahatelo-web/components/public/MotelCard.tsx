@@ -103,15 +103,20 @@ export default function MotelCard({ motel }: MotelCardProps) {
           {/* Amenities */}
           {topAmenities.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
-              {topAmenities.map((ma, idx) => (
-                <span
-                  key={idx}
-                  className="inline-flex items-center gap-1 text-xs bg-purple-50 text-purple-600 px-2 py-1 rounded-full"
-                >
-                  {ma.amenity.icon && <span>{ma.amenity.icon}</span>}
-                  {ma.amenity.name}
-                </span>
-              ))}
+              {topAmenities.map((ma, idx) => {
+                const label = ma.amenity.name;
+                const icon = ma.amenity.icon || '•';
+                return (
+                  <span
+                    key={idx}
+                    title={label}
+                    aria-label={label}
+                    className="inline-flex items-center justify-center text-xs bg-purple-50 text-purple-600 w-8 h-8 rounded-full"
+                  >
+                    {icon}
+                  </span>
+                );
+              })}
             </div>
           )}
 
