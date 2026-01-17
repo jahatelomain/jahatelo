@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { UserPayload } from '@/lib/auth';
 import { hasModuleAccess } from '@/lib/adminModules';
 import { ToastProvider } from '@/contexts/ToastContext';
+import { Toaster } from 'sonner';
 
 export default function AdminLayout({
   children,
@@ -322,6 +323,7 @@ export default function AdminLayout({
 
   return (
     <ToastProvider>
+      <Toaster position="top-right" richColors closeButton />
       <div className="min-h-screen bg-slate-100 admin-theme text-slate-900">
         {/* Topbar Moderno */}
         <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-20">

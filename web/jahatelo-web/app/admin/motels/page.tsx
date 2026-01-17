@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { TableSkeleton } from '@/components/SkeletonLoader';
+import MotelCard from '../components/MotelCard';
 
 type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -34,6 +35,9 @@ export default function MotelsAdminPage() {
   const [statusFilter, setStatusFilter] = useState<MotelStatus | 'ALL'>('ALL');
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [selectedMotels, setSelectedMotels] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   useEffect(() => {
     fetchMotels();
@@ -116,6 +120,117 @@ export default function MotelsAdminPage() {
 
   const pendingCount = motelsArray.filter((m) => m.status === 'PENDING').length;
 
+  // Bulk actions handlers
+  const toggleSelectAll = () => {
+    if (selectedMotels.size === filteredMotels.length) {
+      setSelectedMotels(new Set());
+    } else {
+      setSelectedMotels(new Set(filteredMotels.map((m) => m.id)));
+    }
+  };
+
+  const toggleSelectMotel = (id: string) => {
+    const newSelected = new Set(selectedMotels);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedMotels(newSelected);
+  };
+
+  const handleBulkApprove = async () => {
+    if (!confirm(`¿Aprobar ${selectedMotels.size} motel(es)?`)) return;
+
+    setBulkLoading(true);
+    try {
+      const res = await fetch('/api/admin/motels/bulk-approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedMotels) }),
+      });
+
+      if (!res.ok) throw new Error('Error al aprobar moteles');
+
+      await fetchMotels();
+      setSelectedMotels(new Set());
+      alert('Moteles aprobados exitosamente');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Error al aprobar moteles');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkReject = async () => {
+    if (!confirm(`¿RECHAZAR ${selectedMotels.size} motel(es)? Esta acción no se puede deshacer.`)) return;
+
+    setBulkLoading(true);
+    try {
+      const res = await fetch('/api/admin/motels/bulk-reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedMotels) }),
+      });
+
+      if (!res.ok) throw new Error('Error al rechazar moteles');
+
+      await fetchMotels();
+      setSelectedMotels(new Set());
+      alert('Moteles rechazados');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Error al rechazar moteles');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkActivate = async () => {
+    if (!confirm(`¿Activar ${selectedMotels.size} motel(es)?`)) return;
+
+    setBulkLoading(true);
+    try {
+      const res = await fetch('/api/admin/motels/bulk-activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedMotels), isActive: true }),
+      });
+
+      if (!res.ok) throw new Error('Error al activar moteles');
+
+      await fetchMotels();
+      setSelectedMotels(new Set());
+      alert('Moteles activados exitosamente');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Error al activar moteles');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkDeactivate = async () => {
+    if (!confirm(`¿Desactivar ${selectedMotels.size} motel(es)?`)) return;
+
+    setBulkLoading(true);
+    try {
+      const res = await fetch('/api/admin/motels/bulk-activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedMotels), isActive: false }),
+      });
+
+      if (!res.ok) throw new Error('Error al desactivar moteles');
+
+      await fetchMotels();
+      setSelectedMotels(new Set());
+      alert('Moteles desactivados exitosamente');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Error al desactivar moteles');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -153,6 +268,37 @@ export default function MotelsAdminPage() {
               </span>
             </div>
           )}
+
+          {/* Toggle de vista Lista/Grid */}
+          <div className="inline-flex rounded-lg border border-slate-300 bg-white p-1">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              Lista
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'grid'
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              Grilla
+            </button>
+          </div>
+
           <Link
             href="/admin/motels/new"
             className="inline-flex items-center justify-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-lg hover:bg-purple-700 transition-colors font-medium shadow-md shadow-purple-200"
@@ -313,8 +459,10 @@ export default function MotelsAdminPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table className="min-w-full divide-y divide-slate-200">
+      {/* Vista Lista (Tabla) */}
+      {viewMode === 'list' && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -399,6 +547,32 @@ export default function MotelsAdminPage() {
           </tbody>
         </table>
       </div>
+      )}
+
+      {/* Vista Grid */}
+      {viewMode === 'grid' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredMotels.length === 0 ? (
+            <div className="col-span-full flex flex-col items-center gap-4 py-12">
+              <span className="text-6xl text-slate-300">🔍</span>
+              <p className="text-slate-500 font-medium text-lg">
+                {searchQuery || statusFilter !== 'ALL' || activeFilter !== 'ALL'
+                  ? 'No se encontraron moteles con estos filtros'
+                  : 'No hay moteles registrados'}
+              </p>
+              <p className="text-sm text-slate-400">
+                {searchQuery || statusFilter !== 'ALL' || activeFilter !== 'ALL'
+                  ? 'Intentá con otros criterios de búsqueda'
+                  : 'Los moteles aparecerán aquí cuando sean creados'}
+              </p>
+            </div>
+          ) : (
+            filteredMotels.map((motel) => (
+              <MotelCard key={motel.id} motel={motel} />
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

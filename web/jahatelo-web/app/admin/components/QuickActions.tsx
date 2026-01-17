@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 type PendingMotel = {
   id: string;
@@ -20,12 +21,6 @@ export default function QuickActions({ initialMotels }: QuickActionsProps) {
   const router = useRouter();
   const [motels, setMotels] = useState(initialMotels);
   const [loading, setLoading] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
-  const showToast = (type: 'success' | 'error', message: string) => {
-    setToastMessage({ type, message });
-    setTimeout(() => setToastMessage(null), 3000);
-  };
 
   const getTimeAgo = (date: Date) => {
     const now = new Date();
@@ -52,12 +47,12 @@ export default function QuickActions({ initialMotels }: QuickActionsProps) {
 
       // Remover de la lista
       setMotels(motels.filter((m) => m.id !== motelId));
-      showToast('success', '✅ Motel aprobado exitosamente');
+      toast.success('Motel aprobado exitosamente');
 
       // Refrescar página para actualizar contadores
       router.refresh();
     } catch (error) {
-      showToast('error', error instanceof Error ? error.message : 'Error al aprobar motel');
+      toast.error(error instanceof Error ? error.message : 'Error al aprobar motel');
     } finally {
       setLoading(null);
     }
@@ -81,12 +76,12 @@ export default function QuickActions({ initialMotels }: QuickActionsProps) {
 
       // Remover de la lista
       setMotels(motels.filter((m) => m.id !== motelId));
-      showToast('success', '✅ Motel rechazado');
+      toast.success('Motel rechazado');
 
       // Refrescar página para actualizar contadores
       router.refresh();
     } catch (error) {
-      showToast('error', error instanceof Error ? error.message : 'Error al rechazar motel');
+      toast.error(error instanceof Error ? error.message : 'Error al rechazar motel');
     } finally {
       setLoading(null);
     }
@@ -189,21 +184,6 @@ export default function QuickActions({ initialMotels }: QuickActionsProps) {
           </Link>
         </div>
       </div>
-
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
-          <div
-            className={`px-6 py-4 rounded-lg shadow-xl border ${
-              toastMessage.type === 'success'
-                ? 'bg-green-50 border-green-200 text-green-900'
-                : 'bg-red-50 border-red-200 text-red-900'
-            }`}
-          >
-            <p className="font-medium">{toastMessage.message}</p>
-          </div>
-        </div>
-      )}
     </>
   );
 }
