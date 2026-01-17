@@ -7,6 +7,7 @@ import type { Advertisement } from '@/hooks/useAdvertisements';
 
 export default function AdInlineCard({ ad, placement }: { ad: Advertisement; placement?: string }) {
   const [open, setOpen] = useState(false);
+  const photoUrl = ad.imageUrl || ad.largeImageUrl || '';
 
   useEffect(() => {
     if (!ad) return;
@@ -24,21 +25,29 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
       <button
         type="button"
         onClick={handleOpen}
-        className="text-left w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group"
+        className="text-left w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group min-h-[420px] h-full flex flex-col"
       >
         <div className="relative h-48 bg-gray-200">
-          <Image
-            src={ad.imageUrl}
-            alt={ad.title}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
+          {photoUrl ? (
+            <Image
+              src={photoUrl}
+              alt={ad.title}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-purple-200">
+              <svg className="w-16 h-16 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7h18M5 7v10a2 2 0 002 2h10a2 2 0 002-2V7m-2 0V5a2 2 0 00-2-2H9a2 2 0 00-2 2v2" />
+              </svg>
+            </div>
+          )}
           <div className="absolute top-3 right-3 bg-purple-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
             Publicidad
           </div>
         </div>
-        <div className="p-5">
+        <div className="p-5 flex-1 flex flex-col">
           <h3 className="font-bold text-lg text-gray-900 mb-1 group-hover:text-purple-600 transition-colors">
             {ad.title}
           </h3>
@@ -46,12 +55,7 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
           <div className="flex items-center gap-2 mb-3">
             <span className="text-sm text-gray-400">Publicidad</span>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1 text-xs bg-purple-50 text-purple-600 px-2 py-1 rounded-full">
-              Anuncio
-            </span>
-          </div>
-          {ad.description && <p className="text-sm text-gray-500 mt-3">{ad.description}</p>}
+          {ad.description && <p className="text-sm text-gray-500">{ad.description}</p>}
         </div>
       </button>
 

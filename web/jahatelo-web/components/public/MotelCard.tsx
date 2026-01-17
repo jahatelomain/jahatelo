@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import * as LucideIcons from 'lucide-react';
 import { trackMotelView } from '@/lib/analyticsService';
 
 interface MotelCardProps {
@@ -23,6 +24,7 @@ interface MotelCardProps {
 }
 
 export default function MotelCard({ motel }: MotelCardProps) {
+  const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>;
   const facadePhoto = motel.photos?.find((p) => p.kind === 'FACADE');
   const firstPhoto = motel.photos?.[0];
   const photoUrl = facadePhoto?.url || firstPhoto?.url;
@@ -45,7 +47,9 @@ export default function MotelCard({ motel }: MotelCardProps) {
   const isDisabled = motel.isFinanciallyEnabled === false;
 
   const cardContent = (
-    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-default' : 'cursor-pointer'}`}>
+    <div
+      className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[420px] h-full flex flex-col ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-default' : 'cursor-pointer'}`}
+    >
         {/* Image */}
         <div className="relative h-48 bg-gray-200">
           {photoUrl ? (
@@ -71,7 +75,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
         </div>
 
         {/* Content */}
-        <div className="p-5">
+        <div className="p-5 flex-1 flex flex-col">
           <h3 className="font-bold text-lg text-gray-900 mb-1 group-hover:text-purple-600 transition-colors">
             {motel.name}
           </h3>
@@ -105,7 +109,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
             <div className="flex flex-wrap gap-2 mb-3">
               {topAmenities.map((ma, idx) => {
                 const label = ma.amenity.name;
-                const icon = ma.amenity.icon || '•';
+                const IconComponent = ma.amenity.icon ? iconLibrary[ma.amenity.icon] : undefined;
                 return (
                   <span
                     key={idx}
@@ -113,7 +117,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
                     aria-label={label}
                     className="inline-flex items-center justify-center text-xs bg-purple-50 text-purple-600 w-8 h-8 rounded-full"
                   >
-                    {icon}
+                    {IconComponent ? <IconComponent size={14} /> : <span className="text-[10px] font-semibold">•</span>}
                   </span>
                 );
               })}
@@ -122,7 +126,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
 
           {/* Price */}
           {minPrice !== null && (
-            <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="mt-auto pt-4 border-t border-gray-100">
               <p className="text-sm text-gray-500">Desde</p>
               <p className="text-xl font-bold text-purple-600">
                 ${minPrice.toLocaleString()}
