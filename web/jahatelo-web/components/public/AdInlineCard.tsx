@@ -24,26 +24,27 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
       <button
         type="button"
         onClick={handleOpen}
-        className="text-left w-full bg-white border border-dashed border-slate-300 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-center hover:border-purple-300 hover:bg-purple-50/30 transition"
+        className="text-left w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group"
       >
-      <div className="relative w-full sm:w-48 h-28 bg-slate-100 rounded-xl overflow-hidden">
-        <Image
-          src={ad.imageUrl}
-          alt={ad.title}
-          fill
-          className="object-cover"
-          sizes="(max-width: 640px) 100vw, 200px"
-        />
-      </div>
-      <div className="flex-1">
-        <p className="text-xs uppercase tracking-wide text-slate-400">Publicidad</p>
-        <h4 className="text-base font-semibold text-slate-900">{ad.title}</h4>
-        <p className="text-sm text-slate-500">{ad.advertiser}</p>
-        {ad.description && <p className="text-sm text-slate-600 mt-2">{ad.description}</p>}
-      </div>
-      <span className="px-4 py-2 text-sm font-semibold text-purple-600 border border-purple-200 rounded-lg">
-        Ver detalles
-      </span>
+        <div className="relative h-48 bg-gray-200">
+          <Image
+            src={ad.imageUrl}
+            alt={ad.title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+          <div className="absolute top-3 right-3 bg-purple-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+            Publicidad
+          </div>
+        </div>
+        <div className="p-5">
+          <h4 className="font-bold text-lg text-gray-900 mb-1 group-hover:text-purple-600 transition-colors">
+            {ad.title}
+          </h4>
+          <p className="text-sm text-gray-500 mb-3">{ad.advertiser}</p>
+          {ad.description && <p className="text-sm text-gray-500">{ad.description}</p>}
+        </div>
       </button>
 
       {open && (
