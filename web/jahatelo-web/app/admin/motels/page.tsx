@@ -535,8 +535,9 @@ export default function MotelsAdminPage() {
 
       {/* Vista Lista (Tabla) */}
       {viewMode === 'list' && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <table className="min-w-full divide-y divide-slate-200">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+          <div className="overflow-x-auto">
+            <table className="min-w-[980px] w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
               <th className="px-6 py-3 text-left">
@@ -597,11 +598,13 @@ export default function MotelsAdminPage() {
                       className="w-4 h-4 text-purple-600 bg-white border-slate-300 rounded focus:ring-purple-500 focus:ring-2 cursor-pointer"
                     />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-900">{motel.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                  <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-900 max-w-[220px] truncate">
+                    {motel.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 max-w-[240px] truncate">
                     {motel.neighborhood}, {motel.city}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 max-w-[180px] truncate">
                     {motel.contactName || motel.contactEmail || motel.contactPhone || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -618,7 +621,7 @@ export default function MotelsAdminPage() {
                       {motel.isActive ? 'Sí' : 'No'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm min-w-[120px]">
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/admin/motels/${motel.id}`}
@@ -636,6 +639,7 @@ export default function MotelsAdminPage() {
             )}
           </tbody>
         </table>
+          </div>
       </div>
       )}
 

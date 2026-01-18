@@ -2707,6 +2707,562 @@ useEffect(() => {
 
 ---
 
+# 📊 SISTEMA DE ANALYTICS Y TRACKING
+
+## Objetivo
+
+Identificar **usuarios únicos**, medir **frecuencia de visitas**, diferenciar por **plataforma detallada** (Android, iOS, Web Desktop, Web Mobile) y entender el comportamiento del usuario.
+
+---
+
+## 📋 Estado Actual del Sistema
+
+### ✅ Lo que YA tienen implementado:
+
+1. **Tracking de eventos específicos**
+   - Vista de motel (VIEW)
+   - Click en teléfono (CLICK_PHONE)
+   - Click en WhatsApp (CLICK_WHATSAPP)
+   - Click en mapa (CLICK_MAP)
+   - Click en sitio web (CLICK_WEBSITE)
+   - Favoritos (FAVORITE_ADD/REMOVE)
+
+2. **Diferenciación básica por plataforma**
+   ```typescript
+   deviceType: 'WEB' | 'MOBILE'
+   ```
+
+3. **Dashboard de analytics en admin**
+   - Vista global en `/admin/analytics`
+   - Filtros por período (7, 30, 90 días)
+   - Métricas: Views, clicks, favoritos, conversión
+   - Gráficos por día, fuente, dispositivo
+   - Top moteles y ciudades
+
+### ❌ Gaps críticos:
+
+1. **No identifican usuarios únicos** - Cada evento es anónimo
+2. **No miden frecuencia de visitas** - No saben si un usuario volvió 3 o 30 veces
+3. **No agrupan eventos en sesiones** - No hay concepto de "visita"
+4. **No hay identificador persistente** del usuario entre visitas
+5. **No trackean page views globales** - Solo eventos específicos de moteles
+
+---
+
+## 🚀 SOLUCIÓN: 3 Capas de Analytics
+
+### Capa 1: Analytics Anónimo Mejorado ⭐ RECOMENDADO
+
+**Esfuerzo:** 4-6 horas
+**Costo:** $0
+**Herramienta:** Cookies + localStorage + fingerprinting básico
+
+#### Qué resuelve:
+- ✅ **Usuarios únicos:** Identificación anónima persistente
+- ✅ **Frecuencia de visitas:** Cuántas veces volvió cada usuario
+- ✅ **Sesiones:** Agrupar eventos por visita (timeout 30 min)
+- ✅ **Plataforma detallada:** Android, iOS, Web Desktop, Web Mobile
+- ✅ **Page views globales:** Trackear navegación completa
+- ✅ **100% control de datos:** Todo en tu base de datos
+
+#### Dashboard nuevo te daría:
+```
+📊 Usuarios Únicos (últimos 30 días): 1,247
+├─ 💻 Web Desktop: 523 (42%)
+├─ 📱 Web Mobile: 418 (33%)
+├─ 🤖 Android App: 218 (17%)
+└─ 🍎 iOS App: 88 (7%)
+
+🔄 Frecuencia de Visitas:
+├─ 1 día: 847 usuarios (68%)
+├─ 2-3 días: 245 usuarios (20%)
+├─ 4-7 días: 98 usuarios (8%)
+└─ 7+ días: 57 usuarios (5%)
+
+⏱️ Sesiones:
+├─ Total: 2,834 sesiones
+├─ Duración promedio: 4.3 min
+└─ Páginas por sesión: 3.8
+```
+
+#### Implementación técnica:
+
+**1. Sistema de identificación de usuarios**
+
+Crear `lib/userIdentification.ts`:
+- Generar User ID único por dispositivo
+- Persistir en localStorage + cookie (2 años)
+- Generar Session ID (timeout 30 min en sessionStorage)
+- Detectar plataforma: OS, browser, mobile/desktop
+
+**2. Actualizar eventos existentes**
+
+Modificar `lib/analyticsService.ts`:
+- Agregar `userId` y `sessionId` a cada evento
+- Mejorar `deviceType` de "WEB/MOBILE" a "web-desktop", "web-mobile", "mobile-android", "mobile-ios"
+- Agregar `deviceOs` y `deviceBrowser`
+
+**3. Nuevas tablas en Prisma**
+
+```prisma
+model MotelAnalytics {
+  // ... campos existentes
+  userId       String?   // ⭐ NUEVO
+  sessionId    String?   // ⭐ NUEVO
+  deviceOs     String?   // ⭐ NUEVO
+  deviceBrowser String?  // ⭐ NUEVO
+
+  @@index([userId, timestamp])
+  @@index([sessionId])
+}
+
+model PageView {
+  id            String   @id @default(cuid())
+  pagePath      String
+  pageTitle     String?
+  timestamp     DateTime @default(now())
+  userId        String
+  sessionId     String
+  deviceType    String?
+  deviceOs      String?
+  deviceBrowser String?
+  duration      Int?     // Tiempo en página
+
+  @@index([userId, timestamp])
+  @@index([sessionId])
+}
+
+model UserSession {
+  id            String   @id @default(cuid())
+  userId        String
+  sessionId     String   @unique
+  startTime     DateTime @default(now())
+  endTime       DateTime?
+  duration      Int?
+  pageViewCount Int      @default(0)
+  eventCount    Int      @default(0)
+  pagesVisited  String[]
+
+  @@index([userId, startTime])
+}
+```
+
+**4. Nuevos endpoints**
+
+- `POST /api/analytics/pageview` - Trackear cada cambio de página
+- `GET /api/admin/analytics/users` - Dashboard de usuarios únicos
+- Actualizar `POST /api/analytics/track` con nuevos campos
+
+**5. Auto-tracking de page views**
+
+Crear hook `usePageTracking()` que trackea automáticamente cada cambio de ruta en Next.js.
+
+#### Queries disponibles después:
+
+```sql
+-- Usuarios únicos por período
+SELECT COUNT(DISTINCT "userId")
+FROM "MotelAnalytics"
+WHERE "timestamp" >= NOW() - INTERVAL '30 days';
+
+-- Usuarios por plataforma
+SELECT
+  "deviceType",
+  COUNT(DISTINCT "userId") as unique_users
+FROM "MotelAnalytics"
+WHERE "timestamp" >= NOW() - INTERVAL '30 days'
+GROUP BY "deviceType";
+
+-- Usuarios recurrentes (visitaron 2+ días)
+SELECT
+  COUNT(*) as returning_users
+FROM (
+  SELECT "userId", COUNT(DISTINCT DATE("timestamp")) as visit_days
+  FROM "MotelAnalytics"
+  WHERE "timestamp" >= NOW() - INTERVAL '30 days'
+  GROUP BY "userId"
+  HAVING COUNT(DISTINCT DATE("timestamp")) > 1
+) subquery;
+
+-- Páginas más visitadas
+SELECT
+  "pagePath",
+  COUNT(*) as views,
+  COUNT(DISTINCT "userId") as unique_visitors
+FROM "PageView"
+WHERE "timestamp" >= NOW() - INTERVAL '7 days'
+GROUP BY "pagePath"
+ORDER BY views DESC
+LIMIT 10;
+```
+
+---
+
+### Capa 2: Google Analytics 4 ⭐ COMPLEMENTARIO
+
+**Esfuerzo:** 2 horas
+**Costo:** $0 (gratis hasta 10M eventos/mes)
+**Herramienta:** GA4 + Google Tag Manager
+
+#### Ventajas:
+- ✅ **Dashboards profesionales** listos para usar
+- ✅ **Reportes automáticos** por email
+- ✅ **Comparación con benchmarks** de la industria
+- ✅ **Audiencias** para remarketing si hacen publicidad
+- ✅ **Análisis de flujo** de usuarios
+- ✅ **Integración con Google Ads** si lo usan
+- ✅ **Data backup** - Si falla tu DB, tenés datos en GA4
+
+#### Implementación:
+
+**1. Crear cuenta GA4**
+- Ir a https://analytics.google.com
+- Crear propiedad nueva
+- Obtener Measurement ID (G-XXXXXXXXX)
+
+**2. Instalar en Next.js**
+
+```bash
+npm install @next/third-parties
+```
+
+```typescript
+// app/layout.tsx
+import { GoogleTagManager } from '@next/third-parties/google'
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        <GoogleTagManager gtmId="GTM-XXXXXX" />
+      </body>
+    </html>
+  )
+}
+```
+
+**3. Dual tracking**
+
+Modificar `lib/analyticsService.ts` para enviar a ambos:
+
+```typescript
+export const trackEvent = async (params) => {
+  // 1. Tu base de datos (como antes)
+  await fetch('/api/analytics/track', { ... });
+
+  // 2. Google Analytics
+  if (typeof window !== 'undefined' && (window as any).gtag) {
+    (window as any).gtag('event', params.eventType.toLowerCase(), {
+      motel_id: params.motelId,
+      source: params.source,
+      device_type: params.deviceType,
+    });
+  }
+};
+```
+
+**4. Eventos a configurar en GTM**
+- `page_view` (automático)
+- `motel_view`
+- `click_phone`
+- `click_whatsapp`
+- `add_to_favorites`
+- `share_motel`
+
+#### Reportes que tendrías en GA4:
+- **Adquisición:** De dónde vienen los usuarios (Google, Facebook, directo)
+- **Engagement:** Tiempo promedio, páginas por sesión
+- **Retención:** Usuarios que vuelven
+- **Conversiones:** Funnels personalizados
+- **Real-time:** Usuarios activos ahora mismo
+- **Demografía:** Edad y género (si está disponible)
+- **Tecnología:** Dispositivos, navegadores, resoluciones
+
+---
+
+### Capa 3: Mixpanel / Amplitude 💎 AVANZADO
+
+**Esfuerzo:** 6-8 horas
+**Costo:** $89-299/mes (según volumen)
+**Herramienta:** Mixpanel o Amplitude
+
+#### Cuándo considerarlo:
+
+Después de 2-3 meses con Capa 1 + 2, SI necesitan:
+
+1. **Funnels avanzados** con tasas de conversión automáticas
+   - Ejemplo: "Cuántos que vieron motel → hicieron click → llamaron"
+
+2. **Cohorte analysis**
+   - Ejemplo: "Usuarios que se registraron en enero, ¿cuántos volvieron en febrero?"
+
+3. **Retention curves**
+   - Gráficos automáticos de retención día 1, 7, 30
+
+4. **A/B testing nativo**
+   - Probar 2 versiones de una feature y ver cuál funciona mejor
+
+5. **User profiles**
+   - Ver el recorrido completo de un usuario específico
+
+6. **Predictive analytics**
+   - "Este usuario tiene 80% probabilidad de hacer conversión"
+
+#### Ventajas:
+- Dashboards más potentes que GA4
+- Queries visuales sin SQL
+- Exportación de audiencias
+- Alerts automáticas
+
+#### Desventajas:
+- Costo mensual
+- Curva de aprendizaje
+- Vendor lock-in
+
+---
+
+## 📊 Comparación de las 3 Capas
+
+| Feature | Capa 1 (Custom) | Capa 2 (GA4) | Capa 3 (Mixpanel) |
+|---------|----------------|--------------|-------------------|
+| **Usuarios únicos** | ✅ | ✅ | ✅ |
+| **Frecuencia visitas** | ✅ | ✅ | ✅ |
+| **Plataformas** | ✅ Detallado | ✅ Básico | ✅ Detallado |
+| **Sesiones** | ✅ | ✅ | ✅ |
+| **Page views** | ✅ | ✅ | ✅ |
+| **Costo** | $0 | $0 | $89-299/mes |
+| **Setup time** | 4-6 horas | 2 horas | 6-8 horas |
+| **Dashboards** | Custom | Built-in | Built-in Pro |
+| **Funnels** | Manual | Básico | Avanzado |
+| **Retention** | Manual | Básico | Avanzado |
+| **A/B Testing** | ❌ | ❌ | ✅ |
+| **Data ownership** | 100% tuyo | Google | Mixpanel |
+| **SQL access** | ✅ | ❌ | ⚠️ Limited |
+| **Privacy** | ✅ Total | ⚠️ Google | ⚠️ Third-party |
+
+---
+
+## 💡 Recomendación
+
+### Fase 1 (AHORA): Capa 1 + Capa 2
+
+**Razón:**
+1. **Capa 1** te da control total y datos propios
+2. **GA4** te da dashboards gratis de nivel empresarial
+3. Entre ambas cubren el 95% de necesidades
+4. **Total: 6-8 horas, $0 de costo**
+5. Backup de datos mutuo (si una falla, tenés la otra)
+
+### Fase 2 (2-3 meses después): Evaluar Capa 3
+
+Solo si:
+- Necesitan funnels avanzados con tasas de conversión automáticas
+- Quieren hacer A/B testing de features
+- Necesitan cohorte analysis frecuente
+- Tienen budget para $100-300/mes
+
+---
+
+## 🎯 Métricas Clave a Trackear
+
+### Para Negocio:
+1. **DAU (Daily Active Users)** - Usuarios únicos por día
+2. **MAU (Monthly Active Users)** - Usuarios únicos por mes
+3. **Retention D1, D7, D30** - % que vuelve después de 1, 7, 30 días
+4. **Session Duration** - Tiempo promedio de sesión
+5. **Conversion Rate** - % que llama/WhatsApp después de ver motel
+
+### Para Producto:
+1. **Feature Adoption** - % usuarios que usan cada feature
+2. **Drop-off Points** - Dónde abandonan el sitio
+3. **Most Viewed Pages** - Páginas más visitadas
+4. **Search Success Rate** - % búsquedas que resultan en click
+5. **Error Rate** - Errores 404, 500, etc.
+
+### Para Marketing:
+1. **Traffic Sources** - De dónde vienen (Google, Facebook, directo)
+2. **Campaign Performance** - ROI de campañas publicitarias
+3. **Referrals** - Quién les refiere tráfico
+4. **Conversion by Channel** - Cuál canal convierte mejor
+5. **Cost per Acquisition** - Costo de adquirir cada usuario
+
+---
+
+## 📋 Plan de Implementación
+
+### Sprint 1: Capa 1 (Custom Analytics)
+**Duración:** 1-2 días
+
+**Tareas:**
+1. [ ] Crear `lib/userIdentification.ts` con lógica de User ID
+2. [ ] Actualizar `lib/analyticsService.ts` con nuevos campos
+3. [ ] Agregar tablas a Prisma schema: `PageView`, `UserSession`
+4. [ ] Actualizar tabla `MotelAnalytics` con nuevos campos
+5. [ ] Ejecutar migración: `npx prisma migrate dev`
+6. [ ] Crear endpoint `POST /api/analytics/pageview`
+7. [ ] Actualizar endpoint `POST /api/analytics/track`
+8. [ ] Crear hook `usePageTracking()` para auto-tracking
+9. [ ] Integrar hook en layouts públicos
+10. [ ] Crear endpoint `GET /api/admin/analytics/users`
+11. [ ] Crear página de dashboard en `/admin/analytics/users`
+12. [ ] Testing en desarrollo
+13. [ ] Deploy a producción
+
+### Sprint 2: Capa 2 (GA4)
+**Duración:** 3-4 horas
+
+**Tareas:**
+1. [ ] Crear cuenta Google Analytics 4
+2. [ ] Obtener Measurement ID (G-XXXXXXXXX)
+3. [ ] Instalar `@next/third-parties`
+4. [ ] Agregar GTM a `app/layout.tsx`
+5. [ ] Configurar eventos custom en GTM
+6. [ ] Implementar dual tracking en `analyticsService.ts`
+7. [ ] Verificar eventos en GA4 Real-time
+8. [ ] Configurar conversiones (goals)
+9. [ ] Crear dashboard personalizado en GA4
+
+### Sprint 3: Dashboard Avanzado
+**Duración:** 1-2 días
+
+**Tareas:**
+1. [ ] Crear gráficos de usuarios únicos por día
+2. [ ] Implementar comparación período anterior
+3. [ ] Agregar filtros por plataforma
+4. [ ] Crear reporte de usuarios recurrentes
+5. [ ] Implementar funnel de conversión
+6. [ ] Exportar reportes a CSV
+7. [ ] Agregar alertas automáticas (ej: drop en usuarios)
+
+---
+
+## 🔒 Consideraciones de Privacidad
+
+### GDPR / Privacidad
+1. **Consentimiento:** Pedir permiso antes de cookies analíticas
+2. **Anonimización:** No guardar IPs ni datos personales
+3. **Derecho al olvido:** Permitir borrar datos de usuario
+4. **Transparencia:** Política de privacidad clara
+
+### Implementación de Consent Banner
+
+```typescript
+// components/CookieConsent.tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+
+export default function CookieConsent() {
+  const [showBanner, setShowBanner] = useState(false);
+
+  useEffect(() => {
+    const consent = localStorage.getItem('analytics_consent');
+    if (!consent) {
+      setShowBanner(true);
+    }
+  }, []);
+
+  const acceptCookies = () => {
+    localStorage.setItem('analytics_consent', 'accepted');
+    setShowBanner(false);
+    // Iniciar tracking
+    initializeAnalytics();
+  };
+
+  const rejectCookies = () => {
+    localStorage.setItem('analytics_consent', 'rejected');
+    setShowBanner(false);
+  };
+
+  if (!showBanner) return null;
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 bg-slate-900 text-white p-4 z-50">
+      <div className="container mx-auto flex items-center justify-between">
+        <p className="text-sm">
+          Usamos cookies para mejorar tu experiencia.{' '}
+          <a href="/privacidad" className="underline">
+            Ver política de privacidad
+          </a>
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={rejectCookies}
+            className="px-4 py-2 bg-slate-700 rounded"
+          >
+            Rechazar
+          </button>
+          <button
+            onClick={acceptCookies}
+            className="px-4 py-2 bg-purple-600 rounded"
+          >
+            Aceptar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+## 🧪 Testing y Validación
+
+### Verificar implementación:
+
+**1. User ID persiste entre visitas**
+```javascript
+// En browser console
+const userId1 = localStorage.getItem('jahatelo_user_id');
+console.log('User ID:', userId1);
+
+// Recargar página
+const userId2 = localStorage.getItem('jahatelo_user_id');
+console.log('User ID después de reload:', userId2);
+
+// Deberían ser iguales
+```
+
+**2. Sesiones se crean correctamente**
+```sql
+-- Verificar en DB
+SELECT * FROM "UserSession"
+WHERE "startTime" >= NOW() - INTERVAL '1 hour'
+ORDER BY "startTime" DESC;
+```
+
+**3. Page views se registran**
+```sql
+-- Últimos page views
+SELECT * FROM "PageView"
+ORDER BY "timestamp" DESC
+LIMIT 10;
+```
+
+**4. Usuarios únicos por plataforma**
+```sql
+SELECT
+  "deviceType",
+  COUNT(DISTINCT "userId") as unique_users
+FROM "MotelAnalytics"
+WHERE "timestamp" >= NOW() - INTERVAL '7 days'
+GROUP BY "deviceType";
+```
+
+---
+
+## 📚 Documentación de Referencia
+
+- **Plan completo:** `docs/ANALYTICS-UPGRADE-PLAN.md`
+- **Código de implementación:** Ver plan completo para snippets
+- **Queries SQL:** Ver plan completo para queries útiles
+- **GA4 Setup:** https://support.google.com/analytics
+- **GTM Setup:** https://tagmanager.google.com
+
+---
+
 # 📊 MÉTRICAS PARA MEDIR IMPACTO
 
 ## App Móvil
