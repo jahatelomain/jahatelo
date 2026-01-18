@@ -1,6 +1,8 @@
 # 🎨 Sugerencias UX para Jahatelo
 ## App Móvil y Web de Clientes
 
+> ✅ **Checkpoint:** Cambio de enfoque de estados/planes confirmado. Si surgen problemas a partir de este punto, volver a esta versión del documento y al acuerdo: estado de habilitado/deshabilitado controla visibilidad, planes FREE/BASIC/GOLD/DIAMOND controlan restricciones.
+
 **Documento:** Mejoras de Experiencia de Usuario
 **Fecha:** Enero 2025
 **Versión:** 1.0

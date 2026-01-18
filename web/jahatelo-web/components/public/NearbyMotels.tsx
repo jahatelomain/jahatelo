@@ -40,6 +40,7 @@ interface Motel {
     price2h: number | null;
     price12h: number | null;
   }>;
+  plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
 }
 
 const RADIUS_OPTIONS = [
@@ -244,6 +245,7 @@ export default function NearbyMotels() {
             longitude: motel.longitude,
             featuredPhoto: motel.featuredPhoto,
             hasPromo: false,
+            plan: motel.plan ?? null,
           }))}
           showRadius={selectedRadius}
           initialUserLocation={userLocation ? [userLocation.lat, userLocation.lng] : undefined}

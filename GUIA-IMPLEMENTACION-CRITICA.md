@@ -438,7 +438,7 @@ export const MotelSchema = z.object({
   longitud: z.number().min(-180).max(180).optional(),
   horarioApertura: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
   horarioCierre: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-  plan: z.enum(['FREE', 'BASIC', 'PREMIUM', 'PLATINUM']).optional(),
+  plan: z.enum(['FREE', 'BASIC', 'GOLD', 'DIAMOND']).optional(),
 });
 
 export const UpdateMotelSchema = MotelSchema.partial();

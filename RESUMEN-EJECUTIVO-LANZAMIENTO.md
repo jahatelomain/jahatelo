@@ -198,8 +198,8 @@ TOTAL:            $5,620
 **Mes 1 (10 moteles pagos):**
 ```
 5 × BASIC (₲150K)    = ₲750K   (~$100 USD)
-3 × PREMIUM (₲250K)  = ₲750K   (~$100 USD)
-2 × PLATINUM (₲450K) = ₲900K   (~$120 USD)
+3 × GOLD (₲250K)  = ₲750K   (~$100 USD)
+2 × DIAMOND (₲450K) = ₲900K   (~$120 USD)
 ────────────────────────────────────────
 TOTAL MES 1:          ₲2.4M    (~$320 USD)
 ```
@@ -207,8 +207,8 @@ TOTAL MES 1:          ₲2.4M    (~$320 USD)
 **Mes 3 (30 moteles pagos):**
 ```
 15 × BASIC           = ₲2.25M  (~$300 USD)
-10 × PREMIUM         = ₲2.5M   (~$333 USD)
-5 × PLATINUM         = ₲2.25M  (~$300 USD)
+10 × GOLD         = ₲2.5M   (~$333 USD)
+5 × DIAMOND         = ₲2.25M  (~$300 USD)
 ────────────────────────────────────────
 TOTAL MES 3:          ₲7M      (~$933 USD)
 ```
@@ -216,8 +216,8 @@ TOTAL MES 3:          ₲7M      (~$933 USD)
 **Mes 6 (60 moteles pagos):**
 ```
 30 × BASIC           = ₲4.5M   (~$600 USD)
-20 × PREMIUM         = ₲5M     (~$667 USD)
-10 × PLATINUM        = ₲4.5M   (~$600 USD)
+20 × GOLD         = ₲5M     (~$667 USD)
+10 × DIAMOND        = ₲4.5M   (~$600 USD)
 ────────────────────────────────────────
 TOTAL MES 6:          ₲14M     (~$1,867 USD)
 ```

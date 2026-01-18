@@ -13,6 +13,7 @@ type MapMotel = {
   longitude: number;
   featuredPhoto: string | null;
   hasPromo: boolean;
+  plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
 };
 
 type GoogleMapComponentProps = {
@@ -219,6 +220,24 @@ export default function GoogleMapComponent({
       );
       customLabel.setMap(googleMapRef.current);
 
+      const isFreePlan = motel.plan === 'FREE';
+      const actionButton = isFreePlan
+        ? `
+          <div
+            style="display: block; width: 100%; text-align: center; background: #E5E7EB; color: #6B7280; font-weight: 600; padding: 10px 16px; border-radius: 8px; margin-top: 8px;"
+          >
+            No disponible
+          </div>
+        `
+        : `
+          <a
+            href="/motels/${motel.slug}"
+            style="display: block; width: 100%; text-align: center; background: #8E2DE2; color: white; font-weight: 600; padding: 10px 16px; border-radius: 8px; text-decoration: none; margin-top: 8px;"
+          >
+            Ver detalles
+          </a>
+        `;
+
       // Create InfoWindow with custom content
       const infoWindowContent = `
         <div style="max-width: 280px; padding: 8px;">
@@ -240,12 +259,7 @@ export default function GoogleMapComponent({
               ⭐ Promoción activa
             </div>
           ` : ''}
-          <a
-            href="/motels/${motel.slug}"
-            style="display: block; width: 100%; text-align: center; background: #8E2DE2; color: white; font-weight: 600; padding: 10px 16px; border-radius: 8px; text-decoration: none; margin-top: 8px;"
-          >
-            Ver detalles
-          </a>
+          ${actionButton}
         </div>
       `;
 

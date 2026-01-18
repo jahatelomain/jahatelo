@@ -400,7 +400,7 @@ export default function MotelsAdminPage() {
             </div>
           </div>
 
-          {/* Activo/Inactivo */}
+          {/* Habilitado/Deshabilitado */}
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Visibilidad</p>
             <div className="flex flex-wrap gap-2">
@@ -422,7 +422,7 @@ export default function MotelsAdminPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-green-300'
                 }`}
               >
-                Activos <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.isActive).length})</span>
+                Habilitados <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.isActive).length})</span>
               </button>
               <button
                 onClick={() => setActiveFilter('INACTIVE')}
@@ -432,7 +432,7 @@ export default function MotelsAdminPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400'
                 }`}
               >
-                Inactivos <span className="ml-1 opacity-75">({motelsArray.filter((m) => !m.isActive).length})</span>
+                Deshabilitados <span className="ml-1 opacity-75">({motelsArray.filter((m) => !m.isActive).length})</span>
               </button>
             </div>
           </div>
@@ -561,7 +561,7 @@ export default function MotelsAdminPage() {
                 Estado
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Activo
+                Habilitado
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Acciones
@@ -618,7 +618,7 @@ export default function MotelsAdminPage() {
                           : 'bg-slate-100 text-slate-600'
                       }`}
                     >
-                      {motel.isActive ? 'Sí' : 'No'}
+                      {motel.isActive ? 'Habilitado' : 'Deshabilitado'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm min-w-[120px]">

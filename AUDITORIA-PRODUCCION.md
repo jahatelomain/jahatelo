@@ -34,7 +34,7 @@ Jahatelo es una **plataforma robusta y funcional** con todas las funcionalidades
 #### **Sistema de Moteles**
 - ✅ CRUD completo con validaciones
 - ✅ Estados: PENDIENTE, APROBADO, RECHAZADO
-- ✅ Planes comerciales: FREE, BASIC, PREMIUM, PLATINUM
+- ✅ Planes comerciales: FREE, BASIC, GOLD, DIAMOND
 - ✅ Geocodificación con Google Maps API
 - ✅ Galería de fotos (hasta 10 por motel)
 - ✅ Horarios de atención
@@ -789,8 +789,8 @@ Solo Fase 1 (Seguridad) + usuarios beta limitados.
 Con ~250 moteles en Paraguay y pricing actual:
 - **FREE:** 0 moteles pagando
 - **BASIC:** 50 moteles × ₲150K/mes = ₲7.5M/mes (~$1,000 USD)
-- **PREMIUM:** 30 moteles × ₲250K/mes = ₲7.5M/mes (~$1,000 USD)
-- **PLATINUM:** 10 moteles × ₲450K/mes = ₲4.5M/mes (~$600 USD)
+- **GOLD:** 30 moteles × ₲250K/mes = ₲7.5M/mes (~$1,000 USD)
+- **DIAMOND:** 10 moteles × ₲450K/mes = ₲4.5M/mes (~$600 USD)
 
 **Ingresos mensuales proyectados:** ₲19.5M (~$2,600 USD)
 **Break-even:** 3-4 meses después del lanzamiento

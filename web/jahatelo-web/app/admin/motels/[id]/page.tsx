@@ -148,7 +148,7 @@ export default function MotelDetailPage() {
     operationsContactPhone: '',
     status: 'PENDING' as MotelStatus,
     isActive: false,
-    plan: '',
+    plan: 'BASIC',
     nextBillingAt: '',
     isFeatured: false,
     featuredPhoto: '',
@@ -340,7 +340,7 @@ export default function MotelDetailPage() {
         operationsContactPhone: data.operationsContactPhone || '',
         status: data.status,
         isActive: data.isActive,
-        plan: data.plan || '',
+        plan: data.plan || 'BASIC',
         nextBillingAt: data.nextBillingAt || '',
         isFeatured: data.isFeatured || false,
         featuredPhoto: data.featuredPhoto || '',
@@ -939,7 +939,7 @@ export default function MotelDetailPage() {
                 }`}
               >
                 <span>{motel.isActive ? '✅' : '⏸'}</span>
-                {motel.isActive ? 'Activo' : 'Inactivo'}
+                {motel.isActive ? 'Habilitado' : 'Deshabilitado'}
               </span>
               {motel.plan && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-900 text-white">
@@ -1666,22 +1666,9 @@ export default function MotelDetailPage() {
 
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                 <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
-                  Configuración Comercial
+                  Configuración comercial
                 </h3>
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Plan</label>
-                    <select
-                      value={motelForm.plan}
-                      onChange={(e) => setMotelForm({ ...motelForm, plan: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    >
-                      <option value="">Sin plan</option>
-                      <option value="Gratis">Gratis</option>
-                      <option value="Básico">Básico</option>
-                      <option value="Premium">Premium</option>
-                    </select>
-                  </div>
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Próxima Facturación
@@ -1761,12 +1748,12 @@ export default function MotelDetailPage() {
 
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                 <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
-                  Plan y estado
+                  Facturación y estado
                 </h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-medium text-slate-500 uppercase">Plan</label>
-                    <p className="mt-1 text-slate-900">{motel.plan || 'Sin plan'}</p>
+                    <p className="mt-1 text-slate-900">{motel.plan || 'BASIC'}</p>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-slate-500 uppercase">Próxima facturación</label>
@@ -1785,7 +1772,7 @@ export default function MotelDetailPage() {
                     </p>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Activo</label>
+                    <label className="text-xs font-medium text-slate-500 uppercase">Habilitado</label>
                     <p className="mt-1 font-semibold">{motel.isActive ? 'Sí' : 'No'}</p>
                   </div>
                   <div>
@@ -1878,20 +1865,7 @@ export default function MotelDetailPage() {
                 <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
                   Plan y estado
                 </h3>
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Plan</label>
-                    <select
-                      value={motelForm.plan}
-                      onChange={(e) => setMotelForm({ ...motelForm, plan: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    >
-                      <option value="">Sin plan</option>
-                      <option value="Gratis">Gratis</option>
-                      <option value="Básico">Básico</option>
-                      <option value="Premium">Premium</option>
-                    </select>
-                  </div>
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Próxima facturación</label>
                     <input
@@ -1913,21 +1887,7 @@ export default function MotelDetailPage() {
                     </label>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Estado</label>
-                    <select
-                      value={motelForm.status}
-                      onChange={(e) =>
-                        setMotelForm({ ...motelForm, status: e.target.value as MotelStatus })
-                      }
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    >
-                      <option value="PENDING">Pendiente</option>
-                      <option value="APPROVED">Aprobado</option>
-                      <option value="REJECTED">Rechazado</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Activo</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Habilitado</label>
                     <select
                       value={motelForm.isActive.toString()}
                       onChange={(e) =>
@@ -1935,8 +1895,8 @@ export default function MotelDetailPage() {
                       }
                       className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     >
-                      <option value="true">Sí</option>
-                      <option value="false">No</option>
+                      <option value="true">Habilitado</option>
+                      <option value="false">Deshabilitado</option>
                     </select>
                   </div>
                 </div>

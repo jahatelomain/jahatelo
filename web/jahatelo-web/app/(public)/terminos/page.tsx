@@ -96,8 +96,10 @@ export default function TermsPage() {
 
               <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">6.3 Planes y Pagos</h3>
               <ul className="list-disc pl-6 text-slate-700 space-y-2">
-                <li><strong>BASIC:</strong> Listado gratuito con funcionalidades limitadas</li>
-                <li><strong>PREMIUM:</strong> Perfil destacado con funciones adicionales (consultar precios)</li>
+                <li><strong>FREE:</strong> Listado básico con acceso limitado</li>
+                <li><strong>BASIC:</strong> Listado estándar con funcionalidades esenciales</li>
+                <li><strong>GOLD:</strong> Visibilidad mejorada con funciones adicionales</li>
+                <li><strong>DIAMOND:</strong> Máxima visibilidad y beneficios avanzados</li>
                 <li>Los pagos son mensuales y no reembolsables</li>
                 <li>Las cancelaciones surten efecto al final del período pagado</li>
               </ul>

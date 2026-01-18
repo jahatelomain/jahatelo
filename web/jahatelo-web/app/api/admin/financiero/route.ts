@@ -18,7 +18,6 @@ export async function GET(request: NextRequest) {
         billingDay: true,
         paymentType: true,
         financialStatus: true,
-        isFinanciallyEnabled: true,
         billingCompanyName: true,
         billingTaxId: true,
         adminContactName: true,

@@ -4,6 +4,10 @@ import prisma from '@/lib/prisma';
 export async function GET() {
   try {
     const motels = await prisma.motel.findMany({
+      where: {
+        status: 'APPROVED',
+        isActive: true,
+      },
       select: {
         id: true,
         name: true,
@@ -11,7 +15,7 @@ export async function GET() {
         city: true,
         isActive: true,
         featuredPhoto: true,
-        isFinanciallyEnabled: true,
+        plan: true,
       },
       orderBy: {
         name: 'asc',

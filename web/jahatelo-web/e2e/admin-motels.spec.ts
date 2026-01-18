@@ -329,7 +329,7 @@ test.describe('Admin - Gestión de Moteles', () => {
 
     // Verificar que tiene opciones de planes
     const options = await planSelect.locator('option').allTextContents();
-    expect(options.some(opt => opt.includes('PREMIUM') || opt.includes('Premium'))).toBeTruthy();
+    expect(options.some(opt => opt.includes('GOLD') || opt.includes('DIAMOND'))).toBeTruthy();
   });
 
   test('should toggle motel active status', async ({ page }) => {

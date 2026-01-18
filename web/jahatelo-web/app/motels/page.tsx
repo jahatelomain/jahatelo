@@ -77,6 +77,7 @@ export default async function MotelsPage({ searchParams }: MotelsPageProps) {
       },
     },
     orderBy: [
+      { plan: 'desc' },
       { isFeatured: 'desc' },
       { ratingAvg: 'desc' },
       { createdAt: 'desc' },

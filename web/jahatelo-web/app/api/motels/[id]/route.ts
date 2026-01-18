@@ -16,6 +16,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
           { slug: id },
           { id },
         ],
+        status: 'APPROVED',
+        isActive: true,
       },
       include: {
         rooms: {
@@ -47,7 +49,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       },
     });
 
-    if (!motel) {
+    if (!motel || motel.plan === 'FREE') {
       return NextResponse.json(
         { error: 'Motel not found' },
         { status: 404 }

@@ -15,7 +15,6 @@ interface Motel {
   billingDay: number | null;
   paymentType: PaymentType | null;
   financialStatus: FinancialStatus;
-  isFinanciallyEnabled: boolean;
   billingCompanyName: string | null;
   billingTaxId: string | null;
   adminContactName: string | null;

@@ -6,9 +6,10 @@ import { mapMotelToListItem } from '../mappers';
 // Helper to get plan priority for sorting
 const getPlanPriority = (plan: string | null | undefined): number => {
   switch (plan) {
-    case 'PLATINUM': return 1;
-    case 'PREMIUM': return 2;
+    case 'DIAMOND': return 1;
+    case 'GOLD': return 2;
     case 'BASIC': return 3;
+    case 'FREE': return 4;
     default: return 4;
   }
 };
@@ -143,9 +144,10 @@ export async function GET(request: NextRequest) {
           )
         ORDER BY
           CASE m.plan
-            WHEN 'PLATINUM' THEN 1
-            WHEN 'PREMIUM' THEN 2
+            WHEN 'DIAMOND' THEN 1
+            WHEN 'GOLD' THEN 2
             WHEN 'BASIC' THEN 3
+            WHEN 'FREE' THEN 4
             ELSE 4
           END ASC,
           m."ratingAvg" DESC,

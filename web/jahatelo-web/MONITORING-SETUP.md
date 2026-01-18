@@ -94,7 +94,7 @@ logger.info({
   message: 'Usuario creó motel',
   userId: '123',
   motelId: '456',
-  plan: 'PREMIUM',
+  plan: 'GOLD',
 });
 ```
 

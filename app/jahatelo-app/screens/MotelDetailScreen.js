@@ -216,16 +216,16 @@ export default function MotelDetailScreen({ route, navigation }) {
               <Text style={styles.badgeText}>PROMO</Text>
             </View>
           )}
-          {motel.plan === 'PLATINUM' && (
+          {motel.plan === 'DIAMOND' && (
             <View style={styles.platinumBadge}>
               <Ionicons name="diamond" size={12} color="#FFFFFF" />
-              <Text style={styles.badgeText}>PLATINUM</Text>
+              <Text style={styles.badgeText}>DIAMOND</Text>
             </View>
           )}
-          {motel.plan === 'PREMIUM' && (
+          {motel.plan === 'GOLD' && (
             <View style={styles.premiumBadge}>
               <Ionicons name="star" size={12} color="#FFFFFF" />
-              <Text style={styles.badgeText}>VIP</Text>
+              <Text style={styles.badgeText}>GOLD</Text>
             </View>
           )}
         </View>

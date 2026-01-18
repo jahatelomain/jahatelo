@@ -54,7 +54,7 @@ export const MotelSchema = z.object({
   operationsContactName: z.string().min(2).max(100).optional().nullable(),
   operationsContactEmail: z.string().email('Email inválido').max(255).optional().nullable(),
   operationsContactPhone: z.string().regex(/^\+?[0-9]{9,15}$/, 'Teléfono inválido').optional().nullable(),
-  plan: z.enum(['BASIC', 'PREMIUM', 'PLATINUM']).optional(),
+  plan: z.enum(['FREE', 'BASIC', 'GOLD', 'DIAMOND']).optional(),
   nextBillingAt: z.string().datetime('Fecha inválida').optional().nullable(),
   isFeatured: z.boolean().optional(),
 });
@@ -309,7 +309,7 @@ export const SearchSchema = z.object({
   precioMin: z.number().min(0).optional(),
   precioMax: z.number().min(0).optional(),
   amenidades: z.array(IdSchema).optional(),
-  plan: z.enum(['FREE', 'BASIC', 'PREMIUM', 'PLATINUM']).optional(),
+  plan: z.enum(['FREE', 'BASIC', 'GOLD', 'DIAMOND']).optional(),
 });
 
 // ============================================

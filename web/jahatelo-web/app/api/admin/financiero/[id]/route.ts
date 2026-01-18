@@ -26,7 +26,7 @@ export async function GET(
         billingDay: true,
         paymentType: true,
         financialStatus: true,
-        isFinanciallyEnabled: true,
+        plan: true,
         billingCompanyName: true,
         billingTaxId: true,
         adminContactName: true,
@@ -86,7 +86,7 @@ export async function PATCH(
       billingDay,
       paymentType,
       financialStatus,
-      isFinanciallyEnabled,
+      plan,
       billingCompanyName,
       billingTaxId,
       adminContactName,
@@ -132,6 +132,13 @@ export async function PATCH(
       );
     }
 
+    if (plan && !['FREE', 'BASIC', 'GOLD', 'DIAMOND'].includes(plan)) {
+      return NextResponse.json(
+        { error: 'Plan inválido' },
+        { status: 400 }
+      );
+    }
+
     // Actualizar motel
     const updatedMotel = await prisma.motel.update({
       where: { id },
@@ -139,7 +146,7 @@ export async function PATCH(
         ...(billingDay !== undefined && { billingDay }),
         ...(paymentType && { paymentType }),
         ...(financialStatus && { financialStatus }),
-        ...(isFinanciallyEnabled !== undefined && { isFinanciallyEnabled }),
+        ...(plan && { plan }),
         ...(billingCompanyName !== undefined && { billingCompanyName }),
         ...(billingTaxId !== undefined && { billingTaxId }),
         ...(adminContactName !== undefined && { adminContactName }),
@@ -153,7 +160,7 @@ export async function PATCH(
         billingDay: true,
         paymentType: true,
         financialStatus: true,
-        isFinanciallyEnabled: true,
+        plan: true,
         billingCompanyName: true,
         billingTaxId: true,
         adminContactName: true,

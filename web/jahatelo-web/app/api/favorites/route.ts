@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
     const motels = await prisma.motel.findMany({
       where: {
         id: { in: motelIds },
+        status: 'APPROVED',
         isActive: true,
       },
       include: {

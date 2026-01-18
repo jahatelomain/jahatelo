@@ -64,7 +64,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     },
   });
 
-  if (!motel || motel.status !== 'APPROVED' || !motel.isActive) {
+  if (!motel || motel.status !== 'APPROVED' || !motel.isActive || motel.plan === 'FREE') {
     notFound();
   }
 
@@ -122,7 +122,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                     {(() => {
                       const IconComponent = ma.amenity.icon ? iconLibrary[ma.amenity.icon] : undefined;
                       return IconComponent ? (
-                        <IconComponent size={18} className="text-purple-600" />
+                        <IconComponent size={18} />
                       ) : (
                         <span className="text-purple-600 text-base font-semibold">•</span>
                       );
@@ -292,7 +292,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                                   {(() => {
                                     const IconComponent = ra.amenity.icon ? iconLibrary[ra.amenity.icon] : undefined;
                                     return IconComponent ? (
-                                      <IconComponent size={12} className="text-purple-600" />
+                                      <IconComponent size={12} />
                                     ) : (
                                       <span className="text-purple-600 text-[10px] font-semibold">•</span>
                                     );

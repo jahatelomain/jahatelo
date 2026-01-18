@@ -111,7 +111,7 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
     return null;
   }
 
-  const isDisabled = motel.isFinanciallyEnabled === false;
+  const isDisabled = motel.plan === 'FREE';
 
   return (
     <View
@@ -262,7 +262,7 @@ const LabelOverlay = React.memo(({ motel, mapRef, visible, region }) => {
     return null;
   }
 
-  const isDisabled = motel.isFinanciallyEnabled === false;
+  const isDisabled = motel.plan === 'FREE';
 
   return (
     <Animated.View
@@ -344,7 +344,7 @@ visible={showLabels && userWantsLabels}
 ```javascript
 const CustomMarkerAndroidWithCallout = React.memo(({ motel, onPress }) => {
   const [showCallout, setShowCallout] = useState(false);
-  const isDisabled = motel.isFinanciallyEnabled === false;
+  const isDisabled = motel.plan === 'FREE';
 
   return (
     <Marker

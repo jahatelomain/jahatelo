@@ -25,7 +25,7 @@ Reemplazar los placeholders del dashboard (como "Cantidad de Vistas: 0") con **m
 - ✅ Crecimiento Mensual (moteles nuevos)
 - ✅ Revenue Potencial (estimado por planes)
 - ✅ Gráfico de barras: Moteles por Ciudad (Top 5)
-- ✅ Gráfico de distribución: Planes BASIC/PREMIUM/PLATINUM
+- ✅ Gráfico de distribución: Planes BASIC/GOLD/DIAMOND
 - ✅ Estados vacíos con emojis cuando no hay datos
 - ✅ Animaciones suaves en barras de progreso
 - ✅ Formato de moneda paraguaya (PYG)
@@ -91,8 +91,8 @@ const lastMonthMotels = await prisma.motel.count({
 ```typescript
 const planPrices = {
   BASIC: 0,          // Gratis
-  PREMIUM: 500000,   // 500k PYG/mes
-  PLATINUM: 1000000, // 1M PYG/mes
+  GOLD: 500000,   // 500k PYG/mes
+  DIAMOND: 1000000, // 1M PYG/mes
 };
 
 const planCounts = await prisma.motel.groupBy({
@@ -134,7 +134,7 @@ const planDistribution = await prisma.motel.groupBy({
 const percentage = Math.round((count / totalActivePlans) * 100);
 ```
 
-**Muestra % de cada plan (BASIC, PREMIUM, PLATINUM)**
+**Muestra % de cada plan (BASIC, GOLD, DIAMOND)**
 
 ---
 
@@ -195,10 +195,10 @@ const percentage = Math.round((count / totalActivePlans) * 100);
 │ 🥉 BASIC         12      (60%)      │
 │ ████████████████████████████████    │
 │                                     │
-│ 🥈 PREMIUM        6      (30%)      │
+│ 🥈 GOLD        6      (30%)      │
 │ ████████████████                    │
 │                                     │
-│ 🥇 PLATINUM       2      (10%)      │
+│ 🥇 DIAMOND       2      (10%)      │
 │ █████                               │
 └─────────────────────────────────────┘
 ```
@@ -223,8 +223,8 @@ const percentage = Math.round((count / totalActivePlans) * 100);
 ```typescript
 const planPrices = {
   BASIC: 0,          // Plan gratuito
-  PREMIUM: 500000,   // ₲ 500.000/mes
-  PLATINUM: 1000000, // ₲ 1.000.000/mes
+  GOLD: 500000,   // ₲ 500.000/mes
+  DIAMOND: 1000000, // ₲ 1.000.000/mes
 };
 ```
 
@@ -262,16 +262,16 @@ VALUES
 -- Crear moteles en diferentes ciudades
 INSERT INTO "Motel" (id, name, city, neighborhood, status, address, slug, "isActive", plan, "createdAt", "updatedAt")
 VALUES
-  ('motel-1', 'Paradise', 'Asunción', 'Centro', 'APPROVED', 'Av. Principal 123', 'paradise', true, 'PREMIUM', NOW() - INTERVAL '5 days', NOW()),
+  ('motel-1', 'Paradise', 'Asunción', 'Centro', 'APPROVED', 'Av. Principal 123', 'paradise', true, 'GOLD', NOW() - INTERVAL '5 days', NOW()),
   ('motel-2', 'Luna', 'Ciudad del Este', 'Centro', 'APPROVED', 'Av. Secundaria 456', 'luna', true, 'BASIC', NOW() - INTERVAL '10 days', NOW() - INTERVAL '8 days'),
-  ('motel-3', 'Sol', 'Asunción', 'Barrio Sur', 'APPROVED', 'Calle Terciaria 789', 'sol', true, 'PLATINUM', NOW() - INTERVAL '3 days', NOW());
+  ('motel-3', 'Sol', 'Asunción', 'Barrio Sur', 'APPROVED', 'Calle Terciaria 789', 'sol', true, 'DIAMOND', NOW() - INTERVAL '3 days', NOW());
 ```
 
 4. **Verificar cálculos:**
    - **Tasa de Conversión:** 1 WON / 3 Total = 33%
    - **Tiempo Promedio:** (5 + 2 + 3) / 3 = 3.3 días
    - **Moteles por Ciudad:** Asunción: 2, Ciudad del Este: 1
-   - **Distribución:** BASIC: 1 (33%), PREMIUM: 1 (33%), PLATINUM: 1 (33%)
+   - **Distribución:** BASIC: 1 (33%), GOLD: 1 (33%), DIAMOND: 1 (33%)
    - **Revenue:** 0 + 500k + 1M = ₲ 1.500.000
 
 5. **Verificar estados vacíos:**
@@ -434,7 +434,7 @@ El dashboard ahora muestra **métricas reales y accionables** que permiten:
 3. **Visualizar crecimiento** mes a mes
 4. **Proyectar revenue** según planes contratados
 5. **Identificar ciudades** con más moteles
-6. **Analizar distribución** de planes BASIC/PREMIUM/PLATINUM
+6. **Analizar distribución** de planes BASIC/GOLD/DIAMOND
 
 **Antes:** Dashboard con placeholders sin valor
 **Después:** Dashboard con insights accionables

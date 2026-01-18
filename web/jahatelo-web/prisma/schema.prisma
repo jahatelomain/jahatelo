@@ -102,9 +102,10 @@ enum AdEventType {
 }
 
 enum PlanType {
+  FREE
   BASIC
-  PREMIUM
-  PLATINUM
+  GOLD
+  DIAMOND
 }
 
 // ============================================
@@ -151,7 +152,6 @@ model Motel {
   financialStatus  FinancialStatus @default(ACTIVE)
   billingCompanyName String?       // Razón Social
   billingTaxId     String?         // RUC
-  isFinanciallyEnabled Boolean     @default(true) // Si está inhabilitado financieramente
 
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt

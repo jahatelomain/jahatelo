@@ -37,6 +37,7 @@ interface Motel {
     price2h: number | null;
     price12h: number | null;
   }>;
+  plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
 }
 
 const popularSearches = [

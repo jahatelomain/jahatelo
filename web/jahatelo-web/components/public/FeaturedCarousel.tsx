@@ -10,6 +10,7 @@ interface Motel {
   name: string;
   featuredPhoto?: string | null;
   photos?: Array<{ url: string; kind: string }>;
+  plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
 }
 
 interface FeaturedCarouselProps {
@@ -43,23 +44,41 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
             motel.featuredPhoto ||
             motel.photos?.[0]?.url ||
             'https://picsum.photos/800/400?random=' + index;
+          const isDisabled = motel.plan === 'FREE';
 
           return (
-            <Link
+            <div
               key={motel.id}
-              href={`/motels/${motel.slug}`}
               className={`absolute inset-0 transition-opacity duration-500 ${
                 index === currentIndex ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              <Image
-                src={photoUrl}
-                alt={motel.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 800px"
-                priority={index === 0}
-              />
+              {isDisabled ? (
+                <div className="absolute inset-0 cursor-default">
+                  <Image
+                    src={photoUrl}
+                    alt={motel.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 800px"
+                    priority={index === 0}
+                  />
+                </div>
+              ) : (
+                <Link
+                  href={`/motels/${motel.slug}`}
+                  className="absolute inset-0"
+                >
+                  <Image
+                    src={photoUrl}
+                    alt={motel.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 800px"
+                    priority={index === 0}
+                  />
+                </Link>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
               {/* Badge DESTACADO */}
@@ -76,10 +95,10 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                   {motel.name}
                 </h3>
                 <p className="text-sm md:text-base text-purple-200">
-                  Ver detalles →
+                  {isDisabled ? 'No disponible' : 'Ver detalles →'}
                 </p>
               </div>
-            </Link>
+            </div>
           );
         })}
       </div>

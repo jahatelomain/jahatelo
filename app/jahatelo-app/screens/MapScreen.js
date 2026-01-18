@@ -24,19 +24,19 @@ const debugLog = (...args) => {
 
 // Marker con Callout solo en iOS para evitar etiquetas en Android
 const CustomMarker = React.memo(({ motel, onPress }) => {
-  const isDisabled = motel.isFinanciallyEnabled === false;
+  const isDisabled = motel.plan === 'FREE';
   const [tracksChanges, setTracksChanges] = useState(IS_ANDROID);
   const plan = motel.plan || 'BASIC';
 
   // Configuración según plan
-  const isPremium = plan === 'PREMIUM';
-  const isPlatinum = plan === 'PLATINUM';
+  const isGold = plan === 'GOLD';
+  const isDiamond = plan === 'DIAMOND';
 
   const calloutStyle = [
     styles.calloutContainer,
     isDisabled && styles.disabledCallout,
-    isPremium && styles.premiumCallout,
-    isPlatinum && styles.platinumCallout,
+    isGold && styles.premiumCallout,
+    isDiamond && styles.platinumCallout,
   ];
 
   useEffect(() => {
@@ -69,19 +69,19 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
           style={[
             styles.markerPin,
             isDisabled && styles.disabledMarker,
-            isPlatinum && styles.platinumMarker,
+            isDiamond && styles.platinumMarker,
           ]}
         >
           <View style={styles.markerInner}>
             <Ionicons
               name="heart"
-              size={isPremium || isPlatinum ? 18 : 14}
+              size={isGold || isDiamond ? 18 : 14}
               color={COLORS.white}
             />
           </View>
 
-          {/* Badge para Platinum */}
-          {isPlatinum && !isDisabled && (
+          {/* Badge para Diamond */}
+          {isDiamond && !isDisabled && (
             <View style={styles.platinumBadge}>
               <Ionicons name="star" size={12} color="#FCD34D" />
             </View>
@@ -92,11 +92,11 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
       {!IS_ANDROID && (
         <Callout tooltip onPress={onPress}>
           <View style={calloutStyle}>
-            {isPlatinum && (
-              <Text style={styles.calloutBadge}>💎 PLATINUM</Text>
+            {isDiamond && (
+              <Text style={styles.calloutBadge}>💎 DIAMOND</Text>
             )}
-            {isPremium && !isPlatinum && (
-              <Text style={styles.calloutBadge}>⭐ VIP</Text>
+            {isGold && !isDiamond && (
+              <Text style={styles.calloutBadge}>⭐ GOLD</Text>
             )}
             <Text style={styles.calloutTitle} numberOfLines={1}>
               {motel.name}
@@ -109,7 +109,6 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
   );
 }, (prevProps, nextProps) => {
   return prevProps.motel.id === nextProps.motel.id &&
-         prevProps.motel.isFinanciallyEnabled === nextProps.motel.isFinanciallyEnabled &&
          prevProps.motel.plan === nextProps.motel.plan;
 });
 
@@ -248,8 +247,8 @@ export default function MapScreen() {
   };
 
   const handleMarkerPress = useCallback((motel) => {
-    // No permitir navegación si está financieramente deshabilitado
-    if (motel.isFinanciallyEnabled === false) {
+    // No permitir navegación si es plan FREE
+    if (motel.plan === 'FREE') {
       return;
     }
 

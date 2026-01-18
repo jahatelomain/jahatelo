@@ -8,7 +8,7 @@ export const revalidate = 60; // Cache por 60 segundos
  * GET /api/mobile/motels/map
  *
  * Endpoint ULTRA OPTIMIZADO para mapas - solo datos mínimos necesarios
- * Retorna: id, name, slug, latitude, longitude, isFinanciallyEnabled
+ * Retorna: id, name, slug, latitude, longitude, plan
  */
 export async function GET() {
   try {
@@ -26,7 +26,6 @@ export async function GET() {
         slug: true,
         latitude: true,
         longitude: true,
-        isFinanciallyEnabled: true,
         plan: true,
       },
     });
@@ -41,7 +40,6 @@ export async function GET() {
           slug: m.slug,
           latitude: m.latitude!,
           longitude: m.longitude!,
-          isFinanciallyEnabled: m.isFinanciallyEnabled ?? true,
           plan: m.plan,
         })),
       },

@@ -72,7 +72,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
                 : 'bg-slate-100 text-slate-600'
             }`}
           >
-            {motel.isActive ? 'Activo' : 'Inactivo'}
+            {motel.isActive ? 'Habilitado' : 'Deshabilitado'}
           </span>
         </div>
       </div>

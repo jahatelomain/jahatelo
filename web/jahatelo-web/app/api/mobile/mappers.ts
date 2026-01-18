@@ -163,8 +163,6 @@ export function mapMotelToListItem(motel: MotelForList) {
     promoImageUrl: firstPromo?.imageUrl || null,
     promoTitle: firstPromo?.title || null,
     promoDescription: firstPromo?.description || null,
-    // Campo financiero para deshabilitar moteles
-    isFinanciallyEnabled: motel.isFinanciallyEnabled,
     // Plan del motel para badges y ordenamiento
     plan: motel.plan,
   };

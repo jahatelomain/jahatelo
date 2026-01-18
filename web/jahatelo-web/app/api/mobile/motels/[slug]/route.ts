@@ -82,7 +82,7 @@ export async function GET(
     }
 
     // Check if motel is approved and active
-    if (motel.status !== 'APPROVED' || !motel.isActive) {
+    if (motel.status !== 'APPROVED' || !motel.isActive || motel.plan === 'FREE') {
       return NextResponse.json(
         { error: 'Motel not available' },
         { status: 404 }

@@ -17,7 +17,7 @@ interface Motel {
   billingDay: number | null;
   paymentType: PaymentType | null;
   financialStatus: FinancialStatus;
-  isFinanciallyEnabled: boolean;
+  plan: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND';
   billingCompanyName: string | null;
   billingTaxId: string | null;
   adminContactName: string | null;
@@ -74,7 +74,7 @@ export default function EditFinancieroPage() {
     billingDay: '',
     paymentType: '',
     financialStatus: 'ACTIVE' as FinancialStatus,
-    isFinanciallyEnabled: true,
+    plan: 'BASIC',
     billingCompanyName: '',
     billingTaxId: '',
     adminContactName: '',
@@ -110,7 +110,7 @@ export default function EditFinancieroPage() {
           billingDay: data.billingDay?.toString() || '',
           paymentType: data.paymentType || '',
           financialStatus: data.financialStatus || 'ACTIVE',
-          isFinanciallyEnabled: data.isFinanciallyEnabled ?? true,
+          plan: data.plan || 'BASIC',
           billingCompanyName: data.billingCompanyName || '',
           billingTaxId: data.billingTaxId || '',
           adminContactName: data.adminContactName || '',
@@ -219,7 +219,7 @@ export default function EditFinancieroPage() {
           billingDay: formData.billingDay ? parseInt(formData.billingDay) : null,
           paymentType: formData.paymentType || null,
           financialStatus: formData.financialStatus,
-          isFinanciallyEnabled: formData.isFinanciallyEnabled,
+          plan: formData.plan,
           billingCompanyName: formData.billingCompanyName || null,
           billingTaxId: formData.billingTaxId || null,
           adminContactName: formData.adminContactName || null,
@@ -328,6 +328,22 @@ export default function EditFinancieroPage() {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
+                Plan
+              </label>
+              <select
+                value={formData.plan}
+                onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+              >
+                <option value="FREE">FREE</option>
+                <option value="BASIC">BASIC</option>
+                <option value="GOLD">GOLD</option>
+                <option value="DIAMOND">DIAMOND</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Status financiero
               </label>
               <select
@@ -343,21 +359,6 @@ export default function EditFinancieroPage() {
               </select>
             </div>
 
-            <div className="flex items-center">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.isFinanciallyEnabled}
-                  onChange={(e) =>
-                    setFormData({ ...formData, isFinanciallyEnabled: e.target.checked })
-                  }
-                  className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-600"
-                />
-                <span className="text-sm font-medium text-slate-700">
-                  Habilitado financieramente
-                </span>
-              </label>
-            </div>
           </div>
         </div>
 

@@ -172,9 +172,10 @@ export default function AnalyticsMetrics({ data }: AnalyticsMetricsProps) {
             <div className="space-y-4">
               {data.planDistribution.map((item, index) => {
                 const colors = {
-                  BASIC: { bg: 'bg-slate-100', bar: 'bg-slate-400', text: 'text-slate-700', icon: '🥉' },
-                  PREMIUM: { bg: 'bg-purple-50', bar: 'bg-purple-500', text: 'text-purple-700', icon: '🥈' },
-                  PLATINUM: { bg: 'bg-yellow-50', bar: 'bg-yellow-500', text: 'text-yellow-700', icon: '🥇' },
+                  FREE: { bg: 'bg-slate-100', bar: 'bg-slate-300', text: 'text-slate-700', icon: '🪙' },
+                  BASIC: { bg: 'bg-blue-50', bar: 'bg-blue-500', text: 'text-blue-700', icon: '🥉' },
+                  GOLD: { bg: 'bg-yellow-50', bar: 'bg-yellow-500', text: 'text-yellow-700', icon: '🥈' },
+                  DIAMOND: { bg: 'bg-purple-50', bar: 'bg-purple-600', text: 'text-purple-700', icon: '🥇' },
                 };
 
                 const color = colors[item.plan as keyof typeof colors] || colors.BASIC;

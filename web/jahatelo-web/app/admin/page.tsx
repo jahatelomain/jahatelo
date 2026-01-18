@@ -207,9 +207,10 @@ export default async function AdminDashboard() {
 
   // 4. Revenue Potencial (precios ficticios por plan)
   const planPrices = {
-    BASIC: 0, // Gratis
-    PREMIUM: 500000, // 500k PYG/mes
-    PLATINUM: 1000000, // 1M PYG/mes
+    FREE: 0,
+    BASIC: 0,
+    GOLD: 500000, // 500k PYG/mes
+    DIAMOND: 1000000, // 1M PYG/mes
   };
 
   const planCounts = await prisma.motel.groupBy({

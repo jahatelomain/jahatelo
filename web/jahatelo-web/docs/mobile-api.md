@@ -155,7 +155,7 @@ GET /api/mobile/motels/motel-paraiso
     "contactEmail": "info@motelparaiso.com",
     "contactPhone": "3001234567"
   },
-  "plan": "premium",
+  "plan": "GOLD",
   "nextBillingAt": "2025-02-01T00:00:00.000Z",
   "schedules": [
     {

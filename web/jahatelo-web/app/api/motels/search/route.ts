@@ -70,6 +70,7 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: [
+        { plan: 'desc' },
         { isFeatured: 'desc' },
         { ratingAvg: 'desc' },
         { createdAt: 'desc' },

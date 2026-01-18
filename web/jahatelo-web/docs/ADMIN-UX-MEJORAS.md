@@ -233,8 +233,8 @@ const metrics = [
   },
   {
     title: 'Revenue Potencial',
-    value: `${premiumMotels * 50000}`,
-    description: `${premiumMotels} moteles premium × ₲50k`,
+    value: `${goldMotels * 50000}`,
+    description: `${goldMotels} moteles GOLD × ₲50k`,
     icon: '💰',
     color: 'green'
   }
@@ -245,9 +245,9 @@ const metrics = [
 - ✅ Tasa de conversión (prospects → activos)
 - ✅ Tiempo promedio de aprobación
 - ✅ Growth rate mensual
-- ✅ Revenue potencial (moteles premium × precio)
+- ✅ Revenue potencial (moteles GOLD × precio)
 - ✅ Moteles por ciudad (gráfico de barras)
-- ✅ Distribución de planes (BASIC vs PREMIUM)
+- ✅ Distribución de planes (BASIC vs GOLD)
 
 ---
 
@@ -728,7 +728,7 @@ Después de implementar estas mejoras:
 - 🎯 **3x más rápido** encontrar y gestionar moteles
 - 📊 **Métricas accionables** para tomar decisiones
 - 📱 **100% mobile-friendly** para tablets
-- ✨ **Experiencia premium** que justifica el precio
+- ✨ **Experiencia GOLD** que justifica el precio
 
 ---
 

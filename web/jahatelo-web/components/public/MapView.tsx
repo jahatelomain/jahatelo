@@ -26,6 +26,7 @@ type MapMotel = {
   longitude: number;
   featuredPhoto: string | null;
   hasPromo: boolean;
+  plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
 };
 
 export default function MapView() {

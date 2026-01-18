@@ -31,6 +31,7 @@ export async function GET() {
         },
       },
       orderBy: [
+        { plan: 'desc' },
         { isFeatured: 'desc' },
         { ratingAvg: 'desc' },
       ],

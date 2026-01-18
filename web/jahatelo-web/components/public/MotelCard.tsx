@@ -19,7 +19,7 @@ interface MotelCardProps {
     photos?: { url: string; kind: string }[];
     motelAmenities?: { amenity: { name: string; icon?: string | null } }[];
     rooms?: { price1h?: number | null; price2h?: number | null; price12h?: number | null }[];
-    isFinanciallyEnabled?: boolean;
+    plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
   };
 }
 
@@ -44,7 +44,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
 
   // Get first 3 amenities
   const topAmenities = motel.motelAmenities?.slice(0, 3) ?? [];
-  const isDisabled = motel.isFinanciallyEnabled === false;
+  const isDisabled = motel.plan === 'FREE';
 
   const cardContent = (
     <div

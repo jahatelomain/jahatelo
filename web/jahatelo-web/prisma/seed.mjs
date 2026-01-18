@@ -275,7 +275,7 @@ async function main() {
         contactName: 'Jahatelo',
         contactEmail: null,
         contactPhone: phone,
-        plan: null,
+        plan: 'BASIC',
         isFeatured: index < 6,
         ratingAvg: 0,
         ratingCount: 0,

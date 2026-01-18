@@ -77,8 +77,8 @@ export default function MotelCard({ motel, onPress }) {
   };
 
   const handlePress = () => {
-    // No permitir navegación si está financieramente deshabilitado
-    if (motel.isFinanciallyEnabled === false) {
+    // No permitir navegación si es plan FREE
+    if (motel.plan === 'FREE') {
       return;
     }
 
@@ -90,8 +90,8 @@ export default function MotelCard({ motel, onPress }) {
   };
 
   const handlePressIn = () => {
-    // No animar si está deshabilitado
-    if (motel.isFinanciallyEnabled === false) {
+    // No animar si es plan FREE
+    if (motel.plan === 'FREE') {
       return;
     }
 
@@ -106,8 +106,8 @@ export default function MotelCard({ motel, onPress }) {
   };
 
   const handlePressOut = () => {
-    // No animar si está deshabilitado
-    if (motel.isFinanciallyEnabled === false) {
+    // No animar si es plan FREE
+    if (motel.plan === 'FREE') {
       return;
     }
 
@@ -142,7 +142,7 @@ export default function MotelCard({ motel, onPress }) {
     };
   });
 
-  const isDisabled = motel.isFinanciallyEnabled === false;
+  const isDisabled = motel.plan === 'FREE';
 
   return (
     <Pressable
@@ -193,16 +193,16 @@ export default function MotelCard({ motel, onPress }) {
                   <Text style={styles.promoText}>PROMO</Text>
                 </Animated.View>
               )}
-              {motel.plan === 'PLATINUM' && (
+              {motel.plan === 'DIAMOND' && (
                 <View style={styles.platinumBadge}>
                   <Ionicons name="diamond" size={10} color="#FFFFFF" />
-                  <Text style={styles.platinumText}>PLATINUM</Text>
+                  <Text style={styles.platinumText}>DIAMOND</Text>
                 </View>
               )}
-              {motel.plan === 'PREMIUM' && (
+              {motel.plan === 'GOLD' && (
                 <View style={styles.premiumBadge}>
                   <Ionicons name="star" size={10} color="#FFFFFF" />
-                  <Text style={styles.premiumText}>VIP</Text>
+                  <Text style={styles.premiumText}>GOLD</Text>
                 </View>
               )}
               {!!motel.rating && (
