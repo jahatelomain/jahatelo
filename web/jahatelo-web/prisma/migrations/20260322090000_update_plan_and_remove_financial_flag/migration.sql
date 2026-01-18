@@ -4,6 +4,8 @@ ALTER TYPE "PlanType" RENAME TO "PlanType_old";
 
 CREATE TYPE "PlanType" AS ENUM ('FREE', 'BASIC', 'GOLD', 'DIAMOND');
 
+ALTER TABLE "Motel" ALTER COLUMN "plan" DROP DEFAULT;
+
 ALTER TABLE "Motel"
   ALTER COLUMN "plan" TYPE "PlanType"
   USING (
