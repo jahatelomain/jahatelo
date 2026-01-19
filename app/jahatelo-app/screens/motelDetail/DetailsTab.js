@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { formatPrice } from '../../services/motelsApi';
 import { getAmenityIconConfig } from '../../constants/amenityIcons';
 import { COLORS } from '../../constants/theme';
@@ -73,19 +74,28 @@ export default function DetailsTab({ route }) {
               const amenityData = typeof amenity === 'string' ? { name: amenity } : amenity;
               const iconConfig = getAmenityIconConfig(amenityData.icon);
 
+              const handleAmenityPress = () => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                Alert.alert('Comodidad', amenityData.name);
+              };
+
               return (
-                <View key={index} style={styles.amenityItem}>
+                <TouchableOpacity
+                  key={index}
+                  style={styles.amenityCircle}
+                  onPress={handleAmenityPress}
+                  activeOpacity={0.7}
+                >
                   {iconConfig ? (
                     <MaterialCommunityIcons
                       name={iconConfig.name}
-                      size={20}
-                      color={iconConfig.color}
+                      size={28}
+                      color={COLORS.primary}
                     />
                   ) : (
-                    <Ionicons name="checkmark-circle" size={20} color="#2A0038" />
+                    <Ionicons name="checkmark-circle" size={28} color={COLORS.primary} />
                   )}
-                  <Text style={styles.amenityText}>{amenityData.name}</Text>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -159,19 +169,20 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   amenitiesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
     backgroundColor: '#F5F5F5',
     padding: 16,
     borderRadius: 12,
   },
-  amenityItem: {
-    flexDirection: 'row',
+  amenityCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
     alignItems: 'center',
-    marginBottom: 12,
-  },
-  amenityText: {
-    fontSize: 16,
-    color: '#333',
-    marginLeft: 12,
+    justifyContent: 'center',
   },
   actionButton: {
     flexDirection: 'row',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,14 +15,28 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/theme';
+import { useGoogleAuth, getGoogleUserInfo, isGoogleConfigured } from '../services/googleAuthService';
 
 export default function LoginScreen({ navigation }) {
-  const { login, isLoading: authLoading } = useAuth();
+  const { login, loginWithOAuth, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Google Sign-In
+  const { request: googleRequest, response: googleResponse, promptAsync: promptGoogleAsync } = useGoogleAuth();
+
+  // Manejar respuesta de Google OAuth
+  useEffect(() => {
+    if (googleResponse?.type === 'success') {
+      const { authentication } = googleResponse;
+      handleGoogleLogin(authentication.accessToken);
+    } else if (googleResponse?.type === 'error') {
+      Alert.alert('Error', 'Error al iniciar sesión con Google');
+    }
+  }, [googleResponse]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -56,6 +70,39 @@ export default function LoginScreen({ navigation }) {
       }
     } catch (error) {
       Alert.alert('Error', error.message || 'Error al iniciar sesión');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async (accessToken) => {
+    try {
+      setIsLoading(true);
+
+      // Obtener info del usuario de Google
+      const userInfo = await getGoogleUserInfo(accessToken);
+      if (!userInfo) {
+        Alert.alert('Error', 'No se pudo obtener información de Google');
+        return;
+      }
+
+      // Login con backend de Jahatelo usando OAuth
+      const result = await loginWithOAuth({
+        provider: 'google',
+        providerId: userInfo.id,
+        email: userInfo.email,
+        name: userInfo.name,
+      });
+
+      if (result.success) {
+        Alert.alert('¡Bienvenido!', `Hola ${userInfo.name || userInfo.email}`);
+        navigation.goBack();
+      } else {
+        Alert.alert('Error', result.error || 'Error al iniciar sesión con Google');
+      }
+    } catch (error) {
+      console.error('Error in handleGoogleLogin:', error);
+      Alert.alert('Error', error.message || 'Error al iniciar sesión con Google');
     } finally {
       setIsLoading(false);
     }
@@ -167,13 +214,23 @@ export default function LoginScreen({ navigation }) {
 
             {/* OAuth Buttons */}
             <View style={styles.oauthContainer}>
-              <TouchableOpacity style={styles.oauthButton}>
+              <TouchableOpacity
+                style={[styles.oauthButton, !googleRequest && styles.oauthButtonDisabled]}
+                onPress={() => promptGoogleAsync()}
+                disabled={!googleRequest || isLoading}
+              >
                 <Ionicons name="logo-google" size={24} color="#DB4437" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.oauthButton}>
+              <TouchableOpacity
+                style={[styles.oauthButton, styles.oauthButtonDisabled]}
+                disabled={true}
+              >
                 <Ionicons name="logo-facebook" size={24} color="#4267B2" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.oauthButton}>
+              <TouchableOpacity
+                style={[styles.oauthButton, styles.oauthButtonDisabled]}
+                disabled={true}
+              >
                 <Ionicons name="logo-apple" size={24} color="#000" />
               </TouchableOpacity>
             </View>
@@ -325,6 +382,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.grayLight,
+  },
+  oauthButtonDisabled: {
+    opacity: 0.4,
   },
   registerContainer: {
     flexDirection: 'row',

@@ -73,7 +73,7 @@ export default function RoomsTab({ route }) {
                       <MaterialCommunityIcons
                         name={iconConfig.name}
                         size={14}
-                        color={iconConfig.color}
+                        color={COLORS.primary}
                         style={styles.amenityIcon}
                       />
                     )}

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import MotelCard from '../components/MotelCard';
 import AdListItem from '../components/AdListItem';
+import AdDetailModal from '../components/AdDetailModal';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { mixAdvertisements } from '../utils/mixAdvertisements';
 import { COLORS } from '../constants/theme';
@@ -18,6 +19,8 @@ export default function CityMotelsScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const { cityName, motels = [] } = route.params;
   const headerPaddingTop = insets.top + 12;
+  const [selectedAd, setSelectedAd] = useState(null);
+  const [showAdDetailModal, setShowAdDetailModal] = useState(false);
 
   // Cargar anuncios de lista
   const { ads: listAds, trackAdEvent } = useAdvertisements('LIST_INLINE');
@@ -26,6 +29,18 @@ export default function CityMotelsScreen({ route, navigation }) {
   const mixedItems = useMemo(() => {
     return mixAdvertisements(motels, listAds);
   }, [motels, listAds]);
+
+  const handleAdClick = (ad) => {
+    if (!ad) return;
+    trackAdEvent(ad.id, 'CLICK');
+    setSelectedAd(ad);
+    setShowAdDetailModal(true);
+  };
+
+  const handleAdView = (ad) => {
+    if (!ad) return;
+    trackAdEvent(ad.id, 'VIEW');
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
@@ -55,8 +70,8 @@ export default function CityMotelsScreen({ route, navigation }) {
               return (
                 <AdListItem
                   ad={item.data}
-                  onAdClick={trackAdEvent}
-                  onAdView={trackAdEvent}
+                  onAdClick={handleAdClick}
+                  onAdView={handleAdView}
                 />
               );
             }
@@ -78,6 +93,16 @@ export default function CityMotelsScreen({ route, navigation }) {
           }
         />
       </View>
+
+      <AdDetailModal
+        visible={showAdDetailModal}
+        ad={selectedAd}
+        onClose={() => {
+          setShowAdDetailModal(false);
+          setSelectedAd(null);
+        }}
+        onTrackClick={(adId) => trackAdEvent(adId, 'CLICK')}
+      />
     </SafeAreaView>
   );
 }

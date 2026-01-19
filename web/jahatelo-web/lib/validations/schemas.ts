@@ -170,7 +170,7 @@ export const AdvertisementSchema = z.object({
   largeImageUrl: z.string().url('URL de imagen grande inválida').optional().nullable(),
   description: z.string().max(500, 'Descripción muy larga').optional().nullable(),
   linkUrl: z.string().url('URL de enlace inválida').optional().nullable(),
-  placement: z.enum(['POPUP_HOME', 'CAROUSEL', 'SECTION_BANNER', 'LIST_INLINE']),
+  placement: z.enum(['POPUP_HOME', 'CAROUSEL', 'LIST_INLINE']),
   status: z.enum(['ACTIVE', 'PAUSED', 'INACTIVE']),
   priority: z.number().int().min(0, 'Prioridad mínima 0').max(100, 'Prioridad máxima 100'),
   startDate: z.string().datetime('Fecha de inicio inválida').optional().nullable(),

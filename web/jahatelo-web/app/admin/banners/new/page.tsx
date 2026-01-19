@@ -8,7 +8,6 @@ import DirtyBanner from '@/components/admin/DirtyBanner';
 const placements = [
   { value: 'POPUP_HOME', label: 'Popup Home' },
   { value: 'CAROUSEL', label: 'Carrusel' },
-  { value: 'SECTION_BANNER', label: 'Banner de sección' },
   { value: 'LIST_INLINE', label: 'Inline en listado' },
 ];
 

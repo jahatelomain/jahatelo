@@ -175,7 +175,7 @@ export default function MotelCard({ motel, onPress }) {
           </TouchableOpacity>
         </View>
 
-        {/* Fila inferior: precio, amenities, badges */}
+        {/* Fila inferior: precio, badges/amenities */}
         <View style={styles.bottomRow}>
           <View style={styles.priceContainer}>
             <Text style={styles.price}>{formatPrice(motel.precioDesde)}</Text>
@@ -185,7 +185,7 @@ export default function MotelCard({ motel, onPress }) {
           </View>
 
           <View style={styles.rightInfo}>
-            {/* Badges */}
+            {/* Badges y Amenities en una sola fila */}
             <View style={styles.badgesRow}>
               {motel.tienePromo && (
                 <Animated.View style={[styles.promoBadge, animatedPromoBadgeStyle]}>
@@ -210,27 +210,25 @@ export default function MotelCard({ motel, onPress }) {
                   <Text style={styles.ratingText}>⭐ {motel.rating}</Text>
                 </View>
               )}
-            </View>
 
-            {/* Amenities compactas (solo iconos) */}
-            {motel.amenities && motel.amenities.length > 0 && (
-              <View style={styles.amenitiesContainer}>
-                {motel.amenities.slice(0, 4).map((amenity, index) => {
+              {/* Amenities inline con badges */}
+              {motel.amenities && motel.amenities.length > 0 && (
+                motel.amenities.slice(0, 3).map((amenity, index) => {
                   const amenityData = typeof amenity === 'string' ? { name: amenity } : amenity;
                   const iconConfig = getAmenityIconConfig(amenityData.icon);
 
                   return iconConfig ? (
-                    <MaterialCommunityIcons
-                      key={index}
-                      name={iconConfig.name}
-                      size={16}
-                      color={iconConfig.color}
-                      style={styles.amenityIcon}
-                    />
+                    <View key={index} style={styles.amenityCircle}>
+                      <MaterialCommunityIcons
+                        name={iconConfig.name}
+                        size={12}
+                        color={COLORS.primary}
+                      />
+                    </View>
                   ) : null;
-                })}
-              </View>
-            )}
+                })
+              )}
+            </View>
           </View>
         </View>
       </Animated.View>
@@ -299,13 +297,13 @@ const styles = StyleSheet.create({
   rightInfo: {
     flex: 1,
     alignItems: 'flex-end',
-    gap: 6,
   },
   badgesRow: {
     flexDirection: 'row',
     gap: 4,
     flexWrap: 'wrap',
     justifyContent: 'flex-end',
+    alignItems: 'center',
   },
   promoBadge: {
     flexDirection: 'row',
@@ -368,13 +366,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-  amenitiesContainer: {
-    flexDirection: 'row',
-    gap: 4,
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-  },
-  amenityIcon: {
-    opacity: 0.7,
+  amenityCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import Animated, {
 import { useEffect } from 'react';
 import MotelCard from '../components/MotelCard';
 import AdListItem from '../components/AdListItem';
+import AdDetailModal from '../components/AdDetailModal';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { mixAdvertisements } from '../utils/mixAdvertisements';
 import { COLORS } from '../constants/theme';
@@ -87,6 +88,8 @@ export default function MotelListScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const { title, motels = [] } = route.params;
   const headerPaddingTop = insets.top + 12;
+  const [selectedAd, setSelectedAd] = useState(null);
+  const [showAdDetailModal, setShowAdDetailModal] = useState(false);
 
   // Cargar anuncios de lista
   const { ads: listAds, trackAdEvent } = useAdvertisements('LIST_INLINE');
@@ -101,6 +104,18 @@ export default function MotelListScreen({ route, navigation }) {
       motelSlug: motel.slug,
       motelId: motel.id,
     });
+  };
+
+  const handleAdClick = (ad) => {
+    if (!ad) return;
+    trackAdEvent(ad.id, 'CLICK');
+    setSelectedAd(ad);
+    setShowAdDetailModal(true);
+  };
+
+  const handleAdView = (ad) => {
+    if (!ad) return;
+    trackAdEvent(ad.id, 'VIEW');
   };
 
   return (
@@ -137,8 +152,8 @@ export default function MotelListScreen({ route, navigation }) {
                 <AnimatedAdListItem
                   item={item.data}
                   index={index}
-                  onAdClick={trackAdEvent}
-                  onAdView={trackAdEvent}
+                  onAdClick={handleAdClick}
+                  onAdView={handleAdView}
                 />
               );
             }
@@ -156,6 +171,16 @@ export default function MotelListScreen({ route, navigation }) {
           ListEmptyComponent={<AnimatedEmptyState />}
         />
       </View>
+
+      <AdDetailModal
+        visible={showAdDetailModal}
+        ad={selectedAd}
+        onClose={() => {
+          setShowAdDetailModal(false);
+          setSelectedAd(null);
+        }}
+        onTrackClick={(adId) => trackAdEvent(adId, 'CLICK')}
+      />
     </SafeAreaView>
   );
 }

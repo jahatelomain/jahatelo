@@ -10,7 +10,7 @@ const getApiBaseUrl = () => {
 
 /**
  * Hook para manejar anuncios publicitarios
- * @param {string} placement - Ubicación del anuncio (POPUP_HOME, LIST_INLINE, SECTION_BANNER, CAROUSEL)
+ * @param {string} placement - Ubicación del anuncio (POPUP_HOME, LIST_INLINE, CAROUSEL)
  * @returns {Object} - { ads, loading, error, trackAdEvent }
  */
 export function useAdvertisements(placement) {

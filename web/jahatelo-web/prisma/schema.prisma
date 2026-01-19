@@ -86,7 +86,6 @@ enum AnalyticsEventType {
 enum AdPlacement {
   POPUP_HOME
   CAROUSEL
-  SECTION_BANNER
   LIST_INLINE
 }
 

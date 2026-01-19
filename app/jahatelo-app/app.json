@@ -67,7 +67,11 @@
       "eas": {
         "projectId": "98e7ed1c-2b9c-45e9-8058-4e8f94cd7235"
       },
-      "router": {}
+      "router": {},
+      "googleClientIdExpo": "PLACEHOLDER_EXPO",
+      "googleClientIdIos": "PLACEHOLDER_IOS",
+      "googleClientIdAndroid": "PLACEHOLDER_ANDROID",
+      "googleClientIdWeb": "PLACEHOLDER_WEB"
     },
     "owner": "jmongelos"
   }

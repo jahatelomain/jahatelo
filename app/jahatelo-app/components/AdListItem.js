@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Linking } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
@@ -24,29 +24,16 @@ export default function AdListItem({ ad, onAdClick, onAdView }) {
   useEffect(() => {
     // Registrar vista solo una vez cuando el componente se monta
     if (ad && !viewTracked.current && onAdView) {
-      onAdView(ad.id);
+      onAdView(ad);
       viewTracked.current = true;
     }
   }, [ad, onAdView]);
 
   if (!ad) return null;
 
-  const handlePress = async () => {
-    // Callback de click
+  const handlePress = () => {
     if (onAdClick) {
-      onAdClick(ad.id);
-    }
-
-    // Si tiene linkUrl, abrir en navegador
-    if (ad.linkUrl) {
-      try {
-        const canOpen = await Linking.canOpenURL(ad.linkUrl);
-        if (canOpen) {
-          await Linking.openURL(ad.linkUrl);
-        }
-      } catch (error) {
-        console.warn('Error opening ad link:', error);
-      }
+      onAdClick(ad);
     }
   };
 
@@ -85,7 +72,7 @@ export default function AdListItem({ ad, onAdClick, onAdView }) {
       onPressOut={handlePressOut}
     >
       <Animated.View style={[styles.card, animatedCardStyle]}>
-        {/* Header con título y badge de publicidad */}
+        {/* Header con título */}
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
             <Text style={styles.adTitle} numberOfLines={1}>{ad.title}</Text>
@@ -94,10 +81,6 @@ export default function AdListItem({ ad, onAdClick, onAdView }) {
                 {ad.description}
               </Text>
             )}
-          </View>
-          <View style={styles.adBadge}>
-            <Ionicons name="megaphone" size={12} color={COLORS.white} />
-            <Text style={styles.adBadgeText}>AD</Text>
           </View>
         </View>
 

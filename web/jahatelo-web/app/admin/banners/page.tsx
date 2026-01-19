@@ -9,7 +9,6 @@ import ConfirmModal from '@/components/admin/ConfirmModal';
 const placementLabels: Record<string, string> = {
   POPUP_HOME: 'Popup Home',
   CAROUSEL: 'Carrusel',
-  SECTION_BANNER: 'Banner de sección',
   LIST_INLINE: 'Inline en listado',
 };
 

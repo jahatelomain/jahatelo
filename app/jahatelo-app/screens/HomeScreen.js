@@ -33,7 +33,7 @@ export default function HomeScreen() {
 
   // Cargar anuncios
   const { ads: popupAds, trackAdEvent: trackPopupEvent } = useAdvertisements('POPUP_HOME');
-  const { ads: bannerAds, trackAdEvent: trackBannerEvent } = useAdvertisements('SECTION_BANNER');
+  const { ads: bannerAds, trackAdEvent: trackBannerEvent } = useAdvertisements('CAROUSEL');
 
   const loadMotels = async (isRefreshing = false) => {
     try {
