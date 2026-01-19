@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import * as LucideIcons from 'lucide-react';
 import { trackMotelView } from '@/lib/analyticsService';
+import FavoriteButtonClient from '@/components/public/FavoriteButtonClient';
 
 interface MotelCardProps {
   motel: {
@@ -67,6 +68,9 @@ export default function MotelCard({ motel }: MotelCardProps) {
               </svg>
             </div>
           )}
+          <div className="absolute top-3 left-3">
+            <FavoriteButtonClient motelId={motel.id} source="LIST" size="small" />
+          </div>
           {motel.isFeatured && (
             <div className="absolute top-3 right-3 bg-purple-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
               Destacado

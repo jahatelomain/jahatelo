@@ -17,7 +17,7 @@ interface MotelsPageProps {
 
 export default async function MotelsPage({ searchParams }: MotelsPageProps) {
   const params = await searchParams;
-  const { city, neighborhood, search, amenities } = params;
+  const { city, neighborhood, search, amenities, promos } = params;
   const amenityIds = amenities ? amenities.split(',') : [];
 
   // Build where clause based on filters
@@ -49,6 +49,14 @@ export default async function MotelsPage({ searchParams }: MotelsPageProps) {
         amenityId: {
           in: amenityIds,
         },
+      },
+    };
+  }
+
+  if (promos) {
+    whereClause.promos = {
+      some: {
+        isActive: true,
       },
     };
   }
