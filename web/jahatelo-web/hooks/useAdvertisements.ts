@@ -33,6 +33,10 @@ export function useAdvertisements(placement: string) {
     try {
       const res = await fetch(`/api/advertisements?placement=${placement}`);
       if (!res.ok) throw new Error('Error al cargar anuncios');
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error('Respuesta no JSON desde /api/advertisements');
+      }
       const data = await res.json();
       setAds(Array.isArray(data) ? data : []);
     } catch (error) {
