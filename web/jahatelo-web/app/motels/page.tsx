@@ -12,6 +12,7 @@ interface MotelsPageProps {
     neighborhood?: string;
     search?: string;
     amenities?: string;
+    promos?: string;
   }>;
 }
 
