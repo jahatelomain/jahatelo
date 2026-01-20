@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { searchAndFilterMotels } from '../services/motelsApi';
 import MotelCard from '../components/MotelCard';
+import MotelCardSkeleton from '../components/MotelCardSkeleton';
 import { prefetchMotelDetails, prefetchThumbnails } from '../services/prefetchService';
 
 // Filtros rápidos por amenities comunes
@@ -277,16 +278,22 @@ export default function SearchScreen({ route }) {
           </View>
         )}
 
-        <FlatList
-          data={results}
-          renderItem={renderMotelCard}
-          keyExtractor={item => item.slug || item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          onViewableItemsChanged={onViewableItemsChanged}
-          viewabilityConfig={viewabilityConfig.current}
-          ListEmptyComponent={
-            !loading && (
+        {loading ? (
+          <View style={styles.listContent}>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <MotelCardSkeleton key={`search-skeleton-${index}`} />
+            ))}
+          </View>
+        ) : (
+          <FlatList
+            data={results}
+            renderItem={renderMotelCard}
+            keyExtractor={item => item.slug || item.id}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            onViewableItemsChanged={onViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig.current}
+            ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Animated.View style={animatedEmptyIconStyle}>
                   <Ionicons name="search-outline" size={64} color="#CCC" />
@@ -296,9 +303,9 @@ export default function SearchScreen({ route }) {
                   Intenta con otros términos de búsqueda o filtros
                 </Text>
               </View>
-            )
-          }
-        />
+            }
+          />
+        )}
       </View>
     </SafeAreaView>
   );

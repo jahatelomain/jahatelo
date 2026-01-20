@@ -11,14 +11,15 @@ type CityItem = {
 };
 
 export default function CityListWithAds({ cities }: { cities: CityItem[] }) {
-  const { ads } = useAdvertisements('LIST_INLINE');
+  const { ads, loading } = useAdvertisements('LIST_INLINE');
+  const activeAds = loading ? [] : ads;
   let adIndex = 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {cities.map((city, index) => {
-        const showAd = (index + 1) % 5 === 0 && ads[adIndex];
-        const ad = showAd ? ads[adIndex++] : null;
+        const showAd = (index + 1) % 5 === 0 && activeAds[adIndex];
+        const ad = showAd ? activeAds[adIndex++] : null;
 
         return (
           <Fragment key={city.name}>
@@ -36,7 +37,7 @@ export default function CityListWithAds({ cities }: { cities: CityItem[] }) {
           </Fragment>
         );
       })}
-      {cities.length < 5 && ads[adIndex] && <AdInlineCard ad={ads[adIndex]} placement="LIST_INLINE" />}
+      {cities.length < 5 && activeAds[adIndex] && <AdInlineCard ad={activeAds[adIndex]} placement="LIST_INLINE" />}
     </div>
   );
 }

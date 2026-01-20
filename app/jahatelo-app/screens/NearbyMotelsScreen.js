@@ -13,6 +13,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import MotelCard from '../components/MotelCard';
+import MotelCardSkeleton from '../components/MotelCardSkeleton';
 import { COLORS } from '../constants/theme';
 import { fetchMotels } from '../services/motelsApi';
 import { filterMotelsByDistance } from '../utils/location';
@@ -177,9 +178,15 @@ export default function NearbyMotelsScreen({ navigation }) {
       <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
         {renderHeader()}
 
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.centerText}>Buscando moteles cercanos...</Text>
+        <View style={styles.content}>
+          <View style={styles.infoRow}>
+            <Text style={styles.subtitle}>Buscando moteles cercanos...</Text>
+          </View>
+          <View style={styles.listContent}>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <MotelCardSkeleton key={`nearby-skeleton-${index}`} />
+            ))}
+          </View>
         </View>
       </SafeAreaView>
     );

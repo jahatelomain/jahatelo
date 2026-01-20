@@ -136,7 +136,7 @@ export default function CitySelectorScreen({ route, navigation }) {
   const [error, setError] = useState(null);
   const [selectedAd, setSelectedAd] = useState(null);
   const [showAdDetailModal, setShowAdDetailModal] = useState(false);
-  const { ads: listAds, trackAdEvent } = useAdvertisements('LIST_INLINE');
+  const { ads: listAds, loading: adsLoading, trackAdEvent } = useAdvertisements('LIST_INLINE');
 
   useEffect(() => {
     let mounted = true;
@@ -199,8 +199,11 @@ export default function CitySelectorScreen({ route, navigation }) {
   }, [cities, motels]);
 
   const mixedItems = useMemo(() => {
+    if (loading || adsLoading) {
+      return citiesData.map((city) => ({ type: 'motel', data: city }));
+    }
     return mixAdvertisements(citiesData, listAds);
-  }, [citiesData, listAds]);
+  }, [citiesData, listAds, loading, adsLoading]);
 
   const handleCityPress = (city) => {
     navigation.navigate('CityMotels', {

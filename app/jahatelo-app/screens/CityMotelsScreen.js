@@ -16,6 +16,7 @@ import { useAdvertisements } from '../hooks/useAdvertisements';
 import { mixAdvertisements } from '../utils/mixAdvertisements';
 import { COLORS } from '../constants/theme';
 import { fetchMotels } from '../services/motelsApi';
+import MotelCardSkeleton from '../components/MotelCardSkeleton';
 
 export default function CityMotelsScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
@@ -61,12 +62,15 @@ export default function CityMotelsScreen({ route, navigation }) {
   }, [cityName, motels]);
 
   // Cargar anuncios de lista
-  const { ads: listAds, trackAdEvent } = useAdvertisements('LIST_INLINE');
+  const { ads: listAds, loading: adsLoading, trackAdEvent } = useAdvertisements('LIST_INLINE');
 
   // Mezclar moteles con anuncios
   const mixedItems = useMemo(() => {
+    if (loading || adsLoading) {
+      return cityMotels.map((motel) => ({ type: 'motel', data: motel }));
+    }
     return mixAdvertisements(cityMotels, listAds);
-  }, [cityMotels, listAds]);
+  }, [cityMotels, listAds, loading, adsLoading]);
 
   const handleAdClick = (ad) => {
     if (!ad) return;
@@ -110,38 +114,46 @@ export default function CityMotelsScreen({ route, navigation }) {
           <Text style={styles.errorText}>{error}</Text>
         )}
 
-        <FlatList
-          data={mixedItems}
-          keyExtractor={(item, index) => `${item.type}-${item.data.id || index}`}
-          renderItem={({ item }) => {
-            if (item.type === 'ad') {
+        {loading ? (
+          <View style={styles.listContent}>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <MotelCardSkeleton key={`motel-skeleton-${index}`} />
+            ))}
+          </View>
+        ) : (
+          <FlatList
+            data={mixedItems}
+            keyExtractor={(item, index) => `${item.type}-${item.data.id || index}`}
+            renderItem={({ item }) => {
+              if (item.type === 'ad') {
+                return (
+                  <AdListItem
+                    ad={item.data}
+                    onAdClick={handleAdClick}
+                    onAdView={handleAdView}
+                  />
+                );
+              }
+
               return (
-                <AdListItem
-                  ad={item.data}
-                  onAdClick={handleAdClick}
-                  onAdView={handleAdView}
+                <MotelCard
+                  motel={item.data}
+                  onPress={() => navigation.navigate('MotelDetail', { motelId: item.data.id })}
                 />
               );
+            }}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons name="location-outline" size={64} color={COLORS.muted} />
+                <Text style={styles.emptyText}>
+                  {error ? 'No pudimos cargar los moteles' : 'No hay moteles en esta ciudad'}
+                </Text>
+              </View>
             }
-
-            return (
-              <MotelCard
-                motel={item.data}
-                onPress={() => navigation.navigate('MotelDetail', { motelId: item.data.id })}
-              />
-            );
-          }}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="location-outline" size={64} color={COLORS.muted} />
-              <Text style={styles.emptyText}>
-                {error ? 'No pudimos cargar los moteles' : 'No hay moteles en esta ciudad'}
-              </Text>
-            </View>
-          }
-        />
+          />
+        )}
       </View>
 
       <AdDetailModal

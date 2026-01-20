@@ -72,6 +72,7 @@ export default function NearbyMotels() {
   const [allMotels, setAllMotels] = useState<Motel[]>([]);
   const [nearbyMotels, setNearbyMotels] = useState<Motel[]>([]);
   const [loading, setLoading] = useState(false);
+  const [motelsLoading, setMotelsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [locationPermission, setLocationPermission] = useState<'pending' | 'granted' | 'denied'>('pending');
 
@@ -105,6 +106,7 @@ export default function NearbyMotels() {
     if (userLocation) {
       const fetchMotels = async () => {
         try {
+          setMotelsLoading(true);
           const response = await fetch('/api/motels/nearby');
           const data = await response.json();
           const sanitized = (data.motels || []).map((motel: Motel) => ({
@@ -118,6 +120,8 @@ export default function NearbyMotels() {
         } catch (error) {
           console.error('Error fetching motels:', error);
           setError('Error al cargar los moteles');
+        } finally {
+          setMotelsLoading(false);
         }
       };
 
@@ -253,7 +257,21 @@ export default function NearbyMotels() {
       </div>
 
       {/* Results Grid */}
-      {nearbyMotels.length > 0 ? (
+      {motelsLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={`nearby-skeleton-${index}`}
+              className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm animate-pulse"
+            >
+              <div className="h-32 bg-gray-200 rounded-lg mb-4" />
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+              <div className="h-3 bg-gray-200 rounded w-1/2 mb-4" />
+              <div className="h-6 bg-gray-200 rounded w-1/3" />
+            </div>
+          ))}
+        </div>
+      ) : nearbyMotels.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {nearbyMotels.map((motel) => (
             <div key={motel.id} className="relative">
