@@ -70,7 +70,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
       try {
         const response = await fetch('/api/motels');
         const data = await response.json();
-        const cityList = (data || [])
+        const cityList: string[] = (data || [])
           .map((motel: { city?: string | null }) => motel.city)
           .filter((city: string | null): city is string => Boolean(city && city.trim().length > 0));
 
