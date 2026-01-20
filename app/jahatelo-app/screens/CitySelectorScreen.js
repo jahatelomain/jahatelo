@@ -112,6 +112,18 @@ const AnimatedEmptyState = () => {
   );
 };
 
+const CityCardSkeleton = ({ index }) => (
+  <Animated.View entering={FadeInRight.delay(index * 80).duration(500).springify()}>
+    <View style={styles.cityCardSkeleton}>
+      <View style={styles.iconSkeleton} />
+      <View style={styles.textSkeleton}>
+        <View style={styles.lineSkeleton} />
+        <View style={styles.lineSkeletonShort} />
+      </View>
+    </View>
+  </Animated.View>
+);
+
 export default function CitySelectorScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const { motels = [] } = route.params || {};
@@ -223,16 +235,24 @@ export default function CitySelectorScreen({ route, navigation }) {
           )}
         </Animated.View>
 
-        <FlatList
-          data={citiesData}
-          keyExtractor={(item) => item.name}
-          renderItem={({ item, index }) => (
-        <AnimatedCityCard item={item} index={index} onPress={handleCityPress} />
-          )}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={loading ? null : <AnimatedEmptyState />}
-        />
+        {loading ? (
+          <View style={styles.listContent}>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <CityCardSkeleton key={`city-skeleton-${index}`} index={index} />
+            ))}
+          </View>
+        ) : (
+          <FlatList
+            data={citiesData}
+            keyExtractor={(item) => item.name}
+            renderItem={({ item, index }) => (
+              <AnimatedCityCard item={item} index={index} onPress={handleCityPress} />
+            )}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={<AnimatedEmptyState />}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -309,6 +329,37 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 6,
     elevation: 1,
+  },
+  cityCardSkeleton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.backgroundDark,
+    borderRadius: 16,
+    padding: 12,
+    marginVertical: 4,
+  },
+  iconSkeleton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.card,
+    marginRight: 12,
+  },
+  textSkeleton: {
+    flex: 1,
+    gap: 8,
+  },
+  lineSkeleton: {
+    height: 12,
+    width: '60%',
+    borderRadius: 6,
+    backgroundColor: COLORS.card,
+  },
+  lineSkeletonShort: {
+    height: 10,
+    width: '40%',
+    borderRadius: 6,
+    backgroundColor: COLORS.card,
   },
   iconContainer: {
     width: 44,
