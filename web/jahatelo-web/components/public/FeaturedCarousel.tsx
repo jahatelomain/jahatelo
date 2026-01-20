@@ -21,6 +21,7 @@ interface FeaturedCarouselProps {
 
 export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const { ads } = useAdvertisements('CAROUSEL');
   const [selectedAd, setSelectedAd] = useState<Advertisement | null>(null);
   const [showAdModal, setShowAdModal] = useState(false);
@@ -138,11 +139,14 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
           }
 
           const motel = item.data as Motel;
+          const fallbackPhoto = '/motel-placeholder.png';
           const photoUrl =
-            motel.featuredPhoto ||
-            motel.photos?.[0]?.url ||
-            '/motel-placeholder.png';
-          const isPlaceholder = photoUrl === '/motel-placeholder.png';
+            failedImages[motel.id]
+              ? fallbackPhoto
+              : motel.featuredPhoto ||
+                motel.photos?.[0]?.url ||
+                fallbackPhoto;
+          const isPlaceholder = photoUrl === fallbackPhoto;
           const isDisabled = motel.plan === 'FREE';
 
           return (
@@ -161,6 +165,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                     className={`object-cover ${isPlaceholder ? 'opacity-60' : ''}`}
                     sizes="(max-width: 768px) 100vw, 800px"
                     priority={index === 0}
+                    onError={() => setFailedImages((prev) => ({ ...prev, [motel.id]: true }))}
                   />
                 </div>
               ) : (
@@ -175,6 +180,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                     className={`object-cover ${isPlaceholder ? 'opacity-60' : ''}`}
                     sizes="(max-width: 768px) 100vw, 800px"
                     priority={index === 0}
+                    onError={() => setFailedImages((prev) => ({ ...prev, [motel.id]: true }))}
                   />
                 </Link>
               )}

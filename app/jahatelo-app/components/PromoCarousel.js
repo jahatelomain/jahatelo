@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -60,8 +60,10 @@ const getMotelImageUrl = (motel) => {
 const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badgeIconName = 'pricetag' }) => {
   const fallbackPattern = require('../assets/motel-placeholder.png');
   const imageUrl = getMotelImageUrl(motel);
-  const imageSource = imageUrl ? { uri: imageUrl } : fallbackPattern;
-  const isPlaceholder = !imageUrl;
+  const [imageFailed, setImageFailed] = useState(false);
+  const resolvedImageUrl = imageFailed ? null : imageUrl;
+  const imageSource = resolvedImageUrl ? { uri: resolvedImageUrl } : fallbackPattern;
+  const isPlaceholder = !resolvedImageUrl;
 
   const inputRange = [
     (index - 1) * (CARD_WIDTH + SPACING),
@@ -97,6 +99,7 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
           source={imageSource}
           style={styles.card}
           imageStyle={[styles.cardImage, isPlaceholder && styles.placeholderImage]}
+          onError={() => setImageFailed(true)}
         >
           {/* Badge de Promoción */}
           <View style={styles.promoBadge}>
