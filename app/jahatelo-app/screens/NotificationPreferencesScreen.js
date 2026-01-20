@@ -13,7 +13,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/theme';
-import { getSoundEffectsEnabled, setSoundEffectsEnabled } from '../services/preferencesService';
+import {
+  getSoundEffectsEnabled,
+  setSoundEffectsEnabled,
+  getAdvertisingPushEnabled,
+  setAdvertisingPushEnabled,
+} from '../services/preferencesService';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.100:3000';
 
@@ -40,14 +45,36 @@ export default function NotificationPreferencesScreen({ navigation }) {
     if (isAuthenticated) {
       loadPreferences();
     } else {
-      navigation.replace('Login');
+      loadLocalPreferences();
     }
   }, [isAuthenticated]);
+
+  const loadLocalPreferences = async () => {
+    try {
+      setLoading(true);
+      const [soundEnabled, advertisingEnabled] = await Promise.all([
+        getSoundEffectsEnabled(),
+        getAdvertisingPushEnabled(),
+      ]);
+      setPreferences((prev) => ({
+        ...prev,
+        enableSoundEffects: soundEnabled,
+        enableAdvertisingPush: advertisingEnabled,
+      }));
+    } catch (error) {
+      console.error('Error al cargar preferencias locales:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadPreferences = async () => {
     try {
       setLoading(true);
-      const soundEnabled = await getSoundEffectsEnabled();
+      const [soundEnabled, advertisingEnabled] = await Promise.all([
+        getSoundEffectsEnabled(),
+        getAdvertisingPushEnabled(),
+      ]);
       const response = await fetch(`${API_URL}/api/mobile/notifications/preferences`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -102,6 +129,11 @@ export default function NotificationPreferencesScreen({ navigation }) {
       await setSoundEffectsEnabled(value);
       return;
     }
+    if (key === 'enableAdvertisingPush' && !isAuthenticated) {
+      setPreferences(prev => ({ ...prev, [key]: value }));
+      await setAdvertisingPushEnabled(value);
+      return;
+    }
 
     // Actualizar estado local inmediatamente para mejor UX
     setPreferences(prev => ({ ...prev, [key]: value }));
@@ -136,10 +168,6 @@ export default function NotificationPreferencesScreen({ navigation }) {
     updatePreference(key, !preferences[key]);
   };
 
-  if (!isAuthenticated) {
-    return null;
-  }
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -166,26 +194,37 @@ export default function NotificationPreferencesScreen({ navigation }) {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {!isAuthenticated && (
+          <View style={styles.infoContainer}>
+            <Ionicons name="information-circle-outline" size={20} color={COLORS.textLight} />
+            <Text style={styles.infoText}>
+              Inicia sesión para configurar todas las notificaciones. Por ahora puedes ajustar sonidos y publicidad.
+            </Text>
+          </View>
+        )}
+
         {/* Controles Generales */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Configuración General</Text>
           <View style={styles.optionsContainer}>
-            <PreferenceItem
-              icon="notifications-outline"
-              title="Todas las notificaciones"
-              description="Habilitar o deshabilitar todas las notificaciones"
-              value={preferences.enableNotifications}
-              onToggle={() => toggleSwitch('enableNotifications')}
-              disabled={saving}
-              highlighted
-            />
+            {!isAuthenticated ? null : (
+              <PreferenceItem
+                icon="notifications-outline"
+                title="Todas las notificaciones"
+                description="Habilitar o deshabilitar todas las notificaciones"
+                value={preferences.enableNotifications}
+                onToggle={() => toggleSwitch('enableNotifications')}
+                disabled={saving}
+                highlighted
+              />
+            )}
             <PreferenceItem
               icon="mail-outline"
               title="Notificaciones por email"
               description="Recibir notificaciones en tu correo electrónico"
               value={preferences.enableEmail}
               onToggle={() => toggleSwitch('enableEmail')}
-              disabled={saving || !preferences.enableNotifications}
+              disabled={saving || !preferences.enableNotifications || !isAuthenticated}
             />
             <PreferenceItem
               icon="phone-portrait-outline"
@@ -193,7 +232,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
               description="Recibir notificaciones en tu dispositivo"
               value={preferences.enablePush}
               onToggle={() => toggleSwitch('enablePush')}
-              disabled={saving || !preferences.enableNotifications}
+              disabled={saving || !preferences.enableNotifications || !isAuthenticated}
             />
             <PreferenceItem
               icon="volume-medium-outline"
@@ -207,58 +246,62 @@ export default function NotificationPreferencesScreen({ navigation }) {
         </View>
 
         {/* Notificaciones de Favoritos */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Favoritos y Ofertas</Text>
-          <View style={styles.optionsContainer}>
-            <PreferenceItem
-              icon="pricetag-outline"
-              title="Nuevas promociones"
-              description="Cuando tus favoritos tengan promos nuevas"
-              value={preferences.notifyNewPromos}
-              onToggle={() => toggleSwitch('notifyNewPromos')}
-              disabled={saving || !preferences.enableNotifications}
-            />
-            <PreferenceItem
-              icon="trending-down-outline"
-              title="Bajadas de precio"
-              description="Cuando bajen los precios de tus favoritos"
-              value={preferences.notifyPriceDrops}
-              onToggle={() => toggleSwitch('notifyPriceDrops')}
-              disabled={saving || !preferences.enableNotifications}
-            />
-            <PreferenceItem
-              icon="information-circle-outline"
-              title="Actualizaciones"
-              description="Cambios en la información de tus favoritos"
-              value={preferences.notifyUpdates}
-              onToggle={() => toggleSwitch('notifyUpdates')}
-              disabled={saving || !preferences.enableNotifications}
-            />
+        {!isAuthenticated ? null : (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Favoritos y Ofertas</Text>
+            <View style={styles.optionsContainer}>
+              <PreferenceItem
+                icon="pricetag-outline"
+                title="Nuevas promociones"
+                description="Cuando tus favoritos tengan promos nuevas"
+                value={preferences.notifyNewPromos}
+                onToggle={() => toggleSwitch('notifyNewPromos')}
+                disabled={saving || !preferences.enableNotifications}
+              />
+              <PreferenceItem
+                icon="trending-down-outline"
+                title="Bajadas de precio"
+                description="Cuando bajen los precios de tus favoritos"
+                value={preferences.notifyPriceDrops}
+                onToggle={() => toggleSwitch('notifyPriceDrops')}
+                disabled={saving || !preferences.enableNotifications}
+              />
+              <PreferenceItem
+                icon="information-circle-outline"
+                title="Actualizaciones"
+                description="Cambios en la información de tus favoritos"
+                value={preferences.notifyUpdates}
+                onToggle={() => toggleSwitch('notifyUpdates')}
+                disabled={saving || !preferences.enableNotifications}
+              />
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Notificaciones de Reseñas */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Reseñas</Text>
-          <View style={styles.optionsContainer}>
-            <PreferenceItem
-              icon="chatbubble-outline"
-              title="Respuestas a mis reseñas"
-              description="Cuando el motel responda a tu reseña"
-              value={preferences.notifyReviewReplies}
-              onToggle={() => toggleSwitch('notifyReviewReplies')}
-              disabled={saving || !preferences.enableNotifications}
-            />
-            <PreferenceItem
-              icon="heart-outline"
-              title="Me gusta en mis reseñas"
-              description="Cuando otros usuarios den like a tus reseñas"
-              value={preferences.notifyReviewLikes}
-              onToggle={() => toggleSwitch('notifyReviewLikes')}
-              disabled={saving || !preferences.enableNotifications}
-            />
+        {!isAuthenticated ? null : (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Reseñas</Text>
+            <View style={styles.optionsContainer}>
+              <PreferenceItem
+                icon="chatbubble-outline"
+                title="Respuestas a mis reseñas"
+                description="Cuando el motel responda a tu reseña"
+                value={preferences.notifyReviewReplies}
+                onToggle={() => toggleSwitch('notifyReviewReplies')}
+                disabled={saving || !preferences.enableNotifications}
+              />
+              <PreferenceItem
+                icon="heart-outline"
+                title="Me gusta en mis reseñas"
+                description="Cuando otros usuarios den like a tus reseñas"
+                value={preferences.notifyReviewLikes}
+                onToggle={() => toggleSwitch('notifyReviewLikes')}
+                disabled={saving || !preferences.enableNotifications}
+              />
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Notificaciones Generales */}
         <View style={styles.section}>
@@ -270,35 +313,41 @@ export default function NotificationPreferencesScreen({ navigation }) {
               description="Ofertas patrocinadas y anuncios de la plataforma"
               value={preferences.enableAdvertisingPush}
               onToggle={() => toggleSwitch('enableAdvertisingPush')}
-              disabled={saving || !preferences.enableNotifications || !preferences.enablePush}
+              disabled={saving || (!preferences.enableNotifications || !preferences.enablePush) && isAuthenticated}
             />
-            <PreferenceItem
-              icon="megaphone-outline"
-              title="Promociones de Jahatelo"
-              description="Ofertas especiales y novedades de la plataforma"
-              value={preferences.notifyPromotions}
-              onToggle={() => toggleSwitch('notifyPromotions')}
-              disabled={saving || !preferences.enableNotifications}
-            />
-            <PreferenceItem
-              icon="business-outline"
-              title="Nuevos moteles"
-              description="Cuando se agreguen nuevos moteles en tu zona"
-              value={preferences.notifyNewMotels}
-              onToggle={() => toggleSwitch('notifyNewMotels')}
-              disabled={saving || !preferences.enableNotifications}
-            />
+            {!isAuthenticated ? null : (
+              <>
+                <PreferenceItem
+                  icon="megaphone-outline"
+                  title="Promociones de Jahatelo"
+                  description="Ofertas especiales y novedades de la plataforma"
+                  value={preferences.notifyPromotions}
+                  onToggle={() => toggleSwitch('notifyPromotions')}
+                  disabled={saving || !preferences.enableNotifications}
+                />
+                <PreferenceItem
+                  icon="business-outline"
+                  title="Nuevos moteles"
+                  description="Cuando se agreguen nuevos moteles en tu zona"
+                  value={preferences.notifyNewMotels}
+                  onToggle={() => toggleSwitch('notifyNewMotels')}
+                  disabled={saving || !preferences.enableNotifications}
+                />
+              </>
+            )}
           </View>
         </View>
 
         {/* Info Footer */}
-        <View style={styles.infoContainer}>
-          <Ionicons name="information-circle-outline" size={20} color={COLORS.textLight} />
-          <Text style={styles.infoText}>
-            Puedes cambiar estas preferencias en cualquier momento. Las notificaciones push requieren
-            permisos del dispositivo.
-          </Text>
-        </View>
+        {isAuthenticated && (
+          <View style={styles.infoContainer}>
+            <Ionicons name="information-circle-outline" size={20} color={COLORS.textLight} />
+            <Text style={styles.infoText}>
+              Puedes cambiar estas preferencias en cualquier momento. Las notificaciones push requieren
+              permisos del dispositivo.
+            </Text>
+          </View>
+        )}
 
         {/* Espaciado inferior */}
         <View style={styles.footer} />
