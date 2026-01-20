@@ -1,33 +1,22 @@
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import CityListWithAds from '@/components/public/CityListWithAds';
-import { prisma } from '@/lib/prisma';
+import { headers } from 'next/headers';
 
 export default async function CitiesPage() {
-  const citiesRaw = await prisma.motel.groupBy({
-    by: ['city'],
-    where: {
-      status: 'APPROVED',
-      isActive: true,
-      city: {
-        not: '',
-      },
-    },
-    _count: {
-      city: true,
-    },
-    orderBy: {
-      city: 'asc',
-    },
-    take: 100,
-  });
+  const headersList = headers();
+  const host = headersList.get('x-forwarded-host') || headersList.get('host');
+  const protocol = headersList.get('x-forwarded-proto') || 'http';
+  const baseUrl = host ? `${protocol}://${host}` : 'http://localhost:3000';
 
-  const cities = citiesRaw
-    .filter((item) => item.city && item.city.trim().length > 0)
-    .map((item) => ({
-      name: item.city as string,
-      total: item._count.city,
-    }));
+  const citiesResponse = await fetch(`${baseUrl}/api/mobile/cities`, {
+    next: { revalidate: 60 },
+  });
+  const citiesPayload = citiesResponse.ok ? await citiesResponse.json() : { cities: [] };
+  const cities = (citiesPayload.cities || []).map((item: { name: string; count: number }) => ({
+    name: item.name,
+    total: item.count,
+  }));
 
   return (
     <>

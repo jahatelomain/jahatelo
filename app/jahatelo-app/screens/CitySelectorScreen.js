@@ -1,10 +1,11 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +22,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../constants/theme';
+import { fetchCities } from '../services/motelsApi';
 
 // Componente de city card animada
 const AnimatedCityCard = ({ item, index, onPress }) => {
@@ -112,10 +114,52 @@ const AnimatedEmptyState = () => {
 
 export default function CitySelectorScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
-  const { motels = [] } = route.params;
+  const { motels = [] } = route.params || {};
+  const [cities, setCities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadCities = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchCities();
+        if (mounted) {
+          setCities(data);
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err?.message || 'Error al cargar ciudades');
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadCities();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Agrupar moteles por ciudad
   const citiesData = useMemo(() => {
+    if (cities.length > 0) {
+      return cities
+        .map((city) => ({
+          name: city.name,
+          count: city.count || 0,
+          motels: [],
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    if (motels.length === 0) return [];
+
     const citiesMap = {};
 
     motels.forEach((motel) => {
@@ -126,7 +170,6 @@ export default function CitySelectorScreen({ route, navigation }) {
       citiesMap[city].push(motel);
     });
 
-    // Convertir a array y ordenar alfabéticamente
     return Object.keys(citiesMap)
       .sort()
       .map((cityName) => ({
@@ -134,7 +177,7 @@ export default function CitySelectorScreen({ route, navigation }) {
         count: citiesMap[cityName].length,
         motels: citiesMap[cityName],
       }));
-  }, [motels]);
+  }, [cities, motels]);
 
   const handleCityPress = (city) => {
     navigation.navigate('CityMotels', {
@@ -165,9 +208,19 @@ export default function CitySelectorScreen({ route, navigation }) {
       {/* Contenido */}
       <View style={styles.content}>
         <Animated.View entering={FadeIn.delay(200).duration(500)}>
-          <Text style={styles.subtitle}>
-            {citiesData.length} {citiesData.length === 1 ? 'ciudad disponible' : 'ciudades disponibles'}
-          </Text>
+          {loading ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator size="small" color={COLORS.primary} />
+              <Text style={styles.subtitle}>Cargando ciudades...</Text>
+            </View>
+          ) : (
+            <Text style={styles.subtitle}>
+              {citiesData.length} {citiesData.length === 1 ? 'ciudad disponible' : 'ciudades disponibles'}
+            </Text>
+          )}
+          {error && !loading && (
+            <Text style={styles.errorText}>{error}</Text>
+          )}
         </Animated.View>
 
         <FlatList
@@ -178,7 +231,7 @@ export default function CitySelectorScreen({ route, navigation }) {
           )}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
-          ListEmptyComponent={<AnimatedEmptyState />}
+          ListEmptyComponent={loading ? null : <AnimatedEmptyState />}
         />
       </View>
     </SafeAreaView>
@@ -230,6 +283,16 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginTop: 12,
     marginBottom: 12,
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  errorText: {
+    marginTop: 6,
+    color: COLORS.error,
+    fontSize: 12,
   },
   listContent: {
     paddingBottom: 24,

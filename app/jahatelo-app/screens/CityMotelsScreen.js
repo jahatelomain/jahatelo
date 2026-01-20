@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +15,7 @@ import AdDetailModal from '../components/AdDetailModal';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { mixAdvertisements } from '../utils/mixAdvertisements';
 import { COLORS } from '../constants/theme';
+import { fetchMotels } from '../services/motelsApi';
 
 export default function CityMotelsScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
@@ -21,14 +23,50 @@ export default function CityMotelsScreen({ route, navigation }) {
   const headerPaddingTop = insets.top + 12;
   const [selectedAd, setSelectedAd] = useState(null);
   const [showAdDetailModal, setShowAdDetailModal] = useState(false);
+  const [cityMotels, setCityMotels] = useState(motels);
+  const [loading, setLoading] = useState(motels.length === 0);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadMotels = async () => {
+      if (motels.length > 0) {
+        setCityMotels(motels);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchMotels({ city: cityName });
+        if (mounted) {
+          setCityMotels(data || []);
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err?.message || 'Error al cargar moteles');
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadMotels();
+
+    return () => {
+      mounted = false;
+    };
+  }, [cityName, motels]);
 
   // Cargar anuncios de lista
   const { ads: listAds, trackAdEvent } = useAdvertisements('LIST_INLINE');
 
   // Mezclar moteles con anuncios
   const mixedItems = useMemo(() => {
-    return mixAdvertisements(motels, listAds);
-  }, [motels, listAds]);
+    return mixAdvertisements(cityMotels, listAds);
+  }, [cityMotels, listAds]);
 
   const handleAdClick = (ad) => {
     if (!ad) return;
@@ -58,9 +96,19 @@ export default function CityMotelsScreen({ route, navigation }) {
 
       {/* Contenido */}
       <View style={styles.content}>
-        <Text style={styles.subtitle}>
-          {motels.length} {motels.length === 1 ? 'motel encontrado' : 'moteles encontrados'}
-        </Text>
+        {loading ? (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator size="small" color={COLORS.primary} />
+            <Text style={styles.subtitle}>Cargando moteles...</Text>
+          </View>
+        ) : (
+          <Text style={styles.subtitle}>
+            {cityMotels.length} {cityMotels.length === 1 ? 'motel encontrado' : 'moteles encontrados'}
+          </Text>
+        )}
+        {error && !loading && (
+          <Text style={styles.errorText}>{error}</Text>
+        )}
 
         <FlatList
           data={mixedItems}
@@ -88,7 +136,9 @@ export default function CityMotelsScreen({ route, navigation }) {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="location-outline" size={64} color={COLORS.muted} />
-              <Text style={styles.emptyText}>No hay moteles en esta ciudad</Text>
+              <Text style={styles.emptyText}>
+                {error ? 'No pudimos cargar los moteles' : 'No hay moteles en esta ciudad'}
+              </Text>
             </View>
           }
         />
@@ -152,6 +202,18 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginTop: 12,
     marginBottom: 8,
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  errorText: {
+    marginBottom: 8,
+    color: COLORS.error,
+    fontSize: 12,
   },
   listContent: {
     paddingBottom: 24,

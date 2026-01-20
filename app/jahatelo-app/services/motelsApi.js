@@ -285,6 +285,18 @@ export const fetchMotelsByFilters = async ({ search, amenity, city }) => {
 };
 
 /**
+ * Obtiene ciudades disponibles para el selector
+ * @returns {Promise<Array>} Array de ciudades con count
+ */
+export const fetchCities = async () => {
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}/cities`;
+
+  const response = await fetchJson(url);
+  return response.cities || [];
+};
+
+/**
  * Obtiene el detalle de un motel por slug o ID
  * @param {string} slugOrId - Slug o ID del motel
  * @param {boolean} useCache - Si debe intentar usar el caché (default: true)
