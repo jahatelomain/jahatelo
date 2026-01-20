@@ -42,7 +42,7 @@ export default async function HomePage() {
     })),
   }));
 
-  const headersList = headers();
+  const headersList = await headers();
   const host = headersList.get('x-forwarded-host') || headersList.get('host');
   const protocol = headersList.get('x-forwarded-proto') || 'http';
   const baseUrl = host ? `${protocol}://${host}` : 'http://localhost:3000';

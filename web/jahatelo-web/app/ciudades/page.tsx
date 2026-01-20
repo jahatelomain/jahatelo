@@ -4,7 +4,7 @@ import CityListWithAds from '@/components/public/CityListWithAds';
 import { headers } from 'next/headers';
 
 export default async function CitiesPage() {
-  const headersList = headers();
+  const headersList = await headers();
   const host = headersList.get('x-forwarded-host') || headersList.get('host');
   const protocol = headersList.get('x-forwarded-proto') || 'http';
   const baseUrl = host ? `${protocol}://${host}` : 'http://localhost:3000';
