@@ -72,7 +72,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
         const data = await response.json();
         const cityList = (data || [])
           .map((motel: { city?: string | null }) => motel.city)
-          .filter((city): city is string => Boolean(city && city.trim().length > 0));
+          .filter((city: string | null): city is string => Boolean(city && city.trim().length > 0));
 
         const uniqueCities = Array.from(new Set(cityList)).sort((a, b) => a.localeCompare(b));
         setCities(uniqueCities);
