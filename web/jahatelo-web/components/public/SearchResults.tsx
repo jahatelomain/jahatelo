@@ -70,13 +70,11 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
       try {
         const response = await fetch('/api/motels');
         const data = await response.json();
-        const uniqueCities = Array.from(
-          new Set(
-            (data || [])
-              .map((motel: { city?: string | null }) => motel.city)
-              .filter((city: string | null) => city && city.trim().length > 0)
-          )
-        ).sort((a, b) => a.localeCompare(b));
+        const cityList = (data || [])
+          .map((motel: { city?: string | null }) => motel.city)
+          .filter((city): city is string => Boolean(city && city.trim().length > 0));
+
+        const uniqueCities = Array.from(new Set(cityList)).sort((a, b) => a.localeCompare(b));
         setCities(uniqueCities);
       } catch (error) {
         console.error('Error fetching cities:', error);
