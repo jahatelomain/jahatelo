@@ -124,6 +124,18 @@ const CityCardSkeleton = ({ index }) => (
   </Animated.View>
 );
 
+const AdCardSkeleton = ({ index }) => (
+  <Animated.View entering={FadeInRight.delay(index * 80).duration(500).springify()}>
+    <View style={styles.adCardSkeleton}>
+      <View style={styles.adBadgeSkeleton}>
+        <Text style={styles.adBadgeText}>PUBLICIDAD</Text>
+      </View>
+      <View style={styles.adLineSkeleton} />
+      <View style={styles.adLineSkeletonShort} />
+    </View>
+  </Animated.View>
+);
+
 export default function CitySelectorScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const { motels = [] } = route.params || {};
@@ -238,7 +250,10 @@ export default function CitySelectorScreen({ route, navigation }) {
         {loading ? (
           <View style={styles.listContent}>
             {Array.from({ length: 6 }).map((_, index) => (
-              <CityCardSkeleton key={`city-skeleton-${index}`} index={index} />
+              <React.Fragment key={`city-skeleton-${index}`}>
+                <CityCardSkeleton index={index} />
+                {index === 1 && <AdCardSkeleton index={index + 1} />}
+              </React.Fragment>
             ))}
           </View>
         ) : (
@@ -337,6 +352,41 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 12,
     marginVertical: 4,
+  },
+  adCardSkeleton: {
+    backgroundColor: COLORS.backgroundDark,
+    borderRadius: 16,
+    padding: 12,
+    marginVertical: 4,
+    borderWidth: 1,
+    borderColor: COLORS.card,
+  },
+  adBadgeSkeleton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: COLORS.card,
+    marginBottom: 10,
+  },
+  adBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.textLight,
+    letterSpacing: 0.4,
+  },
+  adLineSkeleton: {
+    height: 12,
+    width: '80%',
+    borderRadius: 6,
+    backgroundColor: COLORS.card,
+    marginBottom: 8,
+  },
+  adLineSkeletonShort: {
+    height: 10,
+    width: '50%',
+    borderRadius: 6,
+    backgroundColor: COLORS.card,
   },
   iconSkeleton: {
     width: 44,

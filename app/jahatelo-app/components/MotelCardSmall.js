@@ -12,7 +12,10 @@ const COLORS = {
 export default function MotelCardSmall({ motel, onPress }) {
   if (!motel) return null;
 
-  const image = motel.photos?.[0] || motel.thumbnail || 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=900&q=80';
+  const fallbackPattern = require('../assets/motel-placeholder.png');
+  const image = motel.photos?.[0] || motel.thumbnail || null;
+  const imageSource = image ? { uri: image } : fallbackPattern;
+  const isPlaceholder = !image;
   const ratingText =
     typeof motel.rating === 'number' && motel.rating > 0
       ? motel.rating.toFixed(1)
@@ -20,7 +23,7 @@ export default function MotelCardSmall({ motel, onPress }) {
 
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.85}>
-      <Image source={{ uri: image }} style={styles.image} />
+      <Image source={imageSource} style={[styles.image, isPlaceholder && styles.placeholderImage]} />
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1}>
           {motel.nombre}
@@ -45,6 +48,9 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: 90,
+  },
+  placeholderImage: {
+    opacity: 0.5,
   },
   info: {
     padding: 8,

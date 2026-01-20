@@ -1,0 +1,8 @@
+# Google OAuth Client IDs - Jahatelo Producción
+# Fecha: 19 Enero 2025
+
+ANDROID_CLIENT_ID: 538770919156-f9enp1tnesjus884vk8tvi047utr3gfh.apps.googleusercontent.com
+
+IOS_CLIENT_ID: 538770919156-iguu9u41nf7fakboh06vvm09be25ip38.apps.googleusercontent.com
+
+WEB_CLIENT_ID: 538770919156-pioslijk4die35brv5njd5pk4k5fcfbe.apps.googleusercontent.com

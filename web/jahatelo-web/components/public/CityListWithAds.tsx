@@ -32,19 +32,11 @@ export default function CityListWithAds({ cities }: { cities: CityItem[] }) {
                 {city.total} {city.total === 1 ? 'motel' : 'moteles'}
               </p>
             </Link>
-            {ad && (
-              <div className="md:col-span-2 lg:col-span-3">
-                <AdInlineCard key={`${city.name}-ad-${ad.id}`} ad={ad} placement="LIST_INLINE" />
-              </div>
-            )}
+            {ad && <AdInlineCard key={`${city.name}-ad-${ad.id}`} ad={ad} placement="LIST_INLINE" />}
           </Fragment>
         );
       })}
-      {cities.length < 5 && ads[adIndex] && (
-        <div className="md:col-span-2 lg:col-span-3">
-          <AdInlineCard ad={ads[adIndex]} placement="LIST_INLINE" />
-        </div>
-      )}
+      {cities.length < 5 && ads[adIndex] && <AdInlineCard ad={ads[adIndex]} placement="LIST_INLINE" />}
     </div>
   );
 }

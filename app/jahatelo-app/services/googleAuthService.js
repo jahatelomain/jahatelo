@@ -1,6 +1,7 @@
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 // Necesario para que funcione el redirect después del login
 WebBrowser.maybeCompleteAuthSession();
@@ -17,13 +18,31 @@ const WEB_CLIENT_ID = Constants.expoConfig?.extra?.googleClientIdWeb || 'PLACEHO
  * Usa expo-auth-session para manejar el flujo OAuth
  */
 export const useGoogleAuth = () => {
+  // En Expo Go, forzar el uso del redirect URI de Expo
+  const redirectUri = `https://auth.expo.io/@${Constants.expoConfig.owner}/${Constants.expoConfig.slug}`;
+
+  // En Expo Go, SIEMPRE usar Web Client ID (tanto para iOS como Android)
+  // Los Client IDs de iOS/Android nativos son solo para builds compilados
+  const clientId = WEB_CLIENT_ID;
+
   const [request, response, promptAsync] = Google.useAuthRequest({
-    expoClientId: EXPO_CLIENT_ID,
-    iosClientId: IOS_CLIENT_ID,
-    androidClientId: ANDROID_CLIENT_ID,
-    webClientId: WEB_CLIENT_ID,
+    clientId: clientId,
     scopes: ['profile', 'email'],
+    redirectUri: redirectUri, // Forzar el redirect URI de Expo
+    // En iOS con Expo Go, usar proxy puede ayudar con problemas de redirect
+    useProxy: Platform.OS === 'ios' ? true : undefined,
   });
+
+  console.log('Google Auth Config:', {
+    platform: Platform.OS,
+    clientId: clientId,
+    redirectUri: redirectUri,
+    useProxy: Platform.OS === 'ios',
+  });
+
+  if (request) {
+    console.log('Google Auth Request URL:', request.url);
+  }
 
   return { request, response, promptAsync };
 };

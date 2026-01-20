@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "514835536979",
+    "project_id": "jahatelo-1dd63",
+    "storage_bucket": "jahatelo-1dd63.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:514835536979:android:34cb137ef1f40ada9abaa6",
+        "android_client_info": {
+          "package_name": "app.jahatelo.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsbuv3xwi8agkXa5fphOshQRhtOzNzpBc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

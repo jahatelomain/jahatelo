@@ -182,16 +182,19 @@ export default function MotelDetailScreen({ route, navigation }) {
   }
 
   // Obtener foto principal del motel o usar placeholder
+  const fallbackPattern = require('../assets/motel-placeholder.png');
   const mainPhoto =
     motel.thumbnail ||
     motel.featuredPhoto ||
     motel.photos?.[0] ||
     motel.allPhotos?.[0] ||
-    'https://picsum.photos/800/600?random=999';
+    null;
   const mainPhotoUrl =
     typeof mainPhoto === 'string'
       ? mainPhoto
-      : mainPhoto?.url || mainPhoto?.photoUrl || 'https://picsum.photos/800/600?random=999';
+      : mainPhoto?.url || mainPhoto?.photoUrl || null;
+  const mainPhotoSource = mainPhotoUrl ? { uri: mainPhotoUrl } : fallbackPattern;
+  const isPlaceholder = !mainPhotoUrl;
 
   const photoHeight = 240 + insets.top;
 
@@ -203,8 +206,12 @@ export default function MotelDetailScreen({ route, navigation }) {
         style={[styles.photoContainer, { height: photoHeight, marginTop: -insets.top }]}
       >
         <Image
-          source={{ uri: mainPhotoUrl }}
-          style={[styles.motelPhoto, { height: photoHeight }]}
+          source={mainPhotoSource}
+          style={[
+            styles.motelPhoto,
+            { height: photoHeight },
+            isPlaceholder && styles.placeholderImage,
+          ]}
           resizeMode="cover"
         />
 
@@ -397,6 +404,9 @@ const styles = StyleSheet.create({
     height: 240,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
+  },
+  placeholderImage: {
+    opacity: 0.5,
   },
   badgesContainer: {
     position: 'absolute',

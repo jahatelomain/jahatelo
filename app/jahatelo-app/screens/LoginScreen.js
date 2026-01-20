@@ -30,11 +30,15 @@ export default function LoginScreen({ navigation }) {
 
   // Manejar respuesta de Google OAuth
   useEffect(() => {
+    console.log('Google Response:', googleResponse);
     if (googleResponse?.type === 'success') {
       const { authentication } = googleResponse;
       handleGoogleLogin(authentication.accessToken);
     } else if (googleResponse?.type === 'error') {
-      Alert.alert('Error', 'Error al iniciar sesión con Google');
+      console.error('Google OAuth Error:', googleResponse.error);
+      Alert.alert('Error', `Error al iniciar sesión con Google: ${googleResponse.error?.message || googleResponse.error}`);
+    } else if (googleResponse?.type === 'dismiss') {
+      console.log('User dismissed login');
     }
   }, [googleResponse]);
 

@@ -24,6 +24,7 @@
     },
     "android": {
       "package": "app.jahatelo.mobile",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo-icon.png",
         "backgroundColor": "#FFFFFF"
@@ -68,10 +69,10 @@
         "projectId": "98e7ed1c-2b9c-45e9-8058-4e8f94cd7235"
       },
       "router": {},
-      "googleClientIdExpo": "PLACEHOLDER_EXPO",
-      "googleClientIdIos": "PLACEHOLDER_IOS",
-      "googleClientIdAndroid": "PLACEHOLDER_ANDROID",
-      "googleClientIdWeb": "PLACEHOLDER_WEB"
+      "googleClientIdExpo": "538770919156-pioslijk4die35brv5njd5pk4k5fcfbe.apps.googleusercontent.com",
+      "googleClientIdIos": "538770919156-iguu9u41nf7fakboh06vvm09be25ip38.apps.googleusercontent.com",
+      "googleClientIdAndroid": "538770919156-f9enp1tnesjus884vk8tvi047utr3gfh.apps.googleusercontent.com",
+      "googleClientIdWeb": "538770919156-pioslijk4die35brv5njd5pk4k5fcfbe.apps.googleusercontent.com"
     },
     "owner": "jmongelos"
   }

@@ -141,7 +141,8 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
           const photoUrl =
             motel.featuredPhoto ||
             motel.photos?.[0]?.url ||
-            'https://picsum.photos/800/400?random=' + index;
+            '/motel-placeholder.png';
+          const isPlaceholder = photoUrl === '/motel-placeholder.png';
           const isDisabled = motel.plan === 'FREE';
 
           return (
@@ -157,7 +158,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                     src={photoUrl}
                     alt={motel.name}
                     fill
-                    className="object-cover"
+                    className={`object-cover ${isPlaceholder ? 'opacity-60' : ''}`}
                     sizes="(max-width: 768px) 100vw, 800px"
                     priority={index === 0}
                   />
@@ -171,7 +172,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                     src={photoUrl}
                     alt={motel.name}
                     fill
-                    className="object-cover"
+                    className={`object-cover ${isPlaceholder ? 'opacity-60' : ''}`}
                     sizes="(max-width: 768px) 100vw, 800px"
                     priority={index === 0}
                   />

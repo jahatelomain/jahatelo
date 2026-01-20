@@ -29,7 +29,9 @@ export default function MotelCard({ motel }: MotelCardProps) {
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
   const facadePhoto = motel.photos?.find((p) => p.kind === 'FACADE');
   const firstPhoto = motel.photos?.[0];
-  const photoUrl = motel.featuredPhoto || facadePhoto?.url || firstPhoto?.url;
+  const placeholderUrl = '/motel-placeholder.png';
+  const photoUrl = motel.featuredPhoto || facadePhoto?.url || firstPhoto?.url || placeholderUrl;
+  const isPlaceholder = photoUrl === placeholderUrl;
 
   // Track vista cuando se hace click en la card
   const handleClick = () => {
@@ -59,7 +61,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
               src={photoUrl}
               alt={motel.name}
               fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              className={`object-cover group-hover:scale-105 transition-transform duration-300 ${isPlaceholder ? 'opacity-60' : ''}`}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
           ) : (
