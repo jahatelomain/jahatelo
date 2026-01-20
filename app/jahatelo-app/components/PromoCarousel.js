@@ -24,18 +24,44 @@ const COLORS = {
   adAccent: '#FFA500',
 };
 
+const resolveImageUrl = (value) => {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (value && typeof value === 'object') {
+    const candidate = value.url || value.photoUrl;
+    if (typeof candidate === 'string') {
+      const trimmed = candidate.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+  }
+  return null;
+};
+
+const getMotelImageUrl = (motel) => {
+  if (!motel) return null;
+  const candidates = [
+    motel.promoImageUrl,
+    motel.thumbnail,
+    motel.photoUrl,
+    motel.imageUrl,
+    motel.imagen,
+    motel.photos?.[0],
+    motel.fotos?.[0],
+  ];
+  for (const candidate of candidates) {
+    const resolved = resolveImageUrl(candidate);
+    if (resolved) return resolved;
+  }
+  return null;
+};
+
 const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badgeIconName = 'pricetag' }) => {
   const fallbackPattern = require('../assets/motel-placeholder.png');
-  // Priorizar imagen de la promo, luego thumbnail del motel, luego fallback
-  const image =
-    motel.promoImageUrl ||
-    motel.thumbnail ||
-    motel.photos?.[0]?.url ||
-    motel.photos?.[0] ||
-    motel.fotos?.[0] ||
-    null;
-  const imageSource = image ? { uri: image } : fallbackPattern;
-  const isPlaceholder = !image;
+  const imageUrl = getMotelImageUrl(motel);
+  const imageSource = imageUrl ? { uri: imageUrl } : fallbackPattern;
+  const isPlaceholder = !imageUrl;
 
   const inputRange = [
     (index - 1) * (CARD_WIDTH + SPACING),

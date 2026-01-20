@@ -16,7 +16,7 @@ export default function CityListWithAds({ cities }: { cities: CityItem[] }) {
   let adIndex = 0;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
       {cities.map((city, index) => {
         const showAd = (index + 1) % 5 === 0 && activeAds[adIndex];
         const ad = showAd ? activeAds[adIndex++] : null;
@@ -33,11 +33,11 @@ export default function CityListWithAds({ cities }: { cities: CityItem[] }) {
                 {city.total} {city.total === 1 ? 'motel' : 'moteles'}
               </p>
             </Link>
-            {ad && <AdInlineCard key={`${city.name}-ad-${ad.id}`} ad={ad} placement="LIST_INLINE" />}
+            {ad && <AdInlineCard key={`${city.name}-ad-${ad.id}`} ad={ad} placement="CITY_LIST" />}
           </Fragment>
         );
       })}
-      {cities.length < 5 && activeAds[adIndex] && <AdInlineCard ad={activeAds[adIndex]} placement="LIST_INLINE" />}
+      {cities.length < 5 && activeAds[adIndex] && <AdInlineCard ad={activeAds[adIndex]} placement="CITY_LIST" />}
     </div>
   );
 }

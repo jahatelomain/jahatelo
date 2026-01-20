@@ -79,15 +79,17 @@ const AnimatedCityAdCard = ({ item, index, onPress }) => {
         onPress={() => onPress(item)}
         activeOpacity={1}
       >
-        <Animated.View style={styles.cityCard}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="megaphone" size={28} color={COLORS.primary} />
+        <Animated.View style={[styles.cityCard, styles.adCityCard]}>
+          <View style={[styles.iconContainer, styles.adIconContainer]}>
+            <Ionicons name="megaphone" size={26} color="#D97706" />
           </View>
           <View style={styles.cityInfo}>
-            <Text style={styles.adLabel}>Publicidad</Text>
-            <Text style={styles.cityName} numberOfLines={1}>{item.title}</Text>
+            <View style={styles.adBadge}>
+              <Text style={styles.adBadgeText}>PUBLICIDAD</Text>
+            </View>
+            <Text style={[styles.cityName, styles.adTitle]} numberOfLines={1}>{item.title}</Text>
             {item.advertiser ? (
-              <Text style={styles.cityCount} numberOfLines={1}>{item.advertiser}</Text>
+              <Text style={[styles.cityCount, styles.adSubtitle]} numberOfLines={1}>{item.advertiser}</Text>
             ) : null}
           </View>
           <Ionicons name="chevron-forward" size={20} color={COLORS.muted} />
@@ -406,6 +408,11 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 1,
   },
+  adCityCard: {
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: '#FFE5B4',
+  },
   cityCardSkeleton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -446,15 +453,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
+  adIconContainer: {
+    backgroundColor: '#FFF3DB',
+  },
   cityInfo: {
     flex: 1,
   },
-  adLabel: {
-    fontSize: 10,
+  adBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFE5B4',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  adBadgeText: {
+    fontSize: 9,
     fontWeight: '700',
-    color: COLORS.muted,
-    marginBottom: 2,
-    letterSpacing: 0.4,
+    color: '#D97706',
+    letterSpacing: 0.3,
   },
   cityName: {
     fontSize: 15,
@@ -462,9 +479,16 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: 2,
   },
+  adTitle: {
+    color: '#2A0038',
+    fontWeight: '700',
+  },
   cityCount: {
     fontSize: 12,
     color: COLORS.textLight,
+  },
+  adSubtitle: {
+    color: '#888',
   },
   emptyContainer: {
     flex: 1,
