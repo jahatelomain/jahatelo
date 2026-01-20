@@ -1,6 +1,7 @@
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import MotelListWithAds from '@/components/public/MotelListWithAds';
+import PromoListWithAds from '@/components/public/PromoListWithAds';
 import MotelFilters from '@/components/public/MotelFilters';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
@@ -84,6 +85,13 @@ export default async function MotelsPage({ searchParams }: MotelsPageProps) {
           price12h: true,
         },
       },
+      promos: promos
+        ? {
+            where: {
+              isActive: true,
+            },
+          }
+        : undefined,
     },
     orderBy: [
       { plan: 'desc' },
@@ -170,7 +178,7 @@ export default async function MotelsPage({ searchParams }: MotelsPageProps) {
           {/* Motels Grid */}
           <div className="lg:col-span-3">
             {motels.length > 0 ? (
-              <MotelListWithAds motels={motels} />
+              promos ? <PromoListWithAds motels={motels} /> : <MotelListWithAds motels={motels} />
             ) : (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">

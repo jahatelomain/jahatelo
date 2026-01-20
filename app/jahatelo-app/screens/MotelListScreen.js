@@ -5,6 +5,7 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  ImageBackground,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,6 +32,45 @@ const AnimatedMotelCard = ({ item, index, onPress }) => {
   return (
     <Animated.View entering={FadeInDown.delay(index * 100).duration(500).springify()}>
       <MotelCard motel={item} onPress={() => onPress(item)} />
+    </Animated.View>
+  );
+};
+
+const AnimatedPromoCard = ({ item, index, onPress }) => {
+  const fallbackPattern = require('../assets/motel-placeholder.png');
+  const [imageFailed, setImageFailed] = useState(false);
+  const imageUrl = item?.promoImageUrl || item?.thumbnail || item?.photos?.[0] || null;
+  const resolvedUrl = imageFailed ? null : imageUrl;
+  const imageSource = resolvedUrl ? { uri: resolvedUrl } : fallbackPattern;
+  const isPlaceholder = !resolvedUrl;
+
+  return (
+    <Animated.View entering={FadeInDown.delay(index * 100).duration(500).springify()}>
+      <TouchableOpacity activeOpacity={0.9} onPress={() => onPress(item)}>
+        <ImageBackground
+          source={imageSource}
+          style={styles.promoCard}
+          imageStyle={[styles.promoImage, isPlaceholder && styles.placeholderImage]}
+          onError={() => setImageFailed(true)}
+        >
+          <View style={styles.promoBadge}>
+            <Text style={styles.promoBadgeText}>PROMO</Text>
+          </View>
+          <View style={styles.promoOverlay}>
+            <Text style={styles.promoTitle} numberOfLines={1}>
+              {item?.promoTitle || 'Promoción especial'}
+            </Text>
+            <Text style={styles.promoMotelName} numberOfLines={1}>
+              {item?.nombre}
+            </Text>
+            {item?.promoDescription ? (
+              <Text style={styles.promoDescription} numberOfLines={2}>
+                {item.promoDescription}
+              </Text>
+            ) : null}
+          </View>
+        </ImageBackground>
+      </TouchableOpacity>
     </Animated.View>
   );
 };
@@ -86,7 +126,8 @@ const AnimatedEmptyState = () => {
 
 export default function MotelListScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
-  const { title, motels = [] } = route.params;
+  const { title, motels = [], listType } = route.params;
+  const isPromosList = listType === 'promos';
   const headerPaddingTop = insets.top + 12;
   const [selectedAd, setSelectedAd] = useState(null);
   const [showAdDetailModal, setShowAdDetailModal] = useState(false);
@@ -103,6 +144,7 @@ export default function MotelListScreen({ route, navigation }) {
     navigation.navigate('MotelDetail', {
       motelSlug: motel.slug,
       motelId: motel.id,
+      initialTab: isPromosList ? 'Promos' : undefined,
     });
   };
 
@@ -154,6 +196,16 @@ export default function MotelListScreen({ route, navigation }) {
                   index={index}
                   onAdClick={handleAdClick}
                   onAdView={handleAdView}
+                />
+              );
+            }
+
+            if (isPromosList) {
+              return (
+                <AnimatedPromoCard
+                  item={item.data}
+                  index={index}
+                  onPress={handleMotelPress}
                 />
               );
             }
@@ -239,6 +291,62 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 80,
+  },
+  promoCard: {
+    height: 220,
+    borderRadius: 18,
+    overflow: 'hidden',
+    marginBottom: 12,
+    backgroundColor: COLORS.card,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+  },
+  promoImage: {
+    borderRadius: 18,
+  },
+  placeholderImage: {
+    opacity: 0.5,
+  },
+  promoBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: COLORS.accent,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  promoBadgeText: {
+    color: COLORS.white,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  promoOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    padding: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
+  promoTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.white,
+  },
+  promoMotelName: {
+    fontSize: 13,
+    color: '#E5E5E5',
+    marginTop: 2,
+  },
+  promoDescription: {
+    fontSize: 12,
+    color: '#F0F0F0',
+    marginTop: 6,
   },
   emptyText: {
     fontSize: 16,

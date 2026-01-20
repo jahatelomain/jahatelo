@@ -137,6 +137,9 @@ const mapMotelSummary = (apiMotel) => {
     rating: apiMotel.rating?.average || 0,
     isFeatured: apiMotel.isFeatured || false,
     tienePromo: typeof apiMotel.tienePromo === 'boolean' ? apiMotel.tienePromo : (apiMotel.hasPromo || false),
+    promoImageUrl: apiMotel.promoImageUrl || null,
+    promoTitle: apiMotel.promoTitle || null,
+    promoDescription: apiMotel.promoDescription || null,
     plan: apiMotel.plan || 'BASIC',
     // Coordenadas en el nivel raíz para fácil acceso
     latitude,

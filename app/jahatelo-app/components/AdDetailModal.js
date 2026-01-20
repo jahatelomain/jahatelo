@@ -144,39 +144,36 @@ export default function AdDetailModal({ visible, ad, onClose, onTrackClick }) {
           </View>
 
           {/* Content */}
-          <ScrollView
-            style={styles.content}
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-          >
-            {/* Título */}
-            <Text style={styles.title}>{ad.title}</Text>
+          <View style={styles.content}>
+            <ScrollView
+              style={styles.contentScroll}
+              contentContainerStyle={styles.contentScrollContent}
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+            >
+              {/* Título */}
+              <Text style={styles.title}>{ad.title}</Text>
 
-            {/* Descripción */}
-            {ad.description && (
-              <Text style={styles.description}>{ad.description}</Text>
-            )}
+              {/* Descripción */}
+              {ad.description && (
+                <Text style={styles.description}>{ad.description}</Text>
+              )}
+            </ScrollView>
 
             {/* Botón de acción */}
             {ad.linkUrl && (
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={handleLinkPress}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.actionButtonText}>Ver más información</Text>
-                <Ionicons name="arrow-forward" size={20} color={COLORS.white} />
-              </TouchableOpacity>
+              <View style={styles.actionContainer}>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={handleLinkPress}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.actionButtonText}>Ver más información</Text>
+                  <Ionicons name="arrow-forward" size={16} color={COLORS.white} />
+                </TouchableOpacity>
+              </View>
             )}
-
-            {/* Info adicional */}
-            <View style={styles.infoContainer}>
-              <Ionicons name="information-circle-outline" size={20} color={COLORS.muted} />
-              <Text style={styles.infoText}>
-                Este es un anuncio publicitario patrocinado
-              </Text>
-            </View>
-          </ScrollView>
+          </View>
         </Animated.View>
       </View>
     </Modal>
@@ -270,6 +267,12 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
   },
+  contentScroll: {
+    flex: 1,
+  },
+  contentScrollContent: {
+    paddingBottom: 12,
+  },
   title: {
     fontSize: 24,
     fontWeight: '800',
@@ -283,13 +286,16 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 24,
   },
+  actionContainer: {
+    paddingBottom: 12,
+  },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.primary,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    paddingVertical: 11,
+    paddingHorizontal: 18,
     borderRadius: 12,
     gap: 8,
     marginBottom: 24,
@@ -300,24 +306,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   actionButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: COLORS.white,
     letterSpacing: 0.5,
-  },
-  infoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    padding: 12,
-    backgroundColor: COLORS.backgroundLight,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 12,
-    color: COLORS.textLight,
-    lineHeight: 18,
   },
 });

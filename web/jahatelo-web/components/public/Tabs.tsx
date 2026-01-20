@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Tab {
   id: string;
@@ -15,6 +15,21 @@ interface TabsProps {
 
 export default function Tabs({ tabs, defaultTab }: TabsProps) {
   const [activeTab, setActiveTab] = useState(defaultTab || tabs[0]?.id);
+
+  useEffect(() => {
+    const applyHash = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (!hash) return;
+      const match = tabs.find((tab) => tab.id === hash);
+      if (match) {
+        setActiveTab(match.id);
+      }
+    };
+
+    applyHash();
+    window.addEventListener('hashchange', applyHash);
+    return () => window.removeEventListener('hashchange', applyHash);
+  }, [tabs]);
 
   const activeTabContent = tabs.find((tab) => tab.id === activeTab)?.content;
 

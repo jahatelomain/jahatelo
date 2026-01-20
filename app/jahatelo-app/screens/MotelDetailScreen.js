@@ -29,6 +29,7 @@ const Tab = createMaterialTopTabNavigator();
 
 export default function MotelDetailScreen({ route, navigation }) {
   const { motelSlug, motelId } = route.params || {};
+  const initialTab = route.params?.initialTab;
   const [motel, setMotel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -300,6 +301,9 @@ export default function MotelDetailScreen({ route, navigation }) {
 
       {/* Material Top Tab Navigator */}
       <Tab.Navigator
+        initialRouteName={
+          initialTab === 'Promos' && motel?.promos?.length ? 'Promos' : 'Detalles'
+        }
         screenOptions={{
           tabBarLabelStyle: {
             fontSize: 12,

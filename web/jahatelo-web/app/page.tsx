@@ -29,6 +29,11 @@ export default async function HomePage() {
         orderBy: { order: 'asc' },
         take: 1,
       },
+      promos: {
+        where: {
+          isActive: true,
+        },
+      },
     },
     take: 5,
     orderBy: [{ plan: 'desc' }, { createdAt: 'desc' }],

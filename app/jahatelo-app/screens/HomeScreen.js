@@ -70,8 +70,8 @@ export default function HomeScreen() {
     loadMotels(true);
   };
 
-  const navigateList = (title, list) => {
-    navigation.navigate('MotelList', { title, motels: list });
+  const navigateList = (title, list, listType) => {
+    navigation.navigate('MotelList', { title, motels: list, listType });
   };
 
   const handleCitiesPress = () => {
@@ -102,7 +102,7 @@ export default function HomeScreen() {
   const categories = [
     { id: 'cities', label: 'Moteles por ciudad', iconName: 'location-outline', onPress: handleCitiesPress },
     { id: 'map', label: 'Ver mapa', iconName: 'map-outline', onPress: handleMapPress },
-    { id: 'promos', label: 'Promos', iconName: 'pricetag', onPress: () => navigateList('Promos', promos) },
+    { id: 'promos', label: 'Promos', iconName: 'pricetag', onPress: () => navigateList('Promos', promos, 'promos') },
   ];
 
   const promos = useMemo(() => motels.filter((motel) => motel.tienePromo), [motels]);

@@ -50,6 +50,7 @@ function AppContent() {
             navigationRef.current.navigate('MotelDetail', {
               motelId: data.motelId,
               motelSlug: data.motelSlug,
+              initialTab: 'Promos',
             });
           }
           break;
