@@ -56,9 +56,9 @@ export async function GET(request: NextRequest) {
 
     // Parse query params
     const search = normalizeText(searchParams.get('search'));
-    const city = normalizeText(searchParams.get('city'));
-    const neighborhood = normalizeText(searchParams.get('neighborhood'));
-    const amenity = normalizeText(searchParams.get('amenity'));
+    const city = normalize(searchParams.get('city'));
+    const neighborhood = normalize(searchParams.get('neighborhood'));
+    const amenity = normalize(searchParams.get('amenity'));
     const featured = searchParams.get('featured') === 'true' ? true : undefined;
     const idsParam = searchParams.get('ids') || undefined;
     const page = parseInt(searchParams.get('page') || '1', 10);

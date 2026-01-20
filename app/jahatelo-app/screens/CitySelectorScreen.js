@@ -23,6 +23,10 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../constants/theme';
 import { fetchCities } from '../services/motelsApi';
+import { useAdvertisements } from '../hooks/useAdvertisements';
+import { mixAdvertisements } from '../utils/mixAdvertisements';
+import AdListItem from '../components/AdListItem';
+import AdDetailModal from '../components/AdDetailModal';
 
 // Componente de city card animada
 const AnimatedCityCard = ({ item, index, onPress }) => {
@@ -124,24 +128,15 @@ const CityCardSkeleton = ({ index }) => (
   </Animated.View>
 );
 
-const AdCardSkeleton = ({ index }) => (
-  <Animated.View entering={FadeInRight.delay(index * 80).duration(500).springify()}>
-    <View style={styles.adCardSkeleton}>
-      <View style={styles.adBadgeSkeleton}>
-        <Text style={styles.adBadgeText}>PUBLICIDAD</Text>
-      </View>
-      <View style={styles.adLineSkeleton} />
-      <View style={styles.adLineSkeletonShort} />
-    </View>
-  </Animated.View>
-);
-
 export default function CitySelectorScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const { motels = [] } = route.params || {};
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedAd, setSelectedAd] = useState(null);
+  const [showAdDetailModal, setShowAdDetailModal] = useState(false);
+  const { ads: listAds, trackAdEvent } = useAdvertisements('LIST_INLINE');
 
   useEffect(() => {
     let mounted = true;
@@ -203,11 +198,27 @@ export default function CitySelectorScreen({ route, navigation }) {
       }));
   }, [cities, motels]);
 
+  const mixedItems = useMemo(() => {
+    return mixAdvertisements(citiesData, listAds);
+  }, [citiesData, listAds]);
+
   const handleCityPress = (city) => {
     navigation.navigate('CityMotels', {
       cityName: city.name,
       motels: city.motels,
     });
+  };
+
+  const handleAdClick = (ad) => {
+    if (!ad) return;
+    trackAdEvent(ad.id, 'CLICK');
+    setSelectedAd(ad);
+    setShowAdDetailModal(true);
+  };
+
+  const handleAdView = (ad) => {
+    if (!ad) return;
+    trackAdEvent(ad.id, 'VIEW');
   };
 
   const headerPaddingTop = insets.top + 12;
@@ -250,25 +261,48 @@ export default function CitySelectorScreen({ route, navigation }) {
         {loading ? (
           <View style={styles.listContent}>
             {Array.from({ length: 6 }).map((_, index) => (
-              <React.Fragment key={`city-skeleton-${index}`}>
-                <CityCardSkeleton index={index} />
-                {index === 1 && <AdCardSkeleton index={index + 1} />}
-              </React.Fragment>
+              <CityCardSkeleton key={`city-skeleton-${index}`} index={index} />
             ))}
           </View>
         ) : (
           <FlatList
-            data={citiesData}
-            keyExtractor={(item) => item.name}
-            renderItem={({ item, index }) => (
-              <AnimatedCityCard item={item} index={index} onPress={handleCityPress} />
-            )}
+            data={mixedItems}
+            keyExtractor={(item, index) => `${item.type}-${item.data?.name || item.data?.id || index}`}
+            renderItem={({ item, index }) => {
+              if (item.type === 'ad') {
+                return (
+                  <AdListItem
+                    ad={item.data}
+                    onAdClick={handleAdClick}
+                    onAdView={handleAdView}
+                  />
+                );
+              }
+
+              return (
+                <AnimatedCityCard
+                  item={item.data}
+                  index={index}
+                  onPress={handleCityPress}
+                />
+              );
+            }}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={<AnimatedEmptyState />}
           />
         )}
       </View>
+
+      <AdDetailModal
+        visible={showAdDetailModal}
+        ad={selectedAd}
+        onClose={() => {
+          setShowAdDetailModal(false);
+          setSelectedAd(null);
+        }}
+        onTrackClick={(adId) => trackAdEvent(adId, 'CLICK')}
+      />
     </SafeAreaView>
   );
 }
@@ -352,41 +386,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 12,
     marginVertical: 4,
-  },
-  adCardSkeleton: {
-    backgroundColor: COLORS.backgroundDark,
-    borderRadius: 16,
-    padding: 12,
-    marginVertical: 4,
-    borderWidth: 1,
-    borderColor: COLORS.card,
-  },
-  adBadgeSkeleton: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    backgroundColor: COLORS.card,
-    marginBottom: 10,
-  },
-  adBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: COLORS.textLight,
-    letterSpacing: 0.4,
-  },
-  adLineSkeleton: {
-    height: 12,
-    width: '80%',
-    borderRadius: 6,
-    backgroundColor: COLORS.card,
-    marginBottom: 8,
-  },
-  adLineSkeletonShort: {
-    height: 10,
-    width: '50%',
-    borderRadius: 6,
-    backgroundColor: COLORS.card,
   },
   iconSkeleton: {
     width: 44,
