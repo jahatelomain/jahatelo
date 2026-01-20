@@ -70,7 +70,11 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
 
   // Get main photo
   const facadePhoto = motel.photos.find((p) => p.kind === 'FACADE');
-  const mainPhoto = facadePhoto || motel.photos[0];
+  const mainPhoto = facadePhoto || motel.photos[0] || (motel.featuredPhoto ? { url: motel.featuredPhoto } : undefined);
+  const galleryPhotos = [
+    ...(motel.featuredPhoto ? [{ url: motel.featuredPhoto, alt: motel.name }] : []),
+    ...motel.photos.map((photo) => ({ url: photo.url, alt: motel.name })),
+  ].filter((photo, index, list) => list.findIndex((item) => item.url === photo.url) === index);
 
   // Safe rating
   const safeRating = motel.ratingAvg || 0;
@@ -94,9 +98,9 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     label: 'Detalles',
     content: (
         <div>
-          {motel.photos.length > 0 && (
+          {galleryPhotos.length > 0 && (
             <div className="mb-8">
-              <ImageGallery images={motel.photos.map((photo) => ({ url: photo.url, alt: motel.name }))} />
+              <ImageGallery images={galleryPhotos} />
             </div>
           )}
           {/* Description */}

@@ -10,24 +10,36 @@ export default function SearchBar() {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [loading, setLoading] = useState(false);
+  const [noResults, setNoResults] = useState(false);
   const debouncedQuery = useDebounce(query, 300);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!debouncedQuery || debouncedQuery.length < 2) {
       setSuggestions([]);
+      setLoading(false);
+      setNoResults(false);
       return;
     }
 
     const fetchSuggestions = async () => {
       try {
+        setLoading(true);
+        setNoResults(false);
         const res = await fetch(`/api/search/suggestions?q=${encodeURIComponent(debouncedQuery)}`);
         if (!res.ok) throw new Error('Error');
         const data = await res.json();
-        setSuggestions(data.suggestions || []);
+        const nextSuggestions = data.suggestions || [];
+        setSuggestions(nextSuggestions);
+        setNoResults(nextSuggestions.length === 0);
+        setOpen(true);
       } catch (error) {
         console.error('Error fetching suggestions:', error);
+        setSuggestions([]);
+        setNoResults(true);
       }
+      setLoading(false);
     };
 
     fetchSuggestions();
@@ -109,6 +121,16 @@ export default function SearchBar() {
               {item.subtitle && <div className="text-xs text-slate-500">{item.subtitle}</div>}
             </button>
           ))}
+        </div>
+      )}
+      {open && loading && (
+        <div className="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden">
+          <div className="px-4 py-3 text-sm text-slate-500">Cargando...</div>
+        </div>
+      )}
+      {open && !loading && noResults && (
+        <div className="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden">
+          <div className="px-4 py-3 text-sm text-slate-500">Sin resultados</div>
         </div>
       )}
     </div>

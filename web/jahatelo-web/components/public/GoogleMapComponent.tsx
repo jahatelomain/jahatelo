@@ -13,6 +13,7 @@ type MapMotel = {
   longitude: number;
   featuredPhoto: string | null;
   hasPromo: boolean;
+  isFeatured?: boolean;
   plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
 };
 
@@ -38,7 +39,9 @@ export default function GoogleMapComponent({
   const mapRef = useRef<HTMLDivElement>(null);
   const googleMapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const overlaysRef = useRef<any[]>([]);
   const userMarkerRef = useRef<any>(null);
+  const userLabelRef = useRef<any>(null);
   const circleRef = useRef<any>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     initialUserLocation || null
@@ -115,6 +118,8 @@ export default function GoogleMapComponent({
     // Clear existing markers
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
+    overlaysRef.current.forEach((overlay) => overlay.setMap(null));
+    overlaysRef.current = [];
 
     // Custom purple pin SVG with heart for ALL motels
     const purplePinSVG = `
@@ -219,6 +224,7 @@ export default function GoogleMapComponent({
         motel.name
       );
       customLabel.setMap(googleMapRef.current);
+      overlaysRef.current.push(customLabel);
 
       const isFreePlan = motel.plan === 'FREE';
       const actionButton = isFreePlan
@@ -259,6 +265,11 @@ export default function GoogleMapComponent({
               ⭐ Promoción activa
             </div>
           ` : ''}
+          ${motel.isFeatured ? `
+            <div style="display: inline-flex; align-items: center; gap: 4px; background: #EDE9FE; color: #6D28D9; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 12px; margin-bottom: 12px;">
+              ★ Destacado
+            </div>
+          ` : ''}
           ${actionButton}
         </div>
       `;
@@ -289,6 +300,9 @@ export default function GoogleMapComponent({
     // Remove existing user marker and circle
     if (userMarkerRef.current) {
       userMarkerRef.current.setMap(null);
+    }
+    if (userLabelRef.current) {
+      userLabelRef.current.setMap(null);
     }
     if (circleRef.current) {
       circleRef.current.setMap(null);
@@ -367,6 +381,7 @@ export default function GoogleMapComponent({
 
     const userLabel = new UserLabel({ lat: location[0], lng: location[1] });
     userLabel.setMap(googleMapRef.current);
+    userLabelRef.current = userLabel;
 
     const infoWindow = new window.google.maps.InfoWindow({
       content: `

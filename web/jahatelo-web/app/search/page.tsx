@@ -7,6 +7,8 @@ interface SearchPageProps {
     q?: string;
     city?: string;
     amenities?: string;
+    promos?: string;
+    featured?: string;
   }>;
 }
 

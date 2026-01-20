@@ -8,6 +8,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const city = searchParams.get('city');
     const amenities = searchParams.get('amenities');
+    const promos = searchParams.get('promos');
+    const featured = searchParams.get('featured');
 
     const whereClause: Prisma.MotelWhereInput = {
       status: 'APPROVED',
@@ -45,6 +47,18 @@ export async function GET(request: NextRequest) {
           },
         },
       };
+    }
+
+    if (promos) {
+      whereClause.promos = {
+        some: {
+          isActive: true,
+        },
+      };
+    }
+
+    if (featured) {
+      whereClause.isFeatured = true;
     }
 
     const motels = await prisma.motel.findMany({

@@ -17,6 +17,7 @@ interface MotelCardProps {
     isFeatured: boolean;
     ratingAvg: number;
     ratingCount: number;
+    featuredPhoto?: string | null;
     photos?: { url: string; kind: string }[];
     motelAmenities?: { amenity: { name: string; icon?: string | null } }[];
     rooms?: { price1h?: number | null; price2h?: number | null; price12h?: number | null }[];
@@ -28,7 +29,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
   const facadePhoto = motel.photos?.find((p) => p.kind === 'FACADE');
   const firstPhoto = motel.photos?.[0];
-  const photoUrl = facadePhoto?.url || firstPhoto?.url;
+  const photoUrl = motel.featuredPhoto || facadePhoto?.url || firstPhoto?.url;
 
   // Track vista cuando se hace click en la card
   const handleClick = () => {

@@ -10,6 +10,8 @@ interface SearchResultsProps {
     q?: string;
     city?: string;
     amenities?: string;
+    promos?: string;
+    featured?: string;
   };
 }
 
@@ -56,7 +58,36 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
   const [motels, setMotels] = useState<Motel[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCity, setSelectedCity] = useState(initialParams.city || '');
+  const [onlyPromos, setOnlyPromos] = useState(initialParams.promos === '1');
+  const [onlyFeatured, setOnlyFeatured] = useState(initialParams.featured === '1');
+  const [cities, setCities] = useState<string[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
+  useEffect(() => {
+    const fetchCities = async () => {
+      setCitiesLoading(true);
+      try {
+        const response = await fetch('/api/motels');
+        const data = await response.json();
+        const uniqueCities = Array.from(
+          new Set(
+            (data || [])
+              .map((motel: { city?: string | null }) => motel.city)
+              .filter((city: string | null) => city && city.trim().length > 0)
+          )
+        ).sort((a, b) => a.localeCompare(b));
+        setCities(uniqueCities);
+      } catch (error) {
+        console.error('Error fetching cities:', error);
+        setCities([]);
+      } finally {
+        setCitiesLoading(false);
+      }
+    };
+
+    fetchCities();
+  }, []);
 
   // Fetch motels when search params change
   useEffect(() => {
@@ -66,6 +97,8 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
         const params = new URLSearchParams();
         if (debouncedSearchQuery) params.set('search', debouncedSearchQuery);
         if (selectedCity) params.set('city', selectedCity);
+        if (onlyPromos) params.set('promos', '1');
+        if (onlyFeatured) params.set('featured', '1');
 
         const response = await fetch(`/api/motels/search?${params.toString()}`);
         const data = await response.json();
@@ -87,7 +120,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     };
 
     fetchMotels();
-  }, [debouncedSearchQuery, selectedCity]);
+  }, [debouncedSearchQuery, selectedCity, onlyPromos, onlyFeatured]);
 
   // Update URL when search params change
   useEffect(() => {
@@ -102,9 +135,19 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     } else {
       params.delete('city');
     }
+    if (onlyPromos) {
+      params.set('promos', '1');
+    } else {
+      params.delete('promos');
+    }
+    if (onlyFeatured) {
+      params.set('featured', '1');
+    } else {
+      params.delete('featured');
+    }
     router.push(`/search?${params.toString()}`, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchQuery, selectedCity]);
+  }, [debouncedSearchQuery, selectedCity, onlyPromos, onlyFeatured]);
 
   const handlePopularSearch = (query: string) => {
     setSearchQuery(query);
@@ -113,6 +156,8 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
   const clearSearch = () => {
     setSearchQuery('');
     setSelectedCity('');
+    setOnlyPromos(false);
+    setOnlyFeatured(false);
   };
 
   return (
@@ -146,8 +191,57 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
         </div>
       </div>
 
+      <div className="mb-8 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4 items-center">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Ciudad
+            </label>
+            <select
+              value={selectedCity}
+              onChange={(event) => setSelectedCity(event.target.value)}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
+            >
+              <option value="">
+                {citiesLoading ? 'Cargando ciudades...' : 'Todas las ciudades'}
+              </option>
+              {cities.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-3 md:pt-7">
+            <button
+              type="button"
+              onClick={() => setOnlyPromos((prev) => !prev)}
+              className={`px-4 py-2 rounded-lg font-medium border-2 transition-colors ${
+                onlyPromos
+                  ? 'bg-purple-600 text-white border-purple-600'
+                  : 'bg-white text-gray-700 border-gray-200 hover:border-purple-300'
+              }`}
+            >
+              Solo promos
+            </button>
+            <button
+              type="button"
+              onClick={() => setOnlyFeatured((prev) => !prev)}
+              className={`px-4 py-2 rounded-lg font-medium border-2 transition-colors ${
+                onlyFeatured
+                  ? 'bg-purple-600 text-white border-purple-600'
+                  : 'bg-white text-gray-700 border-gray-200 hover:border-purple-300'
+              }`}
+            >
+              Solo destacados
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Popular Searches */}
-      {!searchQuery && !selectedCity && (
+      {!searchQuery && !selectedCity && !onlyPromos && !onlyFeatured && (
         <div className="mb-8">
           <h3 className="text-sm font-medium text-gray-700 mb-3">Búsquedas populares:</h3>
           <div className="flex flex-wrap gap-2">
@@ -165,7 +259,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
       )}
 
       {/* Active Filters */}
-      {(searchQuery || selectedCity) && (
+      {(searchQuery || selectedCity || onlyPromos || onlyFeatured) && (
         <div className="mb-6 flex items-center gap-3">
           <span className="text-sm font-medium text-gray-700">Filtros activos:</span>
           {searchQuery && (
@@ -182,6 +276,26 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
               <span>{selectedCity}</span>
               <button onClick={() => setSelectedCity('')} className="hover:text-purple-900">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+          {onlyPromos && (
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+              <span>Promos</span>
+              <button onClick={() => setOnlyPromos(false)} className="hover:text-purple-900">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+          {onlyFeatured && (
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+              <span>Destacados</span>
+              <button onClick={() => setOnlyFeatured(false)} className="hover:text-purple-900">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>

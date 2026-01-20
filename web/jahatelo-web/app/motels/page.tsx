@@ -28,19 +28,19 @@ export default async function MotelsPage({ searchParams }: MotelsPageProps) {
   };
 
   if (city) {
-    whereClause.city = { contains: city };
+    whereClause.city = { contains: city, mode: 'insensitive' };
   }
 
   if (neighborhood) {
-    whereClause.neighborhood = { contains: neighborhood };
+    whereClause.neighborhood = { contains: neighborhood, mode: 'insensitive' };
   }
 
   if (search) {
     whereClause.OR = [
-      { name: { contains: search } },
-      { description: { contains: search } },
-      { city: { contains: search } },
-      { neighborhood: { contains: search } },
+      { name: { contains: search, mode: 'insensitive' } },
+      { description: { contains: search, mode: 'insensitive' } },
+      { city: { contains: search, mode: 'insensitive' } },
+      { neighborhood: { contains: search, mode: 'insensitive' } },
     ];
   }
 
@@ -163,6 +163,7 @@ export default async function MotelsPage({ searchParams }: MotelsPageProps) {
               currentNeighborhood={neighborhood}
               currentSearch={search}
               currentAmenities={amenityIds}
+              currentPromos={promos}
             />
           </div>
 

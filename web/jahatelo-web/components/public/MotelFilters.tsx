@@ -18,6 +18,7 @@ interface MotelFiltersProps {
   currentNeighborhood?: string;
   currentSearch?: string;
   currentAmenities?: string[];
+  currentPromos?: string;
 }
 
 export default function MotelFilters({
@@ -28,6 +29,7 @@ export default function MotelFilters({
   currentNeighborhood,
   currentSearch,
   currentAmenities = [],
+  currentPromos,
 }: MotelFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -89,7 +91,13 @@ export default function MotelFilters({
     router.push(`/motels?${params.toString()}`);
   };
 
-  const hasFilters = currentCity || currentNeighborhood || currentSearch || selectedAmenities.length > 0;
+  const promosActive = currentPromos === '1';
+  const hasFilters =
+    currentCity ||
+    currentNeighborhood ||
+    currentSearch ||
+    selectedAmenities.length > 0 ||
+    promosActive;
 
   const displayedAmenities = showAllAmenities ? amenities : amenities.slice(0, 6);
 
@@ -199,6 +207,21 @@ export default function MotelFilters({
           )}
         </div>
       )}
+
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          Promos activas
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={promosActive}
+            onChange={(event) => updateFilter('promos', event.target.checked ? '1' : '')}
+            className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-600"
+          />
+          <span className="text-sm text-gray-700">Solo moteles con promos</span>
+        </label>
+      </div>
 
       {/* Clear Filters */}
       {hasFilters && (
