@@ -270,6 +270,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 40,
     right: 60,
-    fontSize: 13,
+    fontSize: 12,
   },
 });

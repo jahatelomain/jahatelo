@@ -86,16 +86,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
   // Build tabs dynamically
   const tabs = [];
 
-  // Add Promos tab first if there are active promos
-  if (motel.promos && motel.promos.length > 0) {
-    tabs.push({
-      id: 'promos',
-      label: 'Promos',
-      content: <PromosTab promos={motel.promos} />,
-    });
-  }
-
-  // Always add Details tab
+  // Always add Details tab first
   tabs.push({
     id: 'details',
     label: 'Detalles',
@@ -207,6 +198,15 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
         </div>
       ),
     });
+
+  // Add Promos tab if there are active promos
+  if (motel.promos && motel.promos.length > 0) {
+    tabs.push({
+      id: 'promos',
+      label: 'Promos',
+      content: <PromosTab promos={motel.promos} />,
+    });
+  }
 
   // Add Rooms tab only if there are active rooms
   if (motel.rooms && motel.rooms.length > 0) {

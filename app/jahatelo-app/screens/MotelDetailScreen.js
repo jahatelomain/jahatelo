@@ -32,6 +32,7 @@ export default function MotelDetailScreen({ route, navigation }) {
   const [motel, setMotel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [mainPhotoError, setMainPhotoError] = useState(false);
   const { isFavorite, toggleFavorite } = useFavorites();
   const insets = useSafeAreaInsets();
 
@@ -193,8 +194,8 @@ export default function MotelDetailScreen({ route, navigation }) {
     typeof mainPhoto === 'string'
       ? mainPhoto
       : mainPhoto?.url || mainPhoto?.photoUrl || null;
-  const mainPhotoSource = mainPhotoUrl ? { uri: mainPhotoUrl } : fallbackPattern;
-  const isPlaceholder = !mainPhotoUrl;
+  const mainPhotoSource = mainPhotoUrl && !mainPhotoError ? { uri: mainPhotoUrl } : fallbackPattern;
+  const isPlaceholder = !mainPhotoUrl || mainPhotoError;
 
   const photoHeight = 240 + insets.top;
 
@@ -213,6 +214,7 @@ export default function MotelDetailScreen({ route, navigation }) {
             isPlaceholder && styles.placeholderImage,
           ]}
           resizeMode="cover"
+          onError={() => setMainPhotoError(true)}
         />
 
         {/* Badges informativos */}
@@ -327,6 +329,12 @@ export default function MotelDetailScreen({ route, navigation }) {
         {(() => {
           const availableTabs = [];
 
+          // Detalles siempre se muestra primero
+          availableTabs.push({
+            name: 'Detalles',
+            component: DetailsTab,
+          });
+
           // Incluir Promos solo si hay promos
           if (motel.promos && motel.promos.length > 0) {
             availableTabs.push({
@@ -334,12 +342,6 @@ export default function MotelDetailScreen({ route, navigation }) {
               component: PromosTab,
             });
           }
-
-          // Detalles siempre se muestra
-          availableTabs.push({
-            name: 'Detalles',
-            component: DetailsTab,
-          });
 
           // Habitaciones solo si hay rooms
           if (motel.rooms && motel.rooms.length > 0) {
@@ -357,7 +359,7 @@ export default function MotelDetailScreen({ route, navigation }) {
             });
           }
 
-          // Reseñas siempre se muestra
+          // Reseñas siempre se muestra al final
           availableTabs.push({
             name: 'Reseñas',
             component: ReviewsTab,

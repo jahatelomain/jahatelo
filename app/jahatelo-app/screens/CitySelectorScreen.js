@@ -25,7 +25,6 @@ import { COLORS } from '../constants/theme';
 import { fetchCities } from '../services/motelsApi';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { mixAdvertisements } from '../utils/mixAdvertisements';
-import AdListItem from '../components/AdListItem';
 import AdDetailModal from '../components/AdDetailModal';
 
 // Componente de city card animada
@@ -65,6 +64,31 @@ const AnimatedCityCard = ({ item, index, onPress }) => {
             <Text style={styles.cityCount}>
               {item.count} {item.count === 1 ? 'motel' : 'moteles'}
             </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={COLORS.muted} />
+        </Animated.View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+const AnimatedCityAdCard = ({ item, index, onPress }) => {
+  return (
+    <Animated.View entering={FadeInRight.delay(index * 80).duration(500).springify()}>
+      <TouchableOpacity
+        onPress={() => onPress(item)}
+        activeOpacity={1}
+      >
+        <Animated.View style={styles.cityCard}>
+          <View style={styles.iconContainer}>
+            <Ionicons name="megaphone" size={28} color={COLORS.primary} />
+          </View>
+          <View style={styles.cityInfo}>
+            <Text style={styles.adLabel}>Publicidad</Text>
+            <Text style={styles.cityName} numberOfLines={1}>{item.title}</Text>
+            {item.advertiser ? (
+              <Text style={styles.cityCount} numberOfLines={1}>{item.advertiser}</Text>
+            ) : null}
           </View>
           <Ionicons name="chevron-forward" size={20} color={COLORS.muted} />
         </Animated.View>
@@ -274,10 +298,10 @@ export default function CitySelectorScreen({ route, navigation }) {
             renderItem={({ item, index }) => {
               if (item.type === 'ad') {
                 return (
-                  <AdListItem
-                    ad={item.data}
-                    onAdClick={handleAdClick}
-                    onAdView={handleAdView}
+                  <AnimatedCityAdCard
+                    item={item.data}
+                    index={index}
+                    onPress={handleAdClick}
                   />
                 );
               }
@@ -424,6 +448,13 @@ const styles = StyleSheet.create({
   },
   cityInfo: {
     flex: 1,
+  },
+  adLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.muted,
+    marginBottom: 2,
+    letterSpacing: 0.4,
   },
   cityName: {
     fontSize: 15,

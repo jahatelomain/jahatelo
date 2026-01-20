@@ -25,13 +25,17 @@ const COLORS = {
 };
 
 const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badgeIconName = 'pricetag' }) => {
+  const fallbackPattern = require('../assets/motel-placeholder.png');
   // Priorizar imagen de la promo, luego thumbnail del motel, luego fallback
   const image =
     motel.promoImageUrl ||
     motel.thumbnail ||
     motel.photos?.[0]?.url ||
+    motel.photos?.[0] ||
     motel.fotos?.[0] ||
-    'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=1400&q=80';
+    null;
+  const imageSource = image ? { uri: image } : fallbackPattern;
+  const isPlaceholder = !image;
 
   const inputRange = [
     (index - 1) * (CARD_WIDTH + SPACING),
@@ -63,7 +67,11 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
   return (
     <Animated.View style={[styles.cardWrapper, animatedStyle]}>
       <TouchableOpacity activeOpacity={0.9} onPress={() => onPress?.(motel)}>
-        <ImageBackground source={{ uri: image }} style={styles.card} imageStyle={styles.cardImage}>
+        <ImageBackground
+          source={imageSource}
+          style={styles.card}
+          imageStyle={[styles.cardImage, isPlaceholder && styles.placeholderImage]}
+        >
           {/* Badge de Promoción */}
           <View style={styles.promoBadge}>
             <Ionicons name={badgeIconName} size={14} color={COLORS.white} />
@@ -104,7 +112,10 @@ const AdCard = ({ ad, onPress, index, scrollX, onTrackView }) => {
     }
   }, [ad, onTrackView]);
 
-  const image = ad.imageUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=1400&q=80';
+  const fallbackPattern = require('../assets/motel-placeholder.png');
+  const image = ad.imageUrl || null;
+  const imageSource = image ? { uri: image } : fallbackPattern;
+  const isPlaceholder = !image;
 
   const inputRange = [
     (index - 1) * (CARD_WIDTH + SPACING),
@@ -143,7 +154,11 @@ const AdCard = ({ ad, onPress, index, scrollX, onTrackView }) => {
   return (
     <Animated.View style={[styles.cardWrapper, animatedStyle]}>
       <TouchableOpacity activeOpacity={0.9} onPress={handlePress}>
-        <ImageBackground source={{ uri: image }} style={styles.card} imageStyle={styles.cardImage}>
+        <ImageBackground
+          source={imageSource}
+          style={styles.card}
+          imageStyle={[styles.cardImage, isPlaceholder && styles.placeholderImage]}
+        >
           {/* Badge de Publicidad */}
           <View style={[styles.promoBadge, styles.adBadge]}>
             <Ionicons name="megaphone" size={14} color={COLORS.white} />
@@ -310,6 +325,9 @@ const styles = StyleSheet.create({
   },
   cardImage: {
     borderRadius: 20,
+  },
+  placeholderImage: {
+    opacity: 0.5,
   },
   promoBadge: {
     position: 'absolute',
