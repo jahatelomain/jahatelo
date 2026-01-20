@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/theme';
+import { getSoundEffectsEnabled, setSoundEffectsEnabled } from '../services/preferencesService';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.100:3000';
 
@@ -24,6 +25,8 @@ export default function NotificationPreferencesScreen({ navigation }) {
     enableNotifications: true,
     enableEmail: true,
     enablePush: true,
+    enableAdvertisingPush: true,
+    enableSoundEffects: true,
     notifyNewPromos: true,
     notifyPriceDrops: true,
     notifyUpdates: true,
@@ -44,6 +47,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
   const loadPreferences = async () => {
     try {
       setLoading(true);
+      const soundEnabled = await getSoundEffectsEnabled();
       const response = await fetch(`${API_URL}/api/mobile/notifications/preferences`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -70,6 +74,8 @@ export default function NotificationPreferencesScreen({ navigation }) {
             enableNotifications: data.preferences.enableNotifications ?? true,
             enableEmail: data.preferences.enableEmail ?? true,
             enablePush: data.preferences.enablePush ?? true,
+            enableAdvertisingPush: data.preferences.enableAdvertisingPush ?? true,
+            enableSoundEffects: soundEnabled,
             notifyNewPromos: data.preferences.notifyNewPromos ?? true,
             notifyPriceDrops: data.preferences.notifyPriceDrops ?? true,
             notifyUpdates: data.preferences.notifyUpdates ?? true,
@@ -91,6 +97,12 @@ export default function NotificationPreferencesScreen({ navigation }) {
   };
 
   const updatePreference = async (key, value) => {
+    if (key === 'enableSoundEffects') {
+      setPreferences(prev => ({ ...prev, [key]: value }));
+      await setSoundEffectsEnabled(value);
+      return;
+    }
+
     // Actualizar estado local inmediatamente para mejor UX
     setPreferences(prev => ({ ...prev, [key]: value }));
 
@@ -183,6 +195,14 @@ export default function NotificationPreferencesScreen({ navigation }) {
               onToggle={() => toggleSwitch('enablePush')}
               disabled={saving || !preferences.enableNotifications}
             />
+            <PreferenceItem
+              icon="volume-medium-outline"
+              title="Sonidos en botones"
+              description="Reproducir sonido en acciones de la app"
+              value={preferences.enableSoundEffects}
+              onToggle={() => toggleSwitch('enableSoundEffects')}
+              disabled={saving}
+            />
           </View>
         </View>
 
@@ -244,6 +264,14 @@ export default function NotificationPreferencesScreen({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>General</Text>
           <View style={styles.optionsContainer}>
+            <PreferenceItem
+              icon="megaphone-outline"
+              title="Notificaciones de publicidad"
+              description="Ofertas patrocinadas y anuncios de la plataforma"
+              value={preferences.enableAdvertisingPush}
+              onToggle={() => toggleSwitch('enableAdvertisingPush')}
+              disabled={saving || !preferences.enableNotifications || !preferences.enablePush}
+            />
             <PreferenceItem
               icon="megaphone-outline"
               title="Promociones de Jahatelo"

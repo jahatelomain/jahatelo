@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
+import { playFavoriteSound } from '../services/soundService';
 
 const STORAGE_KEY = '@jahatelo/favorites';
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.100:3000';
@@ -168,6 +169,7 @@ export const FavoritesProvider = ({ children }) => {
             const newFavorites = favorites.filter(item => item.id !== motel.id);
             setFavorites(newFavorites);
             await saveFavorites(newFavorites);
+            playFavoriteSound('remove');
           } else {
             console.error('Error al quitar favorito de la API');
           }
@@ -204,6 +206,7 @@ export const FavoritesProvider = ({ children }) => {
             const newFavorites = [...favorites, favoriteItem];
             setFavorites(newFavorites);
             await saveFavorites(newFavorites);
+            playFavoriteSound('add');
           } else {
             console.error('Error al agregar favorito a la API');
           }
@@ -215,12 +218,15 @@ export const FavoritesProvider = ({ children }) => {
       }
     } else {
       // Modo invitado: solo actualizar localmente
-      toggleFavoriteLocal(motel);
+      toggleFavoriteLocal(motel, isRemoving);
     }
   };
 
   // Función auxiliar para actualizar favoritos localmente
-  const toggleFavoriteLocal = (motel) => {
+  const toggleFavoriteLocal = (motel, isRemovingOverride) => {
+    const isRemoving = typeof isRemovingOverride === 'boolean'
+      ? isRemovingOverride
+      : favorites.some(item => item.id === motel.id);
     setFavorites((prevFavorites) => {
       let newFavorites;
 
@@ -255,6 +261,7 @@ export const FavoritesProvider = ({ children }) => {
 
       return newFavorites;
     });
+    playFavoriteSound(isRemoving ? 'remove' : 'add');
   };
 
   const value = {
