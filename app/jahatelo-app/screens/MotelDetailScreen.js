@@ -212,19 +212,19 @@ export default function MotelDetailScreen({ route, navigation }) {
         <View style={[styles.badgesContainer, { top: insets.top + 70 }]}>
           {motel.hasPromo && (
             <View style={styles.promoBadge}>
-              <Ionicons name="pricetag" size={12} color="#FFFFFF" />
+              <Ionicons name="pricetag" size={10} color="#FFFFFF" />
               <Text style={styles.badgeText}>PROMO</Text>
             </View>
           )}
           {motel.plan === 'DIAMOND' && (
             <View style={styles.platinumBadge}>
-              <Ionicons name="diamond" size={12} color="#FFFFFF" />
+              <Ionicons name="diamond" size={10} color="#FFFFFF" />
               <Text style={styles.badgeText}>DIAMOND</Text>
             </View>
           )}
           {motel.plan === 'GOLD' && (
             <View style={styles.premiumBadge}>
-              <Ionicons name="star" size={12} color="#FFFFFF" />
+              <Ionicons name="star" size={10} color="#FFFFFF" />
               <Text style={styles.badgeText}>GOLD</Text>
             </View>
           )}
@@ -237,7 +237,7 @@ export default function MotelDetailScreen({ route, navigation }) {
               style={styles.backIconButton}
               onPress={() => navigation.goBack()}
             >
-              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+              <Ionicons name="arrow-back" size={19} color="#FFFFFF" />
             </TouchableOpacity>
           </Animated.View>
           <Animated.View entering={FadeInDown.delay(250).duration(400)}>
@@ -249,7 +249,7 @@ export default function MotelDetailScreen({ route, navigation }) {
               <Animated.View style={animatedHeartStyle}>
                 <Ionicons
                   name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
-                  size={26}
+                  size={21}
                   color="COLORS.primary"
                 />
               </Animated.View>
@@ -274,7 +274,7 @@ export default function MotelDetailScreen({ route, navigation }) {
               onPress={() => handleCall(motel.contact.phone)}
               activeOpacity={0.7}
             >
-              <Ionicons name="call" size={20} color="COLORS.primary" />
+              <Ionicons name="call" size={16} color="COLORS.primary" />
             </TouchableOpacity>
           )}
           {motel.contact?.whatsapp && (
@@ -283,7 +283,7 @@ export default function MotelDetailScreen({ route, navigation }) {
               onPress={() => handleWhatsApp(motel.contact.whatsapp)}
               activeOpacity={0.7}
             >
-              <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
+              <Ionicons name="logo-whatsapp" size={16} color="#25D366" />
             </TouchableOpacity>
           )}
         </View>
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   motelName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#2A0038',
   },

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Modal } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { formatPrice } from '../../services/motelsApi';
@@ -8,6 +8,7 @@ import { COLORS } from '../../constants/theme';
 
 export default function DetailsTab({ route }) {
   const { motel } = route.params || {};
+  const [showAmenitiesSheet, setShowAmenitiesSheet] = useState(false);
 
   if (!motel) {
     return (
@@ -26,12 +27,21 @@ export default function DetailsTab({ route }) {
 
   const hasLocation = motel.location && motel.location.lat && motel.location.lng;
 
+  const amenitiesList = (motel.amenities || []).map((amenity) =>
+    typeof amenity === 'string' ? { name: amenity } : amenity
+  );
+
+  const handleAmenitiesPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowAmenitiesSheet(true);
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Información básica */}
       <View style={styles.section}>
         <View style={styles.infoRow}>
-          <Ionicons name="location-outline" size={20} color="#666" />
+          <Ionicons name="location-outline" size={16} color="#666" />
           <Text style={styles.infoText}>
             {motel.barrio}, {motel.ciudad}
           </Text>
@@ -39,7 +49,7 @@ export default function DetailsTab({ route }) {
 
         {!!motel.rating && (
           <View style={styles.infoRow}>
-            <Ionicons name="star" size={20} color="#FFD700" />
+            <Ionicons name="star" size={16} color="#FFD700" />
             <Text style={styles.infoText}>
               {motel.rating} / 5.0
             </Text>
@@ -59,41 +69,34 @@ export default function DetailsTab({ route }) {
         disabled={!hasLocation}
         activeOpacity={0.7}
       >
-        <Ionicons name="map-outline" size={24} color={hasLocation ? "#FFFFFF" : "#999"} />
+        <Ionicons name="map-outline" size={19} color={hasLocation ? "#FFFFFF" : "#999"} />
         <Text style={[styles.mapsButtonText, !hasLocation && styles.mapsButtonTextDisabled]}>
           {hasLocation ? 'Ver ubicación en Google Maps' : 'Ubicación no disponible'}
         </Text>
       </TouchableOpacity>
 
       {/* Amenities generales */}
-      {motel.amenities && motel.amenities.length > 0 && (
+      {amenitiesList.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Comodidades generales</Text>
           <View style={styles.amenitiesGrid}>
-            {motel.amenities.map((amenity, index) => {
-              const amenityData = typeof amenity === 'string' ? { name: amenity } : amenity;
+            {amenitiesList.map((amenityData, index) => {
               const iconConfig = getAmenityIconConfig(amenityData.icon);
-
-              const handleAmenityPress = () => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                Alert.alert('Comodidad', amenityData.name);
-              };
-
               return (
                 <TouchableOpacity
                   key={index}
                   style={styles.amenityCircle}
-                  onPress={handleAmenityPress}
+                  onPress={handleAmenitiesPress}
                   activeOpacity={0.7}
                 >
                   {iconConfig ? (
                     <MaterialCommunityIcons
                       name={iconConfig.name}
-                      size={28}
+                      size={22}
                       color={COLORS.primary}
                     />
                   ) : (
-                    <Ionicons name="checkmark-circle" size={28} color={COLORS.primary} />
+                    <Ionicons name="checkmark-circle" size={22} color={COLORS.primary} />
                   )}
                 </TouchableOpacity>
               );
@@ -101,6 +104,54 @@ export default function DetailsTab({ route }) {
           </View>
         </View>
       )}
+
+      <Modal
+        visible={showAmenitiesSheet}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setShowAmenitiesSheet(false)}
+      >
+        <View style={styles.sheetContainer}>
+          <TouchableOpacity
+            style={styles.sheetBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowAmenitiesSheet(false)}
+          />
+          <View style={styles.sheet}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Comodidades generales</Text>
+              <TouchableOpacity
+                onPress={() => setShowAmenitiesSheet(false)}
+                style={styles.sheetCloseButton}
+              >
+                <Ionicons name="close" size={20} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {amenitiesList.map((amenityData, index) => {
+                const iconConfig = getAmenityIconConfig(amenityData.icon);
+                return (
+                  <View key={`${amenityData.name}-${index}`} style={styles.sheetRow}>
+                    <View style={styles.sheetIcon}>
+                      {iconConfig ? (
+                        <MaterialCommunityIcons
+                          name={iconConfig.name}
+                          size={20}
+                          color={COLORS.primary}
+                        />
+                      ) : (
+                        <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />
+                      )}
+                    </View>
+                    <Text style={styles.sheetRowText}>{amenityData.name}</Text>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -122,7 +173,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   infoText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#333',
     marginLeft: 10,
   },
@@ -132,12 +183,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   priceLabel: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#666',
     marginRight: 8,
   },
   price: {
-    fontSize: 24,
+    fontSize: 14,
     fontWeight: 'bold',
     color: COLORS.primary,
   },
@@ -154,7 +205,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0E0E0',
   },
   mapsButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
     marginLeft: 10,
@@ -163,7 +214,7 @@ const styles = StyleSheet.create({
     color: '#999',
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#2A0038',
     marginBottom: 12,
@@ -177,9 +228,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   amenityCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: 'rgba(139, 92, 246, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -197,10 +248,69 @@ const styles = StyleSheet.create({
     backgroundColor: '#25D366',
   },
   actionButtonText: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginLeft: 12,
+  },
+  sheetContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  sheetBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
+  sheet: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '70%',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 24,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.divider,
+    marginBottom: 8,
+  },
+  sheetTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  sheetCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.card,
+  },
+  sheetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.divider,
+  },
+  sheetIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.accentLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  sheetRowText: {
+    fontSize: 14,
+    color: COLORS.text,
   },
   errorContainer: {
     flex: 1,
