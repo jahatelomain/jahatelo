@@ -29,7 +29,7 @@ export default function AdPopup() {
       <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
         <div className="relative h-64 bg-slate-100">
           <Image
-            src={ad.largeImageUrl || ad.imageUrl}
+            src={ad.largeImageUrl || '/motel-placeholder.png'}
             alt={ad.title}
             fill
             quality={85}

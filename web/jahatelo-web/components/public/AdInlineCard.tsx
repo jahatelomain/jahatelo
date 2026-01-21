@@ -7,7 +7,8 @@ import type { Advertisement } from '@/hooks/useAdvertisements';
 
 export default function AdInlineCard({ ad, placement }: { ad: Advertisement; placement?: string }) {
   const [open, setOpen] = useState(false);
-  const photoUrl = ad.imageUrl || ad.largeImageUrl || '';
+  const adPlaceholder = '/motel-placeholder.png';
+  const photoUrl = ad.imageUrl || adPlaceholder;
   const isCityList = placement === 'CITY_LIST';
 
   useEffect(() => {
@@ -62,7 +63,7 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
             <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
               <div className="relative h-64 bg-slate-100">
                 <Image
-                  src={ad.largeImageUrl || ad.imageUrl}
+                  src={ad.largeImageUrl || adPlaceholder}
                   alt={ad.title}
                   fill
                   quality={85}
@@ -147,7 +148,7 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
           <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
             <div className="relative h-64 bg-slate-100">
               <Image
-                src={ad.largeImageUrl || ad.imageUrl}
+                src={ad.largeImageUrl || adPlaceholder}
                 alt={ad.title}
                 fill
                 quality={85}

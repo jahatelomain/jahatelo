@@ -26,6 +26,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
   const [selectedAd, setSelectedAd] = useState<Advertisement | null>(null);
   const [showAdModal, setShowAdModal] = useState(false);
   const trackedAdViews = useRef<Set<string>>(new Set());
+  const adPlaceholder = '/motel-placeholder.png';
 
   const mixedItems = useMemo(() => {
     if (!ads.length) {
@@ -91,10 +92,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
 
           if (item.type === 'ad') {
             const ad = item.data as Advertisement;
-            const photoUrl =
-              ad.largeImageUrl ||
-              ad.imageUrl ||
-              'https://picsum.photos/800/400?random=' + index;
+            const photoUrl = ad.imageUrl || adPlaceholder;
 
             return (
               <div
@@ -234,7 +232,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
           <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
             <div className="relative h-64 bg-slate-100">
               <Image
-                src={selectedAd.largeImageUrl || selectedAd.imageUrl}
+                src={selectedAd.largeImageUrl || adPlaceholder}
                 alt={selectedAd.title}
                 fill
                 quality={85}
