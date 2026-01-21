@@ -23,7 +23,7 @@ const socialLinks: SocialLink[] = [
   },
   {
     name: 'Facebook',
-    url: 'https://www.facebook.com/share/16GAY8bcxU/',
+    url: 'https://www.facebook.com/profile.php?id=61587090440081',
     enabled: true,
     bgColor: 'bg-[#1877F2]',
     icon: (

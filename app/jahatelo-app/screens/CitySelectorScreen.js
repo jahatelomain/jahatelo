@@ -157,6 +157,8 @@ const CityCardSkeleton = ({ index }) => (
 export default function CitySelectorScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const { motels = [] } = route.params || {};
+  const mode = route?.params?.mode || 'motels';
+  const useProvidedMotels = route?.params?.useProvidedMotels || mode === 'promos';
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -168,6 +170,11 @@ export default function CitySelectorScreen({ route, navigation }) {
     let mounted = true;
 
     const loadCities = async () => {
+      if (useProvidedMotels) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
@@ -251,6 +258,7 @@ export default function CitySelectorScreen({ route, navigation }) {
   };
 
   const headerPaddingTop = insets.top + 12;
+  const headerTitle = mode === 'promos' ? 'Promos por ciudad' : 'Moteles por ciudad';
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
@@ -265,7 +273,7 @@ export default function CitySelectorScreen({ route, navigation }) {
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Moteles por ciudad</Text>
+        <Text style={styles.headerTitle}>{headerTitle}</Text>
         <View style={styles.placeholder} />
       </Animated.View>
 

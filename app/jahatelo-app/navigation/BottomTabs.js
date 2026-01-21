@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import HomeTabs from './HomeTabs';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import { COLORS } from '../constants/theme';
 
 const Tab = createBottomTabNavigator();
 
@@ -23,7 +24,7 @@ export default function BottomTabs() {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#2A0038',
+        tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: '#9CA3AF',
         headerShown: false,
       })}

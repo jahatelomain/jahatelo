@@ -78,7 +78,7 @@ export default function DetailsTab({ route }) {
       {/* Amenities generales */}
       {amenitiesList.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Comodidades generales</Text>
+          <Text style={styles.sectionTitle}>Amenities</Text>
           <View style={styles.amenitiesGrid}>
             {amenitiesList.map((amenityData, index) => {
               const iconConfig = getAmenityIconConfig(amenityData.icon);
@@ -120,7 +120,7 @@ export default function DetailsTab({ route }) {
           />
           <View style={styles.sheet}>
             <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Comodidades generales</Text>
+              <Text style={styles.sheetTitle}>Amenities</Text>
               <TouchableOpacity
                 onPress={() => setShowAmenitiesSheet(false)}
                 style={styles.sheetCloseButton}

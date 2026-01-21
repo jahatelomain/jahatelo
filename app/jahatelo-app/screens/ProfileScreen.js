@@ -200,6 +200,17 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Preferencias */}
+        <View style={styles.section}>
+          <View style={styles.optionsContainer}>
+            <OptionRow
+              icon="settings-outline"
+              title="Notificaciones y sonido"
+              onPress={() => navigation.navigate('NotificationPreferences')}
+            />
+          </View>
+        </View>
+
         {/* Almacenamiento y datos Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Almacenamiento y datos</Text>

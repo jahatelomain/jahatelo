@@ -1537,6 +1537,17 @@ export default function MotelDetailPage() {
                       </div>
                     )}
                   </div>
+                  <div className="flex items-center">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={motelForm.isFeatured}
+                        onChange={(e) => setMotelForm({ ...motelForm, isFeatured: e.target.checked })}
+                        className="rounded text-purple-600 focus:ring-purple-600"
+                      />
+                      <span className="text-sm font-medium text-slate-700">Motel destacado</span>
+                    </label>
+                  </div>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">Teléfono</label>
@@ -1660,36 +1671,6 @@ export default function MotelDetailPage() {
                       className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       placeholder="https://maps.google.com/..."
                     />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
-                  Configuración comercial
-                </h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Próxima Facturación
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={motelForm.nextBillingAt}
-                      onChange={(e) => setMotelForm({ ...motelForm, nextBillingAt: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    />
-                  </div>
-                  <div className="flex items-center">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={motelForm.isFeatured}
-                        onChange={(e) => setMotelForm({ ...motelForm, isFeatured: e.target.checked })}
-                        className="rounded text-purple-600 focus:ring-purple-600"
-                      />
-                      <span className="text-sm font-medium text-slate-700">Motel destacado</span>
-                    </label>
                   </div>
                 </div>
               </div>

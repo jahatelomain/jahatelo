@@ -6,9 +6,12 @@ import {
   FlatList,
   TouchableOpacity,
   ImageBackground,
+  Alert,
+  Modal,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -26,6 +29,17 @@ import AdDetailModal from '../components/AdDetailModal';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { mixAdvertisements } from '../utils/mixAdvertisements';
 import { COLORS } from '../constants/theme';
+import { filterMotelsByDistance } from '../utils/location';
+
+const PROMO_RADIUS_OPTIONS = [
+  { value: 2, label: '2 km' },
+  { value: 5, label: '5 km' },
+  { value: 10, label: '10 km' },
+  { value: 20, label: '20 km' },
+  { value: 50, label: '50 km' },
+  { value: null, label: 'Todos' },
+  { value: 'PROMOS_BY_CITY', label: 'Ver promos por ciudad' },
+];
 
 // Componente wrapper para cada card con animación de entrada escalonada
 const AnimatedMotelCard = ({ item, index, onPress }) => {
@@ -131,14 +145,78 @@ export default function MotelListScreen({ route, navigation }) {
   const headerPaddingTop = insets.top + 12;
   const [selectedAd, setSelectedAd] = useState(null);
   const [showAdDetailModal, setShowAdDetailModal] = useState(false);
+  const [displayMotels, setDisplayMotels] = useState(motels);
+  const [selectedRadius, setSelectedRadius] = useState(10);
+  const [showRadiusModal, setShowRadiusModal] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
 
   // Cargar anuncios de lista
   const { ads: listAds, trackAdEvent } = useAdvertisements('LIST_INLINE');
 
+  useEffect(() => {
+    setDisplayMotels(motels);
+  }, [motels]);
+
+  useEffect(() => {
+    if (!isPromosList) return;
+    loadPromoNearby();
+  }, [isPromosList, motels]);
+
+  useEffect(() => {
+    if (!isPromosList) return;
+    if (selectedRadius === 'PROMOS_BY_CITY') return;
+    if (!userLocation && selectedRadius !== null) return;
+    applyPromoRadius(selectedRadius);
+  }, [selectedRadius, userLocation, motels]);
+
+  const loadPromoNearby = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Ubicación requerida',
+          'Para ver promos cerca tuyo necesitamos acceso a tu ubicación. Puedes elegir "Todos".'
+        );
+        setSelectedRadius(null);
+        setDisplayMotels(motels);
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const { latitude, longitude } = location.coords;
+      setUserLocation({ latitude, longitude });
+      applyPromoRadius(selectedRadius, { latitude, longitude }, motels);
+    } catch (error) {
+      console.error('Error obteniendo ubicación:', error);
+      setSelectedRadius(null);
+      setDisplayMotels(motels);
+    }
+  };
+
+  const applyPromoRadius = (radius, location = userLocation, list = motels) => {
+    if (radius === null) {
+      setDisplayMotels(list);
+      return;
+    }
+
+    if (!location) return;
+
+    const filtered = filterMotelsByDistance(
+      list,
+      location.latitude,
+      location.longitude,
+      radius
+    );
+    setDisplayMotels(filtered);
+  };
+
   // Mezclar moteles con anuncios
   const mixedItems = useMemo(() => {
-    return mixAdvertisements(motels, listAds);
-  }, [motels, listAds]);
+    const baseMotels = isPromosList ? displayMotels : motels;
+    return mixAdvertisements(baseMotels, listAds);
+  }, [motels, displayMotels, listAds, isPromosList]);
 
   const handleMotelPress = (motel) => {
     navigation.navigate('MotelDetail', {
@@ -181,8 +259,21 @@ export default function MotelListScreen({ route, navigation }) {
       <View style={styles.content}>
         <Animated.View entering={FadeIn.delay(200).duration(500)}>
           <Text style={styles.subtitle}>
-            {motels.length} {motels.length === 1 ? 'motel encontrado' : 'moteles encontrados'}
+            {(isPromosList ? displayMotels.length : motels.length)} {((isPromosList ? displayMotels.length : motels.length) === 1) ? 'motel encontrado' : 'moteles encontrados'}
           </Text>
+          {isPromosList && (
+            <TouchableOpacity
+              style={styles.locationBadge}
+              onPress={() => setShowRadiusModal(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="navigate" size={12} color={COLORS.primary} />
+              <Text style={styles.locationText}>
+                Radio: {selectedRadius === null ? 'Todos' : `${selectedRadius} km`}
+              </Text>
+              <Ionicons name="chevron-down" size={12} color={COLORS.primary} />
+            </TouchableOpacity>
+          )}
         </Animated.View>
 
         <FlatList
@@ -233,6 +324,60 @@ export default function MotelListScreen({ route, navigation }) {
         }}
         onTrackClick={(adId) => trackAdEvent(adId, 'CLICK')}
       />
+
+      {/* Modal de selección de radio para promos */}
+      <Modal
+        visible={showRadiusModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowRadiusModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowRadiusModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Seleccionar radio de búsqueda</Text>
+            </View>
+            {PROMO_RADIUS_OPTIONS.map((option) => (
+              <TouchableOpacity
+                key={option.label}
+                style={[
+                  styles.radiusOption,
+                  selectedRadius === option.value && styles.radiusOptionSelected,
+                ]}
+                onPress={() => {
+                  if (option.value === 'PROMOS_BY_CITY') {
+                    setShowRadiusModal(false);
+                    navigation.navigate('CitySelector', {
+                      motels,
+                      mode: 'promos',
+                      useProvidedMotels: true,
+                    });
+                    return;
+                  }
+                  setSelectedRadius(option.value);
+                  setShowRadiusModal(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.radiusOptionText,
+                    selectedRadius === option.value && styles.radiusOptionTextSelected,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+                {selectedRadius === option.value && (
+                  <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -283,8 +428,66 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 8,
   },
+  locationBadge: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: COLORS.accentLight,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  locationText: {
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
   listContent: {
     paddingBottom: 24,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.divider,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  radiusOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.divider,
+  },
+  radiusOptionSelected: {
+    backgroundColor: COLORS.primaryLight,
+  },
+  radiusOptionText: {
+    fontSize: 14,
+    color: COLORS.text,
+  },
+  radiusOptionTextSelected: {
+    color: COLORS.primary,
+    fontWeight: '700',
   },
   emptyContainer: {
     flex: 1,

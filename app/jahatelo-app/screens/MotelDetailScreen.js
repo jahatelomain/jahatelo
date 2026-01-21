@@ -260,7 +260,7 @@ export default function MotelDetailScreen({ route, navigation }) {
                 <Ionicons
                   name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
                   size={21}
-                  color="COLORS.primary"
+                  color={COLORS.primary}
                 />
               </Animated.View>
             </TouchableOpacity>
@@ -273,29 +273,41 @@ export default function MotelDetailScreen({ route, navigation }) {
         <View style={styles.headerInfo}>
           <Text style={styles.motelName} numberOfLines={1}>{motel.nombre}</Text>
           <Text style={styles.motelLocation} numberOfLines={1}>
-            {motel.barrio}, {motel.ciudad}
+            {motel.ciudad}
           </Text>
         </View>
         {/* Botones de contacto */}
         <View style={styles.contactButtons}>
-          {motel.contact?.phone && (
-            <TouchableOpacity
-              style={styles.contactButton}
-              onPress={() => handleCall(motel.contact.phone)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="call" size={16} color="COLORS.primary" />
-            </TouchableOpacity>
-          )}
-          {motel.contact?.whatsapp && (
-            <TouchableOpacity
-              style={styles.contactButton}
-              onPress={() => handleWhatsApp(motel.contact.whatsapp)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="logo-whatsapp" size={16} color="#25D366" />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            style={[
+              styles.contactButton,
+              !motel.contact?.phone && styles.contactButtonDisabled,
+            ]}
+            onPress={motel.contact?.phone ? () => handleCall(motel.contact.phone) : undefined}
+            activeOpacity={0.7}
+            disabled={!motel.contact?.phone}
+          >
+            <Ionicons
+              name="call"
+              size={16}
+              color={motel.contact?.phone ? COLORS.primary : COLORS.muted}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.contactButton,
+              !motel.contact?.whatsapp && styles.contactButtonDisabled,
+            ]}
+            onPress={motel.contact?.whatsapp ? () => handleWhatsApp(motel.contact.whatsapp) : undefined}
+            activeOpacity={0.7}
+            disabled={!motel.contact?.whatsapp}
+          >
+            <Ionicons
+              name="logo-whatsapp"
+              size={16}
+              color={motel.contact?.whatsapp ? '#25D366' : COLORS.muted}
+            />
+          </TouchableOpacity>
         </View>
       </Animated.View>
 
@@ -527,6 +539,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  contactButtonDisabled: {
+    backgroundColor: '#E5E5E5',
   },
   errorContainer: {
     flex: 1,
