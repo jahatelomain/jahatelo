@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { useAdvertisements, trackAdEvent } from '@/hooks/useAdvertisements';
 
 const STORAGE_KEY = 'ad_popup_last_seen';
@@ -22,7 +22,7 @@ export default function AdPopup() {
     setOpen(false);
     setImageReady(false);
     let active = true;
-    const img = new Image();
+    const img = new window.Image();
     img.onload = () => {
       if (!active) return;
       setImageReady(true);
@@ -56,7 +56,7 @@ export default function AdPopup() {
           ✕
         </button>
         <div className="relative h-64 bg-slate-100">
-          <Image
+          <NextImage
             src={imageUrl}
             alt={ad.title}
             fill
