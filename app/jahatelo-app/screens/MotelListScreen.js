@@ -257,7 +257,10 @@ export default function MotelListScreen({ route, navigation }) {
 
       {/* Contenido */}
       <View style={styles.content}>
-        <Animated.View entering={FadeIn.delay(200).duration(500)}>
+        <Animated.View
+          entering={FadeIn.delay(200).duration(500)}
+          style={[styles.infoRow, isPromosList && styles.infoRowPromos]}
+        >
           <Text style={styles.subtitle}>
             {(isPromosList ? displayMotels.length : motels.length)} {((isPromosList ? displayMotels.length : motels.length) === 1) ? 'motel encontrado' : 'moteles encontrados'}
           </Text>
@@ -427,6 +430,14 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginTop: 12,
     marginBottom: 8,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  infoRowPromos: {
+    marginBottom: 4,
   },
   locationBadge: {
     marginTop: 8,

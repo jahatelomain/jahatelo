@@ -157,7 +157,7 @@ export default function MotelCard({ motel, onPress }) {
           <View style={styles.headerLeft}>
             <Text style={styles.motelName} numberOfLines={1}>{motel.nombre}</Text>
             <Text style={styles.location} numberOfLines={1}>
-              <Ionicons name="location-outline" size={12} color="#888" /> {motel.barrio}, {motel.ciudad}
+              <Ionicons name="location-outline" size={12} color="#888" /> {motel.ciudad || motel.barrio || 'Sin ciudad'}
             </Text>
           </View>
           <TouchableOpacity

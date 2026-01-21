@@ -238,7 +238,25 @@ export default function CitySelectorScreen({ route, navigation }) {
     return mixAdvertisements(citiesData, listAds);
   }, [citiesData, listAds, loading, adsLoading]);
 
+  const normalizeCityName = (value) => {
+    return (value || '').toString().trim().toLowerCase();
+  };
+
   const handleCityPress = (city) => {
+    if (mode === 'promos' && useProvidedMotels) {
+      const cityKey = normalizeCityName(city.name);
+      const filteredMotels = motels.filter((motel) => (
+        normalizeCityName(motel.ciudad || motel.city) === cityKey
+      ));
+
+      navigation.navigate('MotelList', {
+        title: `Promos en ${city.name}`,
+        motels: filteredMotels,
+        listType: 'promos',
+      });
+      return;
+    }
+
     navigation.navigate('CityMotels', {
       cityName: city.name,
       motels: city.motels,
