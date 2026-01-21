@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyToken } from './lib/auth';
+import { isUpstashEnabled, rateLimitUpstash } from './lib/rateLimit';
 
-// Rate limiting storage (in-memory para edge runtime)
+// Rate limiting storage (in-memory fallback para edge runtime)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
 // CORS allowed origins
@@ -20,7 +21,7 @@ const allowedOrigins = [
  * @param limit - Max requests
  * @param windowMs - Time window in milliseconds
  */
-function rateLimit(
+function rateLimitInMemory(
   ip: string,
   limit: number,
   windowMs: number
@@ -60,9 +61,22 @@ function cleanupExpiredRecords() {
   }
 }
 
-// Limpiar cada 5 minutos
-if (typeof setInterval !== 'undefined') {
+// Limpiar cada 5 minutos solo si usamos fallback en memoria
+if (typeof setInterval !== 'undefined' && !isUpstashEnabled()) {
   setInterval(cleanupExpiredRecords, 5 * 60 * 1000);
+}
+
+async function applyRateLimit(
+  scope: string,
+  ip: string,
+  limit: number,
+  windowMs: number
+): Promise<{ success: boolean; remaining: number }> {
+  const identifier = `${scope}:${ip}`;
+  if (isUpstashEnabled()) {
+    return rateLimitUpstash(identifier, limit, windowMs);
+  }
+  return rateLimitInMemory(ip, limit, windowMs);
 }
 
 export async function middleware(request: NextRequest) {
@@ -105,7 +119,7 @@ export async function middleware(request: NextRequest) {
     if (process.env.E2E_MODE === '1') {
       return NextResponse.next();
     }
-    const { success, remaining } = rateLimit(ip, 5, 15 * 60 * 1000); // 5 requests per 15 min
+    const { success, remaining } = await applyRateLimit('auth', ip, 5, 15 * 60 * 1000); // 5 requests per 15 min
 
     if (!success) {
       return NextResponse.json(
@@ -139,7 +153,7 @@ export async function middleware(request: NextRequest) {
     if (process.env.E2E_MODE === '1') {
       return NextResponse.next();
     }
-    const { success, remaining } = rateLimit(ip, 30, 60 * 1000); // 30 requests per minute
+    const { success, remaining } = await applyRateLimit('api', ip, 30, 60 * 1000); // 30 requests per minute
 
     if (!success) {
       return NextResponse.json(
@@ -173,7 +187,7 @@ export async function middleware(request: NextRequest) {
     if (process.env.E2E_MODE === '1') {
       return NextResponse.next();
     }
-    const { success, remaining } = rateLimit(ip, 20, 60 * 60 * 1000); // 20 uploads per hour
+    const { success, remaining } = await applyRateLimit('upload', ip, 20, 60 * 60 * 1000); // 20 uploads per hour
 
     if (!success) {
       return NextResponse.json(
