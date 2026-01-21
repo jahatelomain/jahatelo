@@ -4,6 +4,7 @@ import {
   View,
   Text,
   Image,
+  ScrollView,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
@@ -13,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES } from '../constants/theme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const POPUP_WIDTH = Math.min(SCREEN_WIDTH * 0.9, 400);
 
 /**
@@ -22,20 +23,36 @@ const POPUP_WIDTH = Math.min(SCREEN_WIDTH * 0.9, 400);
  */
 export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClick }) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  const imageUrl = ad?.largeImageUrl || ad?.imageUrl;
 
   useEffect(() => {
     if (visible && ad) {
-      // Registrar vista cuando se muestra el popup
-      onTrackView(ad.id);
       setImageLoaded(false);
+      setReady(false);
+      if (imageUrl) {
+        Image.prefetch(imageUrl)
+          .then(() => setReady(true))
+          .catch(() => setReady(true));
+      } else {
+        setReady(true);
+      }
     }
-  }, [visible, ad, onTrackView]);
+  }, [visible, ad, imageUrl]);
+
+  useEffect(() => {
+    if (visible && ready && ad) {
+      // Registrar vista cuando el popup ya es visible
+      onTrackView(ad.id);
+    }
+  }, [visible, ready, ad, onTrackView]);
 
   if (!ad) {
     return null;
   }
 
-  const handleAdPress = async () => {
+  const handleCtaPress = async () => {
     // Registrar click
     onTrackClick(ad.id);
 
@@ -51,21 +68,18 @@ export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClic
       }
     }
 
-    // Cerrar popup después de hacer click
-    setTimeout(() => {
-      onClose();
-    }, 300);
   };
 
-  // Usar imagen grande si existe, sino usar imagen normal
-  const imageUrl = ad.largeImageUrl || ad.imageUrl;
+  if (!visible || !ready) {
+    return null;
+  }
 
   return (
     <Modal
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={() => {}}
       statusBarTranslucent
     >
       <View style={styles.overlay}>
@@ -82,10 +96,10 @@ export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClic
           </TouchableOpacity>
 
           {/* Contenido del anuncio */}
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handleAdPress}
+          <ScrollView
             style={styles.content}
+            contentContainerStyle={styles.contentContainer}
+            showsVerticalScrollIndicator
           >
             {/* Imagen del anuncio */}
             {imageUrl && (
@@ -115,11 +129,7 @@ export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClic
                 </Text>
               )}
 
-              {ad.description && (
-                <Text style={styles.description} numberOfLines={3}>
-                  {ad.description}
-                </Text>
-              )}
+              {ad.description && <Text style={styles.description}>{ad.description}</Text>}
 
               {ad.advertiser && (
                 <Text style={styles.advertiser} numberOfLines={1}>
@@ -128,13 +138,13 @@ export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClic
               )}
 
               {ad.linkUrl && (
-                <View style={styles.ctaButton}>
+                <TouchableOpacity style={styles.ctaButton} onPress={handleCtaPress} activeOpacity={0.85}>
                   <Text style={styles.ctaText}>Ver más</Text>
                   <Ionicons name="arrow-forward" size={16} color={COLORS.white} />
-                </View>
+                </TouchableOpacity>
               )}
             </View>
-          </TouchableOpacity>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -154,6 +164,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
+    maxHeight: SCREEN_HEIGHT * 0.85,
     ...Platform.select({
       ios: {
         shadowColor: COLORS.shadow,
@@ -182,6 +193,10 @@ const styles = StyleSheet.create({
   },
   content: {
     width: '100%',
+    maxHeight: SCREEN_HEIGHT * 0.85,
+  },
+  contentContainer: {
+    paddingBottom: SPACING.lg,
   },
   imageContainer: {
     width: '100%',
