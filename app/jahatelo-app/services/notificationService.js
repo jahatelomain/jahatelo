@@ -24,6 +24,15 @@ Notifications.setNotificationHandler({
 export async function registerForPushNotificationsAsync() {
   let token;
 
+  // Detectar si estamos en Expo Go (SDK 53+ no soporta notificaciones push)
+  const isExpoGo = Constants.appOwnership === 'expo';
+
+  if (isExpoGo) {
+    console.log('⚠️ Push notifications no están disponibles en Expo Go (SDK 53+).');
+    console.log('💡 Para probar notificaciones, usa un development build o production build.');
+    return null;
+  }
+
   // Solo dispositivos físicos pueden recibir notificaciones
   if (!Device.isDevice) {
     console.log('Las notificaciones push solo funcionan en dispositivos físicos');

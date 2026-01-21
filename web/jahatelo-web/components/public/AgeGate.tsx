@@ -7,12 +7,32 @@ export default function AgeGate() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user has already confirmed age
-    const ageConfirmed = localStorage.getItem('age_confirmed');
-    if (!ageConfirmed) {
-      setShow(true);
-    }
-    setLoading(false);
+    const checkAgeGate = async () => {
+      try {
+        // Consultar si el age gate está habilitado desde el admin
+        const response = await fetch('/api/settings/public');
+        const data = await response.json();
+
+        // Si el age gate NO está habilitado, no mostrar nada
+        if (!data.settings?.age_gate_enabled) {
+          setLoading(false);
+          return;
+        }
+
+        // Si está habilitado, verificar si el usuario ya confirmó su edad
+        const ageConfirmed = localStorage.getItem('age_confirmed');
+        if (!ageConfirmed) {
+          setShow(true);
+        }
+      } catch (error) {
+        console.error('Error fetching age gate settings:', error);
+        // En caso de error, no mostrar el age gate
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAgeGate();
   }, []);
 
   const handleConfirm = () => {

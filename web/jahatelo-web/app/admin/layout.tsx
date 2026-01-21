@@ -69,7 +69,7 @@ export default function AdminLayout({
     if (pathname.startsWith('/admin/notifications') || pathname.startsWith('/admin/banners')) {
       setExpandedSections(prev => ({ ...prev, 'Publicidad': true }));
     }
-    if (pathname.startsWith('/admin/users') || pathname.startsWith('/admin/roles') || pathname.startsWith('/admin/audit')) {
+    if (pathname.startsWith('/admin/users') || pathname.startsWith('/admin/roles') || pathname.startsWith('/admin/audit') || pathname.startsWith('/admin/configuracion')) {
       setExpandedSections(prev => ({ ...prev, 'Configuración': true }));
     }
     if (pathname.startsWith('/admin/motels') || pathname.startsWith('/admin/amenities') || pathname.startsWith('/admin/promos')) {
@@ -127,6 +127,7 @@ export default function AdminLayout({
     if (pathname.startsWith('/admin/banners')) return 'Banners Publicitarios';
     if (pathname.startsWith('/admin/audit')) return 'Auditoría';
     if (pathname.startsWith('/admin/inbox')) return 'Inbox';
+    if (pathname.startsWith('/admin/configuracion')) return 'Ajustes Generales';
     return 'Admin';
   };
 
@@ -180,6 +181,7 @@ export default function AdminLayout({
         { href: '/admin/users', label: 'Usuarios', roles: ['SUPERADMIN'] },
         { href: '/admin/roles', label: 'Roles y Permisos', roles: ['SUPERADMIN'] },
         { href: '/admin/audit', label: 'Auditoría', roles: ['SUPERADMIN'] },
+        { href: '/admin/configuracion', label: 'Ajustes Generales', roles: ['SUPERADMIN'] },
       ],
     },
   ];
@@ -202,6 +204,7 @@ export default function AdminLayout({
     if (path.startsWith('/admin/banners')) return 'banners';
     if (path.startsWith('/admin/audit')) return 'audit';
     if (path.startsWith('/admin/inbox')) return 'inbox';
+    if (path.startsWith('/admin/configuracion')) return 'configuracion';
     return null;
   };
 
