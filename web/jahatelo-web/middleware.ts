@@ -239,7 +239,34 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // 7. CORS para API responses
+  // 7. Protección de rutas de usuario autenticado
+  const protectedUserRoutes = ['/perfil', '/mis-favoritos'];
+  if (protectedUserRoutes.some(route => pathname.startsWith(route))) {
+    // Obtener token de la cookie
+    const token = request.cookies.get('auth_token')?.value;
+
+    if (!token) {
+      // No hay sesión → redirigir a login
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Verificar token
+    const user = await verifyToken(token);
+
+    if (!user) {
+      // Token inválido → redirigir a login
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Usuario autenticado - permitir acceso
+    return NextResponse.next();
+  }
+
+  // 8. CORS para API responses
   const response = NextResponse.next();
   if (origin && allowedOrigins.includes(origin) && pathname.startsWith('/api/')) {
     response.headers.set('Access-Control-Allow-Origin', origin);
@@ -253,5 +280,7 @@ export const config = {
   matcher: [
     '/admin/:path*',
     '/api/:path*',
+    '/perfil/:path*',
+    '/mis-favoritos/:path*',
   ],
 };

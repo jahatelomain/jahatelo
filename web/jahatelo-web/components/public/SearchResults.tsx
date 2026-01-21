@@ -51,6 +51,14 @@ const popularSearches = [
   'Netflix',
 ];
 
+const QUICK_FILTERS = [
+  { label: 'Jacuzzi', value: 'jacuzzi' },
+  { label: 'Garage privado', value: 'garage' },
+  { label: 'Room service', value: 'room service' },
+  { label: 'WiFi gratis', value: 'wifi' },
+  { label: 'A/C', value: 'aire' },
+];
+
 export default function SearchResults({ initialParams }: SearchResultsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -60,6 +68,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
   const [selectedCity, setSelectedCity] = useState(initialParams.city || '');
   const [onlyPromos, setOnlyPromos] = useState(initialParams.promos === '1');
   const [onlyFeatured, setOnlyFeatured] = useState(initialParams.featured === '1');
+  const [selectedAmenity, setSelectedAmenity] = useState(initialParams.amenities || '');
   const [cities, setCities] = useState<string[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
@@ -97,6 +106,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
         if (selectedCity) params.set('city', selectedCity);
         if (onlyPromos) params.set('promos', '1');
         if (onlyFeatured) params.set('featured', '1');
+        if (selectedAmenity) params.set('amenities', selectedAmenity);
 
         const response = await fetch(`/api/motels/search?${params.toString()}`);
         const data = await response.json();
@@ -118,7 +128,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     };
 
     fetchMotels();
-  }, [debouncedSearchQuery, selectedCity, onlyPromos, onlyFeatured]);
+  }, [debouncedSearchQuery, selectedCity, onlyPromos, onlyFeatured, selectedAmenity]);
 
   // Update URL when search params change
   useEffect(() => {
@@ -143,9 +153,14 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     } else {
       params.delete('featured');
     }
+    if (selectedAmenity) {
+      params.set('amenities', selectedAmenity);
+    } else {
+      params.delete('amenities');
+    }
     router.push(`/search?${params.toString()}`, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchQuery, selectedCity, onlyPromos, onlyFeatured]);
+  }, [debouncedSearchQuery, selectedCity, onlyPromos, onlyFeatured, selectedAmenity]);
 
   const handlePopularSearch = (query: string) => {
     setSearchQuery(query);
@@ -156,6 +171,15 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     setSelectedCity('');
     setOnlyPromos(false);
     setOnlyFeatured(false);
+    setSelectedAmenity('');
+  };
+
+  const toggleAmenity = (amenityValue: string) => {
+    if (selectedAmenity === amenityValue) {
+      setSelectedAmenity('');
+    } else {
+      setSelectedAmenity(amenityValue);
+    }
   };
 
   return (
@@ -189,7 +213,29 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
         </div>
       </div>
 
-      <div className="mb-8 max-w-5xl mx-auto">
+      {/* Filters Section */}
+      <div className="mb-8 max-w-5xl mx-auto space-y-6">
+        {/* Quick Amenity Filters */}
+        <div>
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Filtros rápidos:</h3>
+          <div className="flex flex-wrap gap-2">
+            {QUICK_FILTERS.map((filter) => (
+              <button
+                key={filter.value}
+                onClick={() => toggleAmenity(filter.value)}
+                className={`px-4 py-2 rounded-full font-medium border-2 transition-all ${
+                  selectedAmenity === filter.value
+                    ? 'bg-purple-600 text-white border-purple-600 shadow-md'
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-purple-300'
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* City and Toggle Filters */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4 items-center">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -239,7 +285,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
       </div>
 
       {/* Popular Searches */}
-      {!searchQuery && !selectedCity && !onlyPromos && !onlyFeatured && (
+      {!searchQuery && !selectedCity && !onlyPromos && !onlyFeatured && !selectedAmenity && (
         <div className="mb-8">
           <h3 className="text-sm font-medium text-gray-700 mb-3">Búsquedas populares:</h3>
           <div className="flex flex-wrap gap-2">
@@ -257,8 +303,8 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
       )}
 
       {/* Active Filters */}
-      {(searchQuery || selectedCity || onlyPromos || onlyFeatured) && (
-        <div className="mb-6 flex items-center gap-3">
+      {(searchQuery || selectedCity || onlyPromos || onlyFeatured || selectedAmenity) && (
+        <div className="mb-6 flex flex-wrap items-center gap-3">
           <span className="text-sm font-medium text-gray-700">Filtros activos:</span>
           {searchQuery && (
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
@@ -274,6 +320,16 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
               <span>{selectedCity}</span>
               <button onClick={() => setSelectedCity('')} className="hover:text-purple-900">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+          {selectedAmenity && (
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+              <span>{QUICK_FILTERS.find(f => f.value === selectedAmenity)?.label || selectedAmenity}</span>
+              <button onClick={() => setSelectedAmenity('')} className="hover:text-purple-900">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>

@@ -3,6 +3,8 @@ import { Lato } from "next/font/google";
 import "./globals.css";
 import PwaRegistrar from "@/components/public/PwaRegistrar";
 import { ToastProvider } from "@/contexts/ToastContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import AgeGate from "@/components/public/AgeGate";
 
 const lato = Lato({
   weight: ['400', '700'],
@@ -71,10 +73,13 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${lato.variable} antialiased bg-white text-slate-900`}>
-        <ToastProvider>
-          <PwaRegistrar />
-          {children}
-        </ToastProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <AgeGate />
+            <PwaRegistrar />
+            {children}
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );
