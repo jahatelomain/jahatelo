@@ -35,6 +35,7 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
                 src={photoUrl}
                 alt={ad.title}
                 fill
+                quality={85}
                 className="object-cover"
                 sizes="44px"
               />
@@ -64,6 +65,7 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
                   src={ad.largeImageUrl || ad.imageUrl}
                   alt={ad.title}
                   fill
+                  quality={85}
                   className="object-cover"
                   sizes="(max-width: 768px) 100vw, 560px"
                 />
@@ -113,6 +115,7 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
               src={photoUrl}
               alt={ad.title}
               fill
+              quality={85}
               className="object-cover group-hover:scale-105 transition-transform duration-300"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
@@ -147,6 +150,7 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
                 src={ad.largeImageUrl || ad.imageUrl}
                 alt={ad.title}
                 fill
+                quality={85}
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 560px"
               />

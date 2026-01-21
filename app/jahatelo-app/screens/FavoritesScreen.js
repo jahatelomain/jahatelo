@@ -142,6 +142,8 @@ export default function FavoritesScreen() {
         data={favoriteMotels}
         renderItem={renderMotelCard}
         keyExtractor={item => item.slug || item.id}
+        maxToRenderPerBatch={10}
+        initialNumToRender={10}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />

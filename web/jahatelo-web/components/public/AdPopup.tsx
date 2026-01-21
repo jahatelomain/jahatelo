@@ -32,6 +32,7 @@ export default function AdPopup() {
             src={ad.largeImageUrl || ad.imageUrl}
             alt={ad.title}
             fill
+            quality={85}
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 560px"
           />

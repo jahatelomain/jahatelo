@@ -112,6 +112,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                     src={photoUrl}
                     alt={ad.title}
                     fill
+                    quality={85}
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, 800px"
                     priority={index === 0}
@@ -162,6 +163,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                     src={photoUrl}
                     alt={motel.name}
                     fill
+                    quality={85}
                     className={`object-cover ${isPlaceholder ? 'opacity-60' : ''}`}
                     sizes="(max-width: 768px) 100vw, 800px"
                     priority={index === 0}
@@ -177,6 +179,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                     src={photoUrl}
                     alt={motel.name}
                     fill
+                    quality={85}
                     className={`object-cover ${isPlaceholder ? 'opacity-60' : ''}`}
                     sizes="(max-width: 768px) 100vw, 800px"
                     priority={index === 0}
@@ -234,6 +237,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                 src={selectedAd.largeImageUrl || selectedAd.imageUrl}
                 alt={selectedAd.title}
                 fill
+                quality={85}
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 560px"
               />

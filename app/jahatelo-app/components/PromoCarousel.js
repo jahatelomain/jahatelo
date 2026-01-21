@@ -304,6 +304,8 @@ export default function PromoCarousel({
           renderItem={renderItem}
           horizontal
           showsHorizontalScrollIndicator={false}
+          maxToRenderPerBatch={10}
+          initialNumToRender={10}
           contentContainerStyle={styles.listContent}
           snapToInterval={CARD_WIDTH + SPACING}
           decelerationRate="fast"

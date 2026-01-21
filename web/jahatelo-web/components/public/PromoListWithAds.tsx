@@ -34,6 +34,7 @@ const PromoCard = ({ motel }: { motel: any }) => {
           src={photoUrl}
           alt={promo?.title || motel.name}
           fill
+          quality={85}
           className="object-cover group-hover:scale-105 transition-transform duration-300"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />

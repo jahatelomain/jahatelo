@@ -130,6 +130,8 @@ export default function HomeCategoriesGrid({ categories = [] }) {
           </View>
         )}
         keyExtractor={(item) => item.id}
+        maxToRenderPerBatch={10}
+        initialNumToRender={10}
         numColumns={2}
         scrollEnabled={false}
         contentContainerStyle={styles.grid}

@@ -44,6 +44,8 @@ export default function MotelSection({
         <FlatList
           data={data}
           keyExtractor={(item) => item.id?.toString()}
+          maxToRenderPerBatch={10}
+          initialNumToRender={10}
           renderItem={({ item }) => (
             <MotelCardSmall motel={item} onPress={() => handleCardPress(item)} />
           )}

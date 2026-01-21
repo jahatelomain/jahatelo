@@ -282,6 +282,8 @@ export default function MotelListScreen({ route, navigation }) {
         <FlatList
           data={mixedItems}
           keyExtractor={(item, index) => `${item.type}-${item.data.id || item.data.slug || index}`}
+          maxToRenderPerBatch={10}
+          initialNumToRender={10}
           renderItem={({ item, index }) => {
             if (item.type === 'ad') {
               return (
@@ -441,6 +443,7 @@ const styles = StyleSheet.create({
   },
   locationBadge: {
     marginTop: 8,
+    marginBottom: 2,
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',

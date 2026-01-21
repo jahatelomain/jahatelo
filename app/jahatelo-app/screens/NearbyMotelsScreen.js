@@ -237,6 +237,8 @@ export default function NearbyMotelsScreen({ navigation }) {
         <FlatList
           data={motels}
           keyExtractor={(item) => item.id?.toString()}
+          maxToRenderPerBatch={10}
+          initialNumToRender={10}
           renderItem={({ item }) => (
             <MotelCard
               motel={{
@@ -366,6 +368,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     gap: 4,
+    marginBottom: 2,
   },
   locationText: {
     fontSize: 12,

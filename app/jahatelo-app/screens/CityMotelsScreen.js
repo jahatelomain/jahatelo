@@ -124,6 +124,8 @@ export default function CityMotelsScreen({ route, navigation }) {
           <FlatList
             data={mixedItems}
             keyExtractor={(item, index) => `${item.type}-${item.data.id || index}`}
+            maxToRenderPerBatch={10}
+            initialNumToRender={10}
             renderItem={({ item }) => {
               if (item.type === 'ad') {
                 return (

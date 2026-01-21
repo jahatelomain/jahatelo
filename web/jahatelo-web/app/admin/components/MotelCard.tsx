@@ -54,6 +54,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
             src={motel.featuredPhoto}
             alt={motel.name}
             fill
+            quality={85}
             className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (

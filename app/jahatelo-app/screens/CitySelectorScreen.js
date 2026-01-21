@@ -343,6 +343,8 @@ export default function CitySelectorScreen({ route, navigation }) {
               );
             }}
             showsVerticalScrollIndicator={false}
+            maxToRenderPerBatch={10}
+            initialNumToRender={10}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={<AnimatedEmptyState />}
           />

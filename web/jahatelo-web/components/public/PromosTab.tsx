@@ -40,6 +40,7 @@ export default function PromosTab({ promos }: PromosTabProps) {
                 src={promo.imageUrl}
                 alt={promo.title}
                 fill
+                quality={85}
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"
               />

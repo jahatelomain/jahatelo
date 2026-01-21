@@ -239,6 +239,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                             src={roomPhoto.url}
                             alt={room.name}
                             fill
+                            quality={85}
                             className="object-cover"
                             sizes="(max-width: 768px) 100vw, 33vw"
                           />
@@ -377,6 +378,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                                 src={item.photoUrl}
                                 alt={item.name}
                                 fill
+                                quality={85}
                                 className="object-cover"
                                 sizes="80px"
                               />
@@ -450,6 +452,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           alt={motel.name}
           fill
           priority
+          quality={85}
           className={`object-cover ${isHeroPlaceholder ? 'opacity-60' : ''}`}
           sizes="100vw"
         />

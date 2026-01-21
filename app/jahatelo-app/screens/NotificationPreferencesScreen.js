@@ -203,9 +203,8 @@ export default function NotificationPreferencesScreen({ navigation }) {
           </View>
         )}
 
-        {/* Controles Generales */}
+        {/* Controles principales */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Configuración General</Text>
           <View style={styles.optionsContainer}>
             {!isAuthenticated ? null : (
               <PreferenceItem
@@ -219,20 +218,12 @@ export default function NotificationPreferencesScreen({ navigation }) {
               />
             )}
             <PreferenceItem
-              icon="mail-outline"
-              title="Notificaciones por email"
-              description="Recibir notificaciones en tu correo electrónico"
-              value={preferences.enableEmail}
-              onToggle={() => toggleSwitch('enableEmail')}
-              disabled={saving || !preferences.enableNotifications || !isAuthenticated}
-            />
-            <PreferenceItem
               icon="phone-portrait-outline"
-              title="Notificaciones push"
-              description="Recibir notificaciones en tu dispositivo"
-              value={preferences.enablePush}
-              onToggle={() => toggleSwitch('enablePush')}
-              disabled={saving || !preferences.enableNotifications || !isAuthenticated}
+              title="Notificaciones de publicidad"
+              description="Ofertas patrocinadas y anuncios de la plataforma"
+              value={preferences.enableAdvertisingPush}
+              onToggle={() => toggleSwitch('enableAdvertisingPush')}
+              disabled={saving || (!preferences.enableNotifications && isAuthenticated)}
             />
             <PreferenceItem
               icon="volume-medium-outline"
@@ -304,40 +295,6 @@ export default function NotificationPreferencesScreen({ navigation }) {
         )}
 
         {/* Notificaciones Generales */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>General</Text>
-          <View style={styles.optionsContainer}>
-            <PreferenceItem
-              icon="megaphone-outline"
-              title="Notificaciones de publicidad"
-              description="Ofertas patrocinadas y anuncios de la plataforma"
-              value={preferences.enableAdvertisingPush}
-              onToggle={() => toggleSwitch('enableAdvertisingPush')}
-              disabled={saving || (!preferences.enableNotifications || !preferences.enablePush) && isAuthenticated}
-            />
-            {!isAuthenticated ? null : (
-              <>
-                <PreferenceItem
-                  icon="megaphone-outline"
-                  title="Promociones de Jahatelo"
-                  description="Ofertas especiales y novedades de la plataforma"
-                  value={preferences.notifyPromotions}
-                  onToggle={() => toggleSwitch('notifyPromotions')}
-                  disabled={saving || !preferences.enableNotifications}
-                />
-                <PreferenceItem
-                  icon="business-outline"
-                  title="Nuevos moteles"
-                  description="Cuando se agreguen nuevos moteles en tu zona"
-                  value={preferences.notifyNewMotels}
-                  onToggle={() => toggleSwitch('notifyNewMotels')}
-                  disabled={saving || !preferences.enableNotifications}
-                />
-              </>
-            )}
-          </View>
-        </View>
-
         {/* Info Footer */}
         {isAuthenticated && (
           <View style={styles.infoContainer}>

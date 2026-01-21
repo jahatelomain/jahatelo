@@ -289,6 +289,8 @@ export default function SearchScreen({ route }) {
             data={results}
             renderItem={renderMotelCard}
             keyExtractor={item => item.slug || item.id}
+            maxToRenderPerBatch={10}
+            initialNumToRender={10}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             onViewableItemsChanged={onViewableItemsChanged}

@@ -31,6 +31,7 @@ export default function ImageGallery({ images }: { images: { url: string; alt?: 
             src={activeImage.url}
             alt={activeImage.alt || 'Imagen'}
             fill
+            quality={85}
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 800px"
             onClick={() => setLightboxOpen(true)}
@@ -56,6 +57,7 @@ export default function ImageGallery({ images }: { images: { url: string; alt?: 
                 src={image.url}
                 alt={image.alt || 'Thumb'}
                 fill
+                quality={85}
                 className="object-cover"
                 sizes="80px"
                 onError={() => setBrokenUrls((prev) => ({ ...prev, [image.url]: true }))}
@@ -78,6 +80,7 @@ export default function ImageGallery({ images }: { images: { url: string; alt?: 
                 src={activeImage.url}
                 alt={activeImage.alt || 'Imagen'}
                 fill
+                quality={85}
                 className="object-contain"
               />
             )}
