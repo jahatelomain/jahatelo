@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/advertisements/[id]
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -18,7 +20,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Anuncio no encontrado' }, { status: 404 });
     }
 
-    return NextResponse.json(ad);
+    return NextResponse.json(ad, {
+      headers: { 'Cache-Control': 'no-store' },
+    });
   } catch (error) {
     console.error('Error fetching advertisement:', error);
     return NextResponse.json({ error: 'Error al obtener anuncio' }, { status: 500 });

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/advertisements?placement=POPUP_HOME
 export async function GET(request: NextRequest) {
   try {
@@ -30,7 +32,9 @@ export async function GET(request: NextRequest) {
       return withinViews && withinClicks;
     });
 
-    return NextResponse.json(filtered);
+    return NextResponse.json(filtered, {
+      headers: { 'Cache-Control': 'no-store' },
+    });
   } catch (error) {
     console.error('Error fetching advertisements:', error);
     return NextResponse.json({ error: 'Error al obtener anuncios' }, { status: 500 });

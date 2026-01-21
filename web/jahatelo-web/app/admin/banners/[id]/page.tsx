@@ -44,7 +44,7 @@ export default function EditAdvertisementPage() {
     if (!id) return;
     const fetchAd = async () => {
       try {
-        const res = await fetch(`/api/admin/banners/${id}`);
+        const res = await fetch(`/api/admin/banners/${id}`, { cache: 'no-store' });
         if (!res.ok) throw new Error('Error al cargar anuncio');
         const data = await res.json();
         const nextForm = {
