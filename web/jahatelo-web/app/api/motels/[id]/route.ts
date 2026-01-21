@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
 
 type RouteContext = {
@@ -7,6 +8,13 @@ type RouteContext = {
 
 export async function GET(request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
+  const parsed = z.string().min(1).max(200).safeParse(id);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'ID inválido' },
+      { status: 400 }
+    );
+  }
 
   try {
     // Try to find by slug first, then by id

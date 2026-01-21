@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
+
+const MobileFavoriteSchema = z.object({
+  motelId: z.string().min(1).max(100),
+  roomTypeId: z.string().min(1).max(100).optional().nullable(),
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -93,14 +99,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { motelId, roomTypeId } = body;
-
-    if (!motelId) {
+    const parsed = MobileFavoriteSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'motelId es requerido' },
+        { error: 'Datos inválidos' },
         { status: 400 }
       );
     }
+    const { motelId, roomTypeId } = parsed.data;
 
     // Verificar que el motel existe
     const motel = await prisma.motel.findUnique({
@@ -195,21 +201,24 @@ export async function DELETE(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const motelId = searchParams.get('motelId');
-
-    if (!motelId) {
+    const parsed = MobileFavoriteSchema.pick({ motelId: true }).safeParse({
+      motelId: motelId ?? undefined,
+    });
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'motelId es requerido' },
+        { error: 'motelId inválido' },
         { status: 400 }
       );
     }
+    const { motelId: validatedMotelId } = parsed.data;
 
     // Eliminar favorito
     const deleted = await prisma.favorite.deleteMany({
       where: {
         userId: payload.id,
-        motelId,
-      },
-    });
+      motelId: validatedMotelId,
+    },
+  });
 
     if (deleted.count === 0) {
       return NextResponse.json(
@@ -221,7 +230,7 @@ export async function DELETE(request: NextRequest) {
     // Registrar evento de analytics
     await prisma.motelAnalytics.create({
       data: {
-        motelId,
+        motelId: validatedMotelId,
         eventType: 'FAVORITE_REMOVE',
         source: 'MOBILE',
         deviceType: 'MOBILE',

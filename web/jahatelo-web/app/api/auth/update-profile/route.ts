@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+
+const UpdateProfileSchema = z.object({
+  name: z.string().min(1).max(100).optional().nullable(),
+  phone: z.string().regex(/^\+?[0-9]{9,15}$/, 'Teléfono inválido').optional().nullable(),
+});
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -25,7 +31,14 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, phone } = body;
+    const parsed = UpdateProfileSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Datos de perfil inválidos' },
+        { status: 400 }
+      );
+    }
+    const { name, phone } = parsed.data;
 
     // Actualizar usuario
     const updatedUser = await prisma.user.update({

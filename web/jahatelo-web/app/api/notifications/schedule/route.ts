@@ -1,5 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { scheduleNotification, sendPromoNotificationToFavorites, processScheduledNotificationById } from '@/lib/push-notifications';
+
+const NotificationScheduleSchema = z.object({
+  title: z.string().min(1).max(65),
+  body: z.string().min(1).max(240),
+  scheduledFor: z.string().datetime().optional().nullable(),
+  sendNow: z.boolean().optional().default(false),
+  type: z.enum(['promo', 'reminder', 'announcement']),
+  targetMotelId: z.string().max(100).optional().nullable(),
+  targetRole: z.enum(['SUPERADMIN', 'MOTEL_ADMIN', 'USER']).optional().nullable(),
+  targetUserIds: z.array(z.string().min(1).max(100)).optional().nullable(),
+  relatedEntityId: z.string().max(100).optional().nullable(),
+  category: z.enum(['advertising', 'security', 'maintenance']).optional().nullable(),
+  data: z.record(z.string(), z.any()).optional().nullable(),
+});
+
+const NotificationScheduleQuerySchema = z.object({
+  sent: z.enum(['true', 'false', 'all']).optional().default('all'),
+  type: z.string().max(50).optional().nullable(),
+  limit: z.coerce.number().int().min(1).max(200).optional().default(50),
+});
 
 /**
  * POST /api/notifications/schedule
@@ -22,33 +43,26 @@ import { scheduleNotification, sendPromoNotificationToFavorites, processSchedule
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const parsed = NotificationScheduleSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Datos de notificación inválidos' },
+        { status: 400 }
+      );
+    }
     const {
       title,
       body: notificationBody,
       scheduledFor,
-      sendNow = false,
+      sendNow,
       type,
       targetMotelId,
       targetRole,
       targetUserIds,
       relatedEntityId,
+      category,
       data: notificationData,
-    } = body;
-
-    // Validaciones
-    if (!title || !notificationBody) {
-      return NextResponse.json(
-        { error: 'title y body son requeridos' },
-        { status: 400 }
-      );
-    }
-
-    if (!type) {
-      return NextResponse.json(
-        { error: 'type es requerido' },
-        { status: 400 }
-      );
-    }
+    } = parsed.data;
 
     if (!sendNow && !scheduledFor) {
       return NextResponse.json(
@@ -85,19 +99,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Programar para el futuro
-    const scheduledDate = sendNow ? new Date() : new Date(scheduledFor);
+    if (!sendNow && !scheduledFor) {
+      return NextResponse.json(
+        { error: 'scheduledFor es requerido si sendNow es false' },
+        { status: 400 }
+      );
+    }
+
+    const scheduledDate = sendNow ? new Date() : new Date(scheduledFor ?? '');
 
     const result = await scheduleNotification({
       title,
       body: notificationBody,
       scheduledFor: scheduledDate,
       type,
-      category: body.category,
-      targetUserIds,
-      targetRole,
-      targetMotelId,
-      relatedEntityId,
-      notificationData,
+      category: category ?? undefined,
+      targetUserIds: targetUserIds ?? undefined,
+      targetRole: targetRole ?? undefined,
+      targetMotelId: targetMotelId ?? undefined,
+      relatedEntityId: relatedEntityId ?? undefined,
+      notificationData: notificationData ?? undefined,
     });
 
     if (sendNow) {
@@ -152,9 +173,20 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const sentFilter = searchParams.get('sent') || 'all';
-    const type = searchParams.get('type');
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const parsed = NotificationScheduleQuerySchema.safeParse({
+      sent: searchParams.get('sent') ?? undefined,
+      type: searchParams.get('type') ?? undefined,
+      limit: searchParams.get('limit') ?? undefined,
+    });
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Parámetros inválidos' },
+        { status: 400 }
+      );
+    }
+
+    const { sent: sentFilter, type, limit } = parsed.data;
 
     const where: any = {};
 

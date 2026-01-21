@@ -54,7 +54,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' https://fonts.gstatic.com",
-              "connect-src 'self' https://maps.googleapis.com https://exp.host",
+              "connect-src 'self' https://jahatelo.com https://www.jahatelo.com https://maps.googleapis.com https://exp.host",
               "frame-src 'self' https://maps.google.com",
             ].join('; ')
           },

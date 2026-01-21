@@ -515,7 +515,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
             <div className="flex items-center gap-3">
               <ContactButtons motelId={motel.id} phone={motel.phone} whatsapp={motel.whatsapp} />
               <FavoriteButtonClient motelId={motel.id} source="DETAIL" />
-              <ShareButton title={motel.name} url={`https://jahatelo.vercel.app/motels/${motel.slug}`} />
+      <ShareButton title={motel.name} url={`https://jahatelo.vercel.app/motels/${motel.slug}`} />
             </div>
           </div>
 

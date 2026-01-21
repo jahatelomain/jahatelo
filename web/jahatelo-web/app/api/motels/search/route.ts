@@ -1,15 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+
+const SearchParamsSchema = z.object({
+  search: z.string().max(200).optional(),
+  city: z.string().max(100).optional(),
+  amenities: z.string().max(500).optional(),
+  promos: z.enum(['1']).optional(),
+  featured: z.enum(['1']).optional(),
+});
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const search = searchParams.get('search');
-    const city = searchParams.get('city');
-    const amenities = searchParams.get('amenities');
-    const promos = searchParams.get('promos');
-    const featured = searchParams.get('featured');
+    const search = searchParams.get('search') ?? undefined;
+    const city = searchParams.get('city') ?? undefined;
+    const amenities = searchParams.get('amenities') ?? undefined;
+    const promos = searchParams.get('promos') ?? undefined;
+    const featured = searchParams.get('featured') ?? undefined;
+
+    const parsed = SearchParamsSchema.safeParse({
+      search,
+      city,
+      amenities,
+      promos,
+      featured,
+    });
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Parámetros de búsqueda inválidos', motels: [] },
+        { status: 400 }
+      );
+    }
 
     const whereClause: Prisma.MotelWhereInput = {
       status: 'APPROVED',
@@ -39,7 +63,18 @@ export async function GET(request: NextRequest) {
     }
 
     if (amenities) {
-      const amenityIds = amenities.split(',');
+      const amenityIds = amenities
+        .split(',')
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0);
+
+      if (amenityIds.length === 0) {
+        return NextResponse.json(
+          { error: 'Amenidades inválidas', motels: [] },
+          { status: 400 }
+        );
+      }
+
       whereClause.motelAmenities = {
         some: {
           amenityId: {
@@ -49,7 +84,7 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    if (promos) {
+    if (promos === '1') {
       whereClause.promos = {
         some: {
           isActive: true,
@@ -57,7 +92,7 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    if (featured) {
+    if (featured === '1') {
       whereClause.isFeatured = true;
     }
 

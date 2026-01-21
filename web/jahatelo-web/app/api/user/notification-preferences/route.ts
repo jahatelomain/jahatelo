@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+
+const UserIdSchema = z.string().min(1).max(100);
 
 /**
  * GET /api/user/notification-preferences
@@ -11,23 +14,25 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    const parsed = UserIdSchema.safeParse(userId);
 
-    if (!userId) {
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'userId es requerido' },
+        { error: 'userId inválido' },
         { status: 400 }
       );
     }
+    const { data: validUserId } = parsed;
 
     // Buscar preferencias existentes o crear con valores por defecto
     let preferences = await prisma.userNotificationPreferences.findUnique({
-      where: { userId },
+      where: { userId: validUserId },
     });
 
     // Si no existen preferencias, crear con valores por defecto
     if (!preferences) {
       preferences = await prisma.userNotificationPreferences.create({
-        data: { userId },
+        data: { userId: validUserId },
       });
     }
 
@@ -53,17 +58,19 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const { userId, ...preferencesData } = body;
+    const parsed = UserIdSchema.safeParse(userId);
 
-    if (!userId) {
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'userId es requerido' },
+        { error: 'userId inválido' },
         { status: 400 }
       );
     }
+    const { data: validUserId } = parsed;
 
     // Validar que el usuario existe
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: validUserId },
     });
 
     if (!user) {
@@ -103,9 +110,9 @@ export async function PUT(request: NextRequest) {
 
     // Actualizar o crear preferencias
     const preferences = await prisma.userNotificationPreferences.upsert({
-      where: { userId },
+      where: { userId: validUserId },
       create: {
-        userId,
+        userId: validUserId,
         ...filteredData,
       },
       update: filteredData,
@@ -133,17 +140,19 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { userId } = body;
+    const parsed = UserIdSchema.safeParse(userId);
 
-    if (!userId) {
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'userId es requerido' },
+        { error: 'userId inválido' },
         { status: 400 }
       );
     }
+    const { data: validUserId } = parsed;
 
     // Validar que el usuario existe
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: validUserId },
     });
 
     if (!user) {
@@ -155,7 +164,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar si ya existen preferencias
     const existing = await prisma.userNotificationPreferences.findUnique({
-      where: { userId },
+      where: { userId: validUserId },
     });
 
     if (existing) {
@@ -168,7 +177,7 @@ export async function POST(request: NextRequest) {
 
     // Crear preferencias con valores por defecto
     const preferences = await prisma.userNotificationPreferences.create({
-      data: { userId },
+      data: { userId: validUserId },
     });
 
     return NextResponse.json(

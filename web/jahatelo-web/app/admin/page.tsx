@@ -4,6 +4,8 @@ import Link from 'next/link';
 import QuickActions from './components/QuickActions';
 import AnalyticsMetrics from './components/AnalyticsMetrics';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDashboard() {
   const e2eMode = process.env.E2E_MODE === '1';
   let totalViews = 0;

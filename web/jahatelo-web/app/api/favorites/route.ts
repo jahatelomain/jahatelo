@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
+
+const FavoritePayloadSchema = z.object({
+  motelId: z.string().min(1).max(100),
+});
 
 /**
  * GET /api/favorites
@@ -117,14 +122,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { motelId } = body;
-
-    if (!motelId) {
+    const parsed = FavoritePayloadSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'motelId es requerido' },
+        { error: 'motelId inválido' },
         { status: 400 }
       );
     }
+    const { motelId } = parsed.data;
 
     // Verificar que el motel existe
     const motel = await prisma.motel.findUnique({
@@ -192,20 +197,21 @@ export async function DELETE(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const motelId = searchParams.get('motelId');
-
-    if (!motelId) {
+    const parsed = FavoritePayloadSchema.safeParse({ motelId: motelId ?? undefined });
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'motelId es requerido' },
+        { error: 'motelId inválido' },
         { status: 400 }
       );
     }
+    const { motelId: validatedMotelId } = parsed.data;
 
     // Buscar el favorito
     const favorite = await prisma.favorite.findUnique({
       where: {
         userId_motelId: {
           userId: user.id,
-          motelId,
+          motelId: validatedMotelId,
         },
       },
     });

@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { createToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
+
+const MobileRegisterSchema = z.object({
+  email: z.string().email().max(255),
+  password: z.string().min(6).max(100).optional().nullable(),
+  name: z.string().max(100).optional().nullable(),
+  phone: z.string().regex(/^\+?[0-9]{9,15}$/).optional().nullable(),
+  provider: z.enum(['email', 'google', 'facebook', 'apple']).optional().default('email'),
+  providerId: z.string().max(255).optional().nullable(),
+});
 
 /**
  * POST /api/mobile/auth/register
@@ -14,27 +24,17 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, name, phone, provider = 'email', providerId } = body;
-
-    // Validaciones básicas
-    if (!email || email.trim().length === 0) {
+    const parsed = MobileRegisterSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'El email es requerido' },
+        { error: 'Datos de registro inválidos' },
         { status: 400 }
       );
     }
-
-    // Validar formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Formato de email inválido' },
-        { status: 400 }
-      );
-    }
+    const { email, password, name, phone, provider, providerId } = parsed.data;
 
     // Para registro con email, password es requerido
-    if (provider === 'email' && (!password || password.length < 6)) {
+    if (provider === 'email' && !password) {
       return NextResponse.json(
         { error: 'La contraseña debe tener al menos 6 caracteres' },
         { status: 400 }
@@ -42,8 +42,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar si el email ya existe
+    const emailNormalized = email.toLowerCase().trim();
     const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+      where: { email: emailNormalized },
     });
 
     if (existingUser) {
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
     // Crear usuario
     const user = await prisma.user.create({
       data: {
-        email: email.toLowerCase().trim(),
+        email: emailNormalized,
         passwordHash,
         name: name?.trim() || null,
         phone: phone?.trim() || null,
