@@ -46,8 +46,14 @@ export default function AdPopup() {
   if (!ad || !open || !imageReady) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="relative bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden max-h-[85vh] flex flex-col">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <div
+        className="relative bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden max-h-[85vh] flex flex-col"
+        onClick={(event) => event.stopPropagation()}
+      >
         <button
           onClick={() => setOpen(false)}
           className="absolute top-3 right-3 bg-black/70 text-white rounded-full w-9 h-9 flex items-center justify-center hover:bg-black/80 z-10"
@@ -65,7 +71,7 @@ export default function AdPopup() {
             sizes="(max-width: 768px) 100vw, 560px"
           />
         </div>
-        <div className="p-5 space-y-3 overflow-y-auto flex-1 min-h-0">
+        <div className="p-5 space-y-3 overflow-y-auto flex-1 min-h-0 overscroll-contain touch-pan-y">
           <div>
             <p className="text-xs uppercase tracking-wide text-slate-400">Publicidad</p>
             <h3 className="text-lg font-semibold text-slate-900">{ad.title}</h3>
