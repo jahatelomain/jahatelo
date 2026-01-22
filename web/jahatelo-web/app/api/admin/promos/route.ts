@@ -7,6 +7,12 @@ import { AdminPaginationSchema, PromoQuerySchema, PromoSchema } from '@/lib/vali
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
 
+const getPromoLimit = (plan?: string | null) => {
+  if (plan === 'GOLD') return 5;
+  if (plan === 'DIAMOND') return null;
+  return 1;
+};
+
 // GET /api/admin/promos?motelId=xxx
 export async function GET(request: NextRequest) {
   try {
@@ -121,6 +127,29 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const validated = PromoSchema.parse(sanitized);
+
+    const motel = await prisma.motel.findUnique({
+      where: { id: validated.motelId },
+      select: { id: true, plan: true },
+    });
+
+    if (!motel) {
+      return NextResponse.json({ error: 'Motel no encontrado' }, { status: 404 });
+    }
+
+    const promoLimit = getPromoLimit(motel.plan ?? 'BASIC');
+    const isActive = validated.isActive ?? true;
+    if (promoLimit !== null && isActive) {
+      const activeCount = await prisma.promo.count({
+        where: { motelId: validated.motelId, isActive: true },
+      });
+      if (activeCount >= promoLimit) {
+        return NextResponse.json(
+          { error: `Límite de ${promoLimit} promos activas para este plan` },
+          { status: 400 }
+        );
+      }
+    }
 
     const promo = await prisma.promo.create({
       data: {
