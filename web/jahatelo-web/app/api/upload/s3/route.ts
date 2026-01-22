@@ -50,6 +50,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: 'File size must be less than 10MB' },
+        { status: 400 },
+      );
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
     const key = createObjectKey(
       typeof file.name === 'string' ? file.name : undefined,

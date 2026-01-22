@@ -15,7 +15,9 @@
     "test:e2e:headed": "playwright test --headed",
     "postinstall": "prisma generate",
     "prisma:migrate": "prisma migrate dev --skip-seed",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "test-users:create": "node scripts/test-users.mjs create",
+    "test-users:cleanup": "node scripts/test-users.mjs cleanup"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.948.0",

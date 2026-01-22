@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
 import { BulkActivateSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
 
 /**
@@ -17,7 +18,8 @@ export async function POST(request: NextRequest) {
 
     // Leer body
     const body = await request.json();
-    const validated = BulkActivateSchema.parse(body);
+    const sanitized = sanitizeObject(body);
+    const validated = BulkActivateSchema.parse(sanitized);
     const { ids, isActive } = validated;
 
     // Buscar todos los moteles

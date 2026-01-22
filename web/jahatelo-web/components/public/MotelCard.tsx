@@ -5,6 +5,7 @@ import Image from 'next/image';
 import * as LucideIcons from 'lucide-react';
 import { trackMotelView } from '@/lib/analyticsService';
 import FavoriteButtonClient from '@/components/public/FavoriteButtonClient';
+import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
 
 interface MotelCardProps {
   motel: {
@@ -64,6 +65,9 @@ export default function MotelCard({ motel }: MotelCardProps) {
               quality={85}
               className={`object-cover group-hover:scale-105 transition-transform duration-300 ${isPlaceholder ? 'opacity-60' : ''}`}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              loading="lazy"
+              placeholder="blur"
+              blurDataURL={BLUR_DATA_URL}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-purple-200">

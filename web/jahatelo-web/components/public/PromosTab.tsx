@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
 
 interface Promo {
   id: string;
@@ -43,6 +44,9 @@ export default function PromosTab({ promos }: PromosTabProps) {
                 quality={85}
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"
+                loading="lazy"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
               />
             </div>
           ) : (

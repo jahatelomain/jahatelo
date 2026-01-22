@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { trackAdEvent } from '@/hooks/useAdvertisements';
 import type { Advertisement } from '@/hooks/useAdvertisements';
+import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
 
 export default function AdInlineCard({ ad, placement }: { ad: Advertisement; placement?: string }) {
   const [open, setOpen] = useState(false);
@@ -39,6 +40,9 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
                 quality={85}
                 className="object-cover"
                 sizes="44px"
+                loading="lazy"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-purple-200">
@@ -69,6 +73,9 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
                   quality={85}
                   className="object-cover"
                   sizes="(max-width: 768px) 100vw, 560px"
+                  loading="lazy"
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
                 />
                 <button
                   onClick={() => setOpen(false)}
@@ -119,6 +126,9 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
               quality={85}
               className="object-cover group-hover:scale-105 transition-transform duration-300"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              loading="lazy"
+              placeholder="blur"
+              blurDataURL={BLUR_DATA_URL}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-purple-200">
@@ -154,6 +164,9 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
                 quality={85}
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 560px"
+                loading="lazy"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
               />
               <button
                 onClick={() => setOpen(false)}

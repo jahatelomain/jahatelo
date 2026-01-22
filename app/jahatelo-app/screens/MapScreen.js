@@ -89,22 +89,6 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
         </View>
       </View>
 
-      {!IS_ANDROID && (
-        <Callout tooltip onPress={onPress}>
-          <View style={calloutStyle}>
-            {isDiamond && (
-              <Text style={styles.calloutBadge}>💎 DIAMOND</Text>
-            )}
-            {isGold && !isDiamond && (
-              <Text style={styles.calloutBadge}>⭐ GOLD</Text>
-            )}
-            <Text style={styles.calloutTitle} numberOfLines={1}>
-              {motel.name}
-            </Text>
-            <Text style={styles.calloutSubtitle}>Tap para ver detalles</Text>
-          </View>
-        </Callout>
-      )}
     </Marker>
   );
 }, (prevProps, nextProps) => {

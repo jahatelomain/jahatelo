@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { sanitizeObject } from '@/lib/sanitize';
 
 const UserIdSchema = z.string().min(1).max(100);
 
@@ -57,7 +58,8 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, ...preferencesData } = body;
+    const sanitized = sanitizeObject(body);
+    const { userId, ...preferencesData } = sanitized;
     const parsed = UserIdSchema.safeParse(userId);
 
     if (!parsed.success) {
@@ -139,7 +141,8 @@ export async function PUT(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId } = body;
+    const sanitized = sanitizeObject(body);
+    const { userId } = sanitized;
     const parsed = UserIdSchema.safeParse(userId);
 
     if (!parsed.success) {

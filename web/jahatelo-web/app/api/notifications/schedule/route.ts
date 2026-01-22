@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { scheduleNotification, sendPromoNotificationToFavorites, processScheduledNotificationById } from '@/lib/push-notifications';
+import { sanitizeObject } from '@/lib/sanitize';
 
 const NotificationScheduleSchema = z.object({
   title: z.string().min(1).max(65),
@@ -43,7 +44,8 @@ const NotificationScheduleQuerySchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const parsed = NotificationScheduleSchema.safeParse(body);
+    const sanitized = sanitizeObject(body);
+    const parsed = NotificationScheduleSchema.safeParse(sanitized);
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Datos de notificación inválidos' },

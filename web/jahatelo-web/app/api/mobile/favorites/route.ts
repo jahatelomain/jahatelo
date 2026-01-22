@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
+import { sanitizeObject } from '@/lib/sanitize';
 
 const MobileFavoriteSchema = z.object({
   motelId: z.string().min(1).max(100),
@@ -99,7 +100,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const parsed = MobileFavoriteSchema.safeParse(body);
+    const sanitized = sanitizeObject(body);
+    const parsed = MobileFavoriteSchema.safeParse(sanitized);
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Datos inválidos' },

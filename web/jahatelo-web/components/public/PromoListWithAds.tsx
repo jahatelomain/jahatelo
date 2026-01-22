@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import AdInlineCard from '@/components/public/AdInlineCard';
 import { useAdvertisements } from '@/hooks/useAdvertisements';
+import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
 
 const getActivePromo = (promos: any[] = []) => {
   const now = new Date();
@@ -37,6 +38,9 @@ const PromoCard = ({ motel }: { motel: any }) => {
           quality={85}
           className="object-cover group-hover:scale-105 transition-transform duration-300"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          loading="lazy"
+          placeholder="blur"
+          blurDataURL={BLUR_DATA_URL}
         />
         <div className="absolute top-3 right-3 bg-purple-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
           Promo

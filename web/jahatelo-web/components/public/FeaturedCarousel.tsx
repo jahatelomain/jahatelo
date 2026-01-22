@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useAdvertisements, trackAdEvent } from '@/hooks/useAdvertisements';
 import type { Advertisement } from '@/hooks/useAdvertisements';
+import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
 
 interface Motel {
   id: string;
@@ -113,7 +114,10 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                     quality={85}
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, 800px"
+                    loading={index === 0 ? 'eager' : 'lazy'}
                     priority={index === 0}
+                    placeholder="blur"
+                    blurDataURL={BLUR_DATA_URL}
                   />
                 </button>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
@@ -164,7 +168,10 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                     quality={85}
                     className={`object-cover ${isPlaceholder ? 'opacity-60' : ''}`}
                     sizes="(max-width: 768px) 100vw, 800px"
+                    loading={index === 0 ? 'eager' : 'lazy'}
                     priority={index === 0}
+                    placeholder="blur"
+                    blurDataURL={BLUR_DATA_URL}
                     onError={() => setFailedImages((prev) => ({ ...prev, [motel.id]: true }))}
                   />
                 </div>
@@ -180,7 +187,10 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                     quality={85}
                     className={`object-cover ${isPlaceholder ? 'opacity-60' : ''}`}
                     sizes="(max-width: 768px) 100vw, 800px"
+                    loading={index === 0 ? 'eager' : 'lazy'}
                     priority={index === 0}
+                    placeholder="blur"
+                    blurDataURL={BLUR_DATA_URL}
                     onError={() => setFailedImages((prev) => ({ ...prev, [motel.id]: true }))}
                   />
                 </Link>

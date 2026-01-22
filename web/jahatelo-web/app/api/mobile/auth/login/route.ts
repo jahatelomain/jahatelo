@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { createToken } from '@/lib/auth';
 import { LoginSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -16,12 +17,13 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { provider, providerId, name, pushToken, deviceInfo } = body;
+    const sanitized = sanitizeObject(body);
+    const { provider, providerId, name, pushToken, deviceInfo } = sanitized;
 
     // Login con email/password
     if (!provider || provider === 'email') {
       // Validar con Zod
-      const validated = LoginSchema.parse(body);
+      const validated = LoginSchema.parse(sanitized);
       const { email, password } = validated;
 
       const emailLower = email.toLowerCase().trim();
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
     // Login con OAuth (Google, Facebook, Apple)
     if (provider && providerId) {
       // Validación básica para OAuth
-      const email = body.email;
+      const email = sanitized.email;
       if (!email || email.trim().length === 0) {
         return NextResponse.json(
           { error: 'El email es requerido' },

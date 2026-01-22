@@ -4,6 +4,7 @@ import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
 import { MotelStatus } from '@prisma/client';
 import { BulkIdsSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
 
 /**
@@ -18,7 +19,8 @@ export async function POST(request: NextRequest) {
 
     // Leer body
     const body = await request.json();
-    const validated = BulkIdsSchema.parse(body);
+    const sanitized = sanitizeObject(body);
+    const validated = BulkIdsSchema.parse(sanitized);
     const { ids } = validated;
 
     // Buscar todos los moteles

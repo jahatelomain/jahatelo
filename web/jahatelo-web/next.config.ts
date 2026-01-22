@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -49,13 +51,19 @@ const nextConfig: NextConfig = {
           {
             key: 'Content-Security-Policy',
             value: [
+              "base-uri 'self'",
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://maps.googleapis.com",
+              `script-src 'self'${isDev ? " 'unsafe-eval'" : ''} 'unsafe-inline' https://maps.googleapis.com`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://jahatelo.com https://www.jahatelo.com https://maps.googleapis.com https://exp.host",
               "frame-src 'self' https://maps.google.com",
+              "object-src 'none'",
+              "frame-ancestors 'self'",
+              "form-action 'self'",
+              'upgrade-insecure-requests',
+              'block-all-mixed-content',
             ].join('; ')
           },
         ],

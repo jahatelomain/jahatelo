@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
+import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
 
 export default function ImageGallery({ images }: { images: { url: string; alt?: string }[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -34,6 +35,9 @@ export default function ImageGallery({ images }: { images: { url: string; alt?: 
             quality={85}
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 800px"
+            loading={safeIndex === 0 ? 'eager' : 'lazy'}
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URL}
             onClick={() => setLightboxOpen(true)}
             onError={() => setBrokenUrls((prev) => ({ ...prev, [activeImage.url]: true }))}
           />
@@ -60,6 +64,9 @@ export default function ImageGallery({ images }: { images: { url: string; alt?: 
                 quality={85}
                 className="object-cover"
                 sizes="80px"
+                loading="lazy"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
                 onError={() => setBrokenUrls((prev) => ({ ...prev, [image.url]: true }))}
               />
             )}
@@ -82,6 +89,9 @@ export default function ImageGallery({ images }: { images: { url: string; alt?: 
                 fill
                 quality={85}
                 className="object-contain"
+                loading="lazy"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
               />
             )}
             <button

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { sanitizeObject } from '@/lib/sanitize';
 
 const UpdateProfileSchema = z.object({
   name: z.string().min(1).max(100).optional().nullable(),
@@ -31,7 +32,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const parsed = UpdateProfileSchema.safeParse(body);
+    const sanitized = sanitizeObject(body);
+    const parsed = UpdateProfileSchema.safeParse(sanitized);
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Datos de perfil inválidos' },

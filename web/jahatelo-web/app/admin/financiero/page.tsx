@@ -72,6 +72,20 @@ export default function FinancieroPage() {
     checkAccess();
   }, []);
 
+  useEffect(() => {
+    if (!currentUser) return;
+    const nextKey = `${statusFilter}|${paymentFilter}|${debouncedSearchQuery.trim()}`;
+    if (filtersKeyRef.current !== nextKey) {
+      filtersKeyRef.current = nextKey;
+      if (page !== 1) {
+        setPage(1);
+        return;
+      }
+    }
+    fetchMotels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, statusFilter, paymentFilter, debouncedSearchQuery, currentUser]);
+
   const checkAccess = async () => {
     try {
       const response = await fetch('/api/auth/me');
@@ -135,19 +149,6 @@ export default function FinancieroPage() {
 
   const motelsArray = Array.isArray(motels) ? motels : [];
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-
-  useEffect(() => {
-    const nextKey = `${statusFilter}|${paymentFilter}|${debouncedSearchQuery.trim()}`;
-    if (filtersKeyRef.current !== nextKey) {
-      filtersKeyRef.current = nextKey;
-      if (page !== 1) {
-        setPage(1);
-        return;
-      }
-    }
-    fetchMotels();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, statusFilter, paymentFilter, debouncedSearchQuery]);
 
   return (
     <div className="space-y-6">

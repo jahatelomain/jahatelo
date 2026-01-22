@@ -4,15 +4,17 @@ import { verifyPassword } from '@/lib/password';
 import { createToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { LoginSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
 
 export async function POST(request: NextRequest) {
   try {
     const isDev = process.env.NODE_ENV === 'development';
     const body = await request.json();
+    const sanitized = sanitizeObject(body);
 
     // Validación con Zod
-    const validated = LoginSchema.parse(body);
+    const validated = LoginSchema.parse(sanitized);
     const { email, password } = validated;
 
     // Buscar usuario activo

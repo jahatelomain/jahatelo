@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { createToken } from '@/lib/auth';
+import { sanitizeObject } from '@/lib/sanitize';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,8 @@ const MobileRegisterSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const parsed = MobileRegisterSchema.safeParse(body);
+    const sanitized = sanitizeObject(body);
+    const parsed = MobileRegisterSchema.safeParse(sanitized);
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Datos de registro inválidos' },

@@ -198,8 +198,7 @@ Jahatelo es una **plataforma robusta y funcional** con todas las funcionalidades
 
 **Falta:**
 - ❌ Sanitización de inputs (prevenir XSS)
-- ❌ Validación estricta con Zod en todos los endpoints
-- ❌ Protección CSRF para formularios
+- ❌ Security headers estrictos (CSP + headers hardening)
 
 **Solución:**
 ```javascript
@@ -235,7 +234,6 @@ app.use(helmet({
 **Impacto:** Posible XSS, SQL Injection, data corruption
 
 **Falta:**
-- ❌ Validación con Zod en TODOS los endpoints
 - ❌ Sanitización de HTML en textos libres
 - ❌ Validación de URLs
 - ❌ Validación de números de teléfono
@@ -314,7 +312,6 @@ tests/
 **Impacto:** App lenta con muchos usuarios
 
 **Falta:**
-- ❌ Paginación en listados (admin carga TODO)
 - ❌ Infinite scroll en app móvil
 - ❌ Lazy loading de imágenes
 - ❌ CDN para assets estáticos
@@ -323,58 +320,7 @@ tests/
 - ❌ Query optimization (N+1 queries)
 - ❌ Image optimization (Next/Image)
 
-**Solución:**
-```typescript
-// Implementar paginación
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '20');
-
-  const motels = await prisma.motel.findMany({
-    skip: (page - 1) * limit,
-    take: limit,
-    orderBy: { createdAt: 'desc' }
-  });
-
-  const total = await prisma.motel.count();
-
-  return { motels, total, page, pages: Math.ceil(total / limit) };
-}
-```
-
-**Tiempo:** 20 horas
-**Prioridad:** 🟠 ALTA
-
----
-
-#### **5. Monitoring y Logs**
-**Riesgo:** MEDIO
-**Impacto:** Difícil detectar y solucionar problemas
-
-**Falta:**
-- ❌ Error tracking (Sentry, Bugsnag)
-- ❌ Application monitoring (New Relic, Datadog)
-- ❌ Structured logging
-- ❌ Alertas automáticas
-- ❌ Logs de seguridad
-- ❌ Performance metrics
-- ❌ Uptime monitoring
-
-**Solución:**
-```bash
-# Implementar Sentry
-npm install @sentry/nextjs @sentry/react-native
-
-# Configurar en sentry.config.js
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  environment: process.env.NODE_ENV,
-  tracesSampleRate: 0.1,
-});
-```
-
-**Tiempo:** 12 horas
+**Tiempo:** 14 horas
 **Prioridad:** 🟠 ALTA
 
 ---
@@ -499,7 +445,6 @@ export async function POST(req: Request) {
 
 ### Seguridad
 - [ ] Sanitización de HTML
-- [ ] Input validation con Zod
 - [ ] Secrets en variables de entorno
 - [ ] JWT con expiración corta
 - [ ] Refresh tokens
@@ -516,7 +461,6 @@ export async function POST(req: Request) {
 - [ ] Mobile testing en iOS y Android
 
 ### Performance
-- [ ] Paginación implementada
 - [ ] Caché configurado
 - [ ] CDN para assets
 - [ ] Images optimizadas
@@ -525,13 +469,8 @@ export async function POST(req: Request) {
 - [ ] Lazy loading
 - [ ] Code splitting
 
-### Monitoring
-- [ ] Sentry configurado
-- [ ] Logs estructurados
-- [ ] Uptime monitoring
-- [ ] Performance metrics
-- [ ] Alertas configuradas
-- [ ] Error tracking
+### Monitoring (básico)
+- [x] Uptime monitoring (UptimeRobot)
 
 ### Legal y Compliance
 - [ ] Términos y condiciones
@@ -567,7 +506,6 @@ export async function POST(req: Request) {
 - [ ] Audit de secrets (revisar que no haya hardcoded) (4h)
 
 **Semana 2 (20h):**
-- [ ] Implementar validación Zod en 30+ endpoints críticos (16h)
 - [ ] Sanitización de HTML inputs (4h)
 
 **Entregables:**
@@ -598,33 +536,16 @@ export async function POST(req: Request) {
 ---
 
 ### **FASE 3: Performance (Semana 5) - ALTA**
-**Total: 20 horas**
+**Total: 14 horas**
 
-- [ ] Implementar paginación en admin (6h)
 - [ ] Configurar CDN para imágenes (4h)
 - [ ] Optimizar queries N+1 (4h)
 - [ ] Agregar índices en DB (2h)
 - [ ] Implementar caché con Redis (opcional) (4h)
 
 **Entregables:**
-- ✅ Admin rápido con paginación
 - ✅ Imágenes optimizadas
 - ✅ Queries optimizadas
-
----
-
-### **FASE 4: Monitoring (Semana 5) - ALTA**
-**Total: 12 horas**
-
-- [ ] Configurar Sentry (4h)
-- [ ] Configurar structured logging (4h)
-- [ ] Configurar uptime monitoring (UptimeRobot) (2h)
-- [ ] Configurar alertas críticas (2h)
-
-**Entregables:**
-- ✅ Error tracking activo
-- ✅ Logs estructurados
-- ✅ Alertas configuradas
 
 ---
 
@@ -665,18 +586,16 @@ export async function POST(req: Request) {
 |------|-------|---------------|
 | Seguridad | 40h | $1,400 |
 | Testing | 40h | $1,400 |
-| Performance | 20h | $700 |
-| Monitoring | 12h | $420 |
+| Performance | 14h | $490 |
 | Pagos | 24h | $840 |
 | Documentación | 16h | $560 |
-| **TOTAL** | **152h** | **$5,320** |
+| **TOTAL** | **146h** | **$5,110** |
 
 ### Servicios Mensuales
 | Servicio | Costo/mes |
 |----------|-----------|
 | Hosting (Vercel Pro) | $20 |
 | Base de datos (PostgreSQL) | $15-30 |
-| Sentry (10k events) | $26 |
 | CDN/Storage (Cloudinary) | $0-30 |
 | MercadoPago (comisión) | Variable |
 | **TOTAL** | **$61-106/mes** |
@@ -684,10 +603,10 @@ export async function POST(req: Request) {
 ### Inversión Inicial One-Time
 | Item | Costo |
 |------|-------|
-| Desarrollo pre-lanzamiento | $5,320 |
+| Desarrollo pre-lanzamiento | $5,110 |
 | Load testing | $100 |
 | Security audit (opcional) | $500 |
-| **TOTAL** | **$5,920** |
+| **TOTAL** | **$5,710** |
 
 ---
 
@@ -700,7 +619,6 @@ export async function POST(req: Request) {
 Implementar solo CRÍTICO:
 - Seguridad (Fase 1)
 - Testing básico (Fase 2 reducida)
-- Monitoring básico
 
 **Pros:** Rápido al mercado
 **Contras:** Riesgo de bugs, sin pagos automáticos
@@ -708,7 +626,7 @@ Implementar solo CRÍTICO:
 ---
 
 ### Opción 2: Lanzamiento Completo (7 semanas) ⭐ RECOMENDADO
-**Inversión:** $5,320
+**Inversión:** $5,110
 **Riesgo:** Bajo
 
 Implementar todo hasta Fase 6.
@@ -746,7 +664,6 @@ Solo Fase 1 (Seguridad) + usuarios beta limitados.
 ### Riesgos Operacionales
 1. **Bugs no detectados** → Mala experiencia de usuario
 2. **Performance pobre** → Usuarios abandonan
-3. **Sin monitoring** → Difícil detectar problemas
 4. **Sin backups** → Pérdida de datos catastrófica
 
 ### Riesgos de Negocio
@@ -765,7 +682,6 @@ Solo Fase 1 (Seguridad) + usuarios beta limitados.
 **NO LANZAR** hasta completar al menos:
 1. ✅ Seguridad (Fase 1) - OBLIGATORIO
 2. ✅ Testing básico (Fase 2 parcial) - OBLIGATORIO
-3. ✅ Monitoring (Fase 4) - RECOMENDADO
 4. ✅ Pagos (Fase 5) - PARA MONETIZAR
 
 ### Timeline Realista

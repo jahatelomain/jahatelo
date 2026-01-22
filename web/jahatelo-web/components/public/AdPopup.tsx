@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import NextImage from 'next/image';
 import { useAdvertisements, trackAdEvent } from '@/hooks/useAdvertisements';
+import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
 
 const STORAGE_KEY = 'ad_popup_last_seen';
 
@@ -69,6 +70,9 @@ export default function AdPopup() {
             quality={85}
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 560px"
+            loading="eager"
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URL}
           />
         </div>
         <div className="p-5 space-y-3 overflow-y-auto flex-1 min-h-0 overscroll-contain touch-pan-y">
