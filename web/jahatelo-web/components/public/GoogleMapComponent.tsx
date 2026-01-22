@@ -82,6 +82,21 @@ export default function GoogleMapComponent({
     document.head.appendChild(script);
   }, []);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const styleId = 'jahatelo-pin-animations';
+    if (document.getElementById(styleId)) return;
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      @keyframes jahatelo-pin-bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-2px); }
+      }
+    `;
+    document.head.appendChild(style);
+  }, []);
+
   // Initialize map
   useEffect(() => {
     if (!isLoaded || !mapRef.current || !window.google) return;
@@ -121,10 +136,27 @@ export default function GoogleMapComponent({
     overlaysRef.current.forEach((overlay) => overlay.setMap(null));
     overlaysRef.current = [];
 
-    // Custom purple pin SVG with heart for ALL motels
-    const purplePinSVG = `
-      <svg width="32" height="45" viewBox="0 0 32 45" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="16" cy="16" r="13" fill="#8E2DE2" stroke="white" stroke-width="3"/>
+    const BASE_PIN_WIDTH = 32;
+    const BASE_PIN_HEIGHT = 45;
+    const BASE_PIN_CENTER = 16;
+    const BASE_PIN_RADIUS = 13;
+
+    const getPlanConfig = (plan?: MapMotel['plan']) => {
+      switch (plan) {
+        case 'FREE':
+          return { color: '#9CA3AF', labelColor: '#9CA3AF', opacity: 1, scale: 1, badge: null };
+        case 'GOLD':
+          return { color: '#F59E0B', labelColor: '#F59E0B', opacity: 1, scale: 1.15, badge: 'G' };
+        case 'DIAMOND':
+          return { color: '#7DD3FC', labelColor: '#7DD3FC', opacity: 1, scale: 1.3, badge: 'D' };
+        default:
+          return { color: '#8E2DE2', labelColor: '#8E2DE2', opacity: 1, scale: 1, badge: null };
+      }
+    };
+
+    const createPinSvg = (color: string, opacity: number) => `
+      <svg width="${BASE_PIN_WIDTH}" height="${BASE_PIN_HEIGHT}" viewBox="0 0 32 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="${BASE_PIN_CENTER}" cy="${BASE_PIN_CENTER}" r="${BASE_PIN_RADIUS}" fill="${color}" fill-opacity="${opacity}" stroke="white" stroke-width="3"/>
         <path d="M16 20.5C16 20.5 11.5 17.5 11.5 14.5C11.5 12.5 13 11 14.5 11C15.5 11 16 11.5 16 11.5C16 11.5 16.5 11 17.5 11C19 11 20.5 12.5 20.5 14.5C20.5 17.5 16 20.5 16 20.5Z" fill="white"/>
       </svg>
     `;
@@ -137,13 +169,6 @@ export default function GoogleMapComponent({
       </svg>
     `;
 
-    const purplePinIcon = {
-      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(purplePinSVG)}`,
-      scaledSize: new window.google.maps.Size(32, 45),
-      anchor: new window.google.maps.Point(16, 45),
-      labelOrigin: new window.google.maps.Point(16, -14),
-    };
-
     const redPinIcon = {
       url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(redPinSVG)}`,
       scaledSize: new window.google.maps.Size(32, 45),
@@ -153,10 +178,19 @@ export default function GoogleMapComponent({
 
     // Create markers for each motel
     motels.forEach((motel) => {
+      const planConfig = getPlanConfig(motel.plan ?? null);
+      const pinSvg = createPinSvg(planConfig.color, planConfig.opacity);
+      const pinWidth = Math.round(BASE_PIN_WIDTH * planConfig.scale);
+      const pinHeight = Math.round(BASE_PIN_HEIGHT * planConfig.scale);
+      const pinIcon = {
+        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(pinSvg)}`,
+        scaledSize: new window.google.maps.Size(pinWidth, pinHeight),
+        anchor: new window.google.maps.Point(pinWidth / 2, pinHeight),
+      };
       const marker = new window.google.maps.Marker({
         position: { lat: motel.latitude, lng: motel.longitude },
         map: googleMapRef.current,
-        icon: purplePinIcon, // ALL motels have purple pin
+        icon: pinIcon,
         // NO usamos label para evitar tooltip nativo
       });
 
@@ -175,19 +209,45 @@ export default function GoogleMapComponent({
         onAdd() {
           this.div = document.createElement('div');
           this.div.style.position = 'absolute';
-          this.div.style.background = '#8E2DE2';
+          this.div.style.background = planConfig.labelColor;
           this.div.style.color = '#FFFFFF';
-          this.div.style.padding = '6px 12px';
-          this.div.style.borderRadius = '10px';
+          this.div.style.padding = `${Math.round(6 * planConfig.scale)}px ${Math.round(12 * planConfig.scale)}px`;
+          this.div.style.borderRadius = `${Math.round(10 * planConfig.scale)}px`;
           this.div.style.border = '2px solid #FFFFFF';
-          this.div.style.fontSize = '13px';
+          this.div.style.fontSize = `${Math.round(13 * planConfig.scale)}px`;
           this.div.style.fontWeight = '500';
           this.div.style.whiteSpace = 'nowrap';
           this.div.style.cursor = 'pointer';
           this.div.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
           this.div.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          this.div.style.position = 'absolute';
+          this.div.style.maxWidth = `${Math.round(180 * planConfig.scale)}px`;
+          this.div.style.overflow = 'visible';
           this.div.textContent = this.text;
           this.div.style.pointerEvents = 'auto';
+          if (planConfig.badge) {
+            this.div.style.animation = 'jahatelo-pin-bounce 1.6s ease-in-out infinite';
+          }
+
+          if (planConfig.badge) {
+            const badge = document.createElement('div');
+            badge.textContent = planConfig.badge;
+            badge.style.position = 'absolute';
+            badge.style.top = `${Math.round(-6 * planConfig.scale)}px`;
+            badge.style.right = `${Math.round(-6 * planConfig.scale)}px`;
+            badge.style.width = `${Math.round(18 * planConfig.scale)}px`;
+            badge.style.height = `${Math.round(18 * planConfig.scale)}px`;
+            badge.style.borderRadius = '999px';
+            badge.style.background = '#FFFFFF';
+            badge.style.border = `2px solid ${planConfig.color}`;
+            badge.style.display = 'flex';
+            badge.style.alignItems = 'center';
+            badge.style.justifyContent = 'center';
+            badge.style.fontSize = `${Math.round(10 * planConfig.scale)}px`;
+            badge.style.fontWeight = '700';
+            badge.style.color = planConfig.color;
+            this.div.appendChild(badge);
+          }
 
           // Click en la etiqueta también abre el InfoWindow
           this.div.addEventListener('click', () => {
@@ -208,7 +268,8 @@ export default function GoogleMapComponent({
             new window.google.maps.LatLng(this.position.lat, this.position.lng)
           );
           this.div.style.left = position.x - (this.div.offsetWidth / 2) + 'px';
-          this.div.style.top = position.y - 67 + 'px'; // 22px arriba del pin (45px altura pin + 22px separación)
+          const labelOffset = Math.round((BASE_PIN_HEIGHT * planConfig.scale) + (22 * planConfig.scale));
+          this.div.style.top = position.y - labelOffset + 'px';
         }
 
         onRemove() {
@@ -227,6 +288,7 @@ export default function GoogleMapComponent({
       overlaysRef.current.push(customLabel);
 
       const isFreePlan = motel.plan === 'FREE';
+      const actionButtonColor = planConfig.labelColor;
       const actionButton = isFreePlan
         ? `
           <div
@@ -238,7 +300,7 @@ export default function GoogleMapComponent({
         : `
           <a
             href="/motels/${motel.slug}"
-            style="display: block; width: 100%; text-align: center; background: #8E2DE2; color: white; font-weight: 600; padding: 10px 16px; border-radius: 8px; text-decoration: none; margin-top: 8px;"
+            style="display: block; width: 100%; text-align: center; background: ${actionButtonColor}; color: white; font-weight: 600; padding: 10px 16px; border-radius: 8px; text-decoration: none; margin-top: 8px;"
           >
             Ver detalles
           </a>
