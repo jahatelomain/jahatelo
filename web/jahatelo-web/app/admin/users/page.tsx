@@ -64,14 +64,12 @@ export default function UsersPage() {
     inactiveCount: 0,
     roleCounts: {},
   });
-  const pageSize = 20;
-  const filtersKeyRef = useRef('');
-  const debouncedSearchQuery = useDebounce(searchQuery, 400);
-
-  // Filtros
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<UserRole | 'ALL'>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  const pageSize = 20;
+  const filtersKeyRef = useRef('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
   // Form state para crear
   const [createForm, setCreateForm] = useState({
