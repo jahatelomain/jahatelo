@@ -184,9 +184,9 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   closeButtonInner: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
