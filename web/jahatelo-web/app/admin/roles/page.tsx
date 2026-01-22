@@ -38,14 +38,12 @@ export default function RolesPage() {
   const [editingPermissions, setEditingPermissions] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const pageSize = 20;
-  const filtersKeyRef = useRef('');
-  const debouncedSearchQuery = useDebounce(searchQuery, 400);
-
-  // Filtros
   const [roleFilter, setRoleFilter] = useState<UserRole | 'ALL'>('ALL');
   const [moduleFilter, setModuleFilter] = useState<AdminModule | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const pageSize = 20;
+  const filtersKeyRef = useRef('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
   useEffect(() => {
     checkAccess();
