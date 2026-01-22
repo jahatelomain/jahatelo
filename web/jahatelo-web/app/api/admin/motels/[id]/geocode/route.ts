@@ -102,7 +102,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   } catch (error) {
     console.error('Error geocoding motel:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'ID inválido', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'ID inválido', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       {

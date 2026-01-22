@@ -139,7 +139,7 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     console.error('Error updating settings:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Error al actualizar configuraciones' },

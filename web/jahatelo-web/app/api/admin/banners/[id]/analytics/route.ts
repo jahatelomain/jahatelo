@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       period: searchParams.get('period') || undefined,
     });
     if (!queryResult.success) {
-      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
     const periodDays = queryResult.data.period || 30;
 
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   } catch (error) {
     console.error('Error fetching advertisement analytics:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json({ error: 'Error al obtener analíticas' }, { status: 500 });
   }

@@ -483,7 +483,7 @@ export const UpdateRoomPhotoSchema = RoomPhotoSchema.partial().omit({ roomTypeId
 // ============================================
 
 export const SettingsUpdateSchema = z
-  .record(z.any())
+  .record(z.string(), z.unknown())
   .refine((value) => Object.keys(value).length > 0, { message: 'Sin configuraciones para actualizar' });
 
 // ============================================

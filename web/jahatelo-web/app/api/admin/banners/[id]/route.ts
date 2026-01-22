@@ -84,7 +84,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   } catch (error) {
     console.error('Error updating advertisement:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json({ error: 'Error al actualizar anuncio' }, { status: 500 });
   }

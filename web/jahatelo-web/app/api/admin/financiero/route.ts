@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { AdminPaginationSchema, EmptySchema } from '@/lib/validations/schemas';
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
         search: searchParams.get('search') || undefined,
       });
     if (!queryResult.success) {
-      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
     const { status, payment, search: searchQuery } = queryResult.data;
     const paginationResult = AdminPaginationSchema.safeParse({
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit') || undefined,
     });
     if (!paginationResult.success) {
-      return NextResponse.json({ error: 'Parámetros inválidos', details: paginationResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros inválidos', details: paginationResult.error.issues }, { status: 400 });
     }
     const usePagination = searchParams.has('page') || searchParams.has('limit');
     const page = paginationResult.data.page ?? 1;
@@ -41,21 +42,21 @@ export async function GET(request: NextRequest) {
     if (access.error) return access.error;
 
     const searchFilter = searchQuery?.trim();
-    const baseWhere = {
+    const baseWhere: Prisma.MotelWhereInput = {
       ...(searchFilter
         ? {
             OR: [
-              { name: { contains: searchFilter, mode: 'insensitive' } },
-              { billingCompanyName: { contains: searchFilter, mode: 'insensitive' } },
-              { billingTaxId: { contains: searchFilter, mode: 'insensitive' } },
-              { adminContactName: { contains: searchFilter, mode: 'insensitive' } },
-              { adminContactEmail: { contains: searchFilter, mode: 'insensitive' } },
-              { adminContactPhone: { contains: searchFilter, mode: 'insensitive' } },
+              { name: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { billingCompanyName: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { billingTaxId: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { adminContactName: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { adminContactEmail: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { adminContactPhone: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
             ],
           }
         : {}),
     };
-    const dataWhere = {
+    const dataWhere: Prisma.MotelWhereInput = {
       ...baseWhere,
       ...(status ? { financialStatus: status } : {}),
       ...(payment ? { paymentType: payment } : {}),
@@ -73,12 +74,12 @@ export async function GET(request: NextRequest) {
       where: baseWhere,
     });
     const statusCounts = statusSummary.reduce<Record<string, number>>((acc, item) => {
-      acc[item.financialStatus] = item._count._all;
+      acc[item.financialStatus] = item._count?._all ?? 0;
       return acc;
     }, {});
     const paymentCounts = paymentSummary.reduce<Record<string, number>>((acc, item) => {
       if (!item.paymentType) return acc;
-      acc[item.paymentType] = item._count._all;
+      acc[item.paymentType] = item._count?._all ?? 0;
       return acc;
     }, {});
 
@@ -125,7 +126,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching financial data:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Error al obtener datos financieros' },

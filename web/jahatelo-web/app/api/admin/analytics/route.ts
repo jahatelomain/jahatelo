@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       eventType: searchParams.get('eventType') || undefined,
     });
     if (!queryResult.success) {
-      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
     const { period, motelId, source, deviceType, eventType } = queryResult.data;
     const days = period || 30;
@@ -212,7 +212,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching global analytics:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Error al obtener estadísticas globales' },

@@ -77,7 +77,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   } catch (error) {
     console.error('Error approving motel:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'ID inválido', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'ID inválido', details: error.issues }, { status: 400 });
     }
     return NextResponse.json({ error: 'Error al aprobar motel' }, { status: 500 });
   }

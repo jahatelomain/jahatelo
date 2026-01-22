@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { AdminAuditQuerySchema, AdminPaginationSchema } from '@/lib/validations/schemas';
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
       q: searchParams.get('q') || undefined,
     });
     if (!queryResult.success) {
-      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
     const { action, entityType, userId, q: query } = queryResult.data;
 
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit') || undefined,
     });
     if (!paginationResult.success) {
-      return NextResponse.json({ error: 'Parámetros inválidos', details: paginationResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros inválidos', details: paginationResult.error.issues }, { status: 400 });
     }
     const usePagination = searchParams.has('page') || searchParams.has('limit');
     const page = paginationResult.data.page ?? 1;
@@ -49,8 +50,7 @@ export async function GET(request: NextRequest) {
 
     const total = await prisma.auditLog.count({ where });
 
-    const logs = await prisma.auditLog.findMany({
-      ...(usePagination ? { skip: (page - 1) * limit, take: limit } : { take: 200 }),
+    const findArgs: Prisma.AuditLogFindManyArgs = {
       orderBy: { createdAt: 'desc' },
       where,
       include: {
@@ -63,7 +63,15 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-    });
+    };
+    if (usePagination) {
+      findArgs.skip = (page - 1) * limit;
+      findArgs.take = limit;
+    } else {
+      findArgs.take = 200;
+    }
+
+    const logs = await prisma.auditLog.findMany(findArgs);
 
     if (!usePagination) {
       return NextResponse.json(logs);
@@ -81,7 +89,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching audit logs:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Error al obtener auditoría' },

@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error creating room photo:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Failed to create room photo' },

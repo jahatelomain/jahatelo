@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
         status: searchParams.get('status') || undefined,
       });
     if (!queryResult.success) {
-      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
     const { status } = queryResult.data;
     const paginationResult = AdminPaginationSchema.safeParse({
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit') || undefined,
     });
     if (!paginationResult.success) {
-      return NextResponse.json({ error: 'Parámetros inválidos', details: paginationResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros inválidos', details: paginationResult.error.issues }, { status: 400 });
     }
     const usePagination = searchParams.has('page') || searchParams.has('limit');
     const page = paginationResult.data.page ?? 1;
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching inbox messages:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Error al obtener mensajes' },

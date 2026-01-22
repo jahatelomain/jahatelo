@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
@@ -59,9 +60,11 @@ export async function PATCH(
     const sanitized = sanitizeObject(body);
     const validated = UpdateRoomPhotoSchema.parse(sanitized);
 
-    const updateData: { order?: number | null; url?: string | null } = {};
-    if (validated.order !== undefined) updateData.order = validated.order ?? null;
-    if (validated.url !== undefined) updateData.url = validated.url ?? null;
+    const updateData: Prisma.RoomPhotoUpdateInput = {};
+    if (validated.order !== undefined && validated.order !== null) {
+      updateData.order = validated.order;
+    }
+    if (validated.url !== undefined) updateData.url = validated.url;
 
     const roomPhoto = await prisma.roomPhoto.update({
       where: { id: idResult.data },
@@ -80,7 +83,7 @@ export async function PATCH(
   } catch (error) {
     console.error('Error updating room photo:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Failed to update room photo' },

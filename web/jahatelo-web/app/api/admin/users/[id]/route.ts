@@ -170,7 +170,7 @@ export async function PATCH(
   } catch (error) {
     console.error('Error updating user:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Error al actualizar usuario' },
@@ -193,6 +193,10 @@ export async function DELETE(
     const user = access.user;
 
     const { id } = await params;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     // Verificar que el usuario existe
     const existingUser = await prisma.user.findUnique({

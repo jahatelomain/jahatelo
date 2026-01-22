@@ -51,7 +51,7 @@ export async function GET(
       period: searchParams.get('period') || undefined,
     });
     if (!queryResult.success) {
-      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
     const days = queryResult.data.period || 30;
 
@@ -171,7 +171,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching motel analytics:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Error al obtener estadísticas' },

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
       type: searchParams.get('type') || undefined,
     });
     if (!queryResult.success) {
-      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
     const { motelId, search: searchQuery, status, type } = queryResult.data;
 
@@ -29,25 +30,25 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit') || undefined,
     });
     if (!paginationResult.success) {
-      return NextResponse.json({ error: 'Parámetros inválidos', details: paginationResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros inválidos', details: paginationResult.error.issues }, { status: 400 });
     }
     const usePagination = searchParams.has('page') || searchParams.has('limit');
     const page = paginationResult.data.page ?? 1;
     const limit = paginationResult.data.limit ?? 20;
 
     const searchFilter = searchQuery?.trim();
-    const baseWhere = {
+    const baseWhere: Prisma.PromoWhereInput = {
       ...(motelId ? { motelId } : {}),
       ...(searchFilter
         ? {
             OR: [
-              { title: { contains: searchFilter, mode: 'insensitive' } },
-              { motel: { name: { contains: searchFilter, mode: 'insensitive' } } },
+              { title: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { motel: { name: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } } },
             ],
           }
         : {}),
     };
-    const dataWhere = {
+    const dataWhere: Prisma.PromoWhereInput = {
       ...baseWhere,
       ...(status ? { isActive: status === 'ACTIVE' } : {}),
       ...(type ? { isGlobal: type === 'GLOBAL' } : {}),
@@ -65,11 +66,11 @@ export async function GET(request: NextRequest) {
       where: baseWhere,
     });
     const activeCounts = summaryActive.reduce<Record<string, number>>((acc, item) => {
-      acc[item.isActive ? 'active' : 'inactive'] = item._count._all;
+      acc[item.isActive ? 'active' : 'inactive'] = item._count?._all ?? 0;
       return acc;
     }, {});
     const typeCounts = summaryGlobal.reduce<Record<string, number>>((acc, item) => {
-      acc[item.isGlobal ? 'global' : 'specific'] = item._count._all;
+      acc[item.isGlobal ? 'global' : 'specific'] = item._count?._all ?? 0;
       return acc;
     }, {});
 
@@ -146,7 +147,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating promo:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json({ error: 'Error al crear promo' }, { status: 500 });
   }

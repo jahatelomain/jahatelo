@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { AdminPaginationSchema, EmptySchema } from '@/lib/validations/schemas';
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
         q: searchParams.get('q') || undefined,
       });
     if (!queryResult.success) {
-      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
     const { status, active, q } = queryResult.data;
 
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit') || undefined,
     });
     if (!paginationResult.success) {
-      return NextResponse.json({ error: 'Parámetros inválidos', details: paginationResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros inválidos', details: paginationResult.error.issues }, { status: 400 });
     }
     const usePagination = searchParams.has('page') || searchParams.has('limit');
     const page = paginationResult.data.page ?? 1;
@@ -45,23 +46,23 @@ export async function GET(request: NextRequest) {
         : undefined;
 
     const searchFilter = q?.trim();
-    const baseWhere = {
+    const baseWhere: Prisma.MotelWhereInput = {
       ...(motelFilter ? motelFilter : {}),
       ...(searchFilter
         ? {
             OR: [
-              { name: { contains: searchFilter, mode: 'insensitive' } },
-              { city: { contains: searchFilter, mode: 'insensitive' } },
-              { neighborhood: { contains: searchFilter, mode: 'insensitive' } },
-              { contactName: { contains: searchFilter, mode: 'insensitive' } },
-              { contactEmail: { contains: searchFilter, mode: 'insensitive' } },
-              { contactPhone: { contains: searchFilter, mode: 'insensitive' } },
+              { name: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { city: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { neighborhood: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { contactName: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { contactEmail: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { contactPhone: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
             ],
           }
         : {}),
     };
 
-    const dataWhere = {
+    const dataWhere: Prisma.MotelWhereInput = {
       ...baseWhere,
       ...(status ? { status } : {}),
       ...(active ? { isActive: active === 'true' } : {}),
@@ -82,11 +83,11 @@ export async function GET(request: NextRequest) {
       where: baseWhere,
     });
     const statusCounts = statusSummary.reduce<Record<string, number>>((acc, item) => {
-      acc[item.status] = item._count._all;
+      acc[item.status] = item._count?._all ?? 0;
       return acc;
     }, {});
     const activeCounts = activeSummary.reduce<Record<string, number>>((acc, item) => {
-      acc[item.isActive ? 'active' : 'inactive'] = item._count._all;
+      acc[item.isActive ? 'active' : 'inactive'] = item._count?._all ?? 0;
       return acc;
     }, {});
 
@@ -144,7 +145,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching motels:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json([], { status: 500 });
   }
