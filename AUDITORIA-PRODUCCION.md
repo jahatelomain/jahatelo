@@ -197,11 +197,6 @@ Jahatelo es una **plataforma robusta y funcional** con todas las funcionalidades
 **Impacto:** Sistema vulnerable a múltiples ataques
 
 **Falta:**
-- ❌ Rate limiting global (prevenir brute force)
-- ❌ Rate limiting por endpoint sensible
-- ❌ CORS headers configurados
-- ❌ Security headers (CSP, X-Frame-Options, HSTS)
-- ❌ Helmet.js o equivalente
 - ❌ Sanitización de inputs (prevenir XSS)
 - ❌ Validación estricta con Zod en todos los endpoints
 - ❌ Protección CSRF para formularios
@@ -503,12 +498,8 @@ export async function POST(req: Request) {
 ## 📋 CHECKLIST DE PRODUCCIÓN
 
 ### Seguridad
-- [ ] Rate limiting implementado
-- [ ] CORS configurado correctamente
-- [ ] Security headers (Helmet)
-- [ ] Input validation con Zod
 - [ ] Sanitización de HTML
-- [ ] HTTPS forzado
+- [ ] Input validation con Zod
 - [ ] Secrets en variables de entorno
 - [ ] JWT con expiración corta
 - [ ] Refresh tokens
@@ -573,11 +564,6 @@ export async function POST(req: Request) {
 **Total: 40 horas**
 
 **Semana 1 (20h):**
-- [ ] Implementar rate limiting global (4h)
-- [ ] Implementar rate limiting por endpoint (4h)
-- [ ] Configurar CORS (2h)
-- [ ] Implementar Helmet + security headers (4h)
-- [ ] Configurar HTTPS y redirección (2h)
 - [ ] Audit de secrets (revisar que no haya hardcoded) (4h)
 
 **Semana 2 (20h):**
