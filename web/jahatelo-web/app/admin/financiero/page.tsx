@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import Link from 'next/link';
+import PaginationControls from '../components/PaginationControls';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type PaymentType = 'DIRECT_DEBIT' | 'TRANSFER' | 'EXCHANGE';
 type FinancialStatus = 'ACTIVE' | 'INACTIVE' | 'DISABLED';
@@ -56,10 +58,18 @@ export default function FinancieroPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | FinancialStatus>('ALL');
   const [paymentFilter, setPaymentFilter] = useState<'ALL' | PaymentType>('ALL');
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [summary, setSummary] = useState<{
+    statusCounts: Record<string, number>;
+    paymentCounts: Record<string, number>;
+  }>({ statusCounts: {}, paymentCounts: {} });
+  const pageSize = 20;
+  const filtersKeyRef = useRef('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
   useEffect(() => {
     checkAccess();
-    fetchMotels();
   }, []);
 
   const checkAccess = async () => {
@@ -82,10 +92,27 @@ export default function FinancieroPage() {
   const fetchMotels = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/financiero');
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(pageSize));
+      if (statusFilter !== 'ALL') params.set('status', statusFilter);
+      if (paymentFilter !== 'ALL') params.set('payment', paymentFilter);
+      if (debouncedSearchQuery.trim()) params.set('search', debouncedSearchQuery.trim());
+      const response = await fetch(`/api/admin/financiero?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setMotels(data);
+        const motelsData = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+          ? data.data
+          : [];
+        const meta = Array.isArray(data) ? undefined : data?.meta;
+        setMotels(motelsData);
+        setTotalItems(meta?.total ?? motelsData.length);
+        setSummary({
+          statusCounts: meta?.summary?.statusCounts ?? {},
+          paymentCounts: meta?.summary?.paymentCounts ?? {},
+        });
       } else {
         toast?.showToast('Error al cargar moteles', 'error');
       }
@@ -107,21 +134,20 @@ export default function FinancieroPage() {
   }
 
   const motelsArray = Array.isArray(motels) ? motels : [];
-  const filteredMotels = motelsArray.filter((motel) => {
-    const query = searchQuery.trim().toLowerCase();
-    const matchesQuery = !query
-      || motel.name.toLowerCase().includes(query)
-      || (motel.billingCompanyName || '').toLowerCase().includes(query)
-      || (motel.billingTaxId || '').toLowerCase().includes(query)
-      || (motel.adminContactName || '').toLowerCase().includes(query)
-      || (motel.adminContactEmail || '').toLowerCase().includes(query)
-      || (motel.adminContactPhone || '').toLowerCase().includes(query);
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
-    const matchesStatus = statusFilter === 'ALL' || motel.financialStatus === statusFilter;
-    const matchesPayment = paymentFilter === 'ALL' || motel.paymentType === paymentFilter;
-
-    return matchesQuery && matchesStatus && matchesPayment;
-  });
+  useEffect(() => {
+    const nextKey = `${statusFilter}|${paymentFilter}|${debouncedSearchQuery.trim()}`;
+    if (filtersKeyRef.current !== nextKey) {
+      filtersKeyRef.current = nextKey;
+      if (page !== 1) {
+        setPage(1);
+        return;
+      }
+    }
+    fetchMotels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, statusFilter, paymentFilter, debouncedSearchQuery]);
 
   return (
     <div className="space-y-6">
@@ -134,7 +160,7 @@ export default function FinancieroPage() {
           </p>
         </div>
         <div className="text-sm text-slate-600">
-          Total: <span className="font-semibold text-slate-900">{motelsArray.length}</span> moteles
+          Total: <span className="font-semibold text-slate-900">{totalItems}</span> moteles
         </div>
       </div>
 
@@ -189,7 +215,7 @@ export default function FinancieroPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-purple-300'
                 }`}
               >
-                Todos <span className="ml-1 opacity-75">({motelsArray.length})</span>
+                Todos <span className="ml-1 opacity-75">({totalItems})</span>
               </button>
               <button
                 onClick={() => setStatusFilter('ACTIVE')}
@@ -199,7 +225,7 @@ export default function FinancieroPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-green-300'
                 }`}
               >
-                Activos <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.financialStatus === 'ACTIVE').length})</span>
+                Activos <span className="ml-1 opacity-75">({summary.statusCounts.ACTIVE ?? 0})</span>
               </button>
               <button
                 onClick={() => setStatusFilter('INACTIVE')}
@@ -209,7 +235,7 @@ export default function FinancieroPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-yellow-300'
                 }`}
               >
-                Inactivos <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.financialStatus === 'INACTIVE').length})</span>
+                Inactivos <span className="ml-1 opacity-75">({summary.statusCounts.INACTIVE ?? 0})</span>
               </button>
               <button
                 onClick={() => setStatusFilter('DISABLED')}
@@ -219,7 +245,7 @@ export default function FinancieroPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-red-300'
                 }`}
               >
-                Inhabilitados <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.financialStatus === 'DISABLED').length})</span>
+                Inhabilitados <span className="ml-1 opacity-75">({summary.statusCounts.DISABLED ?? 0})</span>
               </button>
             </div>
           </div>
@@ -273,8 +299,8 @@ export default function FinancieroPage() {
 
         <div className="flex items-center justify-between mt-2 pt-4 border-t border-slate-200">
           <p className="text-sm text-slate-600">
-            Mostrando <span className="font-semibold text-slate-900">{filteredMotels.length}</span> de{' '}
-            <span className="font-semibold text-slate-900">{motelsArray.length}</span> moteles
+            Mostrando <span className="font-semibold text-slate-900">{motelsArray.length}</span> de{' '}
+            <span className="font-semibold text-slate-900">{totalItems}</span> moteles
           </p>
           {(searchQuery || statusFilter !== 'ALL' || paymentFilter !== 'ALL') && (
             <button
@@ -315,14 +341,14 @@ export default function FinancieroPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
-              {filteredMotels.length === 0 ? (
+              {motelsArray.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                     No hay moteles registrados
                   </td>
                 </tr>
               ) : (
-                filteredMotels.map((motel) => (
+                motelsArray.map((motel) => (
                   <tr key={motel.id} className="hover:bg-slate-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-semibold text-slate-900">
@@ -367,6 +393,17 @@ export default function FinancieroPage() {
             </tbody>
           </table>
         </div>
+        {totalItems > 0 && (
+          <div className="px-6 pb-6">
+            <PaginationControls
+              page={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setPage}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

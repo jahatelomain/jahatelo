@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import MotelCard from '../components/MotelCard';
+import PaginationControls from '../components/PaginationControls';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -38,65 +40,70 @@ export default function MotelsAdminPage() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [selectedMotels, setSelectedMotels] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
-
-  useEffect(() => {
-    fetchMotels();
-  }, []);
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [summary, setSummary] = useState<{
+    statusCounts: Record<string, number>;
+    activeCounts: Record<string, number>;
+  }>({ statusCounts: {}, activeCounts: {} });
+  const pageSize = 20;
+  const filtersKeyRef = useRef('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
   const fetchMotels = async () => {
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), 8000);
 
     try {
-      const res = await fetch('/api/admin/motels', { signal: controller.signal });
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(pageSize));
+      if (debouncedSearchQuery.trim()) params.set('q', debouncedSearchQuery.trim());
+      if (statusFilter !== 'ALL') params.set('status', statusFilter);
+      if (activeFilter === 'ACTIVE') params.set('active', 'true');
+      if (activeFilter === 'INACTIVE') params.set('active', 'false');
+      const res = await fetch(`/api/admin/motels?${params.toString()}`, { signal: controller.signal });
       const data = await res.json();
 
-      // Extraer array de moteles según el shape de la respuesta
       const motelsData = Array.isArray(data)
         ? data
+        : Array.isArray(data?.data)
+        ? data.data
         : Array.isArray(data?.motels)
         ? data.motels
         : [];
+      const meta = Array.isArray(data) ? undefined : data?.meta;
 
       setMotels(motelsData);
+      setTotalItems(meta?.total ?? motelsData.length);
+      setSummary(meta?.summary ?? { statusCounts: {}, activeCounts: {} });
     } catch (error) {
       // Error de red, timeout o parsing - asignar array vacío sin loguear
       setMotels([]);
+      setTotalItems(0);
     } finally {
       window.clearTimeout(timeoutId);
       setLoading(false);
     }
   };
 
-  // Asegurarse de que motels sea siempre un array
-  const motelsArray = Array.isArray(motels) ? motels : [];
-
-  const filteredMotels = motelsArray.filter((motel) => {
-    // Filtro por estado (PENDING, APPROVED, REJECTED)
-    if (statusFilter !== 'ALL' && motel.status !== statusFilter) return false;
-
-    // Filtro por activo/inactivo
-    if (activeFilter === 'ACTIVE' && !motel.isActive) return false;
-    if (activeFilter === 'INACTIVE' && motel.isActive) return false;
-
-    // Búsqueda por nombre, ciudad, barrio o contacto
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchName = motel.name.toLowerCase().includes(query);
-      const matchCity = motel.city.toLowerCase().includes(query);
-      const matchNeighborhood = motel.neighborhood.toLowerCase().includes(query);
-      const matchContact =
-        (motel.contactName && motel.contactName.toLowerCase().includes(query)) ||
-        (motel.contactEmail && motel.contactEmail.toLowerCase().includes(query)) ||
-        (motel.contactPhone && motel.contactPhone.toLowerCase().includes(query));
-
-      if (!matchName && !matchCity && !matchNeighborhood && !matchContact) {
-        return false;
+  useEffect(() => {
+    const nextKey = `${statusFilter}|${activeFilter}|${debouncedSearchQuery.trim()}`;
+    if (filtersKeyRef.current !== nextKey) {
+      filtersKeyRef.current = nextKey;
+      if (page !== 1) {
+        setPage(1);
+        return;
       }
     }
+    fetchMotels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, statusFilter, activeFilter, debouncedSearchQuery]);
 
-    return true;
-  });
+  const motelsArray = Array.isArray(motels) ? motels : [];
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const allPageSelected =
+    motelsArray.length > 0 && motelsArray.every((motel) => selectedMotels.has(motel.id));
 
   const getStatusBadge = (status: MotelStatus) => {
     const styles = {
@@ -118,14 +125,18 @@ export default function MotelsAdminPage() {
     );
   };
 
-  const pendingCount = motelsArray.filter((m) => m.status === 'PENDING').length;
+  const pendingCount = summary.statusCounts.PENDING ?? 0;
+  const approvedCount = summary.statusCounts.APPROVED ?? 0;
+  const rejectedCount = summary.statusCounts.REJECTED ?? 0;
+  const activeCount = summary.activeCounts.active ?? 0;
+  const inactiveCount = summary.activeCounts.inactive ?? 0;
 
   // Bulk actions handlers
   const toggleSelectAll = () => {
-    if (selectedMotels.size === filteredMotels.length) {
+    if (allPageSelected) {
       setSelectedMotels(new Set());
     } else {
-      setSelectedMotels(new Set(filteredMotels.map((m) => m.id)));
+      setSelectedMotels(new Set(motelsArray.map((m) => m.id)));
     }
   };
 
@@ -375,7 +386,7 @@ export default function MotelsAdminPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-yellow-300'
                 }`}
               >
-                Pendientes <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.status === 'PENDING').length})</span>
+                Pendientes <span className="ml-1 opacity-75">({pendingCount})</span>
               </button>
               <button
                 onClick={() => setStatusFilter('APPROVED')}
@@ -385,7 +396,7 @@ export default function MotelsAdminPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-green-300'
                 }`}
               >
-                Aprobados <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.status === 'APPROVED').length})</span>
+                Aprobados <span className="ml-1 opacity-75">({approvedCount})</span>
               </button>
               <button
                 onClick={() => setStatusFilter('REJECTED')}
@@ -395,7 +406,7 @@ export default function MotelsAdminPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-red-300'
                 }`}
               >
-                Rechazados <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.status === 'REJECTED').length})</span>
+                Rechazados <span className="ml-1 opacity-75">({rejectedCount})</span>
               </button>
             </div>
           </div>
@@ -422,7 +433,7 @@ export default function MotelsAdminPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-green-300'
                 }`}
               >
-                Habilitados <span className="ml-1 opacity-75">({motelsArray.filter((m) => m.isActive).length})</span>
+                Habilitados <span className="ml-1 opacity-75">({activeCount})</span>
               </button>
               <button
                 onClick={() => setActiveFilter('INACTIVE')}
@@ -432,7 +443,7 @@ export default function MotelsAdminPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400'
                 }`}
               >
-                Deshabilitados <span className="ml-1 opacity-75">({motelsArray.filter((m) => !m.isActive).length})</span>
+                Deshabilitados <span className="ml-1 opacity-75">({inactiveCount})</span>
               </button>
             </div>
           </div>
@@ -441,8 +452,8 @@ export default function MotelsAdminPage() {
         {/* Resultados */}
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
           <p className="text-sm text-slate-600">
-            Mostrando <span className="font-semibold text-slate-900">{filteredMotels.length}</span> de{' '}
-            <span className="font-semibold text-slate-900">{motelsArray.length}</span> moteles
+            Mostrando <span className="font-semibold text-slate-900">{motelsArray.length}</span> de{' '}
+            <span className="font-semibold text-slate-900">{totalItems}</span> moteles
           </p>
           {(searchQuery || statusFilter !== 'ALL' || activeFilter !== 'ALL') && (
             <button
@@ -543,7 +554,7 @@ export default function MotelsAdminPage() {
               <th className="px-6 py-3 text-left">
                 <input
                   type="checkbox"
-                  checked={selectedMotels.size === filteredMotels.length && filteredMotels.length > 0}
+                  checked={allPageSelected}
                   onChange={toggleSelectAll}
                   className="w-4 h-4 text-purple-600 bg-white border-slate-300 rounded focus:ring-purple-500 focus:ring-2 cursor-pointer"
                 />
@@ -569,7 +580,7 @@ export default function MotelsAdminPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
-            {filteredMotels.length === 0 ? (
+            {motelsArray.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center gap-2">
@@ -588,7 +599,7 @@ export default function MotelsAdminPage() {
                 </td>
               </tr>
             ) : (
-              filteredMotels.map((motel) => (
+              motelsArray.map((motel) => (
                 <tr key={motel.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <input
@@ -640,13 +651,25 @@ export default function MotelsAdminPage() {
           </tbody>
         </table>
           </div>
-      </div>
+          </div>
+          {totalItems > 0 && (
+            <div className="px-6 pb-6">
+              <PaginationControls
+                page={page}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={pageSize}
+                onPageChange={setPage}
+              />
+            </div>
+          )}
+        </div>
       )}
 
       {/* Vista Grid */}
       {viewMode === 'grid' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMotels.length === 0 ? (
+          {motelsArray.length === 0 ? (
             <div className="col-span-full flex flex-col items-center gap-4 py-12">
               <span className="text-6xl text-slate-300">🔍</span>
               <p className="text-slate-500 font-medium text-lg">
@@ -661,11 +684,20 @@ export default function MotelsAdminPage() {
               </p>
             </div>
           ) : (
-            filteredMotels.map((motel) => (
+            motelsArray.map((motel) => (
               <MotelCard key={motel.id} motel={motel} />
             ))
           )}
         </div>
+      )}
+      {viewMode === 'grid' && totalItems > 0 && (
+        <PaginationControls
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

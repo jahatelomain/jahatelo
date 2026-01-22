@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
+import PaginationControls from '../components/PaginationControls';
 
 type ProspectStatus = 'NEW' | 'CONTACTED' | 'IN_NEGOTIATION' | 'WON' | 'LOST';
 type ProspectChannel = 'WEB' | 'APP' | 'MANUAL';
@@ -71,6 +72,9 @@ export default function ProspectsPage() {
     danger?: boolean;
     onConfirm: () => void;
   } | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const pageSize = 20;
 
   // Estado para crear prospect manual
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -82,8 +86,12 @@ export default function ProspectsPage() {
 
   useEffect(() => {
     checkAccess();
-    fetchProspects();
   }, []);
+
+  useEffect(() => {
+    fetchProspects();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   const checkAccess = async () => {
     try {
@@ -105,10 +113,20 @@ export default function ProspectsPage() {
   const fetchProspects = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/prospects');
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(pageSize));
+      const response = await fetch(`/api/admin/prospects?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setProspects(data);
+        const prospectsData = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+          ? data.data
+          : [];
+        const meta = Array.isArray(data) ? undefined : data?.meta;
+        setProspects(prospectsData);
+        setTotalItems(meta?.total ?? prospectsData.length);
       } else {
         toast?.showToast('Error al cargar prospects', 'error');
       }
@@ -277,7 +295,7 @@ export default function ProspectsPage() {
         </div>
         <div className="flex items-center gap-4">
           <div className="text-sm text-slate-600">
-            Total: <span className="font-semibold text-slate-900">{prospects.length}</span>
+            Total: <span className="font-semibold text-slate-900">{totalItems}</span>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -393,11 +411,22 @@ export default function ProspectsPage() {
                       </div>
                     </td>
                   </tr>
-                ))
+                  ))
               )}
             </tbody>
           </table>
         </div>
+        {totalItems > 0 && (
+          <div className="px-6 pb-6">
+            <PaginationControls
+              page={page}
+              totalPages={Math.max(1, Math.ceil(totalItems / pageSize))}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setPage}
+            />
+          </div>
+        )}
       </div>
 
       {/* Notes Modal */}

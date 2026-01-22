@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { ADMIN_MODULES, ADMIN_MODULE_LABELS } from '@/lib/adminModules';
 import type { AdminModule } from '@/lib/adminModules';
+import PaginationControls from '../components/PaginationControls';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type UserRole = 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
 
@@ -34,6 +36,11 @@ export default function RolesPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editingPermissions, setEditingPermissions] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const pageSize = 20;
+  const filtersKeyRef = useRef('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
   // Filtros
   const [roleFilter, setRoleFilter] = useState<UserRole | 'ALL'>('ALL');
@@ -42,8 +49,7 @@ export default function RolesPage() {
 
   useEffect(() => {
     checkAccess();
-    fetchUsers();
-  }, [roleFilter, moduleFilter]);
+  }, []);
 
   const checkAccess = async () => {
     try {
@@ -68,12 +74,24 @@ export default function RolesPage() {
       const params = new URLSearchParams();
       if (roleFilter !== 'ALL') params.append('role', roleFilter);
       if (moduleFilter !== 'ALL') params.append('module', moduleFilter);
+      if (debouncedSearchQuery.trim()) params.append('search', debouncedSearchQuery.trim());
+      params.append('page', String(page));
+      params.append('limit', String(pageSize));
       if (params.toString()) url += `?${params.toString()}`;
 
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
-        setUsers(Array.isArray(data) ? data : data.users || []);
+        const usersData = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data?.users)
+          ? data.users
+          : [];
+        const meta = Array.isArray(data) ? undefined : data?.meta;
+        setUsers(usersData);
+        setTotalItems(meta?.total ?? usersData.length);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -139,16 +157,20 @@ export default function RolesPage() {
     return user.modulePermissions?.length || 0;
   };
 
-  // Filtrado de usuarios
-  const filteredUsers = users.filter((user) => {
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchName = user.name.toLowerCase().includes(query);
-      const matchEmail = user.email.toLowerCase().includes(query);
-      if (!matchName && !matchEmail) return false;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  useEffect(() => {
+    const nextKey = `${roleFilter}|${moduleFilter}|${debouncedSearchQuery.trim()}`;
+    if (filtersKeyRef.current !== nextKey) {
+      filtersKeyRef.current = nextKey;
+      if (page !== 1) {
+        setPage(1);
+        return;
+      }
     }
-    return true;
-  });
+    fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, roleFilter, moduleFilter, debouncedSearchQuery]);
 
   if (loading) {
     return (
@@ -259,7 +281,8 @@ export default function RolesPage() {
           {/* Resultados */}
           <div className="flex items-end">
             <p className="text-sm text-slate-600">
-              Mostrando <span className="font-semibold text-slate-900">{filteredUsers.length}</span> usuarios
+              Mostrando <span className="font-semibold text-slate-900">{users.length}</span> de{' '}
+              <span className="font-semibold text-slate-900">{totalItems}</span> usuarios
             </p>
           </div>
         </div>
@@ -292,7 +315,7 @@ export default function RolesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredUsers.length === 0 ? (
+              {users.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
@@ -304,7 +327,7 @@ export default function RolesPage() {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => (
+                users.map((user) => (
                   <tr key={user.id} className="hover:bg-slate-50 transition">
                     <td className="px-4 py-3">
                       <div className="font-medium text-slate-900">{user.name}</div>
@@ -374,6 +397,17 @@ export default function RolesPage() {
             </tbody>
           </table>
         </div>
+        {totalItems > 0 && (
+          <div className="px-6 pb-6">
+            <PaginationControls
+              page={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setPage}
+            />
+          </div>
+        )}
       </div>
 
       {/* Modal Editor de Permisos */}

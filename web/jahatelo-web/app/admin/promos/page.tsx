@@ -5,6 +5,8 @@ import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import DirtyBanner from '@/components/admin/DirtyBanner';
+import PaginationControls from '../components/PaginationControls';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type Motel = {
   id: string;
@@ -46,6 +48,15 @@ export default function PromosAdminPage() {
     danger?: boolean;
     onConfirm: () => void;
   } | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [summary, setSummary] = useState<{
+    activeCounts: Record<string, number>;
+    typeCounts: Record<string, number>;
+  }>({ activeCounts: {}, typeCounts: {} });
+  const pageSize = 20;
+  const filtersKeyRef = useRef('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
   const toast = useToast();
 
@@ -61,16 +72,34 @@ export default function PromosAdminPage() {
   });
 
   useEffect(() => {
-    fetchPromos();
     fetchMotels();
   }, []);
 
   const fetchPromos = async () => {
     try {
-      const res = await fetch('/api/admin/promos');
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(pageSize));
+      if (filterStatus !== 'ALL') params.set('status', filterStatus);
+      if (filterType !== 'ALL') params.set('type', filterType);
+      if (debouncedSearchQuery.trim()) params.set('search', debouncedSearchQuery.trim());
+      const res = await fetch(`/api/admin/promos?${params.toString()}`);
       if (!res.ok) throw new Error('Error al cargar promos');
       const data = await res.json();
-      setPromos(data);
+      const promosData = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data?.promos)
+        ? data.promos
+        : [];
+      const meta = Array.isArray(data) ? undefined : data?.meta;
+      setPromos(promosData);
+      setTotalItems(meta?.total ?? promosData.length);
+      setSummary({
+        activeCounts: meta?.summary?.activeCounts ?? {},
+        typeCounts: meta?.summary?.typeCounts ?? {},
+      });
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al cargar promociones');
@@ -260,17 +289,20 @@ export default function PromosAdminPage() {
     }
   };
 
-  // Filtros
-  const filteredPromos = promos.filter((promo) => {
-    if (filterStatus === 'ACTIVE' && !promo.isActive) return false;
-    if (filterStatus === 'INACTIVE' && promo.isActive) return false;
-    if (filterType === 'GLOBAL' && !promo.isGlobal) return false;
-    if (filterType === 'SPECIFIC' && promo.isGlobal) return false;
-    if (searchQuery && !promo.title.toLowerCase().includes(searchQuery.toLowerCase()) && !promo.motel.name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  useEffect(() => {
+    const nextKey = `${filterStatus}|${filterType}|${debouncedSearchQuery.trim()}`;
+    if (filtersKeyRef.current !== nextKey) {
+      filtersKeyRef.current = nextKey;
+      if (page !== 1) {
+        setPage(1);
+        return;
+      }
     }
-    return true;
-  });
+    fetchPromos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, filterStatus, filterType, debouncedSearchQuery]);
 
   if (loading) {
     return (
@@ -371,13 +403,13 @@ export default function PromosAdminPage() {
         {/* Contadores */}
         <div className="flex flex-wrap gap-3 mt-4 text-sm">
           <span className="text-slate-600">
-            Total: <span className="font-semibold text-slate-900">{filteredPromos.length}</span>
+            Total: <span className="font-semibold text-slate-900">{totalItems}</span>
           </span>
           <span className="text-green-600">
-            Activas: <span className="font-semibold">{promos.filter((p) => p.isActive).length}</span>
+            Activas: <span className="font-semibold">{summary.activeCounts.active ?? 0}</span>
           </span>
           <span className="text-purple-600">
-            Globales: <span className="font-semibold">{promos.filter((p) => p.isGlobal).length}</span>
+            Globales: <span className="font-semibold">{summary.typeCounts.global ?? 0}</span>
           </span>
         </div>
       </div>
@@ -610,7 +642,7 @@ export default function PromosAdminPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
-              {filteredPromos.length === 0 ? (
+              {promos.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
@@ -627,7 +659,7 @@ export default function PromosAdminPage() {
                   </td>
                 </tr>
               ) : (
-                filteredPromos.map((promo) => (
+                promos.map((promo) => (
                   <tr key={promo.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -723,6 +755,17 @@ export default function PromosAdminPage() {
             </tbody>
           </table>
         </div>
+        {totalItems > 0 && (
+          <div className="px-6 pb-6">
+            <PaginationControls
+              page={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setPage}
+            />
+          </div>
+        )}
       </div>
       <ConfirmModal
         open={Boolean(confirmAction)}

@@ -7,6 +7,8 @@ import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import DirtyBanner from '@/components/admin/DirtyBanner';
+import PaginationControls from '../components/PaginationControls';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type Amenity = {
   id: string;
@@ -47,6 +49,11 @@ export default function AmenitiesPage() {
   const [formData, setFormData] = useState({ name: '', type: '', icon: '' });
   const [expandedAmenity, setExpandedAmenity] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const pageSize = 20;
+  const filtersKeyRef = useRef('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
   // Filtros
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,16 +61,23 @@ export default function AmenitiesPage() {
 
   const fetchAmenities = async () => {
     try {
-      const res = await fetch('/api/admin/amenities');
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(pageSize));
+      if (typeFilter !== 'ALL') params.set('type', typeFilter);
+      if (debouncedSearchQuery.trim()) params.set('search', debouncedSearchQuery.trim());
+      const res = await fetch(`/api/admin/amenities?${params.toString()}`);
       const data = await res.json();
 
-      if (Array.isArray(data)) {
-        setAmenities(data);
-        setExpandedAmenity(null);
-      } else {
-        console.error('API response is not an array:', data);
-        setAmenities([]);
-      }
+      const amenitiesData = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+        ? data.data
+        : [];
+      const meta = Array.isArray(data) ? undefined : data?.meta;
+      setAmenities(amenitiesData);
+      setTotalItems(meta?.total ?? amenitiesData.length);
+      setExpandedAmenity(null);
     } catch (error) {
       console.error('Error fetching amenities:', error);
       setAmenities([]);
@@ -74,8 +88,17 @@ export default function AmenitiesPage() {
   };
 
   useEffect(() => {
+    const nextKey = `${typeFilter}|${debouncedSearchQuery.trim()}`;
+    if (filtersKeyRef.current !== nextKey) {
+      filtersKeyRef.current = nextKey;
+      if (page !== 1) {
+        setPage(1);
+        return;
+      }
+    }
     fetchAmenities();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, typeFilter, debouncedSearchQuery]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,20 +189,7 @@ export default function AmenitiesPage() {
     return labels[type] || type;
   };
 
-  // Filtrado de amenities
-  const filteredAmenities = amenities.filter((amenity) => {
-    // Filtro por tipo
-    if (typeFilter !== 'ALL' && amenity.type !== typeFilter) return false;
-
-    // Búsqueda por nombre
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchName = amenity.name.toLowerCase().includes(query);
-      if (!matchName) return false;
-    }
-
-    return true;
-  });
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   if (loading) {
     return (
@@ -460,8 +470,8 @@ export default function AmenitiesPage() {
         {/* Resultados */}
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
           <p className="text-sm text-slate-600">
-            Mostrando <span className="font-semibold text-slate-900">{filteredAmenities.length}</span> de{' '}
-            <span className="font-semibold text-slate-900">{amenities.length}</span> amenities
+            Mostrando <span className="font-semibold text-slate-900">{amenities.length}</span> de{' '}
+            <span className="font-semibold text-slate-900">{totalItems}</span> amenities
           </p>
           {(searchQuery || typeFilter !== 'ALL') && (
             <button
@@ -500,7 +510,7 @@ export default function AmenitiesPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
-            {filteredAmenities.length === 0 ? (
+            {amenities.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center gap-2">
@@ -519,7 +529,7 @@ export default function AmenitiesPage() {
                 </td>
               </tr>
             ) : (
-              filteredAmenities.map((amenity) => {
+              amenities.map((amenity) => {
                 const motelCount = amenity._count.motelAmenities;
                 const roomCount = amenity._count.roomAmenities;
                 const motels = amenity.motelAmenities ?? [];
@@ -628,6 +638,16 @@ export default function AmenitiesPage() {
           </tbody>
         </table>
       </div>
+
+      {totalItems > 0 && (
+        <PaginationControls
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setPage}
+        />
+      )}
 
       <ConfirmModal
         open={Boolean(confirmAction)}

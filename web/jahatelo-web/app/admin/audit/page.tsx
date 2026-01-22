@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import PaginationControls from '../components/PaginationControls';
 
 type AuditLog = {
   id: string;
@@ -25,6 +26,9 @@ export default function AuditPage() {
   const [entityFilter, setEntityFilter] = useState('');
   const [userFilter, setUserFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const pageSize = 20;
 
   const getAuditLink = (log: AuditLog) => {
     const metadata = log.metadata || {};
@@ -68,7 +72,9 @@ export default function AuditPage() {
       if (searchQuery) params.set('q', searchQuery);
 
       const queryString = params.toString();
-      const response = await fetch(`/api/admin/audit${queryString ? `?${queryString}` : ''}`);
+      if (page) params.set('page', String(page));
+      params.set('limit', String(pageSize));
+      const response = await fetch(`/api/admin/audit${params.toString() ? `?${params.toString()}` : ''}`);
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
         setErrorMessage(error.error || 'No se pudo cargar la auditoría');
@@ -77,7 +83,14 @@ export default function AuditPage() {
       }
 
       const data = await response.json();
-      setLogs(data);
+      const logsData = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+        ? data.data
+        : [];
+      const meta = Array.isArray(data) ? undefined : data?.meta;
+      setLogs(logsData);
+      setTotalItems(meta?.total ?? logsData.length);
     } catch (error) {
       console.error('Error fetching audit logs:', error);
       setErrorMessage('No se pudo cargar la auditoría');
@@ -88,7 +101,14 @@ export default function AuditPage() {
 
   useEffect(() => {
     fetchLogs();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [logs.length]);
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   const uniqueUsers = Array.from(
     new Map(
@@ -166,7 +186,13 @@ export default function AuditPage() {
         </div>
         <div className="flex flex-wrap gap-3 mt-4">
           <button
-            onClick={fetchLogs}
+            onClick={() => {
+              if (page !== 1) {
+                setPage(1);
+                return;
+              }
+              fetchLogs();
+            }}
             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
           >
             Aplicar filtros
@@ -177,6 +203,10 @@ export default function AuditPage() {
               setEntityFilter('');
               setUserFilter('');
               setSearchQuery('');
+              if (page !== 1) {
+                setPage(1);
+                return;
+              }
               fetchLogs();
             }}
             className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition"
@@ -256,6 +286,15 @@ export default function AuditPage() {
           </tbody>
         </table>
       </div>
+      {totalItems > 0 && (
+        <PaginationControls
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   );
 }

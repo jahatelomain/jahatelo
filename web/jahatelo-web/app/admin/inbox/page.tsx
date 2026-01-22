@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/contexts/ToastContext';
 import ConfirmModal from '@/components/admin/ConfirmModal';
+import PaginationControls from '../components/PaginationControls';
 
 interface ContactMessage {
   id: string;
@@ -18,6 +19,14 @@ export default function InboxPage() {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [summary, setSummary] = useState<{ readCount: number; unreadCount: number }>({
+    readCount: 0,
+    unreadCount: 0,
+  });
+  const pageSize = 20;
+  const filtersKeyRef = useRef('');
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -31,10 +40,26 @@ export default function InboxPage() {
   const fetchMessages = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/inbox');
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(pageSize));
+      if (filter === 'read') params.set('status', 'read');
+      if (filter === 'unread') params.set('status', 'unread');
+      const response = await fetch(`/api/admin/inbox?${params.toString()}`);
       if (!response.ok) throw new Error('Error al cargar mensajes');
       const data = await response.json();
-      setMessages(data);
+      const messagesData = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+        ? data.data
+        : [];
+      const meta = Array.isArray(data) ? undefined : data?.meta;
+      setMessages(messagesData);
+      setTotalItems(meta?.total ?? messagesData.length);
+      setSummary({
+        readCount: meta?.summary?.readCount ?? 0,
+        unreadCount: meta?.summary?.unreadCount ?? 0,
+      });
     } catch (error) {
       showToast('Error al cargar mensajes', 'error');
       console.error('Error fetching messages:', error);
@@ -44,8 +69,17 @@ export default function InboxPage() {
   };
 
   useEffect(() => {
+    const nextKey = filter;
+    if (filtersKeyRef.current !== nextKey) {
+      filtersKeyRef.current = nextKey;
+      if (page !== 1) {
+        setPage(1);
+        return;
+      }
+    }
     fetchMessages();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, filter]);
 
   const toggleReadStatus = async (id: string, currentStatus: boolean) => {
     try {
@@ -95,13 +129,7 @@ export default function InboxPage() {
     });
   };
 
-  const filteredMessages = messages.filter((msg) => {
-    if (filter === 'unread') return !msg.isRead;
-    if (filter === 'read') return msg.isRead;
-    return true;
-  });
-
-  const unreadCount = messages.filter((msg) => !msg.isRead).length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   return (
     <div className="space-y-6">
@@ -110,7 +138,7 @@ export default function InboxPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Inbox</h1>
           <p className="text-slate-600 mt-1">
-            Mensajes de contacto recibidos ({unreadCount} sin leer)
+            Mensajes de contacto recibidos ({summary.unreadCount} sin leer)
           </p>
         </div>
 
@@ -124,7 +152,7 @@ export default function InboxPage() {
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
-            Todos ({messages.length})
+            Todos ({summary.readCount + summary.unreadCount})
           </button>
           <button
             onClick={() => setFilter('unread')}
@@ -134,7 +162,7 @@ export default function InboxPage() {
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
-            No leídos ({unreadCount})
+            No leídos ({summary.unreadCount})
           </button>
           <button
             onClick={() => setFilter('read')}
@@ -144,7 +172,7 @@ export default function InboxPage() {
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
-            Leídos ({messages.length - unreadCount})
+            Leídos ({summary.readCount})
           </button>
         </div>
       </div>
@@ -158,7 +186,7 @@ export default function InboxPage() {
       )}
 
       {/* Empty State */}
-      {!loading && filteredMessages.length === 0 && (
+      {!loading && messages.length === 0 && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
           <svg
             className="mx-auto h-12 w-12 text-slate-400"
@@ -185,9 +213,9 @@ export default function InboxPage() {
       )}
 
       {/* Messages List */}
-      {!loading && filteredMessages.length > 0 && (
+      {!loading && messages.length > 0 && (
         <div className="space-y-4">
-          {filteredMessages.map((message) => (
+          {messages.map((message) => (
             <div
               key={message.id}
               className={`bg-white rounded-xl border-2 p-6 transition-all shadow-sm ${
@@ -285,6 +313,15 @@ export default function InboxPage() {
             </div>
           ))}
         </div>
+      )}
+      {!loading && totalItems > 0 && (
+        <PaginationControls
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setPage}
+        />
       )}
       <ConfirmModal
         open={Boolean(confirmAction)}

@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
+import PaginationControls from '../components/PaginationControls';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type UserRole = 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
 
@@ -51,6 +53,20 @@ export default function UsersPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [summary, setSummary] = useState<{
+    activeCount: number;
+    inactiveCount: number;
+    roleCounts: Record<string, number>;
+  }>({
+    activeCount: 0,
+    inactiveCount: 0,
+    roleCounts: {},
+  });
+  const pageSize = 20;
+  const filtersKeyRef = useRef('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
   // Filtros
   const [searchQuery, setSearchQuery] = useState('');
@@ -89,7 +105,6 @@ export default function UsersPage() {
 
   useEffect(() => {
     checkAccess();
-    fetchUsers();
     fetchMotels();
   }, []);
 
@@ -112,10 +127,32 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/admin/users');
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(pageSize));
+      if (roleFilter !== 'ALL') params.set('role', roleFilter);
+      if (statusFilter !== 'ALL') params.set('status', statusFilter);
+      if (debouncedSearchQuery.trim()) params.set('search', debouncedSearchQuery.trim());
+      const response = await fetch(`/api/admin/users?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setUsers(data);
+        const usersData = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data?.users)
+          ? data.users
+          : [];
+        const meta = Array.isArray(data) ? undefined : data?.meta;
+        setUsers(usersData);
+        setTotalItems(meta?.total ?? usersData.length);
+        setSummary({
+          activeCount: meta?.summary?.activeCount ?? usersData.filter((u: User) => u.isActive).length,
+          inactiveCount:
+            meta?.summary?.inactiveCount ??
+            usersData.filter((u: User) => !u.isActive).length,
+          roleCounts: meta?.summary?.roleCounts ?? {},
+        });
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -310,28 +347,20 @@ export default function UsersPage() {
     return badges[role];
   };
 
-  // Filtrado de usuarios
-  const filteredUsers = users.filter((user) => {
-    // Filtro por rol
-    if (roleFilter !== 'ALL' && user.role !== roleFilter) return false;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
-    // Filtro por estado
-    if (statusFilter === 'ACTIVE' && !user.isActive) return false;
-    if (statusFilter === 'INACTIVE' && user.isActive) return false;
-
-    // Búsqueda por nombre o email
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchName = user.name.toLowerCase().includes(query);
-      const matchEmail = user.email.toLowerCase().includes(query);
-      const matchMotel = user.motel?.name.toLowerCase().includes(query);
-      if (!matchName && !matchEmail && !matchMotel) {
-        return false;
+  useEffect(() => {
+    const nextKey = `${roleFilter}|${statusFilter}|${debouncedSearchQuery.trim()}`;
+    if (filtersKeyRef.current !== nextKey) {
+      filtersKeyRef.current = nextKey;
+      if (page !== 1) {
+        setPage(1);
+        return;
       }
     }
-
-    return true;
-  });
+    fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, roleFilter, statusFilter, debouncedSearchQuery]);
 
   if (loading) {
     return (
@@ -451,7 +480,7 @@ export default function UsersPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-purple-300'
                 }`}
               >
-                Superadmin <span className="ml-1 opacity-75">({users.filter((u) => u.role === 'SUPERADMIN').length})</span>
+                Superadmin <span className="ml-1 opacity-75">({summary.roleCounts.SUPERADMIN ?? 0})</span>
               </button>
               <button
                 onClick={() => setRoleFilter('MOTEL_ADMIN')}
@@ -461,7 +490,7 @@ export default function UsersPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-blue-300'
                 }`}
               >
-                Motel Admin <span className="ml-1 opacity-75">({users.filter((u) => u.role === 'MOTEL_ADMIN').length})</span>
+                Motel Admin <span className="ml-1 opacity-75">({summary.roleCounts.MOTEL_ADMIN ?? 0})</span>
               </button>
               <button
                 onClick={() => setRoleFilter('USER')}
@@ -471,7 +500,7 @@ export default function UsersPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400'
                 }`}
               >
-                Usuario <span className="ml-1 opacity-75">({users.filter((u) => u.role === 'USER').length})</span>
+                Usuario <span className="ml-1 opacity-75">({summary.roleCounts.USER ?? 0})</span>
               </button>
             </div>
           </div>
@@ -498,7 +527,7 @@ export default function UsersPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-green-300'
                 }`}
               >
-                Activos <span className="ml-1 opacity-75">({users.filter((u) => u.isActive).length})</span>
+                Activos <span className="ml-1 opacity-75">({summary.activeCount})</span>
               </button>
               <button
                 onClick={() => setStatusFilter('INACTIVE')}
@@ -508,7 +537,7 @@ export default function UsersPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-red-300'
                 }`}
               >
-                Inactivos <span className="ml-1 opacity-75">({users.filter((u) => !u.isActive).length})</span>
+                Inactivos <span className="ml-1 opacity-75">({summary.inactiveCount})</span>
               </button>
             </div>
           </div>
@@ -517,8 +546,8 @@ export default function UsersPage() {
         {/* Resultados */}
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
           <p className="text-sm text-slate-600">
-            Mostrando <span className="font-semibold text-slate-900">{filteredUsers.length}</span> de{' '}
-            <span className="font-semibold text-slate-900">{users.length}</span> usuarios
+            Mostrando <span className="font-semibold text-slate-900">{users.length}</span> de{' '}
+            <span className="font-semibold text-slate-900">{totalItems}</span> usuarios
           </p>
           {(searchQuery || roleFilter !== 'ALL' || statusFilter !== 'ALL') && (
             <button
@@ -562,7 +591,7 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredUsers.length === 0 ? (
+              {users.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
@@ -581,7 +610,7 @@ export default function UsersPage() {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => (
+                users.map((user) => (
                   <tr key={user.id} className="hover:bg-slate-50 transition">
                     <td className="px-4 py-3">
                       <div className="font-medium text-slate-900">{user.name}</div>
@@ -654,6 +683,17 @@ export default function UsersPage() {
             </tbody>
           </table>
         </div>
+        {totalItems > 0 && (
+          <div className="px-6 pb-6">
+            <PaginationControls
+              page={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setPage}
+            />
+          </div>
+        )}
       </div>
 
       {/* Modal Crear Usuario */}

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
+import PaginationControls from '../components/PaginationControls';
 
 const placementLabels: Record<string, string> = {
   POPUP_HOME: 'Popup Home',
@@ -34,6 +35,9 @@ export default function AdvertisementsAdminPage() {
   const toast = useToast();
   const [ads, setAds] = useState<Advertisement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const pageSize = 20;
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -45,10 +49,20 @@ export default function AdvertisementsAdminPage() {
 
   const fetchAds = async () => {
     try {
-      const res = await fetch('/api/admin/banners');
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(pageSize));
+      const res = await fetch(`/api/admin/banners?${params.toString()}`);
       if (!res.ok) throw new Error('Error al cargar anuncios');
       const data = await res.json();
-      setAds(data);
+      const adsData = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+        ? data.data
+        : [];
+      const meta = Array.isArray(data) ? undefined : data?.meta;
+      setAds(adsData);
+      setTotalItems(meta?.total ?? adsData.length);
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al cargar anuncios');
@@ -59,7 +73,9 @@ export default function AdvertisementsAdminPage() {
 
   useEffect(() => {
     fetchAds();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
 
   const handleDelete = async (id: string) => {
     setConfirmAction({
@@ -207,6 +223,17 @@ export default function AdvertisementsAdminPage() {
               )}
             </tbody>
           </table>
+          {ads.length > 0 && (
+            <div className="px-6 pb-6">
+              <PaginationControls
+                page={page}
+                totalPages={Math.max(1, Math.ceil(totalItems / pageSize))}
+                totalItems={totalItems}
+                pageSize={pageSize}
+                onPageChange={setPage}
+              />
+            </div>
+          )}
         </div>
       )}
       <ConfirmModal
