@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { PublicAdvertisementQuerySchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,16 +9,18 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const placement = searchParams.get('placement');
-
-    if (!placement) {
-      return NextResponse.json({ error: 'placement es requerido' }, { status: 400 });
+    const queryResult = PublicAdvertisementQuerySchema.safeParse({
+      placement: searchParams.get('placement'),
+    });
+    if (!queryResult.success) {
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
     }
+    const { placement } = queryResult.data;
 
     const now = new Date();
     const ads = await prisma.advertisement.findMany({
       where: {
-        placement: placement as any,
+        placement,
         status: 'ACTIVE',
         AND: [
           { OR: [{ startDate: null }, { startDate: { lte: now } }] },
@@ -37,6 +41,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching advertisements:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Error al obtener anuncios' }, { status: 500 });
   }
 }

@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
-
-const PAYMENT_TYPES = ['DIRECT_DEBIT', 'TRANSFER', 'EXCHANGE'] as const;
-const PAYMENT_STATUSES = ['PAID', 'PENDING', 'FAILED', 'REFUNDED'] as const;
+import { FinancialPaymentCreateSchema, IdSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 /**
  * POST /api/admin/financiero/[id]/payments
@@ -19,44 +19,17 @@ export async function POST(
     if (access.error) return access.error;
 
     const { id } = await params;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
     const body = await request.json();
-    const {
-      amount,
-      currency,
-      paidAt,
-      status,
-      paymentType,
-      reference,
-      notes,
-    } = body;
-
-    if (amount === undefined || amount === null || Number.isNaN(Number(amount))) {
-      return NextResponse.json({ error: 'Monto inválido' }, { status: 400 });
-    }
-
-    if (Number(amount) <= 0) {
-      return NextResponse.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 });
-    }
-
-    if (status && !PAYMENT_STATUSES.includes(status)) {
-      return NextResponse.json({ error: 'Estado de pago inválido' }, { status: 400 });
-    }
-
-    if (paymentType && !PAYMENT_TYPES.includes(paymentType)) {
-      return NextResponse.json({ error: 'Tipo de pago inválido' }, { status: 400 });
-    }
-
-    let parsedPaidAt: Date | undefined;
-    if (paidAt) {
-      const parsed = new Date(paidAt);
-      if (Number.isNaN(parsed.getTime())) {
-        return NextResponse.json({ error: 'Fecha de pago inválida' }, { status: 400 });
-      }
-      parsedPaidAt = parsed;
-    }
+    const sanitized = sanitizeObject(body);
+    const validated = FinancialPaymentCreateSchema.parse(sanitized);
+    const parsedPaidAt = validated.paidAt ? new Date(validated.paidAt) : undefined;
 
     const motel = await prisma.motel.findUnique({
-      where: { id },
+      where: { id: idResult.data },
       select: { id: true },
     });
 
@@ -66,14 +39,14 @@ export async function POST(
 
     const payment = await prisma.paymentHistory.create({
       data: {
-        motelId: id,
-        amount: Math.round(Number(amount)),
-        currency: currency || 'PYG',
+        motelId: idResult.data,
+        amount: Math.round(Number(validated.amount)),
+        currency: validated.currency || 'PYG',
         paidAt: parsedPaidAt,
-        status: status || 'PAID',
-        paymentType: paymentType || null,
-        reference: reference || null,
-        notes: notes || null,
+        status: validated.status || 'PAID',
+        paymentType: validated.paymentType || null,
+        reference: validated.reference || null,
+        notes: validated.notes || null,
       },
       select: {
         id: true,
@@ -93,12 +66,15 @@ export async function POST(
       action: 'CREATE',
       entityType: 'PaymentHistory',
       entityId: payment.id,
-      metadata: { motelId: id, amount: payment.amount, status: payment.status },
+      metadata: { motelId: idResult.data, amount: payment.amount, status: payment.status },
     });
 
     return NextResponse.json(payment, { status: 201 });
   } catch (error) {
     console.error('Error creating payment history:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al registrar pago' },
       { status: 500 }

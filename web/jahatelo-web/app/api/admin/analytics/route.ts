@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
+import { AdminAnalyticsQuerySchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 /**
  * GET /api/admin/analytics
@@ -14,12 +16,18 @@ export async function GET(request: NextRequest) {
 
     // Obtener parámetros de consulta
     const { searchParams } = new URL(request.url);
-    const period = searchParams.get('period') || '30'; // días (7, 30, 90)
-    const motelId = searchParams.get('motelId'); // Opcional
-    const source = searchParams.get('source');
-    const deviceType = searchParams.get('deviceType');
-    const eventType = searchParams.get('eventType');
-    const days = parseInt(period);
+    const queryResult = AdminAnalyticsQuerySchema.safeParse({
+      period: searchParams.get('period') || undefined,
+      motelId: searchParams.get('motelId') || undefined,
+      source: searchParams.get('source') || undefined,
+      deviceType: searchParams.get('deviceType') || undefined,
+      eventType: searchParams.get('eventType') || undefined,
+    });
+    if (!queryResult.success) {
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
+    }
+    const { period, motelId, source, deviceType, eventType } = queryResult.data;
+    const days = period || 30;
 
     // Calcular fecha de inicio
     const startDate = new Date();
@@ -203,6 +211,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching global analytics:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al obtener estadísticas globales' },
       { status: 500 }

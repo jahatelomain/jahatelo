@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { mapMotelToDetail } from '../../mappers';
+import { MobileMotelSlugSchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 export async function GET(
   request: NextRequest,
@@ -8,14 +10,11 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
-
-    // Validate slug
-    if (!slug || slug.trim() === '') {
-      return NextResponse.json(
-        { error: 'Invalid slug' },
-        { status: 400 }
-      );
+    const slugResult = MobileMotelSlugSchema.safeParse({ slug });
+    if (!slugResult.success) {
+      return NextResponse.json({ error: 'Invalid slug', details: slugResult.error.errors }, { status: 400 });
     }
+    const resolvedSlug = slugResult.data.slug;
 
     // Common include for both queries
     const commonInclude = {
@@ -62,14 +61,14 @@ export async function GET(
 
     // Try to find by slug first, then by id
     let motel = await prisma.motel.findUnique({
-      where: { slug },
+      where: { slug: resolvedSlug },
       include: commonInclude,
     });
 
     // If not found by slug, try by id
     if (!motel) {
       motel = await prisma.motel.findUnique({
-        where: { id: slug },
+        where: { id: resolvedSlug },
         include: commonInclude,
       });
     }
@@ -94,6 +93,9 @@ export async function GET(
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error in GET /api/mobile/motels/[slug]:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Invalid slug', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Failed to fetch motel' },
       { status: 500 }

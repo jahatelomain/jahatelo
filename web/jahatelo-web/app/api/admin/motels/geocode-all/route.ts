@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import { geocodeMultipleAddresses } from '@/lib/geocoding';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { EmptySchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 /**
  * POST /api/admin/motels/geocode-all
@@ -11,6 +13,7 @@ import { logAuditEvent } from '@/lib/audit';
  */
 export async function POST(request: Request) {
   try {
+    EmptySchema.parse({});
     const access = await requireAdminAccess(request, ['SUPERADMIN'], 'motels');
     if (access.error) return access.error;
 
@@ -109,6 +112,9 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Error batch geocoding motels:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       {
         error: 'Failed to geocode motels',

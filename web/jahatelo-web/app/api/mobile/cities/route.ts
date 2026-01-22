@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { EmptySchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 300;
 
 export async function GET() {
   try {
+    EmptySchema.parse({});
     const citiesRaw = await prisma.motel.groupBy({
       by: ['city'],
       where: {
@@ -39,6 +42,9 @@ export async function GET() {
     return NextResponse.json({ cities });
   } catch (error) {
     console.error('Error fetching cities:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Failed to fetch cities', cities: [] },
       { status: 500 }

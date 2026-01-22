@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { EmptySchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 /**
  * GET /api/health
@@ -15,6 +17,7 @@ export async function GET() {
   const startTime = Date.now();
 
   try {
+    EmptySchema.parse({});
     // Verificar conexión a base de datos
     await prisma.$queryRaw`SELECT 1`;
 
@@ -41,6 +44,21 @@ export async function GET() {
     return NextResponse.json(healthData, { status: 200 });
   } catch (error) {
     const duration = Date.now() - startTime;
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          status: 'unhealthy',
+          timestamp: new Date().toISOString(),
+          uptime: process.uptime(),
+          environment: process.env.NODE_ENV,
+          database: {
+            status: 'disconnected',
+            error: 'Validación fallida',
+          },
+        },
+        { status: 400 }
+      );
+    }
 
     logger.error({
       type: 'health_check',

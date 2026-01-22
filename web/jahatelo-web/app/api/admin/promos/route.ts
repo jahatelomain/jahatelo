@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { AdminPaginationSchema, PromoQuerySchema, PromoSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 // GET /api/admin/promos?motelId=xxx
 export async function GET(request: NextRequest) {
@@ -10,10 +13,68 @@ export async function GET(request: NextRequest) {
     if (access.error) return access.error;
 
     const { searchParams } = new URL(request.url);
-    const motelId = searchParams.get('motelId');
+    const queryResult = PromoQuerySchema.safeParse({
+      motelId: searchParams.get('motelId') || undefined,
+      search: searchParams.get('search') || undefined,
+      status: searchParams.get('status') || undefined,
+      type: searchParams.get('type') || undefined,
+    });
+    if (!queryResult.success) {
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
+    }
+    const { motelId, search: searchQuery, status, type } = queryResult.data;
+
+    const paginationResult = AdminPaginationSchema.safeParse({
+      page: searchParams.get('page') || undefined,
+      limit: searchParams.get('limit') || undefined,
+    });
+    if (!paginationResult.success) {
+      return NextResponse.json({ error: 'Parámetros inválidos', details: paginationResult.error.errors }, { status: 400 });
+    }
+    const usePagination = searchParams.has('page') || searchParams.has('limit');
+    const page = paginationResult.data.page ?? 1;
+    const limit = paginationResult.data.limit ?? 20;
+
+    const searchFilter = searchQuery?.trim();
+    const baseWhere = {
+      ...(motelId ? { motelId } : {}),
+      ...(searchFilter
+        ? {
+            OR: [
+              { title: { contains: searchFilter, mode: 'insensitive' } },
+              { motel: { name: { contains: searchFilter, mode: 'insensitive' } } },
+            ],
+          }
+        : {}),
+    };
+    const dataWhere = {
+      ...baseWhere,
+      ...(status ? { isActive: status === 'ACTIVE' } : {}),
+      ...(type ? { isGlobal: type === 'GLOBAL' } : {}),
+    };
+    const total = await prisma.promo.count({ where: dataWhere });
+
+    const summaryActive = await prisma.promo.groupBy({
+      by: ['isActive'],
+      _count: { _all: true },
+      where: baseWhere,
+    });
+    const summaryGlobal = await prisma.promo.groupBy({
+      by: ['isGlobal'],
+      _count: { _all: true },
+      where: baseWhere,
+    });
+    const activeCounts = summaryActive.reduce<Record<string, number>>((acc, item) => {
+      acc[item.isActive ? 'active' : 'inactive'] = item._count._all;
+      return acc;
+    }, {});
+    const typeCounts = summaryGlobal.reduce<Record<string, number>>((acc, item) => {
+      acc[item.isGlobal ? 'global' : 'specific'] = item._count._all;
+      return acc;
+    }, {});
 
     const promos = await prisma.promo.findMany({
-      where: motelId ? { motelId } : undefined,
+      where: dataWhere,
       orderBy: { createdAt: 'desc' },
       include: {
         motel: {
@@ -24,9 +85,26 @@ export async function GET(request: NextRequest) {
           },
         },
       },
+      ...(usePagination ? { skip: (page - 1) * limit, take: limit } : {}),
     });
 
-    return NextResponse.json(promos);
+    if (!usePagination) {
+      return NextResponse.json(promos);
+    }
+
+    return NextResponse.json({
+      data: promos,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+        summary: {
+          activeCounts,
+          typeCounts,
+        },
+      },
+    });
   } catch (error) {
     console.error('Error fetching promos:', error);
     return NextResponse.json({ error: 'Error al obtener promos' }, { status: 500 });
@@ -40,25 +118,19 @@ export async function POST(request: NextRequest) {
     if (access.error) return access.error;
 
     const body = await request.json();
-    const { motelId, title, description, imageUrl, validFrom, validUntil, isActive, isGlobal } = body;
-
-    if (!motelId || !title) {
-      return NextResponse.json(
-        { error: 'motelId y title son requeridos' },
-        { status: 400 }
-      );
-    }
+    const sanitized = sanitizeObject(body);
+    const validated = PromoSchema.parse(sanitized);
 
     const promo = await prisma.promo.create({
       data: {
-        motelId,
-        title,
-        description: description || null,
-        imageUrl: imageUrl || null,
-        validFrom: validFrom ? new Date(validFrom) : null,
-        validUntil: validUntil ? new Date(validUntil) : null,
-        isActive: isActive ?? true,
-        isGlobal: isGlobal ?? false,
+        motelId: validated.motelId,
+        title: validated.title,
+        description: validated.description ?? null,
+        imageUrl: validated.imageUrl ?? null,
+        validFrom: validated.validFrom ? new Date(validated.validFrom) : null,
+        validUntil: validated.validUntil ? new Date(validated.validUntil) : null,
+        isActive: validated.isActive ?? true,
+        isGlobal: validated.isGlobal ?? false,
       },
     });
 
@@ -73,6 +145,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(promo, { status: 201 });
   } catch (error) {
     console.error('Error creating promo:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Error al crear promo' }, { status: 500 });
   }
 }

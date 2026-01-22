@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
+import { MobileReviewQuerySchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,14 +39,13 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const motelId = searchParams.get('motelId');
-
-    if (!motelId) {
-      return NextResponse.json(
-        { error: 'motelId es requerido' },
-        { status: 400 }
-      );
+    const queryResult = MobileReviewQuerySchema.safeParse({
+      motelId: searchParams.get('motelId') || undefined,
+    });
+    if (!queryResult.success) {
+      return NextResponse.json({ error: 'motelId es requerido', details: queryResult.error.errors }, { status: 400 });
     }
+    const { motelId } = queryResult.data;
 
     // Verificar si el usuario ya dejó una review reciente (últimos 30 días)
     const thirtyDaysAgo = new Date();
@@ -85,6 +86,9 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error in GET /api/mobile/reviews/can-review:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al verificar disponibilidad de reseña' },
       { status: 500 }

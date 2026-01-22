@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { AdminProspectUpdateSchema, IdSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 /**
  * PATCH /api/admin/prospects/[id]
@@ -16,12 +19,18 @@ export async function PATCH(
     if (access.error) return access.error;
 
     const { id } = await params;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
     const body = await request.json();
-    const { status, notes, channel } = body;
+    const sanitized = sanitizeObject(body);
+    const validated = AdminProspectUpdateSchema.parse(sanitized);
+    const { status, notes, channel } = validated;
 
     // Validar que el prospecto existe
     const prospect = await prisma.motelProspect.findUnique({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     if (!prospect) {
@@ -31,25 +40,9 @@ export async function PATCH(
       );
     }
 
-    // Validar estado si se provee
-    if (status && !['NEW', 'CONTACTED', 'IN_NEGOTIATION', 'WON', 'LOST'].includes(status)) {
-      return NextResponse.json(
-        { error: 'Estado inválido' },
-        { status: 400 }
-      );
-    }
-
-    // Validar canal si se provee
-    if (channel && !['WEB', 'APP', 'MANUAL'].includes(channel)) {
-      return NextResponse.json(
-        { error: 'Canal inválido' },
-        { status: 400 }
-      );
-    }
-
     // Actualizar prospect
     const updatedProspect = await prisma.motelProspect.update({
-      where: { id },
+      where: { id: idResult.data },
       data: {
         ...(status && { status }),
         ...(notes !== undefined && { notes }),
@@ -68,6 +61,9 @@ export async function PATCH(
     return NextResponse.json(updatedProspect);
   } catch (error) {
     console.error('Error updating prospect:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al actualizar prospect' },
       { status: 500 }
@@ -88,10 +84,14 @@ export async function DELETE(
     if (access.error) return access.error;
 
     const { id } = await params;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     // Verificar que existe
     const prospect = await prisma.motelProspect.findUnique({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     if (!prospect) {
@@ -103,14 +103,14 @@ export async function DELETE(
 
     // Eliminar
     await prisma.motelProspect.delete({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     await logAuditEvent({
       userId: access.user?.id,
       action: 'DELETE',
       entityType: 'Prospect',
-      entityId: id,
+      entityId: idResult.data,
       metadata: { motelName: prospect.motelName, channel: prospect.channel },
     });
 

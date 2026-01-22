@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const IdSchema = z.string().min(1, 'ID inválido');
+export const IdSchema = z.string().min(1, 'ID inválido');
 
 // ============================================
 // AUTENTICACIÓN
@@ -101,6 +101,29 @@ export const RoomSchema = z.object({
 
 export const UpdateRoomSchema = RoomSchema.partial().omit({ motelId: true });
 
+export const RoomAdminSchema = z.object({
+  motelId: IdSchema,
+  name: z.string().min(2, 'Nombre muy corto').max(100, 'Nombre muy largo'),
+  description: z.string().max(1000, 'Descripción muy larga').optional().nullable(),
+  basePrice: z.coerce.number().int().min(0).optional().nullable(),
+  priceLabel: z.string().max(50).optional().nullable(),
+  price1h: z.coerce.number().int().min(0).optional().nullable(),
+  price1_5h: z.coerce.number().int().min(0).optional().nullable(),
+  price2h: z.coerce.number().int().min(0).optional().nullable(),
+  price3h: z.coerce.number().int().min(0).optional().nullable(),
+  price12h: z.coerce.number().int().min(0).optional().nullable(),
+  price24h: z.coerce.number().int().min(0).optional().nullable(),
+  priceNight: z.coerce.number().int().min(0).optional().nullable(),
+  maxPersons: z.coerce.number().int().min(1).optional().nullable(),
+  hasJacuzzi: z.boolean().optional(),
+  hasPrivateGarage: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+  amenityIds: z.array(IdSchema).optional().nullable(),
+});
+
+export const UpdateRoomAdminSchema = RoomAdminSchema.partial().omit({ motelId: true });
+
 // ============================================
 // RESEÑAS
 // ============================================
@@ -127,6 +150,13 @@ export const PromoSchema = z.object({
 });
 
 export const UpdatePromoSchema = PromoSchema.partial().omit({ motelId: true });
+
+export const PromoQuerySchema = z.object({
+  motelId: IdSchema.optional(),
+  search: z.string().max(100).optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+  type: z.enum(['GLOBAL', 'SPECIFIC']).optional(),
+});
 
 // ============================================
 // CONTACTO
@@ -181,6 +211,20 @@ export const AdvertisementSchema = z.object({
 
 export const UpdateAdvertisementSchema = AdvertisementSchema.partial();
 
+export const AdvertisementAdminUpdateSchema = UpdateAdvertisementSchema.extend({
+  viewCount: z.number().int().min(0, 'Vistas inválidas').optional(),
+  clickCount: z.number().int().min(0, 'Clicks inválidos').optional(),
+});
+
+export const AdvertisementQuerySchema = z.object({
+  status: z.enum(['ACTIVE', 'PAUSED', 'INACTIVE']).optional(),
+  placement: z.enum(['POPUP_HOME', 'CAROUSEL', 'LIST_INLINE']).optional(),
+});
+
+export const PublicAdvertisementQuerySchema = z.object({
+  placement: z.enum(['POPUP_HOME', 'CAROUSEL', 'LIST_INLINE']),
+});
+
 export const TrackAdvertisementSchema = z.object({
   advertisementId: IdSchema,
   eventType: z.enum(['VIEW', 'CLICK']),
@@ -226,6 +270,31 @@ export const UpdateUserSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+export const AdminUserQuerySchema = z.object({
+  role: z.enum(['SUPERADMIN', 'MOTEL_ADMIN', 'USER']).optional(),
+  module: z.string().max(50).optional(),
+  search: z.string().max(100).optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+});
+
+export const AdminUserCreateSchema = z.object({
+  email: z.string().email().max(255),
+  name: z.string().min(2).max(100),
+  role: z.enum(['SUPERADMIN', 'MOTEL_ADMIN', 'USER']),
+  motelId: IdSchema.optional().nullable(),
+  password: z.string().min(8).max(100).optional(),
+  modulePermissions: z.array(z.string().max(50)).optional(),
+});
+
+export const AdminUserUpdateSchema = z.object({
+  name: z.string().min(2).max(100).optional(),
+  role: z.enum(['SUPERADMIN', 'MOTEL_ADMIN', 'USER']).optional(),
+  motelId: IdSchema.optional().nullable(),
+  isActive: z.boolean().optional(),
+  resetPassword: z.boolean().optional(),
+  modulePermissions: z.array(z.string().max(50)).optional(),
+});
+
 // ============================================
 // PUSH TOKENS
 // ============================================
@@ -265,8 +334,9 @@ export const NotificationPreferencesSchema = z.object({
 
 export const AmenitySchema = z.object({
   name: z.string().min(2).max(100),
-  icon: z.string().min(1).max(50),
-  category: z.string().min(2).max(50).optional().nullable(),
+  icon: z.string().min(1).max(50).optional().nullable(),
+  type: z.enum(['MOTEL', 'ROOM', 'BOTH']).optional().nullable(),
+  description: z.string().max(255).optional().nullable(),
 });
 
 export const UpdateAmenitySchema = AmenitySchema.partial();
@@ -298,6 +368,20 @@ export const PublicProspectSchema = z.object({
   (data) => data.phone.replace(/\D/g, '').length >= 7,
   { message: 'Teléfono inválido', path: ['phone'] }
 );
+
+export const AdminProspectCreateSchema = z.object({
+  contactName: z.string().min(2).max(100),
+  phone: z.string().max(50),
+  motelName: z.string().min(2).max(100),
+  channel: z.enum(['WEB', 'APP', 'MANUAL']).optional(),
+  notes: z.string().max(1000).optional().nullable(),
+});
+
+export const AdminProspectUpdateSchema = z.object({
+  status: z.enum(['NEW', 'CONTACTED', 'IN_NEGOTIATION', 'WON', 'LOST']).optional(),
+  notes: z.string().max(1000).optional().nullable(),
+  channel: z.enum(['WEB', 'APP', 'MANUAL']).optional(),
+});
 
 // ============================================
 // BÚSQUEDA
@@ -359,3 +443,172 @@ export const PaymentSchema = z.object({
 });
 
 export const UpdatePaymentSchema = PaymentSchema.partial().omit({ motelId: true });
+
+export const FinancialUpdateSchema = z.object({
+  billingDay: z.coerce.number().int().min(1).max(31).optional().nullable(),
+  paymentType: z.enum(['DIRECT_DEBIT', 'TRANSFER', 'EXCHANGE']).optional().nullable(),
+  financialStatus: z.enum(['ACTIVE', 'INACTIVE', 'DISABLED']).optional().nullable(),
+  plan: z.enum(['FREE', 'BASIC', 'GOLD', 'DIAMOND']).optional().nullable(),
+  billingCompanyName: z.string().max(150).optional().nullable(),
+  billingTaxId: z.string().max(50).optional().nullable(),
+  adminContactName: z.string().max(100).optional().nullable(),
+  adminContactEmail: z.string().email().max(255).optional().nullable(),
+  adminContactPhone: z.string().max(50).optional().nullable(),
+});
+
+export const FinancialPaymentCreateSchema = z.object({
+  amount: z.coerce.number().positive(),
+  currency: z.string().length(3).optional().nullable(),
+  paidAt: z.string().datetime().optional().nullable(),
+  status: z.enum(['PAID', 'PENDING', 'FAILED', 'REFUNDED']).optional(),
+  paymentType: z.enum(['DIRECT_DEBIT', 'TRANSFER', 'EXCHANGE']).optional().nullable(),
+  reference: z.string().max(100).optional().nullable(),
+  notes: z.string().max(500).optional().nullable(),
+});
+
+// ============================================
+// ROOM PHOTOS
+// ============================================
+
+export const RoomPhotoSchema = z.object({
+  roomTypeId: IdSchema,
+  url: z.string().url('URL de imagen inválida'),
+  order: z.coerce.number().int().min(0).optional().nullable(),
+});
+
+export const UpdateRoomPhotoSchema = RoomPhotoSchema.partial().omit({ roomTypeId: true });
+
+// ============================================
+// SETTINGS
+// ============================================
+
+export const SettingsUpdateSchema = z
+  .record(z.any())
+  .refine((value) => Object.keys(value).length > 0, { message: 'Sin configuraciones para actualizar' });
+
+// ============================================
+// INBOX
+// ============================================
+
+export const InboxUpdateSchema = z.object({
+  isRead: z.boolean(),
+});
+
+// ============================================
+// MENU
+// ============================================
+
+export const MenuCategorySchema = z.object({
+  motelId: IdSchema,
+  title: z.string().min(2).max(100),
+  sortOrder: z.coerce.number().int().min(0).optional().nullable(),
+});
+
+export const UpdateMenuCategorySchema = MenuCategorySchema.partial().omit({ motelId: true });
+
+export const MenuItemSchema = z.object({
+  categoryId: IdSchema,
+  name: z.string().min(2).max(100),
+  description: z.string().max(500).optional().nullable(),
+  price: z.coerce.number().int().min(0),
+  photoUrl: z.string().url().optional().nullable(),
+});
+
+export const UpdateMenuItemSchema = MenuItemSchema.partial().omit({ categoryId: true });
+
+// ============================================
+// ADMIN ANALYTICS / AUDIT
+// ============================================
+
+export const AdminAnalyticsQuerySchema = z.object({
+  period: z.coerce.number().int().min(1).max(365).optional(),
+  motelId: IdSchema.optional(),
+  source: z.string().max(50).optional(),
+  deviceType: z.string().max(50).optional(),
+  eventType: z.string().max(50).optional(),
+});
+
+export const MotelAnalyticsQuerySchema = z.object({
+  period: z.coerce.number().int().min(1).max(365).optional(),
+});
+
+export const AdminAuditQuerySchema = z.object({
+  action: z.string().max(50).optional(),
+  entityType: z.string().max(50).optional(),
+  userId: IdSchema.optional(),
+  q: z.string().max(100).optional(),
+});
+
+export const AdvertisementAnalyticsQuerySchema = z.object({
+  period: z.coerce.number().int().refine((value) => [7, 30, 90].includes(value), {
+    message: 'Periodo inválido',
+  }).optional(),
+});
+
+export const BulkIdsSchema = z.object({
+  ids: z.array(IdSchema).min(1, 'Se requiere al menos un ID'),
+});
+
+export const BulkActivateSchema = BulkIdsSchema.extend({
+  isActive: z.boolean(),
+});
+
+export const SearchSuggestionQuerySchema = z.object({
+  q: z.string().min(2).max(100),
+});
+
+// ============================================
+// MOBILE / PUBLIC QUERIES
+// ============================================
+
+export const MobileMotelsQuerySchema = z.object({
+  search: z.string().max(200).optional(),
+  city: z.string().max(100).optional(),
+  neighborhood: z.string().max(100).optional(),
+  amenity: z.string().max(100).optional(),
+  featured: z.coerce.boolean().optional(),
+  ids: z.string().max(500).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+});
+
+export const MobileMotelSlugSchema = z.object({
+  slug: z.string().min(1).max(200),
+});
+
+export const MobileReviewQuerySchema = z.object({
+  motelId: IdSchema,
+});
+
+export const MobileProfileUpdateSchema = z.object({
+  name: z.string().min(2).max(100).optional().nullable(),
+  phone: z.string().regex(/^\+?[0-9]{9,15}$/).optional().nullable(),
+  profilePhoto: z.string().url().optional().nullable(),
+  pushToken: z.string().max(200).optional().nullable(),
+  deviceInfo: z.record(z.string(), z.any()).optional().nullable(),
+});
+
+export const MobileNotificationPreferencesSchema = z.object({
+  enableNotifications: z.boolean().optional(),
+  enableEmail: z.boolean().optional(),
+  enablePush: z.boolean().optional(),
+  enableAdvertisingPush: z.boolean().optional(),
+  notifyNewPromos: z.boolean().optional(),
+  notifyPriceDrops: z.boolean().optional(),
+  notifyUpdates: z.boolean().optional(),
+  notifyReviewReplies: z.boolean().optional(),
+  notifyReviewLikes: z.boolean().optional(),
+  notifyPromotions: z.boolean().optional(),
+  notifyNewMotels: z.boolean().optional(),
+});
+
+export const UploadFormSchema = z.object({
+  folder: z.string().max(100).optional().nullable(),
+});
+
+export const EmptySchema = z.object({});
+
+export const AdminPaginationSchema = z.object({
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});

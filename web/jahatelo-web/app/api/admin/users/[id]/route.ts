@@ -4,6 +4,9 @@ import { requireAdminAccess } from '@/lib/adminAccess';
 import { hashPassword, generateRandomPassword } from '@/lib/password';
 import { ADMIN_MODULES } from '@/lib/adminModules';
 import { logAuditEvent } from '@/lib/audit';
+import { AdminUserUpdateSchema, IdSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 /**
  * PATCH /api/admin/users/:id
@@ -19,12 +22,18 @@ export async function PATCH(
     const user = access.user;
 
     const { id } = await params;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
     const body = await request.json();
-    const { name, role, motelId, isActive, resetPassword, modulePermissions } = body;
+    const sanitized = sanitizeObject(body);
+    const validated = AdminUserUpdateSchema.parse(sanitized);
+    const { name, role, motelId, isActive, resetPassword, modulePermissions } = validated;
 
     // Verificar que el usuario existe
     const existingUser = await prisma.user.findUnique({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     if (!existingUser) {
@@ -119,7 +128,7 @@ export async function PATCH(
 
     // Actualizar usuario
     const updatedUser = await prisma.user.update({
-      where: { id },
+      where: { id: idResult.data },
       data: updateData,
       select: {
         id: true,
@@ -160,6 +169,9 @@ export async function PATCH(
     return NextResponse.json(response);
   } catch (error) {
     console.error('Error updating user:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al actualizar usuario' },
       { status: 500 }
@@ -184,7 +196,7 @@ export async function DELETE(
 
     // Verificar que el usuario existe
     const existingUser = await prisma.user.findUnique({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     if (!existingUser) {
@@ -204,14 +216,14 @@ export async function DELETE(
 
     // Eliminar usuario
     await prisma.user.delete({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     await logAuditEvent({
       userId: user?.id,
       action: 'DELETE',
       entityType: 'User',
-      entityId: id,
+      entityId: idResult.data,
       metadata: { email: existingUser.email },
     });
 

@@ -4,6 +4,9 @@ import { requireAdminAccess } from '@/lib/adminAccess';
 import { hashPassword, generateRandomPassword } from '@/lib/password';
 import { ADMIN_MODULES, hasModuleAccess, AdminModule } from '@/lib/adminModules';
 import { logAuditEvent } from '@/lib/audit';
+import { AdminPaginationSchema, AdminUserCreateSchema, AdminUserQuerySchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 /**
  * GET /api/admin/users
@@ -15,16 +18,16 @@ export async function GET(request: NextRequest) {
     if (access.error) return access.error;
 
     const searchParams = request.nextUrl.searchParams;
-    const roleFilter = searchParams.get('role');
-    const moduleFilter = searchParams.get('module');
-    const searchFilter = searchParams.get('search');
-
-    if (roleFilter && !['SUPERADMIN', 'MOTEL_ADMIN', 'USER'].includes(roleFilter)) {
-      return NextResponse.json(
-        { error: 'Rol inválido' },
-        { status: 400 }
-      );
+    const queryResult = AdminUserQuerySchema.safeParse({
+      role: searchParams.get('role') || undefined,
+      module: searchParams.get('module') || undefined,
+      search: searchParams.get('search') || undefined,
+      status: searchParams.get('status') || undefined,
+    });
+    if (!queryResult.success) {
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
     }
+    const { role: roleFilter, module: moduleFilter, search: searchFilter, status: statusFilter } = queryResult.data;
 
     if (moduleFilter && !ADMIN_MODULES.includes(moduleFilter as AdminModule)) {
       return NextResponse.json(
@@ -32,6 +35,17 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const paginationResult = AdminPaginationSchema.safeParse({
+      page: searchParams.get('page') || undefined,
+      limit: searchParams.get('limit') || undefined,
+    });
+    if (!paginationResult.success) {
+      return NextResponse.json({ error: 'Parámetros inválidos', details: paginationResult.error.errors }, { status: 400 });
+    }
+    const usePagination = searchParams.has('page') || searchParams.has('limit');
+    const page = paginationResult.data.page ?? 1;
+    const limit = paginationResult.data.limit ?? 20;
 
     const users = await prisma.user.findMany({
       select: {
@@ -84,7 +98,40 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(filteredUsers);
+    const activeCount = filteredUsers.filter((user) => user.isActive).length;
+    const inactiveCount = filteredUsers.length - activeCount;
+    const roleCounts = filteredUsers.reduce<Record<string, number>>((acc, user) => {
+      acc[user.role] = (acc[user.role] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    if (statusFilter) {
+      const shouldBeActive = statusFilter === 'ACTIVE';
+      filteredUsers = filteredUsers.filter((user) => user.isActive === shouldBeActive);
+    }
+
+    if (!usePagination) {
+      return NextResponse.json(filteredUsers);
+    }
+
+    const total = filteredUsers.length;
+    const start = (page - 1) * limit;
+    const paged = filteredUsers.slice(start, start + limit);
+
+    return NextResponse.json({
+      data: paged,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+        summary: {
+          activeCount,
+          inactiveCount,
+          roleCounts,
+        },
+      },
+    });
   } catch (error) {
     console.error('Error fetching users:', error);
     return NextResponse.json(
@@ -105,35 +152,14 @@ export async function POST(request: NextRequest) {
     const user = access.user;
 
     const body = await request.json();
-    const { email, name, role, motelId, password, modulePermissions } = body;
-
-    // Validaciones
-    if (!email || !name || !role) {
-      return NextResponse.json(
-        { error: 'Email, nombre y rol son requeridos' },
-        { status: 400 }
-      );
-    }
-
-    // Validar que el rol sea válido
-    if (!['SUPERADMIN', 'MOTEL_ADMIN', 'USER'].includes(role)) {
-      return NextResponse.json(
-        { error: 'Rol inválido' },
-        { status: 400 }
-      );
-    }
+    const sanitized = sanitizeObject(body);
+    const validated = AdminUserCreateSchema.parse(sanitized);
+    const { email, name, role, motelId, password, modulePermissions } = validated;
 
     // Si es MOTEL_ADMIN, motelId es requerido
     if (role === 'MOTEL_ADMIN' && !motelId) {
       return NextResponse.json(
         { error: 'Para MOTEL_ADMIN el motelId es requerido' },
-        { status: 400 }
-      );
-    }
-
-    if (modulePermissions && !Array.isArray(modulePermissions)) {
-      return NextResponse.json(
-        { error: 'Permisos inválidos' },
         { status: 400 }
       );
     }
@@ -222,6 +248,9 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
   } catch (error) {
     console.error('Error creating user:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al crear usuario' },
       { status: 500 }

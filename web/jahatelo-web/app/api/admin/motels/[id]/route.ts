@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { canAccessMotel } from '@/lib/auth';
 import { logAuditEvent } from '@/lib/audit';
-import { UpdateMotelSchema } from '@/lib/validations/schemas';
+import { IdSchema, UpdateMotelSchema } from '@/lib/validations/schemas';
 import { sanitizeText } from '@/lib/sanitize';
 import { z } from 'zod';
 
@@ -20,12 +20,16 @@ export async function GET(
   try {
     const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
     if (access.error) return access.error;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
     if (!canAccessMotel(access.user || null, id)) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
     const motel = await prisma.motel.findUnique({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     if (!motel) {
@@ -48,7 +52,7 @@ export async function GET(
       'rooms',
       () =>
         prisma.roomType.findMany({
-          where: { motelId: id },
+          where: { motelId: idResult.data },
           include: {
             amenities: {
               include: {
@@ -69,7 +73,7 @@ export async function GET(
       'menu categories',
       () =>
         prisma.menuCategory.findMany({
-          where: { motelId: id },
+          where: { motelId: idResult.data },
           include: {
             items: true,
           },
@@ -84,7 +88,7 @@ export async function GET(
       'photos',
       () =>
         prisma.photo.findMany({
-          where: { motelId: id },
+          where: { motelId: idResult.data },
           orderBy: { order: 'asc' },
         }),
       []
@@ -94,7 +98,7 @@ export async function GET(
       'motel amenities',
       () =>
         prisma.motelAmenity.findMany({
-          where: { motelId: id },
+          where: { motelId: idResult.data },
           include: {
             amenity: true,
           },
@@ -127,6 +131,10 @@ export async function PATCH(
   try {
     const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
     if (access.error) return access.error;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
     if (!canAccessMotel(access.user || null, id)) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
@@ -150,7 +158,7 @@ export async function PATCH(
     }
 
     const motel = await prisma.motel.update({
-      where: { id },
+      where: { id: idResult.data },
       data,
     });
 

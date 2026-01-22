@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { RoomPhotoSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 export async function POST(request: Request) {
   try {
@@ -9,20 +12,14 @@ export async function POST(request: Request) {
     if (access.error) return access.error;
 
     const body = await request.json();
-    const { roomTypeId, url, order } = body;
-
-    if (!roomTypeId || !url) {
-      return NextResponse.json(
-        { error: 'roomTypeId and url are required' },
-        { status: 400 }
-      );
-    }
+    const sanitized = sanitizeObject(body);
+    const validated = RoomPhotoSchema.parse(sanitized);
 
     const roomPhoto = await prisma.roomPhoto.create({
       data: {
-        roomTypeId,
-        url,
-        order: order ?? 0,
+        roomTypeId: validated.roomTypeId,
+        url: validated.url,
+        order: validated.order ?? 0,
       },
     });
 
@@ -37,6 +34,9 @@ export async function POST(request: Request) {
     return NextResponse.json(roomPhoto);
   } catch (error) {
     console.error('Error creating room photo:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Failed to create room photo' },
       { status: 500 }

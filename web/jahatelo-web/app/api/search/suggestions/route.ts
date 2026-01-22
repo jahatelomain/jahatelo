@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { SearchSuggestionQuerySchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q')?.trim();
-
-    if (!query || query.length < 2) {
+    const queryResult = SearchSuggestionQuerySchema.safeParse({
+      q: searchParams.get('q')?.trim(),
+    });
+    if (!queryResult.success) {
       return NextResponse.json({ suggestions: [] });
     }
+    const query = queryResult.data.q;
 
     const motels = await prisma.motel.findMany({
       where: {
@@ -63,6 +67,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ suggestions });
   } catch (error) {
     console.error('Error fetching suggestions:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ suggestions: [] }, { status: 400 });
+    }
     return NextResponse.json({ suggestions: [] }, { status: 500 });
   }
 }

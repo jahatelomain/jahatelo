@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
+import { MobileNotificationPreferencesSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,6 +88,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
+    const sanitized = sanitizeObject(body);
+    const validated = MobileNotificationPreferencesSchema.parse(sanitized);
     const {
       enableNotifications,
       enableEmail,
@@ -97,7 +102,7 @@ export async function PATCH(request: NextRequest) {
       notifyReviewLikes,
       notifyPromotions,
       notifyNewMotels,
-    } = body;
+    } = validated;
 
     // Actualizar preferencias (upsert por si no existen)
     const preferences = await prisma.userNotificationPreferences.upsert({
@@ -139,6 +144,9 @@ export async function PATCH(request: NextRequest) {
 
   } catch (error) {
     console.error('Error in PATCH /api/mobile/notifications/preferences:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al actualizar preferencias' },
       { status: 500 }

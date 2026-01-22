@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { AMENITY_ICONS } from '@/lib/amenityIcons';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { IdSchema, UpdateAmenitySchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -18,9 +21,13 @@ export async function GET(
   try {
     const access = await requireAdminAccess(request, ['SUPERADMIN'], 'amenities');
     if (access.error) return access.error;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     const amenity = await prisma.amenity.findUnique({
-      where: { id },
+      where: { id: idResult.data },
       include: {
         _count: {
           select: {
@@ -58,22 +65,23 @@ export async function PATCH(
   try {
     const access = await requireAdminAccess(request, ['SUPERADMIN'], 'amenities');
     if (access.error) return access.error;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     const body = await request.json();
-    const { name, type, icon } = body;
-
-    if (!name) {
-      return NextResponse.json(
-        { error: 'El nombre es requerido' },
-        { status: 400 }
-      );
+    const sanitized = sanitizeObject(body);
+    const validated = UpdateAmenitySchema.parse(sanitized);
+    if (!validated.name) {
+      return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 });
     }
 
     // Check if another amenity with the same name exists
     const existing = await prisma.amenity.findFirst({
       where: {
         name,
-        id: { not: id },
+        id: { not: idResult.data },
       },
     });
 
@@ -84,7 +92,7 @@ export async function PATCH(
       );
     }
 
-    if (icon && !AMENITY_ICONS.some((item) => item.value === icon)) {
+    if (validated.icon && !AMENITY_ICONS.some((item) => item.value === validated.icon)) {
       return NextResponse.json(
         { error: 'Ícono inválido' },
         { status: 400 }
@@ -92,11 +100,12 @@ export async function PATCH(
     }
 
     const amenity = await prisma.amenity.update({
-      where: { id },
+      where: { id: idResult.data },
       data: {
-        name,
-        type: type || null,
-        icon: icon || null,
+        name: validated.name,
+        type: validated.type || null,
+        icon: validated.icon || null,
+        description: validated.description || null,
       },
     });
 
@@ -111,6 +120,9 @@ export async function PATCH(
     return NextResponse.json(amenity);
   } catch (error) {
     console.error('Error updating amenity:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al actualizar amenity' },
       { status: 500 }
@@ -128,9 +140,13 @@ export async function DELETE(
   try {
     const access = await requireAdminAccess(request, ['SUPERADMIN'], 'amenities');
     if (access.error) return access.error;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     const amenity = await prisma.amenity.findUnique({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     if (!amenity) {
@@ -141,22 +157,22 @@ export async function DELETE(
     }
 
     await prisma.motelAmenity.deleteMany({
-      where: { amenityId: id },
+      where: { amenityId: idResult.data },
     });
 
     await prisma.roomAmenity.deleteMany({
-      where: { amenityId: id },
+      where: { amenityId: idResult.data },
     });
 
     await prisma.amenity.delete({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     await logAuditEvent({
       userId: access.user?.id,
       action: 'DELETE',
       entityType: 'Amenity',
-      entityId: id,
+      entityId: idResult.data,
       metadata: { name: amenity.name },
     });
 

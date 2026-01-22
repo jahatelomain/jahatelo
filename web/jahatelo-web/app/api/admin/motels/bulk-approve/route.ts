@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
 import { MotelStatus } from '@prisma/client';
+import { BulkIdsSchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 /**
  * POST /api/admin/motels/bulk-approve
@@ -16,12 +18,8 @@ export async function POST(request: NextRequest) {
 
     // Leer body
     const body = await request.json();
-    const { ids } = body;
-
-    // Validar que ids sea un array
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return NextResponse.json({ error: 'Se requiere un array de IDs' }, { status: 400 });
-    }
+    const validated = BulkIdsSchema.parse(body);
+    const { ids } = validated;
 
     // Buscar todos los moteles
     const motels = await prisma.motel.findMany({
@@ -82,6 +80,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error bulk approving motels:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Error al aprobar moteles' }, { status: 500 });
   }
 }

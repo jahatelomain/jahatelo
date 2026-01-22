@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { IdSchema, UpdateRoomPhotoSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 export async function DELETE(
   request: Request,
@@ -12,9 +15,13 @@ export async function DELETE(
     if (access.error) return access.error;
 
     const { id } = await params;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     const roomPhoto = await prisma.roomPhoto.delete({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     await logAuditEvent({
@@ -44,15 +51,20 @@ export async function PATCH(
     if (access.error) return access.error;
 
     const { id } = await params;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
     const body = await request.json();
-    const { order, url } = body;
+    const sanitized = sanitizeObject(body);
+    const validated = UpdateRoomPhotoSchema.parse(sanitized);
 
-    const updateData: { order?: number; url?: string } = {};
-    if (order !== undefined) updateData.order = order;
-    if (url !== undefined) updateData.url = url;
+    const updateData: { order?: number | null; url?: string | null } = {};
+    if (validated.order !== undefined) updateData.order = validated.order ?? null;
+    if (validated.url !== undefined) updateData.url = validated.url ?? null;
 
     const roomPhoto = await prisma.roomPhoto.update({
-      where: { id },
+      where: { id: idResult.data },
       data: updateData,
     });
 
@@ -67,6 +79,9 @@ export async function PATCH(
     return NextResponse.json(roomPhoto);
   } catch (error) {
     console.error('Error updating room photo:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Failed to update room photo' },
       { status: 500 }

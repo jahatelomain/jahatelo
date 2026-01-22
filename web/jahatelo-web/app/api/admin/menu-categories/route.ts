@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { MenuCategorySchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,20 +12,14 @@ export async function POST(request: NextRequest) {
     if (access.error) return access.error;
 
     const body = await request.json();
-    const { motelId, title, sortOrder } = body;
-
-    if (!motelId || !title) {
-      return NextResponse.json(
-        { error: 'Faltan campos requeridos: motelId, title' },
-        { status: 400 }
-      );
-    }
+    const sanitized = sanitizeObject(body);
+    const validated = MenuCategorySchema.parse(sanitized);
 
     const category = await prisma.menuCategory.create({
       data: {
-        motelId,
-        title,
-        sortOrder: sortOrder || 0,
+        motelId: validated.motelId,
+        title: validated.title,
+        sortOrder: validated.sortOrder ?? 0,
       },
       include: {
         items: true,
@@ -40,6 +37,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(category, { status: 201 });
   } catch (error) {
     console.error('Error creating category:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al crear categoría' },
       { status: 500 }

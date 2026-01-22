@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import { geocodeAddress } from '@/lib/geocoding';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { IdSchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -19,10 +21,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
     if (access.error) return access.error;
+    const resolvedId = IdSchema.parse(id);
 
     // Get motel from database
     const motel = await prisma.motel.findUnique({
-      where: { id },
+      where: { id: resolvedId },
       select: {
         id: true,
         address: true,
@@ -61,7 +64,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     // Update motel with coordinates
     const updatedMotel = await prisma.motel.update({
-      where: { id },
+      where: { id: resolvedId },
       data: {
         latitude: result.lat,
         longitude: result.lng,
@@ -98,6 +101,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     });
   } catch (error) {
     console.error('Error geocoding motel:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'ID inválido', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       {
         error: 'Failed to geocode motel',

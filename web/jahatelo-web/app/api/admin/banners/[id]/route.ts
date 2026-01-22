@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { AdvertisementAdminUpdateSchema, IdSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,8 +15,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (access.error) return access.error;
 
     const { id } = await params;
+    const paramsResult = IdSchema.safeParse(id);
+    if (!paramsResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
     const ad = await prisma.advertisement.findUnique({
-      where: { id },
+      where: { id: paramsResult.data },
     });
 
     if (!ad) {
@@ -36,44 +43,32 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (access.error) return access.error;
 
     const { id } = await params;
+    const paramsResult = IdSchema.safeParse(id);
+    if (!paramsResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
     const body = await request.json();
-
-    const {
-      title,
-      advertiser,
-      imageUrl,
-      largeImageUrl,
-      description,
-      linkUrl,
-      placement,
-      status,
-      priority,
-      startDate,
-      endDate,
-      maxViews,
-      maxClicks,
-      viewCount,
-      clickCount,
-    } = body;
+    const sanitized = sanitizeObject(body);
+    const validated = AdvertisementAdminUpdateSchema.parse(sanitized);
 
     const ad = await prisma.advertisement.update({
-      where: { id },
+      where: { id: paramsResult.data },
       data: {
-        title,
-        advertiser,
-        imageUrl,
-        largeImageUrl: largeImageUrl ?? null,
-        description: description ?? null,
-        linkUrl: linkUrl ?? null,
-        placement,
-        status,
-        priority: Number.isFinite(priority) ? Number(priority) : undefined,
-        startDate: startDate === null ? null : startDate ? new Date(startDate) : undefined,
-        endDate: endDate === null ? null : endDate ? new Date(endDate) : undefined,
-        maxViews: Number.isFinite(maxViews) ? Number(maxViews) : maxViews === null ? null : undefined,
-        maxClicks: Number.isFinite(maxClicks) ? Number(maxClicks) : maxClicks === null ? null : undefined,
-        viewCount: Number.isFinite(viewCount) ? Number(viewCount) : undefined,
-        clickCount: Number.isFinite(clickCount) ? Number(clickCount) : undefined,
+        title: validated.title,
+        advertiser: validated.advertiser,
+        imageUrl: validated.imageUrl,
+        largeImageUrl: validated.largeImageUrl ?? null,
+        description: validated.description ?? null,
+        linkUrl: validated.linkUrl ?? null,
+        placement: validated.placement,
+        status: validated.status,
+        priority: validated.priority,
+        startDate: validated.startDate === null ? null : validated.startDate ? new Date(validated.startDate) : undefined,
+        endDate: validated.endDate === null ? null : validated.endDate ? new Date(validated.endDate) : undefined,
+        maxViews: validated.maxViews ?? null,
+        maxClicks: validated.maxClicks ?? null,
+        viewCount: validated.viewCount,
+        clickCount: validated.clickCount,
       },
     });
 
@@ -88,6 +83,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json(ad);
   } catch (error) {
     console.error('Error updating advertisement:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Error al actualizar anuncio' }, { status: 500 });
   }
 }
@@ -99,13 +97,17 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     if (access.error) return access.error;
 
     const { id } = await params;
-    await prisma.advertisement.delete({ where: { id } });
+    const paramsResult = IdSchema.safeParse(id);
+    if (!paramsResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+    await prisma.advertisement.delete({ where: { id: paramsResult.data } });
 
     await logAuditEvent({
       userId: access.user?.id,
       action: 'DELETE',
       entityType: 'Advertisement',
-      entityId: id,
+      entityId: paramsResult.data,
       metadata: null,
     });
 

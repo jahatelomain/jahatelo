@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { BulkActivateSchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 /**
  * POST /api/admin/motels/bulk-activate
@@ -15,17 +17,8 @@ export async function POST(request: NextRequest) {
 
     // Leer body
     const body = await request.json();
-    const { ids, isActive } = body;
-
-    // Validar que ids sea un array
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return NextResponse.json({ error: 'Se requiere un array de IDs' }, { status: 400 });
-    }
-
-    // Validar que isActive sea un booleano
-    if (typeof isActive !== 'boolean') {
-      return NextResponse.json({ error: 'Se requiere el parámetro isActive (true o false)' }, { status: 400 });
-    }
+    const validated = BulkActivateSchema.parse(body);
+    const { ids, isActive } = validated;
 
     // Buscar todos los moteles
     const motels = await prisma.motel.findMany({
@@ -72,6 +65,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error bulk activating/deactivating motels:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Error al actualizar moteles' }, { status: 500 });
   }
 }

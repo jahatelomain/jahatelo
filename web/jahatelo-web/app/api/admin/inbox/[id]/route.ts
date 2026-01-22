@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
+import { IdSchema, InboxUpdateSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 /**
  * PATCH /api/admin/inbox/:id
@@ -15,19 +18,18 @@ export async function PATCH(
     if (access.error) return access.error;
 
     const { id } = await params;
-    const body = await request.json();
-    const { isRead } = body;
-
-    if (typeof isRead !== 'boolean') {
-      return NextResponse.json(
-        { error: 'isRead debe ser un booleano' },
-        { status: 400 }
-      );
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
+    const body = await request.json();
+    const sanitized = sanitizeObject(body);
+    const validated = InboxUpdateSchema.parse(sanitized);
+    const { isRead } = validated;
 
     // Verificar que el mensaje existe
     const existingMessage = await prisma.contactMessage.findUnique({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     if (!existingMessage) {
@@ -39,13 +41,16 @@ export async function PATCH(
 
     // Actualizar mensaje
     const updatedMessage = await prisma.contactMessage.update({
-      where: { id },
+      where: { id: idResult.data },
       data: { isRead },
     });
 
     return NextResponse.json(updatedMessage);
   } catch (error) {
     console.error('Error updating inbox message:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al actualizar mensaje' },
       { status: 500 }
@@ -66,10 +71,14 @@ export async function DELETE(
     if (access.error) return access.error;
 
     const { id } = await params;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     // Verificar que el mensaje existe
     const existingMessage = await prisma.contactMessage.findUnique({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     if (!existingMessage) {
@@ -81,7 +90,7 @@ export async function DELETE(
 
     // Eliminar mensaje
     await prisma.contactMessage.delete({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     return NextResponse.json(

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { FinancialUpdateSchema, IdSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 /**
  * GET /api/admin/financiero/[id]
@@ -16,9 +19,13 @@ export async function GET(
     if (access.error) return access.error;
 
     const { id } = await params;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     const motel = await prisma.motel.findUnique({
-      where: { id },
+      where: { id: idResult.data },
       select: {
         id: true,
         name: true,
@@ -81,7 +88,13 @@ export async function PATCH(
     if (access.error) return access.error;
 
     const { id } = await params;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
     const body = await request.json();
+    const sanitized = sanitizeObject(body);
+    const validated = FinancialUpdateSchema.parse(sanitized);
     const {
       billingDay,
       paymentType,
@@ -92,11 +105,11 @@ export async function PATCH(
       adminContactName,
       adminContactEmail,
       adminContactPhone,
-    } = body;
+    } = validated;
 
     // Validar que el motel existe
     const motel = await prisma.motel.findUnique({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     if (!motel) {
@@ -106,42 +119,9 @@ export async function PATCH(
       );
     }
 
-    // Validar billingDay si se provee
-    if (billingDay !== undefined && billingDay !== null) {
-      if (billingDay < 1 || billingDay > 31) {
-        return NextResponse.json(
-          { error: 'El día de cobro debe estar entre 1 y 31' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Validar paymentType si se provee
-    if (paymentType && !['DIRECT_DEBIT', 'TRANSFER', 'EXCHANGE'].includes(paymentType)) {
-      return NextResponse.json(
-        { error: 'Tipo de pago inválido' },
-        { status: 400 }
-      );
-    }
-
-    // Validar financialStatus si se provee
-    if (financialStatus && !['ACTIVE', 'INACTIVE', 'DISABLED'].includes(financialStatus)) {
-      return NextResponse.json(
-        { error: 'Estado financiero inválido' },
-        { status: 400 }
-      );
-    }
-
-    if (plan && !['FREE', 'BASIC', 'GOLD', 'DIAMOND'].includes(plan)) {
-      return NextResponse.json(
-        { error: 'Plan inválido' },
-        { status: 400 }
-      );
-    }
-
     // Actualizar motel
     const updatedMotel = await prisma.motel.update({
-      where: { id },
+      where: { id: idResult.data },
       data: {
         ...(billingDay !== undefined && { billingDay }),
         ...(paymentType && { paymentType }),
@@ -181,6 +161,9 @@ export async function PATCH(
     return NextResponse.json(updatedMotel);
   } catch (error) {
     console.error('Error updating motel financial data:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al actualizar datos del motel' },
       { status: 500 }

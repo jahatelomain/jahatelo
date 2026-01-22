@@ -15,6 +15,23 @@ const allowedOrigins = [
   'http://localhost:19006', // Expo web alternative
 ];
 
+const csrfSafeMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+const isSameOrigin = (request: NextRequest) => {
+  const origin = request.headers.get('origin');
+  const referer = request.headers.get('referer');
+  if (origin && allowedOrigins.includes(origin)) return true;
+  if (referer) {
+    try {
+      const refOrigin = new URL(referer).origin;
+      return allowedOrigins.includes(refOrigin);
+    } catch {
+      return false;
+    }
+  }
+  return false;
+};
+
 /**
  * Rate limiting function
  * @param ip - IP address
@@ -107,6 +124,21 @@ export async function middleware(request: NextRequest) {
         'Access-Control-Max-Age': '86400',
       },
     });
+  }
+
+  // 2.0 CSRF protection for cookie-based web/admin requests
+  if (
+    pathname.startsWith('/api/') &&
+    !csrfSafeMethods.has(request.method) &&
+    !pathname.startsWith('/api/mobile/') &&
+    !pathname.startsWith('/api/public/') &&
+    !pathname.startsWith('/api/cron/') &&
+    !pathname.startsWith('/api/health')
+  ) {
+    const hasAuthHeader = Boolean(request.headers.get('authorization'));
+    if (!hasAuthHeader && !isSameOrigin(request)) {
+      return NextResponse.json({ error: 'CSRF validation failed' }, { status: 403 });
+    }
   }
 
   // 2.1. Health check sin rate limiting

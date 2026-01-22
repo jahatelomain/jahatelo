@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { IdSchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 export async function GET(
   _request: NextRequest,
@@ -8,11 +10,8 @@ export async function GET(
   try {
     const resolvedParams = await params;
     const rawId = resolvedParams?.id ?? '';
-    const id = decodeURIComponent(rawId).trim();
-
-    if (!id) {
-      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
-    }
+    const decoded = decodeURIComponent(rawId).trim();
+    const id = IdSchema.parse(decoded);
 
     const notification = await prisma.scheduledNotification.findUnique({
       where: { id },
@@ -25,6 +24,9 @@ export async function GET(
     return NextResponse.json({ success: true, notification });
   } catch (error) {
     console.error('Error fetching notification:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'ID inválido', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Error al obtener notificación' }, { status: 500 });
   }
 }

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { IdSchema, UpdateMenuCategorySchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -17,14 +20,20 @@ export async function PATCH(
     const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
     if (access.error) return access.error;
 
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+
     const body = await request.json();
-    const { title, sortOrder } = body;
+    const sanitized = sanitizeObject(body);
+    const validated = UpdateMenuCategorySchema.parse(sanitized);
 
     const category = await prisma.menuCategory.update({
-      where: { id },
+      where: { id: idResult.data },
       data: {
-        title,
-        sortOrder,
+        ...(validated.title !== undefined && { title: validated.title }),
+        ...(validated.sortOrder !== undefined && { sortOrder: validated.sortOrder }),
       },
     });
 
@@ -39,6 +48,9 @@ export async function PATCH(
     return NextResponse.json(category);
   } catch (error) {
     console.error('Error updating category:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al actualizar categoría' },
       { status: 500 }
@@ -56,8 +68,13 @@ export async function DELETE(
     const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
     if (access.error) return access.error;
 
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+
     const category = await prisma.menuCategory.delete({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     await logAuditEvent({

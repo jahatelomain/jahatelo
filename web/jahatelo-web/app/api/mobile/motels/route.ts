@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { mapMotelToListItem } from '../mappers';
+import { MobileMotelsQuerySchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 // Helper to get plan priority for sorting
 const getPlanPriority = (plan: string | null | undefined): number => {
@@ -53,16 +55,29 @@ const equalsFilter = (value?: string) =>
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const queryResult = MobileMotelsQuerySchema.safeParse({
+      search: searchParams.get('search') || undefined,
+      city: searchParams.get('city') || undefined,
+      neighborhood: searchParams.get('neighborhood') || undefined,
+      amenity: searchParams.get('amenity') || undefined,
+      featured: searchParams.get('featured') || undefined,
+      ids: searchParams.get('ids') || undefined,
+      page: searchParams.get('page') || undefined,
+      limit: searchParams.get('limit') || undefined,
+    });
+    if (!queryResult.success) {
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
+    }
 
     // Parse query params
-    const search = normalizeText(searchParams.get('search'));
-    const city = normalize(searchParams.get('city'));
-    const neighborhood = normalize(searchParams.get('neighborhood'));
-    const amenity = normalize(searchParams.get('amenity'));
-    const featured = searchParams.get('featured') === 'true' ? true : undefined;
-    const idsParam = searchParams.get('ids') || undefined;
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 50);
+    const search = normalizeText(queryResult.data.search);
+    const city = normalize(queryResult.data.city);
+    const neighborhood = normalize(queryResult.data.neighborhood);
+    const amenity = normalize(queryResult.data.amenity);
+    const featured = queryResult.data.featured;
+    const idsParam = queryResult.data.ids;
+    const page = queryResult.data.page || 1;
+    const limit = Math.min(queryResult.data.limit || 20, 50);
 
     // Build where clause
     const where: Prisma.MotelWhereInput = {
@@ -298,6 +313,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error in GET /api/mobile/motels:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Parámetros inválidos', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Failed to fetch motels' },
       { status: 500 }

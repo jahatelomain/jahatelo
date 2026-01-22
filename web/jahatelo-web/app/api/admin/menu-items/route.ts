@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { MenuItemSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,21 +12,16 @@ export async function POST(request: NextRequest) {
     if (access.error) return access.error;
 
     const body = await request.json();
-    const { categoryId, name, price, description } = body;
-
-    if (!categoryId || !name || !price) {
-      return NextResponse.json(
-        { error: 'Faltan campos requeridos: categoryId, name, price' },
-        { status: 400 }
-      );
-    }
+    const sanitized = sanitizeObject(body);
+    const validated = MenuItemSchema.parse(sanitized);
 
     const item = await prisma.menuItem.create({
       data: {
-        categoryId,
-        name,
-        price: parseInt(price),
-        description,
+        categoryId: validated.categoryId,
+        name: validated.name,
+        price: validated.price,
+        description: validated.description ?? null,
+        photoUrl: validated.photoUrl ?? null,
       },
     });
 
@@ -38,6 +36,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(item, { status: 201 });
   } catch (error) {
     console.error('Error creating menu item:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al crear item' },
       { status: 500 }

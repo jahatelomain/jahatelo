@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
+import { UploadFormSchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 export const runtime = 'nodejs';
 
@@ -42,6 +44,9 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get('file');
     const folder = formData.get('folder');
+    const validated = UploadFormSchema.parse({
+      folder: typeof folder === 'string' ? folder : undefined,
+    });
 
     if (!(file instanceof Blob)) {
       return NextResponse.json(
@@ -61,7 +66,7 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const key = createObjectKey(
       typeof file.name === 'string' ? file.name : undefined,
-      typeof folder === 'string' ? folder : undefined,
+      validated.folder ?? undefined,
     );
 
     await s3.send(
@@ -77,6 +82,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ url });
   } catch (error) {
     console.error('[UPLOAD_ERROR]', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Datos inválidos', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Failed to upload file' },
       { status: 500 },

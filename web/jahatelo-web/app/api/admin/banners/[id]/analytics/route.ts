@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
-
-const VALID_PERIODS = new Set([7, 30, 90]);
+import { AdvertisementAnalyticsQuerySchema, IdSchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 // GET /api/admin/advertisements/[id]/analytics?period=30
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -11,9 +11,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (access.error) return access.error;
 
     const { id } = await params;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
     const { searchParams } = new URL(request.url);
-    const periodParam = Number(searchParams.get('period') || 30);
-    const periodDays = VALID_PERIODS.has(periodParam) ? periodParam : 30;
+    const queryResult = AdvertisementAnalyticsQuerySchema.safeParse({
+      period: searchParams.get('period') || undefined,
+    });
+    if (!queryResult.success) {
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
+    }
+    const periodDays = queryResult.data.period || 30;
 
     const endDate = new Date();
     const startDate = new Date();
@@ -21,7 +30,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const events = await prisma.adAnalytics.findMany({
       where: {
-        advertisementId: id,
+        advertisementId: idResult.data,
         timestamp: { gte: startDate },
       },
       orderBy: { timestamp: 'desc' },
@@ -83,6 +92,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
   } catch (error) {
     console.error('Error fetching advertisement analytics:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Error al obtener analíticas' }, { status: 500 });
   }
 }

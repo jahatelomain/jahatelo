@@ -2,9 +2,12 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { EmptySchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 export async function GET() {
   try {
+    EmptySchema.parse({});
     const cookieStore = await cookies();
     const token = cookieStore.get('auth_token')?.value;
 
@@ -40,6 +43,9 @@ export async function GET() {
     }, { status: 200 });
   } catch (error) {
     console.error('Auth me error:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ user: null }, { status: 400 });
+    }
     return NextResponse.json({ user: null }, { status: 200 });
   }
 }

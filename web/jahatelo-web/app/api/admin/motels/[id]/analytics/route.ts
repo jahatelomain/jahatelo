@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
+import { IdSchema, MotelAnalyticsQuerySchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 /**
  * GET /api/admin/motels/[id]/analytics
@@ -17,10 +19,14 @@ export async function GET(
     const user = access.user;
 
     const { id: motelId } = await params;
+    const idResult = IdSchema.safeParse(motelId);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     // Verificar que el motel existe
     const motel = await prisma.motel.findUnique({
-      where: { id: motelId },
+      where: { id: idResult.data },
       select: { id: true, name: true },
     });
 
@@ -33,7 +39,7 @@ export async function GET(
 
     // Verificar permisos: SUPERADMIN o MOTEL_ADMIN dueño del motel
     const isSuperAdmin = user?.role === 'SUPERADMIN';
-    const isMotelOwner = user?.role === 'MOTEL_ADMIN' && user.motelId === motelId;
+    const isMotelOwner = user?.role === 'MOTEL_ADMIN' && user.motelId === idResult.data;
 
     if (!isSuperAdmin && !isMotelOwner) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
@@ -41,8 +47,13 @@ export async function GET(
 
     // Obtener parámetros de consulta
     const { searchParams } = new URL(request.url);
-    const period = searchParams.get('period') || '30'; // días (7, 30, 90)
-    const days = parseInt(period);
+    const queryResult = MotelAnalyticsQuerySchema.safeParse({
+      period: searchParams.get('period') || undefined,
+    });
+    if (!queryResult.success) {
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
+    }
+    const days = queryResult.data.period || 30;
 
     // Calcular fecha de inicio
     const startDate = new Date();
@@ -51,7 +62,7 @@ export async function GET(
     // Obtener eventos del período
     const events = await prisma.motelAnalytics.findMany({
       where: {
-        motelId,
+        motelId: idResult.data,
         timestamp: {
           gte: startDate,
         },
@@ -159,6 +170,9 @@ export async function GET(
     });
   } catch (error) {
     console.error('Error fetching motel analytics:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al obtener estadísticas' },
       { status: 500 }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { EmptySchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 /**
  * GET /api/settings/public
@@ -8,6 +10,7 @@ import { prisma } from '@/lib/prisma';
  */
 export async function GET(request: NextRequest) {
   try {
+    EmptySchema.parse({});
     // Lista de configuraciones públicas permitidas
     const PUBLIC_SETTINGS = [
       'age_gate_enabled',
@@ -49,6 +52,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching public settings:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al obtener configuraciones públicas' },
       { status: 500 }

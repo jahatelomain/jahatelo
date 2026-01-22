@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { IdSchema, UpdatePromoSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 // PATCH /api/admin/promos/[id]
 export async function PATCH(
@@ -13,19 +16,24 @@ export async function PATCH(
     if (access.error) return access.error;
 
     const { id } = await params;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
     const body = await request.json();
-    const { title, description, imageUrl, validFrom, validUntil, isActive, isGlobal } = body;
+    const sanitized = sanitizeObject(body);
+    const validated = UpdatePromoSchema.parse(sanitized);
 
     const promo = await prisma.promo.update({
-      where: { id },
+      where: { id: idResult.data },
       data: {
-        ...(title !== undefined && { title }),
-        ...(description !== undefined && { description }),
-        ...(imageUrl !== undefined && { imageUrl }),
-        ...(validFrom !== undefined && { validFrom: validFrom ? new Date(validFrom) : null }),
-        ...(validUntil !== undefined && { validUntil: validUntil ? new Date(validUntil) : null }),
-        ...(isActive !== undefined && { isActive }),
-        ...(isGlobal !== undefined && { isGlobal }),
+        ...(validated.title !== undefined && { title: validated.title }),
+        ...(validated.description !== undefined && { description: validated.description }),
+        ...(validated.imageUrl !== undefined && { imageUrl: validated.imageUrl }),
+        ...(validated.validFrom !== undefined && { validFrom: validated.validFrom ? new Date(validated.validFrom) : null }),
+        ...(validated.validUntil !== undefined && { validUntil: validated.validUntil ? new Date(validated.validUntil) : null }),
+        ...(validated.isActive !== undefined && { isActive: validated.isActive }),
+        ...(validated.isGlobal !== undefined && { isGlobal: validated.isGlobal }),
       },
     });
 
@@ -40,6 +48,9 @@ export async function PATCH(
     return NextResponse.json(promo);
   } catch (error) {
     console.error('Error updating promo:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Error al actualizar promo' }, { status: 500 });
   }
 }
@@ -54,9 +65,13 @@ export async function DELETE(
     if (access.error) return access.error;
 
     const { id } = await params;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     const promo = await prisma.promo.delete({
-      where: { id },
+      where: { id: idResult.data },
     });
 
     await logAuditEvent({

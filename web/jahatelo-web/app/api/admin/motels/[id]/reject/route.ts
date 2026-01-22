@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
 import { MotelStatus } from '@prisma/client';
+import { IdSchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -19,10 +21,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // Solo SUPERADMIN puede rechazar moteles
     const access = await requireAdminAccess(request, ['SUPERADMIN'], 'motels');
     if (access.error) return access.error;
+    const resolvedId = IdSchema.parse(id);
 
     // Verificar que el motel existe
     const motel = await prisma.motel.findUnique({
-      where: { id },
+      where: { id: resolvedId },
       select: {
         id: true,
         name: true,
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     // Rechazar el motel
     const updatedMotel = await prisma.motel.update({
-      where: { id },
+      where: { id: resolvedId },
       data: {
         status: MotelStatus.REJECTED,
         isActive: false, // Desactivar al rechazar
@@ -73,6 +76,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     });
   } catch (error) {
     console.error('Error rejecting motel:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'ID inválido', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Error al rechazar motel' }, { status: 500 });
   }
 }

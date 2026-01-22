@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processScheduledNotifications } from '@/lib/push-notifications';
+import { EmptySchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 /**
  * GET /api/cron/process-notifications
@@ -10,6 +12,7 @@ import { processScheduledNotifications } from '@/lib/push-notifications';
  */
 export async function GET(request: NextRequest) {
   try {
+    EmptySchema.parse({});
     // Verificar token de autorización (opcional pero recomendado)
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
@@ -31,6 +34,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error in process-notifications cron:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       {
         error: 'Error processing notifications',

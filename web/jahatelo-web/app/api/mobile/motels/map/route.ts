@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { EmptySchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 60; // Cache por 60 segundos
@@ -12,6 +14,7 @@ export const revalidate = 60; // Cache por 60 segundos
  */
 export async function GET() {
   try {
+    EmptySchema.parse({});
     // Query optimizada: sin joins innecesarios, solo campos esenciales
     const motels = await prisma.motel.findMany({
       where: {
@@ -61,6 +64,9 @@ export async function GET() {
     );
   } catch (error) {
     console.error('Error fetching map data:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ success: false, error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       {
         success: false,

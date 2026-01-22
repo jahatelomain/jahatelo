@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
+import { MobileProfileUpdateSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
@@ -106,7 +109,9 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, phone, profilePhoto, pushToken, deviceInfo } = body;
+    const sanitized = sanitizeObject(body);
+    const validated = MobileProfileUpdateSchema.parse(sanitized);
+    const { name, phone, profilePhoto, pushToken, deviceInfo } = validated;
 
     // Actualizar usuario
     const user = await prisma.user.update({
@@ -140,6 +145,9 @@ export async function PATCH(request: NextRequest) {
 
   } catch (error) {
     console.error('Error in PATCH /api/mobile/auth/me:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al actualizar perfil' },
       { status: 500 }

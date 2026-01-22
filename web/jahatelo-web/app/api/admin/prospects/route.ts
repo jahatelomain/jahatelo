@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { AdminPaginationSchema, AdminProspectCreateSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 /**
  * GET /api/admin/prospects
@@ -12,14 +15,41 @@ export async function GET(request: NextRequest) {
     const access = await requireAdminAccess(request, ['SUPERADMIN'], 'prospects');
     if (access.error) return access.error;
 
+    const { searchParams } = new URL(request.url);
+    const paginationResult = AdminPaginationSchema.safeParse({
+      page: searchParams.get('page') || undefined,
+      limit: searchParams.get('limit') || undefined,
+    });
+    if (!paginationResult.success) {
+      return NextResponse.json({ error: 'Parámetros inválidos', details: paginationResult.error.errors }, { status: 400 });
+    }
+    const usePagination = searchParams.has('page') || searchParams.has('limit');
+    const page = paginationResult.data.page ?? 1;
+    const limit = paginationResult.data.limit ?? 20;
+
+    const total = await prisma.motelProspect.count();
+
     const prospects = await prisma.motelProspect.findMany({
       orderBy: [
         { status: 'asc' },
         { createdAt: 'desc' },
       ],
+      ...(usePagination ? { skip: (page - 1) * limit, take: limit } : {}),
     });
 
-    return NextResponse.json(prospects);
+    if (!usePagination) {
+      return NextResponse.json(prospects);
+    }
+
+    return NextResponse.json({
+      data: prospects,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    });
   } catch (error) {
     console.error('Error fetching prospects:', error);
     return NextResponse.json(
@@ -39,53 +69,25 @@ export async function POST(request: NextRequest) {
     if (access.error) return access.error;
 
     const body = await request.json();
-    const { contactName, phone, motelName, channel, notes } = body;
-
-    // Validación básica
-    if (!contactName || !phone || !motelName) {
-      return NextResponse.json(
-        { error: 'contactName, phone y motelName son requeridos' },
-        { status: 400 }
-      );
-    }
-
-    // Validación de nombre de contacto (mínimo 2 caracteres)
-    if (contactName.trim().length < 2) {
-      return NextResponse.json(
-        { error: 'El nombre de contacto debe tener al menos 2 caracteres' },
-        { status: 400 }
-      );
-    }
-
-    // Validación de teléfono (mínimo 7 dígitos)
-    const phoneDigits = phone.replace(/\D/g, '');
+    const sanitized = sanitizeObject(body);
+    const validated = AdminProspectCreateSchema.parse(sanitized);
+    const phoneDigits = validated.phone.replace(/\D/g, '');
     if (phoneDigits.length < 7) {
       return NextResponse.json(
         { error: 'El teléfono debe tener al menos 7 dígitos' },
         { status: 400 }
       );
     }
-
-    // Validación de nombre del motel (mínimo 2 caracteres)
-    if (motelName.trim().length < 2) {
-      return NextResponse.json(
-        { error: 'El nombre del motel debe tener al menos 2 caracteres' },
-        { status: 400 }
-      );
-    }
-
-    // Validar canal si se proporciona, default MANUAL para admin
-    const validChannels = ['WEB', 'APP', 'MANUAL'];
-    const finalChannel = channel && validChannels.includes(channel) ? channel : 'MANUAL';
+    const finalChannel = validated.channel || 'MANUAL';
 
     // Crear prospect
     const prospect = await prisma.motelProspect.create({
       data: {
-        contactName: contactName.trim(),
-        phone: phone.trim(),
-        motelName: motelName.trim(),
+        contactName: validated.contactName.trim(),
+        phone: validated.phone.trim(),
+        motelName: validated.motelName.trim(),
         channel: finalChannel,
-        notes: notes?.trim() || null,
+        notes: validated.notes?.trim() || null,
       },
     });
 
@@ -100,6 +102,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(prospect, { status: 201 });
   } catch (error) {
     console.error('Error creating prospect:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al crear prospect' },
       { status: 500 }

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { SettingsUpdateSchema } from '@/lib/validations/schemas';
+import { sanitizeObject } from '@/lib/sanitize';
+import { z } from 'zod';
 
 /**
  * GET /api/admin/settings
@@ -87,18 +90,12 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-
-    // Validar que el body no esté vacío
-    if (!body || Object.keys(body).length === 0) {
-      return NextResponse.json(
-        { error: 'No se proporcionaron configuraciones para actualizar' },
-        { status: 400 }
-      );
-    }
+    const sanitized = sanitizeObject(body);
+    const validated = SettingsUpdateSchema.parse(sanitized);
 
     // Actualizar cada configuración
     const updates = [];
-    for (const [key, value] of Object.entries(body)) {
+    for (const [key, value] of Object.entries(validated)) {
       const update = prisma.settings.upsert({
         where: { key },
         update: {
@@ -141,6 +138,9 @@ export async function PATCH(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error updating settings:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error al actualizar configuraciones' },
       { status: 500 }

@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { EmptySchema } from '@/lib/validations/schemas';
+import { z } from 'zod';
 
 export async function GET() {
   try {
+    EmptySchema.parse({});
     const motels = await prisma.motel.findMany({
       where: {
         status: 'APPROVED',
@@ -49,6 +52,9 @@ export async function GET() {
     return NextResponse.json({ motels: sanitizedMotels });
   } catch (error) {
     console.error('Error fetching nearby motels:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validación fallida', details: error.errors, motels: [] }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Error fetching motels', motels: [] },
       { status: 500 }
