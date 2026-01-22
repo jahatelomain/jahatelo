@@ -385,6 +385,17 @@ export default function MotelDetailPage() {
     }
   };
 
+  const getResponseError = async (res: Response, fallback: string) => {
+    try {
+      const data = await res.json();
+      if (data?.error) return data.error as string;
+      if (data?.message) return data.message as string;
+    } catch (error) {
+      console.error('Error parsing response:', error);
+    }
+    return fallback;
+  };
+
   const handleSavePromo = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -400,6 +411,9 @@ export default function MotelDetailPage() {
           setShowPromoForm(false);
           setEditingPromoId(null);
           setPromoForm(createInitialPromoForm());
+        } else {
+          const message = await getResponseError(res, 'Error al actualizar promo');
+          alert(message);
         }
       } else {
         // Create new promo
@@ -412,10 +426,14 @@ export default function MotelDetailPage() {
           fetchPromos();
           setShowPromoForm(false);
           setPromoForm(createInitialPromoForm());
+        } else {
+          const message = await getResponseError(res, 'Error al crear promo');
+          alert(message);
         }
       }
     } catch (error) {
       console.error('Error saving promo:', error);
+      alert('Error al guardar promo');
     }
   };
 
@@ -767,7 +785,8 @@ export default function MotelDetailPage() {
         setSaveStatus('success');
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
-        alert('Error al agregar foto');
+        const message = await getResponseError(res, 'Error al agregar foto');
+        alert(message);
       }
     } catch (error) {
       console.error('Error adding room photo:', error);
@@ -893,6 +912,7 @@ export default function MotelDetailPage() {
   // Constantes seguras para evitar errores de undefined
   const rooms = motel.rooms ?? [];
   const menuCategories = motel.menuCategories ?? [];
+  const activePromosCount = promos.filter((promo) => promo.isActive).length;
 
   // Constantes seguras para valores numéricos
   const safeRatingAvg = typeof motel.ratingAvg === 'number' ? motel.ratingAvg : 0;
@@ -904,8 +924,36 @@ export default function MotelDetailPage() {
     return numPrice.toLocaleString();
   };
 
+  const normalizePlan = (plan: string | null | undefined) => (plan || 'BASIC').toUpperCase();
+
+  const getPlanLabel = (plan: string | null | undefined) => {
+    const normalized = normalizePlan(plan);
+    if (normalized === 'GOLD') return 'Gold';
+    if (normalized === 'DIAMOND') return 'Diamond';
+    if (normalized === 'FREE') return 'Free';
+    return 'Básico';
+  };
+
+  const getPromoLimit = (plan: string | null | undefined) => {
+    const normalized = normalizePlan(plan);
+    if (normalized === 'GOLD') return 5;
+    if (normalized === 'DIAMOND') return Number.POSITIVE_INFINITY;
+    return 1;
+  };
+
+  const getRoomPhotoLimit = (plan: string | null | undefined) => {
+    const normalized = normalizePlan(plan);
+    if (normalized === 'GOLD') return 3;
+    if (normalized === 'DIAMOND') return Number.POSITIVE_INFINITY;
+    return 1;
+  };
+
+  const formatLimit = (limit: number) => (Number.isFinite(limit) ? `${limit}` : 'Ilimitadas');
+
   const whatsappLink = motel.whatsapp ? `https://wa.me/${motel.whatsapp.replace(/\D/g, '')}` : '';
   const phoneLink = motel.phone ? `tel:${motel.phone}` : '';
+  const promoLimit = getPromoLimit(motel.plan);
+  const roomPhotoLimit = getRoomPhotoLimit(motel.plan);
 
   return (
     <div className="space-y-6">
@@ -1128,6 +1176,14 @@ export default function MotelDetailPage() {
               </button>
             </div>
           )}
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <span className="font-semibold">Límite por plan ({getPlanLabel(motel.plan)}):</span>{' '}
+            Básico 1 activa · Gold 5 activas · Diamond ilimitadas.
+            <span className="ml-2 text-slate-500">
+              Activas: {activePromosCount}/{formatLimit(promoLimit)}
+            </span>
+          </div>
 
           {showPromoForm && (
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
@@ -2349,6 +2405,12 @@ export default function MotelDetailPage() {
                   {/* Fotos de la habitación */}
                   <div className="pt-4 border-t border-slate-200">
                     <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Fotos</h4>
+                    <p className="text-xs text-slate-500 mb-3">
+                      Límite por plan ({getPlanLabel(motel.plan)}): Básico 1 · Gold 3 · Diamond ilimitadas.
+                      <span className="ml-2">
+                        Esta habitación tiene {(room.roomPhotos?.length ?? 0)}/{formatLimit(roomPhotoLimit)}.
+                      </span>
+                    </p>
                     <div className="space-y-3">
                       {(room.roomPhotos?.length ?? 0) > 0 && (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">

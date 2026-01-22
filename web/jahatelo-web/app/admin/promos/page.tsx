@@ -12,6 +12,7 @@ type Motel = {
   id: string;
   name: string;
   city: string;
+  plan?: string | null;
 };
 
 type Promo = {
@@ -59,6 +60,22 @@ export default function PromosAdminPage() {
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
   const toast = useToast();
+
+  const normalizePlan = (plan?: string | null) => (plan || 'BASIC').toUpperCase();
+  const getPlanLabel = (plan?: string | null) => {
+    const normalized = normalizePlan(plan);
+    if (normalized === 'GOLD') return 'Gold';
+    if (normalized === 'DIAMOND') return 'Diamond';
+    if (normalized === 'FREE') return 'Free';
+    return 'Básico';
+  };
+  const getPromoLimit = (plan?: string | null) => {
+    const normalized = normalizePlan(plan);
+    if (normalized === 'GOLD') return 5;
+    if (normalized === 'DIAMOND') return Number.POSITIVE_INFINITY;
+    return 1;
+  };
+  const formatLimit = (limit: number) => (Number.isFinite(limit) ? `${limit}` : 'Ilimitadas');
 
   const [formData, setFormData] = useState({
     motelId: '',
@@ -290,6 +307,9 @@ export default function PromosAdminPage() {
   };
 
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const selectedMotel = motels.find((motel) => motel.id === formData.motelId);
+  const selectedPlan = selectedMotel?.plan ?? null;
+  const selectedPromoLimit = getPromoLimit(selectedPlan);
 
   useEffect(() => {
     const nextKey = `${filterStatus}|${filterType}|${debouncedSearchQuery.trim()}`;
@@ -455,6 +475,15 @@ export default function PromosAdminPage() {
                 </select>
                 {editingId && (
                   <p className="text-xs text-slate-500 mt-1">No se puede cambiar el motel al editar</p>
+                )}
+                {formData.motelId && (
+                  <p className="text-xs text-slate-500 mt-2">
+                    Límite por plan ({getPlanLabel(selectedPlan)}): Básico 1 activa · Gold 5 activas · Diamond ilimitadas.
+                    <span className="ml-2">Límite actual: {formatLimit(selectedPromoLimit)}.</span>
+                    {!selectedMotel?.plan && (
+                      <span className="ml-2">Plan no disponible en listado; se validará al guardar.</span>
+                    )}
+                  </p>
                 )}
               </div>
 
