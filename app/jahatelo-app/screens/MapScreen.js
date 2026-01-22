@@ -8,6 +8,7 @@ import {
   Alert,
   StatusBar,
   Platform,
+  Animated,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -22,7 +23,7 @@ const debugLog = (...args) => {
   if (__DEV__) console.log(...args);
 };
 
-// Marker con Callout solo en iOS para evitar etiquetas en Android
+// Marker con etiquetas en iOS y tooltip en Android
 const CustomMarker = React.memo(({ motel, onPress }) => {
   const isDisabled = motel.plan === 'FREE';
   const [tracksChanges, setTracksChanges] = useState(IS_ANDROID);
@@ -31,12 +32,38 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
   // Configuración según plan
   const isGold = plan === 'GOLD';
   const isDiamond = plan === 'DIAMOND';
-
+  const sizeMultiplier = isDiamond ? 1.3 : isGold ? 1.15 : 1;
+  const pinSize = Math.round(36 * sizeMultiplier);
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+  const pinStyle = [
+    styles.markerPin,
+    isDisabled && styles.disabledMarker,
+    isGold && styles.goldMarker,
+    isDiamond && styles.diamondMarker,
+    { width: pinSize, height: pinSize, borderRadius: Math.round(pinSize / 2) },
+  ];
+  const labelContainerStyle = [
+    styles.iosLabelContainer,
+    isDisabled && styles.disabledLabel,
+    isGold && styles.goldLabel,
+    isDiamond && styles.diamondLabel,
+    {
+      paddingHorizontal: Math.round(10 * sizeMultiplier),
+      paddingVertical: Math.round(4 * sizeMultiplier),
+      borderRadius: Math.round(10 * sizeMultiplier),
+      maxWidth: Math.round(180 * sizeMultiplier),
+    },
+  ];
+  const labelTextStyle = [
+    styles.iosLabelText,
+    { fontSize: Math.round(12 * sizeMultiplier) },
+  ];
   const calloutStyle = [
     styles.calloutContainer,
     isDisabled && styles.disabledCallout,
-    isGold && styles.premiumCallout,
-    isDiamond && styles.platinumCallout,
+    isGold && styles.goldCallout,
+    isDiamond && styles.diamondCallout,
+    { padding: Math.round(12 * sizeMultiplier) },
   ];
 
   useEffect(() => {
@@ -45,6 +72,26 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    if (!isGold && !isDiamond) return;
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: -2,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [bounceAnim, isGold, isDiamond]);
+
   return (
     <Marker
       coordinate={{
@@ -52,42 +99,57 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
         longitude: motel.longitude,
       }}
       anchor={{ x: 0.5, y: 1 }}
-      onPress={onPress}
+      onPress={IS_ANDROID ? undefined : onPress}
       tracksViewChanges={IS_ANDROID ? tracksChanges : false}
     >
       <View style={{ alignItems: 'center' }}>
         {!IS_ANDROID && (
-          <View style={styles.iosLabelContainer} pointerEvents="none">
-            <Text style={styles.iosLabelText} numberOfLines={1}>
+          <View style={labelContainerStyle} pointerEvents="none">
+            {isGold && (
+              <View style={styles.labelBadge}>
+                <Ionicons name="star" size={12} color="#F59E0B" />
+              </View>
+            )}
+            {isDiamond && (
+              <View style={styles.labelBadge}>
+                <Ionicons name="diamond" size={12} color="#0EA5E9" />
+              </View>
+            )}
+            <Text style={labelTextStyle} numberOfLines={1}>
               {motel.name}
             </Text>
           </View>
         )}
 
         {/* Pin del marker */}
-        <View
-          style={[
-            styles.markerPin,
-            isDisabled && styles.disabledMarker,
-            isDiamond && styles.platinumMarker,
-          ]}
-        >
+        <Animated.View style={[{ transform: [{ translateY: bounceAnim }] }, pinStyle]}>
           <View style={styles.markerInner}>
             <Ionicons
               name="heart"
-              size={isGold || isDiamond ? 18 : 14}
+              size={Math.round((isGold || isDiamond ? 18 : 14) * sizeMultiplier)}
               color={COLORS.white}
             />
           </View>
 
-          {/* Badge para Diamond */}
-          {isDiamond && !isDisabled && (
-            <View style={styles.platinumBadge}>
-              <Ionicons name="star" size={12} color="#FCD34D" />
-            </View>
-          )}
-        </View>
+        </Animated.View>
       </View>
+
+      {IS_ANDROID && (
+        <Callout tooltip onPress={onPress}>
+          <View style={calloutStyle}>
+            {isDiamond && (
+              <Text style={[styles.calloutBadge, { fontSize: Math.round(11 * sizeMultiplier) }]}>💎 DIAMOND</Text>
+            )}
+            {isGold && !isDiamond && (
+              <Text style={[styles.calloutBadge, { fontSize: Math.round(11 * sizeMultiplier) }]}>⭐ GOLD</Text>
+            )}
+            <Text style={[styles.calloutTitle, { fontSize: Math.round(14 * sizeMultiplier) }]} numberOfLines={1}>
+              {motel.name}
+            </Text>
+            <Text style={[styles.calloutSubtitle, { fontSize: Math.round(11 * sizeMultiplier) }]}>Tap para ver detalles</Text>
+          </View>
+        </Callout>
+      )}
 
     </Marker>
   );
@@ -395,8 +457,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   disabledMarker: {
-    backgroundColor: '#CCCCCC',
-    opacity: 0.5,
+    backgroundColor: '#9CA3AF',
+    opacity: 1,
+  },
+  goldMarker: {
+    backgroundColor: '#F59E0B',
+  },
+  diamondMarker: {
+    backgroundColor: '#7DD3FC',
   },
 
   // ===== CALLOUT STYLES =====
@@ -426,32 +494,11 @@ const styles = StyleSheet.create({
   disabledCallout: {
     backgroundColor: '#CCCCCC',
   },
-  platinumMarker: {
-    ...(Platform.OS === 'android' && {
-      shadowColor: '#F59E0B',
-      shadowOpacity: 0.6,
-      shadowRadius: 6,
-      elevation: 8,
-    }),
-  },
-  platinumBadge: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    backgroundColor: COLORS.white,
-    borderRadius: 10,
-    width: 20,
-    height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#F59E0B',
-  },
-  premiumCallout: {
-    backgroundColor: '#8B5CF6',
-  },
-  platinumCallout: {
+  goldCallout: {
     backgroundColor: '#F59E0B',
+  },
+  diamondCallout: {
+    backgroundColor: '#7DD3FC',
   },
   calloutBadge: {
     fontSize: 11,
@@ -475,6 +522,30 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 6,
     elevation: 3,
+    position: 'relative',
+    overflow: 'visible',
+  },
+  disabledLabel: {
+    backgroundColor: '#9CA3AF',
+  },
+  goldLabel: {
+    backgroundColor: '#F59E0B',
+  },
+  diamondLabel: {
+    backgroundColor: '#7DD3FC',
+  },
+  labelBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: COLORS.white,
+    borderWidth: 2,
+    borderColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   iosLabelText: {
     fontSize: 12,

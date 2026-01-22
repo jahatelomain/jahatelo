@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   premiumBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#F59E0B',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
@@ -338,12 +338,12 @@ const styles = StyleSheet.create({
   platinumBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F59E0B',
+    backgroundColor: '#7DD3FC',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
     gap: 2,
-    shadowColor: '#F59E0B',
+    shadowColor: '#7DD3FC',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.4,
     shadowRadius: 3,
