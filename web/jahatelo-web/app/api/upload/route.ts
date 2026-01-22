@@ -83,7 +83,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('[UPLOAD_ERROR]', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Datos inválidos', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Datos inválidos', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Failed to upload file' },

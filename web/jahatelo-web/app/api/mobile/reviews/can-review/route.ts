@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       motelId: searchParams.get('motelId') || undefined,
     });
     if (!queryResult.success) {
-      return NextResponse.json({ error: 'motelId es requerido', details: queryResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'motelId es requerido', details: queryResult.error.issues }, { status: 400 });
     }
     const { motelId } = queryResult.data;
 
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error in GET /api/mobile/reviews/can-review:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Error al verificar disponibilidad de reseña' },

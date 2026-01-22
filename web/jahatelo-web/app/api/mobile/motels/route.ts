@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit') || undefined,
     });
     if (!queryResult.success) {
-      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
 
     // Parse query params
@@ -314,7 +314,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error in GET /api/mobile/motels:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Parámetros inválidos', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros inválidos', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Failed to fetch motels' },

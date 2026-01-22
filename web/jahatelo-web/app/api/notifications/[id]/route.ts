@@ -25,7 +25,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching notification:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'ID inválido', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'ID inválido', details: error.issues }, { status: 400 });
     }
     return NextResponse.json({ error: 'Error al obtener notificación' }, { status: 500 });
   }

@@ -12,7 +12,7 @@ export async function GET(
     const { slug } = await params;
     const slugResult = MobileMotelSlugSchema.safeParse({ slug });
     if (!slugResult.success) {
-      return NextResponse.json({ error: 'Invalid slug', details: slugResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid slug', details: slugResult.error.issues }, { status: 400 });
     }
     const resolvedSlug = slugResult.data.slug;
 
@@ -94,7 +94,7 @@ export async function GET(
   } catch (error) {
     console.error('Error in GET /api/mobile/motels/[slug]:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid slug', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid slug', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Failed to fetch motel' },

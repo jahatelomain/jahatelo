@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
 import { MobileProfileUpdateSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
@@ -121,12 +122,17 @@ export async function PATCH(request: NextRequest) {
         ...(phone !== undefined && { phone: phone?.trim() || null }),
         ...(profilePhoto !== undefined && { profilePhoto }),
         ...(pushToken !== undefined && { pushToken }),
-        ...(deviceInfo !== undefined && { deviceInfo }),
+        ...(deviceInfo !== undefined && {
+          deviceInfo: deviceInfo === null ? Prisma.JsonNull : deviceInfo,
+        }),
       },
       include: {
         notificationPreferences: true,
       },
     });
+
+    const notificationPreferences =
+      'notificationPreferences' in user ? user.notificationPreferences : null;
 
     return NextResponse.json({
       success: true,
@@ -139,14 +145,14 @@ export async function PATCH(request: NextRequest) {
         provider: user.provider,
         isEmailVerified: user.isEmailVerified,
         updatedAt: user.updatedAt,
-        notificationPreferences: user.notificationPreferences,
+        notificationPreferences,
       },
     });
 
   } catch (error) {
     console.error('Error in PATCH /api/mobile/auth/me:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Error al actualizar perfil' },

@@ -53,7 +53,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching nearby motels:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.errors, motels: [] }, { status: 400 });
+      return NextResponse.json({ error: 'Validación fallida', details: error.issues, motels: [] }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Error fetching motels', motels: [] },

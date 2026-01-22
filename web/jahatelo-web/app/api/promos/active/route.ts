@@ -32,7 +32,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching promos:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ promos: [], error: 'Validación fallida', details: error.errors }, { status: 400 });
+      return NextResponse.json({ promos: [], error: 'Validación fallida', details: error.issues }, { status: 400 });
     }
     return NextResponse.json({ promos: [] }, { status: 500 });
   }
