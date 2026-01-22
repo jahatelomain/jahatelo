@@ -80,7 +80,7 @@ export async function PATCH(
     // Check if another amenity with the same name exists
     const existing = await prisma.amenity.findFirst({
       where: {
-        name,
+        name: validated.name,
         id: { not: idResult.data },
       },
     });
