@@ -51,13 +51,11 @@ export default function AmenitiesPage() {
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('ALL');
   const pageSize = 20;
   const filtersKeyRef = useRef('');
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
-
-  // Filtros
-  const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('ALL');
 
   const fetchAmenities = async () => {
     try {
