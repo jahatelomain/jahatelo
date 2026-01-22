@@ -651,7 +651,6 @@ export default function MotelsAdminPage() {
           </tbody>
         </table>
           </div>
-          </div>
           {totalItems > 0 && (
             <div className="px-6 pb-6">
               <PaginationControls
