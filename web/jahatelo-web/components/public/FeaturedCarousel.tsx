@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAdvertisements, trackAdEvent } from '@/hooks/useAdvertisements';
 import type { Advertisement } from '@/hooks/useAdvertisements';
 import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
+import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
 
 interface Motel {
   id: string;
@@ -142,14 +143,9 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
           }
 
           const motel = item.data as Motel;
-          const fallbackPhoto = '/motel-placeholder.png';
-          const photoUrl =
-            failedImages[motel.id]
-              ? fallbackPhoto
-              : motel.featuredPhoto ||
-                motel.photos?.[0]?.url ||
-                fallbackPhoto;
-          const isPlaceholder = photoUrl === fallbackPhoto;
+          const realPhotoUrl = motel.featuredPhoto || motel.photos?.[0]?.url || null;
+          const photoUrl = failedImages[motel.id] ? null : realPhotoUrl;
+          const isPlaceholder = !photoUrl;
           const isDisabled = motel.plan === 'FREE';
 
           return (
@@ -159,14 +155,19 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                 isActive ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              {isDisabled ? (
+              {isPlaceholder ? (
+                <div
+                  className="absolute inset-0"
+                  style={MOTEL_PATTERN_STYLE}
+                />
+              ) : isDisabled ? (
                 <div className="absolute inset-0 cursor-default">
                   <Image
                     src={photoUrl}
                     alt={motel.name}
                     fill
                     quality={85}
-                    className={`object-cover ${isPlaceholder ? 'opacity-60' : ''}`}
+                    className="object-cover"
                     sizes="(max-width: 768px) 100vw, 800px"
                     loading={index === 0 ? 'eager' : 'lazy'}
                     priority={index === 0}
@@ -185,7 +186,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                     alt={motel.name}
                     fill
                     quality={85}
-                    className={`object-cover ${isPlaceholder ? 'opacity-60' : ''}`}
+                    className="object-cover"
                     sizes="(max-width: 768px) 100vw, 800px"
                     loading={index === 0 ? 'eager' : 'lazy'}
                     priority={index === 0}

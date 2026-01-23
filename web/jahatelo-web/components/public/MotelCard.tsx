@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import * as LucideIcons from 'lucide-react';
 import { trackMotelView } from '@/lib/analyticsService';
 import FavoriteButtonClient from '@/components/public/FavoriteButtonClient';
 import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
+import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
+import type { CSSProperties } from 'react';
 
 interface MotelCardProps {
   motel: {
@@ -30,9 +33,10 @@ export default function MotelCard({ motel }: MotelCardProps) {
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
   const facadePhoto = motel.photos?.find((p) => p.kind === 'FACADE');
   const firstPhoto = motel.photos?.[0];
-  const placeholderUrl = '/motel-placeholder.png';
-  const photoUrl = motel.featuredPhoto || facadePhoto?.url || firstPhoto?.url || placeholderUrl;
-  const isPlaceholder = photoUrl === placeholderUrl;
+  const realPhotoUrl = motel.featuredPhoto || facadePhoto?.url || firstPhoto?.url || null;
+  const [imageFailed, setImageFailed] = useState(false);
+  const photoUrl = imageFailed ? null : realPhotoUrl;
+  const isPlaceholder = !photoUrl;
 
   // Track vista cuando se hace click en la card
   const handleClick = () => {
@@ -50,13 +54,17 @@ export default function MotelCard({ motel }: MotelCardProps) {
   // Get first 3 amenities
   const topAmenities = motel.motelAmenities?.slice(0, 3) ?? [];
   const isDisabled = motel.plan === 'FREE';
+  const isDiamond = motel.plan === 'DIAMOND';
 
-  const cardContent = (
+  const cardInner = (
     <div
-      className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[360px] h-full flex flex-col ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-default' : 'cursor-pointer'}`}
+      className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[360px] h-full flex flex-col ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-default' : 'cursor-pointer'} ${isDiamond ? 'border-transparent' : ''}`}
     >
         {/* Image */}
-        <div className="relative h-40 bg-gray-200">
+        <div
+          className="relative h-40"
+          style={isPlaceholder ? MOTEL_PATTERN_STYLE : undefined}
+        >
           {photoUrl ? (
             <Image
               src={photoUrl}
@@ -68,13 +76,10 @@ export default function MotelCard({ motel }: MotelCardProps) {
               loading="lazy"
               placeholder="blur"
               blurDataURL={BLUR_DATA_URL}
+              onError={() => setImageFailed(true)}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-purple-200">
-              <svg className="w-16 h-16 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
+            <div className="w-full h-full bg-transparent" />
           )}
           <div className="absolute top-3 left-3">
             <FavoriteButtonClient motelId={motel.id} source="LIST" size="small" />
@@ -147,6 +152,78 @@ export default function MotelCard({ motel }: MotelCardProps) {
           )}
         </div>
       </div>
+  );
+
+  const diamondFrameStyle: CSSProperties = isDiamond
+    ? {
+        backgroundImage:
+          'conic-gradient(from 180deg at 50% 50%, rgba(34,211,238,0.9), rgba(186,230,253,0.9), rgba(14,116,144,0.9), rgba(125,211,252,0.9), rgba(34,211,238,0.9)), repeating-linear-gradient(135deg, rgba(255,255,255,0.35) 0 6px, rgba(255,255,255,0.05) 6px 12px)',
+      }
+    : undefined;
+
+  const cardContent = isDiamond ? (
+    <div
+      className="relative p-[2px] rounded-xl shadow-[0_0_18px_rgba(34,211,238,0.45)]"
+      style={diamondFrameStyle}
+    >
+      <div className="absolute inset-0 rounded-xl pointer-events-none diamond-orbit">
+        <span className="diamond-orbit-dot" />
+      </div>
+      <div className="absolute -inset-1 rounded-xl pointer-events-none diamond-shimmer" />
+      <div className="rounded-[10px] h-full">{cardInner}</div>
+      <style jsx>{`
+        .diamond-orbit {
+          animation: diamond-orbit 4.2s linear infinite;
+        }
+        .diamond-shimmer {
+          background: linear-gradient(
+            120deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.18) 45%,
+            rgba(255, 255, 255, 0) 70%
+          );
+          animation: diamond-shimmer 7s linear infinite;
+          mix-blend-mode: screen;
+        }
+        .diamond-orbit-dot {
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 6px;
+          height: 6px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.95);
+          box-shadow: 0 0 6px rgba(186, 230, 253, 0.7), 0 0 12px rgba(34, 211, 238, 0.45);
+        }
+        @keyframes diamond-orbit {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+        @keyframes diamond-shimmer {
+          0% {
+            transform: translateX(-60%) rotate(20deg);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.45;
+          }
+          50% {
+            opacity: 0.2;
+          }
+          100% {
+            transform: translateX(60%) rotate(20deg);
+            opacity: 0;
+          }
+        }
+      `}</style>
+    </div>
+  ) : (
+    cardInner
   );
 
   return isDisabled ? cardContent : <Link href={`/motels/${motel.slug}`} onClick={handleClick}>{cardContent}</Link>;

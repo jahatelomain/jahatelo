@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
+import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
 
 export default function ImageGallery({ images }: { images: { url: string; alt?: string }[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -24,9 +25,7 @@ export default function ImageGallery({ images }: { images: { url: string; alt?: 
     <div className="space-y-3">
       <div className="relative h-80 bg-slate-100 rounded-2xl overflow-hidden">
         {isActiveBroken ? (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-purple-200">
-            <span className="text-sm text-purple-600 font-semibold">Imagen no disponible</span>
-          </div>
+          <div className="w-full h-full" style={MOTEL_PATTERN_STYLE} />
         ) : (
           <Image
             src={activeImage.url}
@@ -53,9 +52,10 @@ export default function ImageGallery({ images }: { images: { url: string; alt?: 
             onClick={() => setActiveIndex(index)}
           >
             {isBroken ? (
-              <div className="w-full h-full flex items-center justify-center bg-slate-100 text-[10px] text-slate-400">
-                Sin imagen
-              </div>
+              <div
+                className="w-full h-full"
+                style={{ ...MOTEL_PATTERN_STYLE, backgroundSize: '80px 80px' }}
+              />
             ) : (
               <Image
                 src={image.url}
