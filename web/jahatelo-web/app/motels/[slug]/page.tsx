@@ -7,6 +7,7 @@ import FavoriteButtonClient from '@/components/public/FavoriteButtonClient';
 import ContactButtons from '@/components/public/ContactButtons';
 import PromosTab from '@/components/public/PromosTab';
 import ImageGallery from '@/components/public/ImageGallery';
+import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
 import ShareButton from '@/components/public/ShareButton';
 import ReviewsSection from '@/components/public/ReviewsSection';
 import PriceTable from '@/components/public/PriceTable';
@@ -71,9 +72,8 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
   // Get main photo
   const facadePhoto = motel.photos.find((p) => p.kind === 'FACADE');
   const mainPhoto = facadePhoto || motel.photos[0] || (motel.featuredPhoto ? { url: motel.featuredPhoto } : undefined);
-  const fallbackUrl = '/motel-placeholder.png';
-  const heroPhotoUrl = mainPhoto?.url || motel.featuredPhoto || fallbackUrl;
-  const isHeroPlaceholder = heroPhotoUrl === fallbackUrl;
+  const heroPhotoUrl = mainPhoto?.url || motel.featuredPhoto || null;
+  const hasHeroPhoto = Boolean(heroPhotoUrl);
   const galleryPhotos = [
     ...(motel.featuredPhoto ? [{ url: motel.featuredPhoto, alt: motel.name }] : []),
     ...motel.photos.map((photo) => ({ url: photo.url, alt: motel.name })),
@@ -436,7 +436,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: 'Inicio', url: 'https://jahatelo.vercel.app' },
-    { name: 'Moteles', url: 'https://jahatelo.vercel.app/motels' },
+    { name: 'Buscar Moteles', url: 'https://jahatelo.vercel.app/search' },
     { name: motel.name, url: `https://jahatelo.vercel.app/motels/${motel.slug}` },
   ]);
 
@@ -446,16 +446,23 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
       <Navbar />
       <div className="bg-gray-50 min-h-screen">
       {/* Hero Image */}
-      <div className="relative h-96 bg-gray-200">
-        <Image
-          src={heroPhotoUrl}
-          alt={motel.name}
-          fill
-          priority
-          quality={85}
-          className={`object-cover ${isHeroPlaceholder ? 'opacity-60' : ''}`}
-          sizes="100vw"
-        />
+      <div
+        className="relative h-96"
+        style={{
+          ...MOTEL_PATTERN_STYLE,
+        }}
+      >
+        {hasHeroPhoto ? (
+          <Image
+            src={heroPhotoUrl}
+            alt={motel.name}
+            fill
+            priority
+            quality={85}
+            className="object-cover"
+            sizes="100vw"
+          />
+        ) : null}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
         {/* Badges */}

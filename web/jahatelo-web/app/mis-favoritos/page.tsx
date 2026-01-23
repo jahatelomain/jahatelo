@@ -160,10 +160,10 @@ export default function MisFavoritosPage() {
               Toca el corazón en cualquier motel para guardarlo aquí.
             </p>
             <Link
-              href="/motels"
+              href="/search"
               className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
             >
-              Explorar Moteles
+              Buscar Moteles
             </Link>
           </div>
         )}

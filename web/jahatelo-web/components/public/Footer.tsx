@@ -27,8 +27,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/motels" className="text-gray-600 hover:text-purple-600 text-sm transition-colors">
-                  Moteles
+                <Link href="/search" className="text-gray-600 hover:text-purple-600 text-sm transition-colors">
+                  Buscar moteles
                 </Link>
               </li>
             </ul>

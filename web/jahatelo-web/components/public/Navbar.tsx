@@ -47,16 +47,6 @@ export default function Navbar() {
               Inicio
             </Link>
             <Link
-              href="/motels"
-              className={`font-medium transition-colors ${
-                isActive('/motels') || pathname.startsWith('/motels')
-                  ? 'text-purple-600'
-                  : 'text-gray-600 hover:text-purple-600'
-              }`}
-            >
-              Moteles
-            </Link>
-            <Link
               href="/search"
               className={`font-medium transition-colors ${
                 isActive('/search')
@@ -64,7 +54,7 @@ export default function Navbar() {
                   : 'text-gray-600 hover:text-purple-600'
               }`}
             >
-              Buscar
+              Buscar Moteles
             </Link>
             <Link
               href="/nearby"
@@ -200,17 +190,6 @@ export default function Navbar() {
                 Inicio
               </Link>
               <Link
-                href="/motels"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`font-medium transition-colors ${
-                  isActive('/motels') || pathname.startsWith('/motels')
-                    ? 'text-purple-600'
-                    : 'text-gray-600 hover:text-purple-600'
-                }`}
-              >
-                Moteles
-              </Link>
-              <Link
                 href="/search"
                 onClick={() => setMobileMenuOpen(false)}
                 className={`font-medium transition-colors ${
@@ -219,7 +198,7 @@ export default function Navbar() {
                     : 'text-gray-600 hover:text-purple-600'
                 }`}
               >
-                Buscar
+                Buscar Moteles
               </Link>
               <Link
                 href="/nearby"

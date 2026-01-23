@@ -212,8 +212,8 @@ export default function ContactoPage() {
         <div className="mt-8 text-center">
           <p className="text-gray-600">
             ¿Prefieres explorar por tu cuenta?{' '}
-            <a href="/motels" className="text-purple-600 font-semibold hover:text-purple-700 transition-colors">
-              Ver todos los moteles
+            <a href="/search" className="text-purple-600 font-semibold hover:text-purple-700 transition-colors">
+              Buscar moteles
             </a>
           </p>
         </div>

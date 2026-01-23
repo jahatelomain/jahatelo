@@ -62,14 +62,14 @@ export default function SearchBar() {
       return;
     }
     if (item.type === 'city') {
-      router.push(`/motels?city=${encodeURIComponent(item.label)}`);
+      router.push(`/search?city=${encodeURIComponent(item.label)}`);
       return;
     }
     if (item.type === 'neighborhood') {
-      router.push(`/motels?search=${encodeURIComponent(item.label)}`);
+      router.push(`/search?q=${encodeURIComponent(item.label)}`);
       return;
     }
-    router.push(`/motels?search=${encodeURIComponent(query)}`);
+    router.push(`/search?q=${encodeURIComponent(query)}`);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -87,7 +87,7 @@ export default function SearchBar() {
       if (activeIndex >= 0 && suggestions[activeIndex]) {
         handleSelect(suggestions[activeIndex]);
       } else {
-        router.push(`/motels?search=${encodeURIComponent(query)}`);
+        router.push(`/search?q=${encodeURIComponent(query)}`);
       }
     }
     if (event.key === 'Escape') {

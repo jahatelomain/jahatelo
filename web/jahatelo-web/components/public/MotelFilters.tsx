@@ -41,7 +41,7 @@ export default function MotelFilters({
   // Auto-search when debounced value changes
   useEffect(() => {
     if (debouncedSearchValue !== currentSearch) {
-      updateFilter('search', debouncedSearchValue);
+      updateFilter('q', debouncedSearchValue);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchValue]);
@@ -63,11 +63,11 @@ export default function MotelFilters({
       }
     }
 
-    router.push(`/motels?${params.toString()}`);
+    router.push(`/search?${params.toString()}`);
   };
 
   const clearFilters = () => {
-    router.push('/motels');
+    router.push('/search');
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -88,7 +88,7 @@ export default function MotelFilters({
     } else {
       params.delete('amenities');
     }
-    router.push(`/motels?${params.toString()}`);
+    router.push(`/search?${params.toString()}`);
   };
 
   const promosActive = currentPromos === '1';
