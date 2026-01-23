@@ -66,11 +66,17 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
     { padding: Math.round(12 * sizeMultiplier) },
   ];
 
+  const shouldAnimate = isGold || isDiamond;
+
   useEffect(() => {
     if (!IS_ANDROID) return;
+    if (shouldAnimate) {
+      setTracksChanges(true);
+      return;
+    }
     const timer = setTimeout(() => setTracksChanges(false), 500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [shouldAnimate]);
 
   useEffect(() => {
     if (!isGold && !isDiamond) return;
@@ -92,6 +98,8 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
     return () => animation.stop();
   }, [bounceAnim, isGold, isDiamond]);
 
+  const bounceStyle = isGold || isDiamond ? { transform: [{ translateY: bounceAnim }] } : null;
+
   return (
     <Marker
       coordinate={{
@@ -104,7 +112,7 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
     >
       <View style={{ alignItems: 'center' }}>
         {!IS_ANDROID && (
-          <View style={labelContainerStyle} pointerEvents="none">
+          <Animated.View style={[labelContainerStyle, bounceStyle]} pointerEvents="none">
             {isGold && (
               <View style={styles.labelBadge}>
                 <Ionicons name="star" size={12} color="#F59E0B" />
@@ -118,11 +126,11 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
             <Text style={labelTextStyle} numberOfLines={1}>
               {motel.name}
             </Text>
-          </View>
+          </Animated.View>
         )}
 
         {/* Pin del marker */}
-        <Animated.View style={[{ transform: [{ translateY: bounceAnim }] }, pinStyle]}>
+        <Animated.View style={[bounceStyle, pinStyle]}>
           <View style={styles.markerInner}>
             <Ionicons
               name="heart"

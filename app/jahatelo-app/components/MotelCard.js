@@ -4,11 +4,14 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  interpolate,
   withSpring,
   withTiming,
   withRepeat,
   withSequence,
+  Easing,
 } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { formatPrice, formatDistance } from '../services/motelsApi';
 import { useFavorites } from '../hooks/useFavorites';
@@ -30,6 +33,8 @@ export default function MotelCard({ motel, onPress }) {
 
   // Valor animado para badge PROMO
   const promoBadgeScale = useSharedValue(1);
+  const diamondOrbit = useSharedValue(0);
+  const diamondShimmer = useSharedValue(-1);
 
   if (!motel) return null;
 
@@ -46,6 +51,30 @@ export default function MotelCard({ motel, onPress }) {
       );
     }
   }, [motel.tienePromo]);
+
+  useEffect(() => {
+    if (!isDiamond) return;
+    diamondOrbit.value = withRepeat(
+      withTiming(360, { duration: 4200, easing: Easing.linear }),
+      -1,
+      false
+    );
+    return () => {
+      diamondOrbit.value = 0;
+    };
+  }, [isDiamond]);
+
+  useEffect(() => {
+    if (!isDiamond) return;
+    diamondShimmer.value = withRepeat(
+      withTiming(1, { duration: 7000, easing: Easing.linear }),
+      -1,
+      false
+    );
+    return () => {
+      diamondShimmer.value = -1;
+    };
+  }, [isDiamond]);
 
   const handleFavoritePress = (e) => {
     // Prevenir que se dispare el onPress de la card
@@ -141,8 +170,105 @@ export default function MotelCard({ motel, onPress }) {
       transform: [{ scale: promoBadgeScale.value }],
     };
   });
+  const animatedOrbitStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ rotate: `${diamondOrbit.value}deg` }],
+    };
+  });
+  const animatedShimmerStyle = useAnimatedStyle(() => {
+    const translateX = interpolate(diamondShimmer.value, [-1, 1], [-60, 60]);
+    return {
+      opacity: isDiamond ? 0.18 : 0,
+      transform: [{ translateX }, { rotate: '20deg' }],
+    };
+  });
 
   const isDisabled = motel.plan === 'FREE';
+  const isDiamond = motel.plan === 'DIAMOND';
+
+  const cardBody = (
+    <Animated.View style={[styles.card, animatedCardStyle, isDisabled && styles.disabledCard, isDiamond && styles.cardNoMargin]}>
+      {/* Header con nombre y favorito */}
+      <View style={styles.cardHeader}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.motelName} numberOfLines={1}>{motel.nombre}</Text>
+          <Text style={styles.location} numberOfLines={1}>
+            <Ionicons name="location-outline" size={12} color="#888" /> {motel.ciudad || motel.barrio || 'Sin ciudad'}
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={handleFavoritePress}
+          style={styles.favoriteButton}
+          activeOpacity={0.7}
+        >
+          <Animated.View style={animatedHeartStyle}>
+            <Ionicons
+              name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
+              size={20}
+              color={COLORS.primary}
+            />
+          </Animated.View>
+        </TouchableOpacity>
+      </View>
+
+      {/* Fila inferior: precio, badges/amenities */}
+      <View style={styles.bottomRow}>
+        <View style={styles.priceContainer}>
+          <Text style={styles.price}>{formatPrice(motel.precioDesde)}</Text>
+          {motel.distanciaKm && (
+            <Text style={styles.distance}>{formatDistance(motel.distanciaKm)}</Text>
+          )}
+        </View>
+
+        <View style={styles.rightInfo}>
+          {/* Badges y Amenities en una sola fila */}
+          <View style={styles.badgesRow}>
+            {motel.tienePromo && (
+              <Animated.View style={[styles.promoBadge, animatedPromoBadgeStyle]}>
+                <Ionicons name="pricetag" size={10} color="#2A0038" />
+                <Text style={styles.promoText}>PROMO</Text>
+              </Animated.View>
+            )}
+            {motel.plan === 'DIAMOND' && (
+              <View style={styles.platinumBadge}>
+                <Ionicons name="diamond" size={10} color="#FFFFFF" />
+                <Text style={styles.platinumText}>DIAMOND</Text>
+              </View>
+            )}
+            {motel.plan === 'GOLD' && (
+              <View style={styles.premiumBadge}>
+                <Ionicons name="star" size={10} color="#FFFFFF" />
+                <Text style={styles.premiumText}>GOLD</Text>
+              </View>
+            )}
+            {!!motel.rating && (
+              <View style={styles.ratingBadge}>
+                <Text style={styles.ratingText}>⭐ {motel.rating}</Text>
+              </View>
+            )}
+
+            {/* Amenities inline con badges */}
+            {motel.amenities && motel.amenities.length > 0 && (
+              motel.amenities.slice(0, 3).map((amenity, index) => {
+                const amenityData = typeof amenity === 'string' ? { name: amenity } : amenity;
+                const iconConfig = getAmenityIconConfig(amenityData.icon);
+
+                return iconConfig ? (
+                  <View key={index} style={styles.amenityCircle}>
+                    <MaterialCommunityIcons
+                      name={iconConfig.name}
+                      size={12}
+                      color={COLORS.primary}
+                    />
+                  </View>
+                ) : null;
+              })
+            )}
+          </View>
+        </View>
+      </View>
+    </Animated.View>
+  );
 
   return (
     <Pressable
@@ -151,87 +277,29 @@ export default function MotelCard({ motel, onPress }) {
       onPressOut={handlePressOut}
       disabled={isDisabled}
     >
-      <Animated.View style={[styles.card, animatedCardStyle, isDisabled && styles.disabledCard]}>
-        {/* Header con nombre y favorito */}
-        <View style={styles.cardHeader}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.motelName} numberOfLines={1}>{motel.nombre}</Text>
-            <Text style={styles.location} numberOfLines={1}>
-              <Ionicons name="location-outline" size={12} color="#888" /> {motel.ciudad || motel.barrio || 'Sin ciudad'}
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={handleFavoritePress}
-            style={styles.favoriteButton}
-            activeOpacity={0.7}
-          >
-            <Animated.View style={animatedHeartStyle}>
-              <Ionicons
-                name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
-                size={20}
-                color={COLORS.primary}
-              />
-            </Animated.View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Fila inferior: precio, badges/amenities */}
-        <View style={styles.bottomRow}>
-          <View style={styles.priceContainer}>
-            <Text style={styles.price}>{formatPrice(motel.precioDesde)}</Text>
-            {motel.distanciaKm && (
-              <Text style={styles.distance}>{formatDistance(motel.distanciaKm)}</Text>
-            )}
-          </View>
-
-          <View style={styles.rightInfo}>
-            {/* Badges y Amenities en una sola fila */}
-            <View style={styles.badgesRow}>
-              {motel.tienePromo && (
-                <Animated.View style={[styles.promoBadge, animatedPromoBadgeStyle]}>
-                  <Ionicons name="pricetag" size={10} color="#2A0038" />
-                  <Text style={styles.promoText}>PROMO</Text>
-                </Animated.View>
-              )}
-              {motel.plan === 'DIAMOND' && (
-                <View style={styles.platinumBadge}>
-                  <Ionicons name="diamond" size={10} color="#FFFFFF" />
-                  <Text style={styles.platinumText}>DIAMOND</Text>
-                </View>
-              )}
-              {motel.plan === 'GOLD' && (
-                <View style={styles.premiumBadge}>
-                  <Ionicons name="star" size={10} color="#FFFFFF" />
-                  <Text style={styles.premiumText}>GOLD</Text>
-                </View>
-              )}
-              {!!motel.rating && (
-                <View style={styles.ratingBadge}>
-                  <Text style={styles.ratingText}>⭐ {motel.rating}</Text>
-                </View>
-              )}
-
-              {/* Amenities inline con badges */}
-              {motel.amenities && motel.amenities.length > 0 && (
-                motel.amenities.slice(0, 3).map((amenity, index) => {
-                  const amenityData = typeof amenity === 'string' ? { name: amenity } : amenity;
-                  const iconConfig = getAmenityIconConfig(amenityData.icon);
-
-                  return iconConfig ? (
-                    <View key={index} style={styles.amenityCircle}>
-                      <MaterialCommunityIcons
-                        name={iconConfig.name}
-                        size={12}
-                        color={COLORS.primary}
-                      />
-                    </View>
-                  ) : null;
-                })
-              )}
-            </View>
-          </View>
-        </View>
-      </Animated.View>
+      {isDiamond ? (
+        <LinearGradient
+          colors={['#22D3EE', '#BAE6FD', '#0EA5E9', '#7DD3FC']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.diamondFrame}
+        >
+          <Animated.View pointerEvents="none" style={[styles.diamondShimmer, animatedShimmerStyle]}>
+            <LinearGradient
+              colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.6)', 'rgba(255,255,255,0)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.diamondShimmerGradient}
+            />
+          </Animated.View>
+          <Animated.View pointerEvents="none" style={[styles.diamondOrbit, animatedOrbitStyle]}>
+            <View style={styles.diamondDot} />
+          </Animated.View>
+          <View style={styles.diamondFrameInner}>{cardBody}</View>
+        </LinearGradient>
+      ) : (
+        cardBody
+      )}
     </Pressable>
   );
 }
@@ -247,6 +315,58 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 2,
+  },
+  cardNoMargin: {
+    marginBottom: 0,
+  },
+  diamondFrame: {
+    padding: 2,
+    borderRadius: 18,
+    marginBottom: 10,
+    shadowColor: '#22D3EE',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
+    overflow: 'visible',
+  },
+  diamondFrameInner: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  diamondShimmer: {
+    position: 'absolute',
+    top: -8,
+    bottom: -8,
+    left: -60,
+    right: -60,
+  },
+  diamondShimmerGradient: {
+    width: 120,
+    height: '100%',
+  },
+  diamondOrbit: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 18,
+    alignItems: 'center',
+  },
+  diamondDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    shadowColor: '#BAE6FD',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
+    elevation: 4,
+    marginTop: -3,
   },
   disabledCard: {
     opacity: 0.4,
