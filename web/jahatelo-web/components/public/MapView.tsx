@@ -37,6 +37,21 @@ export default function MapView() {
   const [showPromosOnly, setShowPromosOnly] = useState(false);
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
 
+  const getPlanPriority = (plan?: MapMotel['plan']) => {
+    switch (plan) {
+      case 'DIAMOND':
+        return 1;
+      case 'GOLD':
+        return 2;
+      case 'BASIC':
+        return 3;
+      case 'FREE':
+        return 4;
+      default:
+        return 4;
+    }
+  };
+
   useEffect(() => {
     async function fetchMapData() {
       try {
@@ -108,11 +123,17 @@ export default function MapView() {
     );
   }
 
-  const filteredMotels = motels.filter((motel) => {
-    if (showPromosOnly && !motel.hasPromo) return false;
-    if (showFeaturedOnly && !motel.isFeatured) return false;
-    return true;
-  });
+  const filteredMotels = motels
+    .filter((motel) => {
+      if (showPromosOnly && !motel.hasPromo) return false;
+      if (showFeaturedOnly && !motel.isFeatured) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const planDiff = getPlanPriority(a.plan) - getPlanPriority(b.plan);
+      if (planDiff !== 0) return planDiff;
+      return a.name.localeCompare(b.name);
+    });
 
   return (
     <div className="h-full w-full flex flex-col">

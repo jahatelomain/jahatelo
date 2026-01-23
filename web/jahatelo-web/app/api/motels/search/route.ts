@@ -11,6 +11,21 @@ const SearchParamsSchema = z.object({
   featured: z.enum(['1']).optional(),
 });
 
+const getPlanPriority = (plan: string | null | undefined): number => {
+  switch (plan) {
+    case 'DIAMOND':
+      return 1;
+    case 'GOLD':
+      return 2;
+    case 'BASIC':
+      return 3;
+    case 'FREE':
+      return 4;
+    default:
+      return 4;
+  }
+};
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -135,6 +150,14 @@ export async function GET(request: NextRequest) {
         kind: photo.kind ?? 'OTHER',
       })),
     }));
+
+    sanitizedMotels.sort((a, b) => {
+      const planDiff = getPlanPriority(a.plan) - getPlanPriority(b.plan);
+      if (planDiff !== 0) return planDiff;
+      const ratingDiff = (b.ratingAvg || 0) - (a.ratingAvg || 0);
+      if (ratingDiff !== 0) return ratingDiff;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
     return NextResponse.json({ motels: sanitizedMotels });
   } catch (error) {

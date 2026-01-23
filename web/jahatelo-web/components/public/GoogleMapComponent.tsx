@@ -144,13 +144,13 @@ export default function GoogleMapComponent({
     const getPlanConfig = (plan?: MapMotel['plan']) => {
       switch (plan) {
         case 'FREE':
-          return { color: '#9CA3AF', labelColor: '#9CA3AF', opacity: 1, scale: 1, badge: null };
+          return { color: '#9CA3AF', labelColor: '#9CA3AF', opacity: 1, scale: 1, badge: null, glow: null };
         case 'GOLD':
-          return { color: '#F59E0B', labelColor: '#F59E0B', opacity: 1, scale: 1.15, badge: 'G' };
+          return { color: '#F59E0B', labelColor: '#F59E0B', opacity: 1, scale: 1.15, badge: '★', glow: null };
         case 'DIAMOND':
-          return { color: '#7DD3FC', labelColor: '#7DD3FC', opacity: 1, scale: 1.3, badge: 'D' };
+          return { color: '#22D3EE', labelColor: '#22D3EE', opacity: 1, scale: 1.3, badge: '◆', glow: 'rgba(34, 211, 238, 0.55)' };
         default:
-          return { color: '#8E2DE2', labelColor: '#8E2DE2', opacity: 1, scale: 1, badge: null };
+          return { color: '#8E2DE2', labelColor: '#8E2DE2', opacity: 1, scale: 1, badge: null, glow: null };
       }
     };
 
@@ -218,7 +218,9 @@ export default function GoogleMapComponent({
           this.div.style.fontWeight = '500';
           this.div.style.whiteSpace = 'nowrap';
           this.div.style.cursor = 'pointer';
-          this.div.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
+          this.div.style.boxShadow = planConfig.glow
+            ? `0 2px 8px rgba(0, 0, 0, 0.15), 0 0 14px ${planConfig.glow}`
+            : '0 2px 8px rgba(0, 0, 0, 0.15)';
           this.div.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
           this.div.style.position = 'absolute';
           this.div.style.maxWidth = `${Math.round(180 * planConfig.scale)}px`;
@@ -246,6 +248,9 @@ export default function GoogleMapComponent({
             badge.style.fontSize = `${Math.round(10 * planConfig.scale)}px`;
             badge.style.fontWeight = '700';
             badge.style.color = planConfig.color;
+            if (planConfig.glow) {
+              badge.style.boxShadow = `0 0 10px ${planConfig.glow}`;
+            }
             this.div.appendChild(badge);
           }
 
