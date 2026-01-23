@@ -454,7 +454,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
       >
         {hasHeroPhoto ? (
           <Image
-            src={heroPhotoUrl}
+            src={heroPhotoUrl as string}
             alt={motel.name}
             fill
             priority

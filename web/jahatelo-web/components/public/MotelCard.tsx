@@ -154,7 +154,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
       </div>
   );
 
-  const diamondFrameStyle: CSSProperties = isDiamond
+  const diamondFrameStyle: CSSProperties | undefined = isDiamond
     ? {
         backgroundImage:
           'conic-gradient(from 180deg at 50% 50%, rgba(34,211,238,0.9), rgba(186,230,253,0.9), rgba(14,116,144,0.9), rgba(125,211,252,0.9), rgba(34,211,238,0.9)), repeating-linear-gradient(135deg, rgba(255,255,255,0.35) 0 6px, rgba(255,255,255,0.05) 6px 12px)',
