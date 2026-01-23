@@ -7,8 +7,10 @@ import { isUpstashEnabled, rateLimitUpstash } from './lib/rateLimit';
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
 // CORS allowed origins
+const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
 const allowedOrigins = [
   process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  ...(vercelUrl ? [vercelUrl] : []),
   'exp://localhost:8081', // Expo dev
   'http://localhost:8081', // Expo dev
   'http://localhost:19000', // Expo web
@@ -20,10 +22,13 @@ const csrfSafeMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
 const isSameOrigin = (request: NextRequest) => {
   const origin = request.headers.get('origin');
   const referer = request.headers.get('referer');
+  const requestOrigin = request.nextUrl.origin;
+  if (origin && origin === requestOrigin) return true;
   if (origin && allowedOrigins.includes(origin)) return true;
   if (referer) {
     try {
       const refOrigin = new URL(referer).origin;
+      if (refOrigin === requestOrigin) return true;
       return allowedOrigins.includes(refOrigin);
     } catch {
       return false;
