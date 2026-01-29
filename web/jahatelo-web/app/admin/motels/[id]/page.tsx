@@ -509,6 +509,28 @@ export default function MotelDetailPage() {
     }
   };
 
+  const updateStatusFlags = async (updates: { status?: MotelStatus; isActive?: boolean }) => {
+    try {
+      const res = await fetch(`/api/admin/motels/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+
+      if (res.ok) {
+        fetchMotel();
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus('idle'), 2500);
+      } else {
+        const message = await getResponseError(res, 'Error al actualizar motel');
+        alert(message);
+      }
+    } catch (error) {
+      console.error('Error updating motel:', error);
+      alert('Error al actualizar motel');
+    }
+  };
+
   const handleGeocode = async () => {
     if (!motelForm.address || !motelForm.city) {
       alert('Por favor ingresa dirección y ciudad antes de geocodificar');
@@ -995,6 +1017,33 @@ export default function MotelDetailPage() {
                 </span>
               )}
             </div>
+            {currentUser?.role === 'SUPERADMIN' && (
+              <div className="flex flex-wrap gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Estado</label>
+                  <select
+                    value={motel.status}
+                    onChange={(e) => updateStatusFlags({ status: e.target.value as MotelStatus })}
+                    className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  >
+                    <option value="PENDING">Pendiente</option>
+                    <option value="APPROVED">Aprobado</option>
+                    <option value="REJECTED">Rechazado</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Habilitado</label>
+                  <select
+                    value={motel.isActive ? 'true' : 'false'}
+                    onChange={(e) => updateStatusFlags({ isActive: e.target.value === 'true' })}
+                    className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  >
+                    <option value="true">Sí</option>
+                    <option value="false">No</option>
+                  </select>
+                </div>
+              </div>
+            )}
 
             <div>
               <h1 className="text-2xl font-semibold text-slate-900 mb-2">{motel.name}</h1>
@@ -1923,22 +1972,6 @@ export default function MotelDetailPage() {
                       <span className="text-sm font-medium text-slate-700">Destacado</span>
                     </label>
                   </div>
-                  {currentUser?.role === 'SUPERADMIN' && (
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">Estado</label>
-                      <select
-                        value={motelForm.status}
-                        onChange={(e) =>
-                          setMotelForm({ ...motelForm, status: e.target.value as MotelStatus })
-                        }
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                      >
-                        <option value="PENDING">Pendiente</option>
-                        <option value="APPROVED">Aprobado</option>
-                        <option value="REJECTED">Rechazado</option>
-                      </select>
-                    </div>
-                  )}
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Habilitado</label>
                     <select
