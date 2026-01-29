@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, ChangeEvent, useRef } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import * as LucideIcons from 'lucide-react';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import DirtyBanner from '@/components/admin/DirtyBanner';
@@ -118,6 +118,7 @@ export default function MotelDetailPage() {
     if (Array.isArray(value)) return value[0] ?? '';
     return value ?? '';
   }, [params]);
+  const router = useRouter();
   const [motel, setMotel] = useState<Motel | null>(null);
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -529,6 +530,34 @@ export default function MotelDetailPage() {
       console.error('Error updating motel:', error);
       alert('Error al actualizar motel');
     }
+  };
+
+  const handleDeleteMotel = () => {
+    if (!motel) return;
+    setConfirmAction({
+      title: 'Eliminar motel',
+      message: `Esto eliminará el motel "${motel.name}" y sus datos asociados. ¿Deseas continuar?`,
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/motels/${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            setConfirmAction(null);
+            router.push('/admin/motels');
+            return;
+          }
+          const message = await getResponseError(res, 'Error al eliminar motel');
+          alert(message);
+        } catch (error) {
+          console.error('Error deleting motel:', error);
+          alert('Error al eliminar motel');
+        } finally {
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
   const handleGeocode = async () => {
@@ -1111,6 +1140,16 @@ export default function MotelDetailPage() {
                   <LucideIcons.Phone className="w-3.5 h-3.5" />
                   Llamar
                 </a>
+              )}
+              {currentUser?.role === 'SUPERADMIN' && (
+                <button
+                  type="button"
+                  onClick={handleDeleteMotel}
+                  className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:border-red-300 hover:bg-red-100 transition-colors"
+                >
+                  <LucideIcons.Trash2 className="w-3.5 h-3.5" />
+                  Eliminar
+                </button>
               )}
             </div>
           </div>

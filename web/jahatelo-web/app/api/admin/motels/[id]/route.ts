@@ -190,3 +190,54 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  context: RouteContext
+) {
+  const { id } = await context.params;
+
+  try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'motels');
+    if (access.error) return access.error;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+    if (!canAccessMotel(access.user || null, id)) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
+
+    const motel = await prisma.motel.findUnique({
+      where: { id: idResult.data },
+      select: { id: true, name: true },
+    });
+
+    if (!motel) {
+      return NextResponse.json(
+        { error: 'Motel no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    await prisma.motel.delete({
+      where: { id: idResult.data },
+    });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'DELETE',
+      entityType: 'Motel',
+      entityId: motel.id,
+      metadata: { name: motel.name },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting motel:', error);
+    return NextResponse.json(
+      { error: 'Error al eliminar motel' },
+      { status: 500 }
+    );
+  }
+}
