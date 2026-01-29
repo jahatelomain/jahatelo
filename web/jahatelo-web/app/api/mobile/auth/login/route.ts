@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       // Verificar que tenga password (no sea OAuth)
       if (!user.passwordHash) {
         return NextResponse.json(
-          { error: 'Esta cuenta usa login social. Por favor usa Google/Facebook/Apple' },
+          { error: 'Esta cuenta usa login social. Por favor usa Google/Apple' },
           { status: 401 }
         );
       }
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Login con OAuth (Google, Facebook, Apple)
+    // Login con OAuth (Google, Apple)
     if (provider && providerId) {
       // Validación básica para OAuth
       const email = sanitized.email;

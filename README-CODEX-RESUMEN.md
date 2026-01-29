@@ -15,12 +15,19 @@
 - App: sonidos para favoritos y settings para activar/desactivar sonidos y notificaciones de publicidad.
 - Web: anuncios inline y cards de ciudades con estilo alineado al resto del listado.
 - Performance: cache de ciudades en web a 5 min, FlatList con `maxToRenderPerBatch`/`initialNumToRender`, Next/Image con `quality=85`.
+- Web: se elimino `/motels` y se dejo solo `/search` con nombre "Buscar Moteles"; navbar/footer y links actualizados.
+- Web: placeholders de imagen con `motel-placeholder.png` unificados en cards, carrusel y galeria cuando no hay foto.
+- Web: orden por plan en `search` y `nearby` (prioriza `DIAMOND`/`GOLD`).
+- App/Web: visuales de planes en mapa (pines + badges) y animaciones para planes superiores.
+- Seguridad web: CSRF en middleware ajustado para same-origin en prod (Vercel).
 
 ## Fixes recientes
 - Web ads fetch: se evita parsear HTML como JSON (proteccion de respuesta no JSON).
 - TypeScript: `promos` agregado a `searchParams` en `web/jahatelo-web/app/motels/page.tsx`.
 - Input de filtros en web con texto negro para legibilidad.
 - Imagenes: placeholder en web con calidad balanceada para mejor performance percibida.
+- Admin: conteo de "Promociones Activas" usa `promo.isActive` + motel aprobado/activo.
+- Auth: se removio Facebook en UI/web/app/docs; solo Google + Apple (iOS) + email/password.
 
 ## Cambios de DB (Supabase)
 - Migraciones de planes y eliminacion de `SECTION_BANNER` se ejecutaron via SQL Editor (por limitaciones IPv6).
@@ -38,3 +45,4 @@
 - Mejorar visualizacion de amenities en detalles de moteles.
 - Tree-shaking de `lucide-react` (hoy se usa import dinamico para iconos de amenities).
 - EAS iOS/Android queda pendiente por costo de build.
+- OTP WhatsApp + verificacion email + Apple Sign-In: pendiente de credenciales (Meta WABA, proveedor email, Apple Developer).

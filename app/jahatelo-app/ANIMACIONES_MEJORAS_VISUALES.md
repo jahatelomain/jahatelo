@@ -393,7 +393,6 @@
 - **Delay entre iconos**: 100ms
 - **Implementación**:
   ```javascript
-  // Instagram → Facebook → WhatsApp → TikTok
   translateY: 20 → 0
   scale: 0 → 1
   opacity: 0 → 1

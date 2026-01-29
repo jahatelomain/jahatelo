@@ -21,14 +21,6 @@ const SOCIAL_LINKS = [
     iconColor: '#FFFFFF',
   },
   {
-    iconName: 'logo-facebook',
-    url: 'https://www.facebook.com/share/16GAY8bcxU/',
-    enabled: true,
-    bgType: 'solid',
-    bgColor: '#1877F2',
-    iconColor: '#FFFFFF',
-  },
-  {
     iconName: 'logo-tiktok',
     url: 'https://www.tiktok.com/@jahatelo',
     enabled: true,

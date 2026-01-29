@@ -37,7 +37,7 @@ export default function PrivacyPage() {
 
               <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">2.3 Información de terceros:</h3>
               <ul className="list-disc pl-6 text-slate-700 space-y-2">
-                <li><strong>Redes sociales:</strong> si inicia sesión con Google/Facebook</li>
+                <li><strong>Redes sociales:</strong> si inicia sesión con Google/Apple</li>
                 <li><strong>Servicios de pago:</strong> MercadoPago (no almacenamos datos de tarjetas)</li>
               </ul>
             </section>

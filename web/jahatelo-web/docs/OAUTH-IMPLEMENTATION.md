@@ -10,12 +10,10 @@
 ### ✅ Ya Implementado
 - **Backend**: API `/api/mobile/auth/login` ya soporta OAuth
 - **Frontend**: AuthContext, LoginScreen, authApi.js tienen la estructura
-- **Botones UI**: Los botones de Google, Facebook y Apple están en LoginScreen
 
 ### ❌ Falta Implementar
 - Configuración de credenciales OAuth
 - Integración real con Google Sign-In
-- Integración real con Facebook Login
 - Login con SMS/WhatsApp
 - Conectar botones con funcionalidad
 
@@ -28,10 +26,8 @@
 - Alternativa: `@react-native-google-signin/google-signin`
 - Requiere: Google Cloud Console credentials
 
-### 2. **Facebook Login** 🟡 SECUNDARIO
 - Método recomendado: `expo-auth-session`
 - Alternativa: `react-native-fbsdk-next`
-- Requiere: Facebook App credentials
 
 ### 3. **SMS/WhatsApp** 🟡 OPCIONAL
 - Opción A: Firebase Phone Authentication (recomendado)
@@ -223,41 +219,29 @@ export default function LoginScreen({ navigation }) {
 
 ---
 
-## 📘 Implementación Facebook Login
 
-### Paso 1: Crear App en Facebook Developers
 
-1. Ve a [Facebook Developers](https://developers.facebook.com/)
 2. **Create App** → **Consumer**
 3. **Settings** → **Basic**:
    - iOS Bundle ID: `com.mbaretech.jahatelo`
    - Android Package Name: `com.mbaretech.jahatelo`
    - Android Key Hashes: (obtenido con keytool)
 
-### Paso 2: Crear Servicio de Facebook Auth
 
-**Archivo:** `app/jahatelo-app/services/facebookAuthService.js`
 
 ```javascript
-import * as Facebook from 'expo-auth-session/providers/facebook';
 import * as WebBrowser from 'expo-web-browser';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const FACEBOOK_APP_ID = 'YOUR_FACEBOOK_APP_ID';
 
-export const useFacebookAuth = () => {
-  const [request, response, promptAsync] = Facebook.useAuthRequest({
-    clientId: FACEBOOK_APP_ID,
   });
 
   return { request, response, promptAsync };
 };
 
-export const getFacebookUserInfo = async (accessToken) => {
   try {
     const response = await fetch(
-      `https://graph.facebook.com/me?access_token=${accessToken}&fields=id,name,email,picture.type(large)`,
     );
     const user = await response.json();
     return {
@@ -267,7 +251,6 @@ export const getFacebookUserInfo = async (accessToken) => {
       picture: user.picture?.data?.url,
     };
   } catch (error) {
-    console.error('Error fetching Facebook user info:', error);
     return null;
   }
 };
@@ -278,9 +261,6 @@ export const getFacebookUserInfo = async (accessToken) => {
 ```json
 {
   "expo": {
-    "facebookScheme": "fbYOUR_FACEBOOK_APP_ID",
-    "facebookAppId": "YOUR_FACEBOOK_APP_ID",
-    "facebookDisplayName": "Jahatelo"
   }
 }
 ```
@@ -554,9 +534,6 @@ export async function POST(request: NextRequest) {
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 
-# Facebook OAuth
-FACEBOOK_APP_ID=your_facebook_app_id
-FACEBOOK_APP_SECRET=your_facebook_app_secret
 
 # Twilio (si usas SMS)
 TWILIO_ACCOUNT_SID=your_twilio_account_sid
@@ -578,7 +555,6 @@ FIREBASE_PROJECT_ID=your_firebase_project_id
       "googleClientIdExpo": "YOUR_EXPO_CLIENT_ID",
       "googleClientIdIos": "YOUR_IOS_CLIENT_ID",
       "googleClientIdAndroid": "YOUR_ANDROID_CLIENT_ID",
-      "facebookAppId": "YOUR_FACEBOOK_APP_ID"
     }
   }
 }
@@ -591,11 +567,9 @@ FIREBASE_PROJECT_ID=your_firebase_project_id
 | Servicio | Costo Mensual | Límite Gratis |
 |----------|---------------|---------------|
 | **Google OAuth** | $0 | Ilimitado |
-| **Facebook Login** | $0 | Ilimitado |
 | **Firebase Phone Auth** | $0 - $50 | 10K verificaciones/mes |
 | **Twilio SMS** | ~$10 - $100 | Sin límite gratis |
 
-**Recomendación**: Usar Google + Facebook (gratis) + Firebase Phone Auth (10K gratis)
 
 ---
 
@@ -608,9 +582,6 @@ FIREBASE_PROJECT_ID=your_firebase_project_id
 4. Actualizar `LoginScreen.js`
 5. Probar en iOS, Android y Expo Go
 
-### Fase 2: Facebook Login (1 día)
-1. Crear app en Facebook Developers
-2. Crear `facebookAuthService.js`
 3. Configurar `app.json`
 4. Actualizar `LoginScreen.js`
 5. Probar en dispositivos
@@ -637,17 +608,14 @@ FIREBASE_PROJECT_ID=your_firebase_project_id
 
 1. **Definir prioridad**:
    - ¿Solo Google?
-   - ¿Google + Facebook?
    - ¿Incluir SMS desde el inicio?
 
 2. **Crear credenciales**:
    - Google Cloud Console
-   - Facebook Developers
    - (Opcional) Firebase / Twilio
 
 3. **Comenzar implementación**:
    - Empezar con Google (más usado)
-   - Agregar Facebook
    - Evaluar necesidad de SMS
 
 ---
@@ -656,7 +624,6 @@ FIREBASE_PROJECT_ID=your_firebase_project_id
 
 - [Expo Auth Session Docs](https://docs.expo.dev/guides/authentication/)
 - [Google Sign-In for iOS](https://developers.google.com/identity/sign-in/ios)
-- [Facebook Login for Android](https://developers.facebook.com/docs/facebook-login/android)
 - [Firebase Phone Auth](https://firebase.google.com/docs/auth/web/phone-auth)
 - [Twilio Verify](https://www.twilio.com/docs/verify/api)
 

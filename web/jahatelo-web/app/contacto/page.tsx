@@ -99,7 +99,7 @@ export default function ContactoPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Tu nombre completo"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 required
                 minLength={2}
                 maxLength={100}
@@ -121,7 +121,7 @@ export default function ContactoPage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+595 xxx xxx xxx"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 maxLength={50}
                 disabled={loading}
               />
@@ -141,7 +141,7 @@ export default function ContactoPage() {
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Escribe tu mensaje aquí..."
                 rows={6}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
+                className="w-full px-4 py-3 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
                 required
                 minLength={10}
                 maxLength={1000}

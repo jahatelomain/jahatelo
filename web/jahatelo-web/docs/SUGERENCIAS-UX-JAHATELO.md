@@ -2973,7 +2973,6 @@ export const trackEvent = async (params) => {
 - `share_motel`
 
 #### Reportes que tendrías en GA4:
-- **Adquisición:** De dónde vienen los usuarios (Google, Facebook, directo)
 - **Engagement:** Tiempo promedio, páginas por sesión
 - **Retención:** Usuarios que vuelven
 - **Conversiones:** Funnels personalizados
@@ -3083,7 +3082,6 @@ Solo si:
 5. **Error Rate** - Errores 404, 500, etc.
 
 ### Para Marketing:
-1. **Traffic Sources** - De dónde vienen (Google, Facebook, directo)
 2. **Campaign Performance** - ROI de campañas publicitarias
 3. **Referrals** - Quién les refiere tráfico
 4. **Conversion by Channel** - Cuál canal convierte mejor

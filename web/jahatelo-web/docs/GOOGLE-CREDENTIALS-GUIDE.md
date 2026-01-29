@@ -377,7 +377,6 @@ Antes de declarar que está funcionando, verifica:
 Si llegaste hasta aquí, ya tienes Google Sign-In funcionando en Jahatelo.
 
 **Próximos pasos:**
-1. Implementar Facebook Login
 2. Implementar SMS/WhatsApp auth con Firebase
 3. Publicar en las tiendas
 

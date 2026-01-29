@@ -18,6 +18,7 @@ import { COLORS } from '../constants/theme';
 
 export default function RegisterScreen({ navigation }) {
   const { register } = useAuth();
+  const isAppleAvailable = Platform.OS === 'ios';
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -93,6 +94,10 @@ export default function RegisterScreen({ navigation }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleAppleLogin = () => {
+    Alert.alert('Apple', 'Login con Apple pendiente de configuración');
   };
 
   return (
@@ -266,12 +271,11 @@ export default function RegisterScreen({ navigation }) {
               <TouchableOpacity style={styles.oauthButton}>
                 <Ionicons name="logo-google" size={24} color="#DB4437" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.oauthButton}>
-                <Ionicons name="logo-facebook" size={24} color="#4267B2" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.oauthButton}>
-                <Ionicons name="logo-apple" size={24} color="#000" />
-              </TouchableOpacity>
+              {isAppleAvailable && (
+                <TouchableOpacity style={styles.oauthButton} onPress={handleAppleLogin}>
+                  <Ionicons name="logo-apple" size={24} color="#000" />
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* Login */}

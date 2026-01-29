@@ -12,7 +12,7 @@ const MobileRegisterSchema = z.object({
   password: z.string().min(6).max(100).optional().nullable(),
   name: z.string().max(100).optional().nullable(),
   phone: z.string().regex(/^\+?[0-9]{9,15}$/).optional().nullable(),
-  provider: z.enum(['email', 'google', 'facebook', 'apple']).optional().default('email'),
+  provider: z.enum(['email', 'google', 'apple']).optional().default('email'),
   providerId: z.string().max(255).optional().nullable(),
 });
 

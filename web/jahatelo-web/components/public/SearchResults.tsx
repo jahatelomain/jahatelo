@@ -192,7 +192,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
             placeholder="Buscar moteles por nombre, ciudad, amenidades..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-6 py-4 pr-12 text-lg border-2 border-gray-300 rounded-2xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600 transition-all"
+            className="w-full px-6 py-4 pr-12 text-lg text-gray-900 border-2 border-gray-300 rounded-2xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600 transition-all"
           />
           <div className="absolute inset-y-0 right-0 flex items-center pr-4">
             {searchQuery ? (
@@ -244,7 +244,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
             <select
               value={selectedCity}
               onChange={(event) => setSelectedCity(event.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
+              className="w-full px-4 py-3 text-gray-900 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
             >
               <option value="">
                 {citiesLoading ? 'Cargando ciudades...' : 'Todas las ciudades'}

@@ -98,7 +98,7 @@ export default function RegisterMotelForm() {
               onChange={(e) => setContactName(e.target.value)}
               placeholder="Ej: Juan Pérez"
               disabled={loading}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors text-gray-900"
             />
           </div>
 
@@ -117,7 +117,7 @@ export default function RegisterMotelForm() {
               onChange={(e) => setPhone(e.target.value)}
               placeholder="Ej: 0981 123 456"
               disabled={loading}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors text-gray-900"
             />
           </div>
 
@@ -136,7 +136,7 @@ export default function RegisterMotelForm() {
               onChange={(e) => setMotelName(e.target.value)}
               placeholder="Ej: Motel Paradise"
               disabled={loading}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors text-gray-900"
             />
           </div>
 

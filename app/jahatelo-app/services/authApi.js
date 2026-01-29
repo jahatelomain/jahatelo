@@ -125,7 +125,7 @@ export async function login({ email, password, pushToken, deviceInfo }) {
 }
 
 /**
- * Login con OAuth (Google, Facebook, Apple)
+ * Login con OAuth (Google, Apple)
  */
 export async function loginWithOAuth({ provider, providerId, email, name, pushToken, deviceInfo }) {
   try {

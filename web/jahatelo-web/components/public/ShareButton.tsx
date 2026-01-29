@@ -49,14 +49,6 @@ export default function ShareButton({ title, url }: { title: string; url: string
             Compartir en WhatsApp
           </a>
           <a
-            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded"
-          >
-            Compartir en Facebook
-          </a>
-          <a
             href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}`}
             target="_blank"
             rel="noopener noreferrer"

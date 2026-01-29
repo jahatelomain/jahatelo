@@ -31,6 +31,15 @@ export default async function AdminDashboard() {
   if (e2eMode) {
     pendingMotels = await prisma.motel.count({ where: { status: MotelStatus.PENDING } });
     activeMotels = await prisma.motel.count({ where: { isActive: true } });
+    activePromotions = await prisma.promo.count({
+      where: {
+        isActive: true,
+        motel: {
+          status: MotelStatus.APPROVED,
+          isActive: true,
+        },
+      },
+    });
     recentMotelsRaw = await prisma.motel.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
@@ -66,7 +75,15 @@ export default async function AdminDashboard() {
       Promise.resolve(0), // Placeholder para vistas - implementar más adelante
       prisma.motel.count({ where: { status: MotelStatus.PENDING } }),
       prisma.motel.count({ where: { isActive: true } }),
-      Promise.resolve(0), // Placeholder para promociones - implementar más adelante
+      prisma.promo.count({
+        where: {
+          isActive: true,
+          motel: {
+            status: MotelStatus.APPROVED,
+            isActive: true,
+          },
+        },
+      }),
       prisma.motel.findMany({
         take: 5,
         orderBy: { createdAt: 'desc' },
