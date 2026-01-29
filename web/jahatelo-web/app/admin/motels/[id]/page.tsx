@@ -1923,6 +1923,22 @@ export default function MotelDetailPage() {
                       <span className="text-sm font-medium text-slate-700">Destacado</span>
                     </label>
                   </div>
+                  {currentUser?.role === 'SUPERADMIN' && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Estado</label>
+                      <select
+                        value={motelForm.status}
+                        onChange={(e) =>
+                          setMotelForm({ ...motelForm, status: e.target.value as MotelStatus })
+                        }
+                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      >
+                        <option value="PENDING">Pendiente</option>
+                        <option value="APPROVED">Aprobado</option>
+                        <option value="REJECTED">Rechazado</option>
+                      </select>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Habilitado</label>
                     <select
