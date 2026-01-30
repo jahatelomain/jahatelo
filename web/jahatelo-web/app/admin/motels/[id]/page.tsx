@@ -390,10 +390,50 @@ export default function MotelDetailPage() {
     }
   };
 
+  const getFieldLabel = (field: string) => {
+    const labels: Record<string, string> = {
+      name: 'Nombre',
+      description: 'Descripcion',
+      country: 'Pais',
+      city: 'Ciudad',
+      neighborhood: 'Barrio',
+      address: 'Direccion',
+      mapUrl: 'URL de mapa',
+      phone: 'Telefono',
+      whatsapp: 'WhatsApp',
+      website: 'Sitio web',
+      instagram: 'Instagram',
+      contactName: 'Contacto usuarios',
+      contactEmail: 'Correo usuarios',
+      contactPhone: 'Telefono usuarios',
+      adminContactName: 'Contacto administrativo',
+      adminContactEmail: 'Correo administrativo',
+      adminContactPhone: 'Telefono administrativo',
+      operationsContactName: 'Contacto operativo',
+      operationsContactEmail: 'Correo operativo',
+      operationsContactPhone: 'Telefono operativo',
+      featuredPhoto: 'URL foto principal',
+      nextBillingAt: 'Proxima facturacion',
+      status: 'Estado',
+      isActive: 'Habilitado',
+    };
+    return labels[field] || field;
+  };
+
   const getResponseError = async (res: Response, fallback: string) => {
     try {
       const data = await res.json();
       if (data?.error) return data.error as string;
+      if (Array.isArray(data?.details) && data.details.length > 0) {
+        const messages = data.details
+          .map((detail: { field?: string; message?: string }) => {
+            const field = detail?.field ? getFieldLabel(detail.field) : 'Campo';
+            const message = detail?.message || 'Dato invalido';
+            return `${field}: ${message}`;
+          })
+          .join('\n');
+        return `Datos invalidos:\n${messages}`;
+      }
       if (data?.message) return data.message as string;
     } catch (error) {
       console.error('Error parsing response:', error);
