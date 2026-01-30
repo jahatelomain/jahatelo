@@ -1233,16 +1233,6 @@ export default function MotelDetailPage() {
       {/* Tabs */}
       <div className="flex gap-1 border-b border-slate-200">
         <button
-          onClick={() => setActiveTab('promos')}
-          className={`px-5 py-3 font-medium text-sm transition-colors ${
-            activeTab === 'promos'
-              ? 'border-b-2 border-purple-600 text-purple-700 -mb-[2px]'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Promos <span className="ml-1 opacity-70">({promos.length})</span>
-        </button>
-        <button
           onClick={() => setActiveTab('details')}
           className={`px-5 py-3 font-medium text-sm transition-colors ${
             activeTab === 'details'
@@ -1253,16 +1243,6 @@ export default function MotelDetailPage() {
           Detalles
         </button>
         <button
-          onClick={() => setActiveTab('rooms')}
-          className={`px-5 py-3 font-medium text-sm transition-colors ${
-            activeTab === 'rooms'
-              ? 'border-b-2 border-purple-600 text-purple-700 -mb-[2px]'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Habitaciones <span className="ml-1 opacity-70">({rooms.length})</span>
-        </button>
-        <button
           onClick={() => setActiveTab('menu')}
           className={`px-5 py-3 font-medium text-sm transition-colors ${
             activeTab === 'menu'
@@ -1271,6 +1251,26 @@ export default function MotelDetailPage() {
           }`}
         >
           Menú <span className="ml-1 opacity-70">({menuCategories.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('promos')}
+          className={`px-5 py-3 font-medium text-sm transition-colors ${
+            activeTab === 'promos'
+              ? 'border-b-2 border-purple-600 text-purple-700 -mb-[2px]'
+              : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Promos <span className="ml-1 opacity-70">({promos.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('rooms')}
+          className={`px-5 py-3 font-medium text-sm transition-colors ${
+            activeTab === 'rooms'
+              ? 'border-b-2 border-purple-600 text-purple-700 -mb-[2px]'
+              : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Habitaciones <span className="ml-1 opacity-70">({rooms.length})</span>
         </button>
         <Link
           href={`/admin/motels/${id}/analytics`}
