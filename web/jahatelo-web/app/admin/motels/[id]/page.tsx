@@ -123,7 +123,7 @@ export default function MotelDetailPage() {
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
   const [geocoding, setGeocoding] = useState(false);
-  const [activeTab, setActiveTab] = useState<'promos' | 'details' | 'rooms' | 'menu' | 'commercial'>('promos');
+  const [activeTab, setActiveTab] = useState<'promos' | 'details' | 'rooms' | 'menu' | 'commercial'>('details');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
 
   const [editingMotel, setEditingMotel] = useState(false);
@@ -446,6 +446,14 @@ export default function MotelDetailPage() {
     return trimmed === '' ? null : trimmed;
   };
 
+  const normalizeMapUrl = (value: string) => {
+    const trimmed = value.trim();
+    if (trimmed === '') return null;
+    if (!trimmed.toLowerCase().startsWith('<iframe')) return trimmed;
+    const match = trimmed.match(/src=["']([^"']+)["']/i);
+    return match?.[1] || trimmed;
+  };
+
   const handleSavePromo = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -545,7 +553,7 @@ export default function MotelDetailPage() {
         city: normalizeOptionalText(motelForm.city || ''),
         neighborhood: normalizeOptionalText(motelForm.neighborhood || ''),
         address: normalizeOptionalText(motelForm.address || ''),
-        mapUrl: normalizeOptionalText(motelForm.mapUrl || ''),
+        mapUrl: normalizeMapUrl(motelForm.mapUrl || ''),
         phone: normalizeOptionalText(motelForm.phone || ''),
         whatsapp: normalizeOptionalText(motelForm.whatsapp || ''),
         website: normalizeOptionalText(motelForm.website || ''),
@@ -1283,14 +1291,14 @@ export default function MotelDetailPage() {
           Detalles
         </button>
         <button
-          onClick={() => setActiveTab('menu')}
+          onClick={() => setActiveTab('rooms')}
           className={`px-5 py-3 font-medium text-sm transition-colors ${
-            activeTab === 'menu'
+            activeTab === 'rooms'
               ? 'border-b-2 border-purple-600 text-purple-700 -mb-[2px]'
               : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          Menú <span className="ml-1 opacity-70">({menuCategories.length})</span>
+          Habitaciones <span className="ml-1 opacity-70">({rooms.length})</span>
         </button>
         <button
           onClick={() => setActiveTab('promos')}
@@ -1303,14 +1311,14 @@ export default function MotelDetailPage() {
           Promos <span className="ml-1 opacity-70">({promos.length})</span>
         </button>
         <button
-          onClick={() => setActiveTab('rooms')}
+          onClick={() => setActiveTab('menu')}
           className={`px-5 py-3 font-medium text-sm transition-colors ${
-            activeTab === 'rooms'
+            activeTab === 'menu'
               ? 'border-b-2 border-purple-600 text-purple-700 -mb-[2px]'
               : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          Habitaciones <span className="ml-1 opacity-70">({rooms.length})</span>
+          Menú <span className="ml-1 opacity-70">({menuCategories.length})</span>
         </button>
         <Link
           href={`/admin/motels/${id}/analytics`}
