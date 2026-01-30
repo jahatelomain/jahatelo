@@ -397,6 +397,11 @@ export default function MotelDetailPage() {
     return fallback;
   };
 
+  const normalizeOptionalText = (value: string) => {
+    const trimmed = value.trim();
+    return trimmed === '' ? null : trimmed;
+  };
+
   const handleSavePromo = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -489,10 +494,34 @@ export default function MotelDetailPage() {
   const handleUpdateMotel = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...motelForm,
+        description: normalizeOptionalText(motelForm.description || ''),
+        country: normalizeOptionalText(motelForm.country || ''),
+        city: normalizeOptionalText(motelForm.city || ''),
+        neighborhood: normalizeOptionalText(motelForm.neighborhood || ''),
+        address: normalizeOptionalText(motelForm.address || ''),
+        mapUrl: normalizeOptionalText(motelForm.mapUrl || ''),
+        phone: normalizeOptionalText(motelForm.phone || ''),
+        whatsapp: normalizeOptionalText(motelForm.whatsapp || ''),
+        website: normalizeOptionalText(motelForm.website || ''),
+        instagram: normalizeOptionalText(motelForm.instagram || ''),
+        contactName: normalizeOptionalText(motelForm.contactName || ''),
+        contactEmail: normalizeOptionalText(motelForm.contactEmail || ''),
+        contactPhone: normalizeOptionalText(motelForm.contactPhone || ''),
+        adminContactName: normalizeOptionalText(motelForm.adminContactName || ''),
+        adminContactEmail: normalizeOptionalText(motelForm.adminContactEmail || ''),
+        adminContactPhone: normalizeOptionalText(motelForm.adminContactPhone || ''),
+        operationsContactName: normalizeOptionalText(motelForm.operationsContactName || ''),
+        operationsContactEmail: normalizeOptionalText(motelForm.operationsContactEmail || ''),
+        operationsContactPhone: normalizeOptionalText(motelForm.operationsContactPhone || ''),
+        featuredPhoto: normalizeOptionalText(motelForm.featuredPhoto || ''),
+        nextBillingAt: motelForm.nextBillingAt ? motelForm.nextBillingAt : null,
+      };
       const res = await fetch(`/api/admin/motels/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(motelForm),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
@@ -502,7 +531,8 @@ export default function MotelDetailPage() {
         setSaveStatus('success');
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
-        alert('Error al actualizar motel');
+        const message = await getResponseError(res, 'Error al actualizar motel');
+        alert(message);
       }
     } catch (error) {
       console.error('Error updating motel:', error);
