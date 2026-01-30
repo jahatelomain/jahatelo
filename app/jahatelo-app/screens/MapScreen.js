@@ -23,11 +23,42 @@ const debugLog = (...args) => {
   if (__DEV__) console.log(...args);
 };
 
+const getPlanOrder = (plan) => {
+  switch (plan) {
+    case 'FREE':
+      return 1;
+    case 'BASIC':
+      return 2;
+    case 'GOLD':
+      return 3;
+    case 'DIAMOND':
+      return 4;
+    default:
+      return 2;
+  }
+};
+
+const getPlanZIndex = (plan) => {
+  switch (plan) {
+    case 'DIAMOND':
+      return 400;
+    case 'GOLD':
+      return 300;
+    case 'BASIC':
+      return 200;
+    case 'FREE':
+      return 100;
+    default:
+      return 200;
+  }
+};
+
 // Marker con etiquetas en iOS y tooltip en Android
 const CustomMarker = React.memo(({ motel, onPress }) => {
   const isDisabled = motel.plan === 'FREE';
   const [tracksChanges, setTracksChanges] = useState(IS_ANDROID);
   const plan = motel.plan || 'BASIC';
+  const planZIndex = getPlanZIndex(plan);
 
   // Configuración según plan
   const isGold = plan === 'GOLD';
@@ -107,6 +138,7 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
         longitude: motel.longitude,
       }}
       anchor={{ x: 0.5, y: 1 }}
+      zIndex={planZIndex}
       onPress={IS_ANDROID ? undefined : onPress}
       tracksViewChanges={IS_ANDROID ? tracksChanges : false}
     >
@@ -187,6 +219,13 @@ export default function MapScreen() {
     longitudeDelta: 0.5,
   });
   const mapRef = React.useRef(null);
+  const sortedMotels = useMemo(() => {
+    return [...motels].sort((a, b) => {
+      const planDiff = getPlanOrder(a.plan) - getPlanOrder(b.plan);
+      if (planDiff !== 0) return planDiff;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+  }, [motels]);
 
   useEffect(() => {
     fetchMapData();
@@ -372,7 +411,7 @@ export default function MapScreen() {
         showsUserLocation={!!userLocation}
         showsMyLocationButton={false}
       >
-        {motels.map((motel) => (
+        {sortedMotels.map((motel) => (
           <CustomMarker
             key={motel.id}
             motel={motel}
@@ -385,6 +424,7 @@ export default function MapScreen() {
             coordinate={userLocation}
             title="Tu ubicación"
             pinColor="#D32F2F"
+            zIndex={1200}
             tracksViewChanges={false}
           />
         )}

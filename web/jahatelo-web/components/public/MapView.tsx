@@ -37,18 +37,18 @@ export default function MapView() {
   const [showPromosOnly, setShowPromosOnly] = useState(false);
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
 
-  const getPlanPriority = (plan?: MapMotel['plan']) => {
+  const getPlanOrder = (plan?: MapMotel['plan']) => {
     switch (plan) {
-      case 'DIAMOND':
-        return 1;
-      case 'GOLD':
-        return 2;
-      case 'BASIC':
-        return 3;
       case 'FREE':
+        return 1;
+      case 'BASIC':
+        return 2;
+      case 'GOLD':
+        return 3;
+      case 'DIAMOND':
         return 4;
       default:
-        return 4;
+        return 2;
     }
   };
 
@@ -130,7 +130,7 @@ export default function MapView() {
       return true;
     })
     .sort((a, b) => {
-      const planDiff = getPlanPriority(a.plan) - getPlanPriority(b.plan);
+      const planDiff = getPlanOrder(a.plan) - getPlanOrder(b.plan);
       if (planDiff !== 0) return planDiff;
       return a.name.localeCompare(b.name);
     });

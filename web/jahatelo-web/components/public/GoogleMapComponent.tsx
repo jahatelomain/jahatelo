@@ -141,6 +141,21 @@ export default function GoogleMapComponent({
     const BASE_PIN_CENTER = 16;
     const BASE_PIN_RADIUS = 13;
 
+    const getPlanZIndex = (plan?: MapMotel['plan']) => {
+      switch (plan) {
+        case 'DIAMOND':
+          return 400;
+        case 'GOLD':
+          return 300;
+        case 'BASIC':
+          return 200;
+        case 'FREE':
+          return 100;
+        default:
+          return 200;
+      }
+    };
+
     const getPlanConfig = (plan?: MapMotel['plan']) => {
       switch (plan) {
         case 'FREE':
@@ -179,6 +194,7 @@ export default function GoogleMapComponent({
     // Create markers for each motel
     motels.forEach((motel) => {
       const planConfig = getPlanConfig(motel.plan ?? null);
+      const planZIndex = getPlanZIndex(motel.plan ?? null);
       const pinSvg = createPinSvg(planConfig.color, planConfig.opacity);
       const pinWidth = Math.round(BASE_PIN_WIDTH * planConfig.scale);
       const pinHeight = Math.round(BASE_PIN_HEIGHT * planConfig.scale);
@@ -191,6 +207,7 @@ export default function GoogleMapComponent({
         position: { lat: motel.latitude, lng: motel.longitude },
         map: googleMapRef.current,
         icon: pinIcon,
+        zIndex: planZIndex,
         // NO usamos label para evitar tooltip nativo
       });
 
@@ -218,6 +235,7 @@ export default function GoogleMapComponent({
           this.div.style.fontWeight = '500';
           this.div.style.whiteSpace = 'nowrap';
           this.div.style.cursor = 'pointer';
+          this.div.style.zIndex = String(planZIndex + 10);
           this.div.style.boxShadow = planConfig.glow
             ? `0 2px 8px rgba(0, 0, 0, 0.15), 0 0 14px ${planConfig.glow}`
             : '0 2px 8px rgba(0, 0, 0, 0.15)';
@@ -394,6 +412,7 @@ export default function GoogleMapComponent({
       position: { lat: location[0], lng: location[1] },
       map: googleMapRef.current,
       icon: redUserPinIcon,
+      zIndex: 1200,
       // NO usamos label para evitar tooltip nativo
     });
 
@@ -419,6 +438,7 @@ export default function GoogleMapComponent({
         this.div.style.fontWeight = '500';
         this.div.style.whiteSpace = 'nowrap';
         this.div.style.cursor = 'pointer';
+        this.div.style.zIndex = '1210';
         this.div.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
         this.div.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         this.div.textContent = 'Tu ubicación';

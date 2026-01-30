@@ -399,6 +399,8 @@ export default function MotelDetailPage() {
       neighborhood: 'Barrio',
       address: 'Direccion',
       mapUrl: 'URL de mapa',
+      latitude: 'Latitud',
+      longitude: 'Longitud',
       phone: 'Telefono',
       whatsapp: 'WhatsApp',
       website: 'Sitio web',
@@ -452,6 +454,51 @@ export default function MotelDetailPage() {
     if (!trimmed.toLowerCase().startsWith('<iframe')) return trimmed;
     const match = trimmed.match(/src=["']([^"']+)["']/i);
     return match?.[1] || trimmed;
+  };
+
+  const extractLatLngFromMapUrl = (value: string | null) => {
+    if (!value) return null;
+    const decoded = decodeURIComponent(value);
+    const patterns: Array<{ regex: RegExp; getCoords: (match: RegExpMatchArray) => [string, string] }> = [
+      {
+        regex: /!3d(-?\d+(?:\.\d+)?)!2d(-?\d+(?:\.\d+)?)/,
+        getCoords: (match) => [match[1], match[2]],
+      },
+      {
+        regex: /!2d(-?\d+(?:\.\d+)?)!3d(-?\d+(?:\.\d+)?)/,
+        getCoords: (match) => [match[2], match[1]],
+      },
+      {
+        regex: /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+        getCoords: (match) => [match[1], match[2]],
+      },
+      {
+        regex: /[?&]q=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+        getCoords: (match) => [match[1], match[2]],
+      },
+      {
+        regex: /[?&]query=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+        getCoords: (match) => [match[1], match[2]],
+      },
+      {
+        regex: /[?&]ll=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+        getCoords: (match) => [match[1], match[2]],
+      },
+    ];
+
+    for (const { regex, getCoords } of patterns) {
+      const match = decoded.match(regex);
+      if (match) {
+        const [latRaw, lngRaw] = getCoords(match);
+        const latitude = Number.parseFloat(latRaw);
+        const longitude = Number.parseFloat(lngRaw);
+        if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+          return { latitude, longitude };
+        }
+      }
+    }
+
+    return null;
   };
 
   const handleSavePromo = async (e: React.FormEvent) => {
@@ -546,6 +593,8 @@ export default function MotelDetailPage() {
   const handleUpdateMotel = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const normalizedMapUrl = normalizeMapUrl(motelForm.mapUrl || '');
+      const extractedCoords = extractLatLngFromMapUrl(normalizedMapUrl);
       const payload = {
         ...motelForm,
         description: normalizeOptionalText(motelForm.description || ''),
@@ -553,7 +602,7 @@ export default function MotelDetailPage() {
         city: normalizeOptionalText(motelForm.city || ''),
         neighborhood: normalizeOptionalText(motelForm.neighborhood || ''),
         address: normalizeOptionalText(motelForm.address || ''),
-        mapUrl: normalizeMapUrl(motelForm.mapUrl || ''),
+        mapUrl: normalizedMapUrl,
         phone: normalizeOptionalText(motelForm.phone || ''),
         whatsapp: normalizeOptionalText(motelForm.whatsapp || ''),
         website: normalizeOptionalText(motelForm.website || ''),
@@ -569,6 +618,7 @@ export default function MotelDetailPage() {
         operationsContactPhone: normalizeOptionalText(motelForm.operationsContactPhone || ''),
         featuredPhoto: normalizeOptionalText(motelForm.featuredPhoto || ''),
         nextBillingAt: motelForm.nextBillingAt ? motelForm.nextBillingAt : null,
+        ...(extractedCoords ? { latitude: extractedCoords.latitude, longitude: extractedCoords.longitude } : {}),
       };
       const res = await fetch(`/api/admin/motels/${id}`, {
         method: 'PATCH',
@@ -1897,6 +1947,9 @@ export default function MotelDetailPage() {
                       className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       placeholder="https://maps.google.com/..."
                     />
+                    <p className="mt-2 text-xs text-slate-500">
+                      Pega un link de Google Maps o iframe y se guardan las coordenadas automaticamente.
+                    </p>
                   </div>
                 </div>
               </div>
