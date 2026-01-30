@@ -17,6 +17,7 @@ import HomeHeader from '../components/HomeHeader';
 import PromoCarousel from '../components/PromoCarousel';
 import AdPopup from '../components/AdPopup';
 import AdDetailModal from '../components/AdDetailModal';
+import AnimatedSplash from '../components/AnimatedSplash';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { COLORS } from '../constants/theme';
 
@@ -112,16 +113,11 @@ export default function HomeScreen() {
     return (
       <>
         <StatusBar
-          barStyle="light-content"
-          backgroundColor={colors.primary}
+          barStyle="dark-content"
+          backgroundColor={colors.white}
           translucent={Platform.OS === 'android'}
         />
-        <View style={[styles.screen, { backgroundColor: colors.background }]}>
-          <View style={[styles.centerContainer, { backgroundColor: colors.primary }]}>
-            <ActivityIndicator size="large" color={colors.white} />
-            <Text style={[styles.centerText, { color: colors.white }]}>Cargando moteles...</Text>
-          </View>
-        </View>
+        <AnimatedSplash />
       </>
     );
   }

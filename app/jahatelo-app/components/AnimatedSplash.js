@@ -7,6 +7,7 @@ const COLORS = {
 };
 
 export default function AnimatedSplash({ onFinish }) {
+  const shouldLoop = !onFinish;
   // Valores de animación
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
@@ -71,7 +72,7 @@ export default function AnimatedSplash({ onFinish }) {
         <LottieView
           source={require('../assets/logo-lottie.json')}
           autoPlay
-          loop={false}
+          loop={shouldLoop}
           onAnimationFinish={() => onFinish?.()}
           style={styles.logo}
         />

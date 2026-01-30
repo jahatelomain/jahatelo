@@ -1,59 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useColorScheme } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const THEME_STORAGE_KEY = '@jahatelo_theme';
+import React, { createContext, useContext } from 'react';
 
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
-  const systemColorScheme = useColorScheme();
-  const [theme, setThemeState] = useState('auto'); // 'light', 'dark', 'auto'
-  const [isDark, setIsDark] = useState(systemColorScheme === 'dark');
-
-  // Cargar tema guardado al iniciar
-  useEffect(() => {
-    loadTheme();
-  }, []);
-
-  // Actualizar isDark cuando cambia el tema o el sistema
-  useEffect(() => {
-    if (theme === 'auto') {
-      setIsDark(systemColorScheme === 'dark');
-    } else {
-      setIsDark(theme === 'dark');
-    }
-  }, [theme, systemColorScheme]);
-
-  const loadTheme = async () => {
-    try {
-      const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-      if (savedTheme && ['light', 'dark', 'auto'].includes(savedTheme)) {
-        setThemeState(savedTheme);
-      }
-    } catch (error) {
-      console.error('Error loading theme:', error);
-    }
-  };
-
-  const setTheme = async (newTheme) => {
-    try {
-      setThemeState(newTheme);
-      await AsyncStorage.setItem(THEME_STORAGE_KEY, newTheme);
-    } catch (error) {
-      console.error('Error saving theme:', error);
-    }
-  };
-
-  const toggleTheme = () => {
-    if (theme === 'light') {
-      setTheme('dark');
-    } else if (theme === 'dark') {
-      setTheme('auto');
-    } else {
-      setTheme('light');
-    }
-  };
+  const theme = 'light';
+  const isDark = false;
+  const setTheme = async () => {};
+  const toggleTheme = () => {};
 
   const value = {
     theme, // 'light', 'dark', 'auto'

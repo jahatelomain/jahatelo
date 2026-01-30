@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/app-icon-1024.png",
     "scheme": "jahatelo",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "primaryColor": "#822DE2",
     "splash": {
@@ -53,10 +53,7 @@
           "image": "./assets/splash-icon-v2.png",
           "imageWidth": 300,
           "resizeMode": "contain",
-          "backgroundColor": "#FFFFFF",
-          "dark": {
-            "backgroundColor": "#FFFFFF"
-          }
+          "backgroundColor": "#FFFFFF"
         }
       ]
     ],
