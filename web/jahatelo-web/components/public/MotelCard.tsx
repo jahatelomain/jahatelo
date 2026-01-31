@@ -22,6 +22,7 @@ interface MotelCardProps {
     ratingAvg: number;
     ratingCount: number;
     featuredPhoto?: string | null;
+    featuredPhotoWeb?: string | null;
     photos?: { url: string; kind: string }[];
     motelAmenities?: { amenity: { name: string; icon?: string | null } }[];
     rooms?: { price1h?: number | null; price2h?: number | null; price12h?: number | null }[];
@@ -33,7 +34,8 @@ export default function MotelCard({ motel }: MotelCardProps) {
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
   const facadePhoto = motel.photos?.find((p) => p.kind === 'FACADE');
   const firstPhoto = motel.photos?.[0];
-  const realPhotoUrl = motel.featuredPhoto || facadePhoto?.url || firstPhoto?.url || null;
+  const realPhotoUrl =
+    motel.featuredPhotoWeb || motel.featuredPhoto || facadePhoto?.url || firstPhoto?.url || null;
   const [imageFailed, setImageFailed] = useState(false);
   const photoUrl = imageFailed ? null : realPhotoUrl;
   const isPlaceholder = !photoUrl;

@@ -22,6 +22,7 @@ const PromoCard = ({ motel }: { motel: any }) => {
   const photoUrl =
     promo?.imageUrl ||
     motel.photos?.[0]?.url ||
+    motel.featuredPhotoWeb ||
     motel.featuredPhoto ||
     '/motel-placeholder.png';
 

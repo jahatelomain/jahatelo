@@ -109,6 +109,8 @@ export async function GET(request: NextRequest) {
         phone: true,
         whatsapp: true,
         featuredPhoto: true,
+        featuredPhotoWeb: true,
+        featuredPhotoApp: true,
         _count: {
           select: {
             photos: true,

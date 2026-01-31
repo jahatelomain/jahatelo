@@ -12,6 +12,8 @@ type MapMotel = {
   latitude: number;
   longitude: number;
   featuredPhoto: string | null;
+  featuredPhotoWeb?: string | null;
+  featuredPhotoApp?: string | null;
   hasPromo: boolean;
   isFeatured?: boolean;
   plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
@@ -329,12 +331,14 @@ export default function GoogleMapComponent({
           </a>
         `;
 
+      const motelPhoto = motel.featuredPhotoWeb || motel.featuredPhoto;
+
       // Create InfoWindow with custom content
       const infoWindowContent = `
         <div style="max-width: 280px; padding: 8px;">
-          ${motel.featuredPhoto ? `
+          ${motelPhoto ? `
             <img
-              src="${motel.featuredPhoto}"
+              src="${motelPhoto}"
               alt="${motel.name}"
               style="width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;"
             />

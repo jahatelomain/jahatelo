@@ -71,7 +71,14 @@ const normalizeMotelPhotos = (motel = {}) => {
 
   const normalizedPhotos = normalizePhotoList(motel.photos);
   const normalizedAllPhotos = normalizePhotoList(motel.allPhotos);
-  const featured = motel.featuredPhoto ? [motel.featuredPhoto] : [];
+  const featured =
+    motel.featuredPhotoApp
+      ? [motel.featuredPhotoApp]
+      : motel.featuredPhotoWeb
+        ? [motel.featuredPhotoWeb]
+        : motel.featuredPhoto
+          ? [motel.featuredPhoto]
+          : [];
 
   const buildUniqueList = (lists) => {
     const merged = lists.flat().filter(Boolean);
@@ -121,6 +128,8 @@ const mapMotelSummary = (apiMotel) => {
 
   const thumbnail =
     apiMotel.thumbnail ||
+    apiMotel.featuredPhotoApp ||
+    apiMotel.featuredPhotoWeb ||
     apiMotel.featuredPhoto ||
     normalizedPhotos[0] ||
     null;
@@ -150,6 +159,8 @@ const mapMotelSummary = (apiMotel) => {
       : null,
     photos: normalizedPhotos,
     thumbnail,
+    featuredPhotoApp: apiMotel.featuredPhotoApp || null,
+    featuredPhotoWeb: apiMotel.featuredPhotoWeb || null,
   });
 };
 

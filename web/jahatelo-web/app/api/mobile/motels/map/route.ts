@@ -32,6 +32,8 @@ export async function GET() {
         plan: true,
         isFeatured: true,
         featuredPhoto: true,
+        featuredPhotoWeb: true,
+        featuredPhotoApp: true,
         promos: {
           where: { isActive: true },
           select: { id: true },
@@ -52,7 +54,7 @@ export async function GET() {
           longitude: m.longitude!,
           plan: m.plan,
           isFeatured: m.isFeatured,
-          featuredPhoto: m.featuredPhoto ?? null,
+          featuredPhoto: m.featuredPhotoApp ?? m.featuredPhotoWeb ?? m.featuredPhoto ?? null,
           hasPromo: m.promos.length > 0,
         })),
       },

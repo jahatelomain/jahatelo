@@ -25,6 +25,8 @@ type MapMotel = {
   latitude: number;
   longitude: number;
   featuredPhoto: string | null;
+  featuredPhotoWeb?: string | null;
+  featuredPhotoApp?: string | null;
   hasPromo: boolean;
   isFeatured: boolean;
   plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;

@@ -67,7 +67,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
     // Transform the data to match what the app expects
     const sortedPhotos = motel.photos.sort((a, b) => a.order - b.order);
     const facadePhoto = sortedPhotos.find(p => p.kind === 'FACADE');
-    const thumbnail = facadePhoto?.url || sortedPhotos[0]?.url || motel.featuredPhoto || null;
+    const thumbnail =
+      facadePhoto?.url ||
+      sortedPhotos[0]?.url ||
+      motel.featuredPhotoWeb ||
+      motel.featuredPhotoApp ||
+      motel.featuredPhoto ||
+      null;
     const photos = sortedPhotos.map(p => p.url);
 
     // Calculate starting price from room prices
@@ -97,6 +103,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
       hasPromo: motel.promos.length > 0,
       thumbnail,
       featuredPhoto: thumbnail,
+      featuredPhotoWeb: motel.featuredPhotoWeb || null,
+      featuredPhotoApp: motel.featuredPhotoApp || null,
       photos,
       allPhotos: photos,
       hasPhotos: photos.length > 0,

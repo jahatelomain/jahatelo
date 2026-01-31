@@ -21,6 +21,8 @@ interface Motel {
   neighborhood: string;
   description: string | null;
   featuredPhoto: string | null;
+  featuredPhotoWeb?: string | null;
+  featuredPhotoApp?: string | null;
   latitude: number;
   longitude: number;
   isFeatured: boolean;

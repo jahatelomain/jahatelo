@@ -93,6 +93,10 @@ export function getAllPhotos(photos: Photo[], featuredPhoto?: string | null): st
   return Array.from(unique);
 }
 
+const getPreferredFeaturedPhoto = (motel: Motel) => {
+  return motel.featuredPhotoApp || motel.featuredPhotoWeb || motel.featuredPhoto || null;
+};
+
 /**
  * Verifica si hay promos activas
  */
@@ -156,9 +160,9 @@ export function mapMotelToListItem(motel: MotelForList) {
       name: ma.amenity.name,
       icon: ma.amenity.icon,
     })),
-    thumbnail: getThumbnail(motel.photos, motel.featuredPhoto),
-    photos: getListPhotos(motel.photos, motel.featuredPhoto),
-    featuredPhoto: motel.featuredPhoto,
+    thumbnail: getThumbnail(motel.photos, getPreferredFeaturedPhoto(motel)),
+    photos: getListPhotos(motel.photos, getPreferredFeaturedPhoto(motel)),
+    featuredPhoto: getPreferredFeaturedPhoto(motel),
     // Incluir datos de la primera promo activa para el carrusel
     promoImageUrl: firstPromo?.imageUrl || null,
     promoTitle: firstPromo?.title || null,
@@ -240,8 +244,8 @@ export function mapMotelToDetail(
 
   return {
     ...listItem,
-    photos: getListPhotos(motel.photos, motel.featuredPhoto),
-    allPhotos: getAllPhotos(motel.photos, motel.featuredPhoto),
+    photos: getListPhotos(motel.photos, getPreferredFeaturedPhoto(motel)),
+    allPhotos: getAllPhotos(motel.photos, getPreferredFeaturedPhoto(motel)),
     promos:
       motel.promos
         ?.filter((promo) => {
@@ -285,6 +289,8 @@ export function mapMotelToDetail(
       })) || [],
     rooms: motel.rooms?.filter((r) => r.isActive).map(mapRoomForMobile) || [],
     paymentMethods: motel.paymentMethods?.map((pm) => pm.method) || [],
-    hasPhotos: motel.photos.length > 0 || Boolean(motel.featuredPhoto),
+    hasPhotos:
+      motel.photos.length > 0 ||
+      Boolean(motel.featuredPhotoApp || motel.featuredPhotoWeb || motel.featuredPhoto),
   };
 }

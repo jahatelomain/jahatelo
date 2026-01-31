@@ -38,6 +38,8 @@ type Motel = {
   nextBillingAt: string | null;
   isFeatured: boolean;
   featuredPhoto: string | null;
+  featuredPhotoWeb?: string | null;
+  featuredPhotoApp?: string | null;
   ratingAvg: number | null;
   ratingCount: number | null;
   createdAt?: string;
@@ -155,6 +157,8 @@ export default function MotelDetailPage() {
     nextBillingAt: '',
     isFeatured: false,
     featuredPhoto: '',
+    featuredPhotoWeb: '',
+    featuredPhotoApp: '',
   });
 
   const [showRoomForm, setShowRoomForm] = useState(false);
@@ -199,6 +203,8 @@ export default function MotelDetailPage() {
   const [promoForm, setPromoForm] = useState(createInitialPromoForm());
   const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
   const [uploadingFeatured, setUploadingFeatured] = useState(false);
+  const [uploadingFeaturedWeb, setUploadingFeaturedWeb] = useState(false);
+  const [uploadingFeaturedApp, setUploadingFeaturedApp] = useState(false);
   const [uploadingRoomId, setUploadingRoomId] = useState<string | null>(null);
   const [uploadingPromo, setUploadingPromo] = useState(false);
   const [draggedPhotoId, setDraggedPhotoId] = useState<string | null>(null);
@@ -349,6 +355,8 @@ export default function MotelDetailPage() {
         nextBillingAt: data.nextBillingAt || '',
         isFeatured: data.isFeatured || false,
         featuredPhoto: data.featuredPhoto || '',
+        featuredPhotoWeb: data.featuredPhotoWeb || '',
+        featuredPhotoApp: data.featuredPhotoApp || '',
       });
     } catch (error) {
       console.error('Error fetching motel:', error);
@@ -415,6 +423,8 @@ export default function MotelDetailPage() {
       operationsContactEmail: 'Correo operativo',
       operationsContactPhone: 'Telefono operativo',
       featuredPhoto: 'URL foto principal',
+      featuredPhotoWeb: 'URL foto principal (Web)',
+      featuredPhotoApp: 'URL foto principal (App)',
       nextBillingAt: 'Proxima facturacion',
       status: 'Estado',
       isActive: 'Habilitado',
@@ -595,6 +605,10 @@ export default function MotelDetailPage() {
     try {
       const normalizedMapUrl = normalizeMapUrl(motelForm.mapUrl || '');
       const extractedCoords = extractLatLngFromMapUrl(normalizedMapUrl);
+      const fallbackFeaturedPhoto =
+        normalizeOptionalText(motelForm.featuredPhoto || '') ||
+        normalizeOptionalText(motelForm.featuredPhotoWeb || '') ||
+        normalizeOptionalText(motelForm.featuredPhotoApp || '');
       const payload = {
         ...motelForm,
         description: normalizeOptionalText(motelForm.description || ''),
@@ -616,7 +630,9 @@ export default function MotelDetailPage() {
         operationsContactName: normalizeOptionalText(motelForm.operationsContactName || ''),
         operationsContactEmail: normalizeOptionalText(motelForm.operationsContactEmail || ''),
         operationsContactPhone: normalizeOptionalText(motelForm.operationsContactPhone || ''),
-        featuredPhoto: normalizeOptionalText(motelForm.featuredPhoto || ''),
+        featuredPhoto: fallbackFeaturedPhoto,
+        featuredPhotoWeb: normalizeOptionalText(motelForm.featuredPhotoWeb || ''),
+        featuredPhotoApp: normalizeOptionalText(motelForm.featuredPhotoApp || ''),
         nextBillingAt: motelForm.nextBillingAt ? motelForm.nextBillingAt : null,
         ...(extractedCoords ? { latitude: extractedCoords.latitude, longitude: extractedCoords.longitude } : {}),
       };
@@ -1045,14 +1061,100 @@ export default function MotelDetailPage() {
     return data.url as string;
   };
 
+  const loadImageFromFile = (file: File) =>
+    new Promise<{ image: HTMLImageElement; revoke: () => void }>((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const image = new Image();
+      image.onload = () => resolve({ image, revoke: () => URL.revokeObjectURL(objectUrl) });
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('No se pudo leer la imagen.'));
+      };
+      image.src = objectUrl;
+    });
+
+  const cropImageToRatio = (
+    image: HTMLImageElement,
+    ratio: number,
+    outputType = 'image/jpeg'
+  ) =>
+    new Promise<Blob>((resolve, reject) => {
+      const sourceWidth = image.naturalWidth || image.width;
+      const sourceHeight = image.naturalHeight || image.height;
+      if (!sourceWidth || !sourceHeight) {
+        reject(new Error('La imagen no tiene dimensiones válidas.'));
+        return;
+      }
+
+      const sourceRatio = sourceWidth / sourceHeight;
+      let cropWidth = sourceWidth;
+      let cropHeight = sourceHeight;
+      let cropX = 0;
+      let cropY = 0;
+
+      if (sourceRatio > ratio) {
+        cropWidth = Math.round(sourceHeight * ratio);
+        cropX = Math.round((sourceWidth - cropWidth) / 2);
+      } else if (sourceRatio < ratio) {
+        cropHeight = Math.round(sourceWidth / ratio);
+        cropY = Math.round((sourceHeight - cropHeight) / 2);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = cropWidth;
+      canvas.height = cropHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('No se pudo crear el canvas.'));
+        return;
+      }
+
+      ctx.drawImage(image, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('No se pudo procesar la imagen.'));
+            return;
+          }
+          resolve(blob);
+        },
+        outputType,
+        0.9
+      );
+    });
+
+  const createCroppedFile = async (file: File, ratio: number, suffix: string) => {
+    const { image, revoke } = await loadImageFromFile(file);
+    try {
+      const blob = await cropImageToRatio(image, ratio);
+      const baseName = file.name.replace(/\.[^.]+$/, '');
+      const fileName = `${baseName}-${suffix}.jpg`;
+      return new File([blob], fileName, { type: blob.type || 'image/jpeg' });
+    } finally {
+      revoke();
+    }
+  };
+
   const handleFeaturedFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     setUploadingFeatured(true);
     try {
-      const url = await uploadFileToS3(file);
-      setMotelForm((prev) => ({ ...prev, featuredPhoto: url }));
+      const [webFile, appFile] = await Promise.all([
+        createCroppedFile(file, 16 / 9, 'web'),
+        createCroppedFile(file, 4 / 5, 'app'),
+      ]);
+      const [webUrl, appUrl] = await Promise.all([
+        uploadFileToS3(webFile),
+        uploadFileToS3(appFile),
+      ]);
+      setMotelForm((prev) => ({
+        ...prev,
+        featuredPhotoWeb: webUrl,
+        featuredPhotoApp: appUrl,
+        featuredPhoto: prev.featuredPhoto || webUrl,
+      }));
       setSaveStatus('success');
       setTimeout(() => setSaveStatus('idle'), 2500);
     } catch (error) {
@@ -1060,6 +1162,37 @@ export default function MotelDetailPage() {
       alert('No se pudo subir la imagen. Intenta nuevamente.');
     } finally {
       setUploadingFeatured(false);
+      event.target.value = '';
+    }
+  };
+
+  const handleFeaturedVariantFileChange = async (
+    variant: 'web' | 'app',
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const setUploading = variant === 'web' ? setUploadingFeaturedWeb : setUploadingFeaturedApp;
+    setUploading(true);
+    try {
+      const targetRatio = variant === 'web' ? 16 / 9 : 4 / 5;
+      const suffix = variant === 'web' ? 'web' : 'app';
+      const croppedFile = await createCroppedFile(file, targetRatio, suffix);
+      const url = await uploadFileToS3(croppedFile);
+      setMotelForm((prev) => ({
+        ...prev,
+        featuredPhotoWeb: variant === 'web' ? url : prev.featuredPhotoWeb,
+        featuredPhotoApp: variant === 'app' ? url : prev.featuredPhotoApp,
+        featuredPhoto: prev.featuredPhoto || url,
+      }));
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus('idle'), 2500);
+    } catch (error) {
+      console.error('Error uploading featured photo variant:', error);
+      alert('No se pudo subir la imagen. Intenta nuevamente.');
+    } finally {
+      setUploading(false);
       event.target.value = '';
     }
   };
@@ -1100,6 +1233,8 @@ export default function MotelDetailPage() {
   // Constantes seguras para valores numéricos
   const safeRatingAvg = typeof motel.ratingAvg === 'number' ? motel.ratingAvg : 0;
   const safeRatingCount = typeof motel.ratingCount === 'number' ? motel.ratingCount : 0;
+  const featuredPhotoWeb = motel.featuredPhotoWeb || motel.featuredPhoto || null;
+  const featuredPhotoApp = motel.featuredPhotoApp || motel.featuredPhoto || null;
 
   // Función helper para formatear precios de forma segura
   const formatPrice = (price: number | null | undefined): string => {
@@ -1287,9 +1422,9 @@ export default function MotelDetailPage() {
           </div>
 
           <div className="relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-            {motel.featuredPhoto ? (
+            {featuredPhotoWeb || featuredPhotoApp ? (
               <img
-                src={motel.featuredPhoto}
+                src={featuredPhotoWeb || featuredPhotoApp || ''}
                 alt={motel.name}
                 className="h-56 w-full object-cover"
               />
@@ -1298,7 +1433,7 @@ export default function MotelDetailPage() {
                 <LucideIcons.Image className="h-10 w-10" />
               </div>
             )}
-            {motel.featuredPhoto && (
+            {(featuredPhotoWeb || featuredPhotoApp) && (
               <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-900/60 to-transparent" />
             )}
           </div>
@@ -1663,14 +1798,38 @@ export default function MotelDetailPage() {
                   </div>
                   <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                     <dt className="text-xs font-medium text-slate-500 uppercase">Foto principal</dt>
-                    {motel.featuredPhoto ? (
-                      <div className="mt-2">
-                        <img
-                          src={motel.featuredPhoto}
-                          alt={motel.name}
-                          className="w-full max-w-md h-48 object-cover rounded-xl border border-slate-200 shadow-sm"
-                        />
-                        <p className="mt-2 text-xs text-slate-500 truncate">{motel.featuredPhoto}</p>
+                    {featuredPhotoWeb || featuredPhotoApp ? (
+                      <div className="mt-3 grid gap-4 md:grid-cols-2">
+                        <div>
+                          <p className="text-xs font-medium text-slate-500 uppercase">Web (16:9)</p>
+                          {featuredPhotoWeb ? (
+                            <div className="mt-2">
+                              <img
+                                src={featuredPhotoWeb}
+                                alt={`${motel.name} - Web`}
+                                className="w-full aspect-[16/9] object-cover rounded-xl border border-slate-200 shadow-sm"
+                              />
+                              <p className="mt-2 text-xs text-slate-500 truncate">{featuredPhotoWeb}</p>
+                            </div>
+                          ) : (
+                            <p className="mt-2 text-sm text-slate-400">Sin foto web</p>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-slate-500 uppercase">App (4:5)</p>
+                          {featuredPhotoApp ? (
+                            <div className="mt-2">
+                              <img
+                                src={featuredPhotoApp}
+                                alt={`${motel.name} - App`}
+                                className="w-full aspect-[4/5] object-cover rounded-xl border border-slate-200 shadow-sm"
+                              />
+                              <p className="mt-2 text-xs text-slate-500 truncate">{featuredPhotoApp}</p>
+                            </div>
+                          ) : (
+                            <p className="mt-2 text-sm text-slate-400">Sin foto app</p>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <p className="mt-1 text-sm text-slate-400">Sin foto principal</p>
@@ -1761,15 +1920,8 @@ export default function MotelDetailPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">URL Foto Principal</label>
-                    <input
-                      type="text"
-                      value={motelForm.featuredPhoto}
-                      onChange={(e) => setMotelForm({ ...motelForm, featuredPhoto: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                      placeholder="https://ejemplo.com/foto.jpg"
-                    />
-                    <div className="flex flex-wrap items-center gap-3 mt-3">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Foto principal (auto)</label>
+                    <div className="flex flex-wrap items-center gap-3">
                       <label
                         className={`inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg cursor-pointer font-medium hover:bg-slate-200 transition ${
                           uploadingFeatured ? 'opacity-70 cursor-not-allowed' : ''
@@ -1794,24 +1946,122 @@ export default function MotelDetailPage() {
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4-4 4 4m-4-4v9" />
                             </svg>
-                            Subir desde archivo
+                            Subir y generar 16:9 + 4:5
                           </>
                         )}
                       </label>
-                      <p className="text-xs text-slate-500">Formatos sugeridos: JPG o PNG.</p>
+                      <p className="text-xs text-slate-500">Usamos recorte central para web (16:9) y app (4:5).</p>
                     </div>
-                    {motelForm.featuredPhoto && (
-                      <div className="mt-3">
-                        <img
-                          src={motelForm.featuredPhoto}
-                          alt="Preview"
-                          className="w-full max-w-md h-48 object-cover rounded-lg border border-slate-200"
-                          onError={(e) => {
-                            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f1f5f9" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
-                          }}
+
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">URL Foto Web (16:9)</label>
+                        <input
+                          type="text"
+                          value={motelForm.featuredPhotoWeb}
+                          onChange={(e) => setMotelForm({ ...motelForm, featuredPhotoWeb: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                          placeholder="https://ejemplo.com/foto-web.jpg"
                         />
+                        <div className="flex flex-wrap items-center gap-3 mt-3">
+                          <label
+                            className={`inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg cursor-pointer font-medium hover:bg-slate-200 transition ${
+                              uploadingFeaturedWeb ? 'opacity-70 cursor-not-allowed' : ''
+                            }`}
+                          >
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(event) => handleFeaturedVariantFileChange('web', event)}
+                              disabled={uploadingFeaturedWeb}
+                            />
+                            {uploadingFeaturedWeb ? (
+                              <>
+                                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l3 3" />
+                                </svg>
+                                Subiendo...
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4-4 4 4m-4-4v9" />
+                                </svg>
+                                Reemplazar Web
+                              </>
+                            )}
+                          </label>
+                          <p className="text-xs text-slate-500">Recomendado 16:9.</p>
+                        </div>
+                        {motelForm.featuredPhotoWeb && (
+                          <div className="mt-3">
+                            <img
+                              src={motelForm.featuredPhotoWeb}
+                              alt="Preview web"
+                              className="w-full aspect-[16/9] object-cover rounded-lg border border-slate-200"
+                              onError={(e) => {
+                                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f1f5f9" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
+                              }}
+                            />
+                          </div>
+                        )}
                       </div>
-                    )}
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">URL Foto App (4:5)</label>
+                        <input
+                          type="text"
+                          value={motelForm.featuredPhotoApp}
+                          onChange={(e) => setMotelForm({ ...motelForm, featuredPhotoApp: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                          placeholder="https://ejemplo.com/foto-app.jpg"
+                        />
+                        <div className="flex flex-wrap items-center gap-3 mt-3">
+                          <label
+                            className={`inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg cursor-pointer font-medium hover:bg-slate-200 transition ${
+                              uploadingFeaturedApp ? 'opacity-70 cursor-not-allowed' : ''
+                            }`}
+                          >
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(event) => handleFeaturedVariantFileChange('app', event)}
+                              disabled={uploadingFeaturedApp}
+                            />
+                            {uploadingFeaturedApp ? (
+                              <>
+                                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l3 3" />
+                                </svg>
+                                Subiendo...
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4-4 4 4m-4-4v9" />
+                                </svg>
+                                Reemplazar App
+                              </>
+                            )}
+                          </label>
+                          <p className="text-xs text-slate-500">Recomendado 4:5.</p>
+                        </div>
+                        {motelForm.featuredPhotoApp && (
+                          <div className="mt-3">
+                            <img
+                              src={motelForm.featuredPhotoApp}
+                              alt="Preview app"
+                              className="w-full aspect-[4/5] object-cover rounded-lg border border-slate-200"
+                              onError={(e) => {
+                                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f1f5f9" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <div className="flex items-center">
                     <label className="flex items-center gap-2 cursor-pointer">

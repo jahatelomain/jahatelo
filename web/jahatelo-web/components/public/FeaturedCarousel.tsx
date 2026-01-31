@@ -13,6 +13,7 @@ interface Motel {
   slug: string;
   name: string;
   featuredPhoto?: string | null;
+  featuredPhotoWeb?: string | null;
   photos?: Array<{ url: string; kind: string }>;
   plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
 }
@@ -143,7 +144,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
           }
 
           const motel = item.data as Motel;
-          const realPhotoUrl = motel.featuredPhoto || motel.photos?.[0]?.url || null;
+          const realPhotoUrl = motel.featuredPhotoWeb || motel.featuredPhoto || motel.photos?.[0]?.url || null;
           const photoUrl = failedImages[motel.id] ? null : realPhotoUrl;
           const isPlaceholder = !photoUrl;
           const isDisabled = motel.plan === 'FREE';

@@ -43,6 +43,8 @@ export const MotelSchema = z.object({
   website: z.string().url('URL inválida').optional().nullable(),
   instagram: z.string().optional().nullable(),
   featuredPhoto: z.string().url('URL de imagen inválida').optional().nullable(),
+  featuredPhotoWeb: z.string().url('URL de imagen inválida').optional().nullable(),
+  featuredPhotoApp: z.string().url('URL de imagen inválida').optional().nullable(),
   status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
   isActive: z.boolean().optional(),
   contactName: z.string().min(2).max(100).optional().nullable(),

@@ -16,6 +16,8 @@ type MotelCardProps = {
     contactPhone: string | null;
     description: string | null;
     featuredPhoto: string | null;
+    featuredPhotoWeb?: string | null;
+    featuredPhotoApp?: string | null;
     _count?: {
       photos: number;
       rooms: number;
@@ -45,13 +47,15 @@ export default function MotelCard({ motel }: MotelCardProps) {
     );
   };
 
+  const displayPhoto = motel.featuredPhotoWeb || motel.featuredPhoto || null;
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-all group">
       {/* Imagen */}
       <div className="relative h-48 bg-slate-100 overflow-hidden">
-        {motel.featuredPhoto ? (
+        {displayPhoto ? (
           <Image
-            src={motel.featuredPhoto}
+            src={displayPhoto}
             alt={motel.name}
             fill
             quality={85}

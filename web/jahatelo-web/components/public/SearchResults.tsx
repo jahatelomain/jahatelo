@@ -23,6 +23,8 @@ interface Motel {
   neighborhood: string;
   description: string | null;
   featuredPhoto: string | null;
+  featuredPhotoWeb?: string | null;
+  featuredPhotoApp?: string | null;
   isFeatured: boolean;
   ratingAvg: number;
   ratingCount: number;

@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import MotelCard from '../components/MotelCard';
-import PaginationControls from '../components/PaginationControls';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -24,6 +24,8 @@ type Motel = {
   phone: string | null;
   whatsapp: string | null;
   featuredPhoto: string | null;
+  featuredPhotoWeb?: string | null;
+  featuredPhotoApp?: string | null;
   _count?: {
     photos: number;
     rooms: number;
@@ -34,6 +36,7 @@ type Motel = {
 export default function MotelsAdminPage() {
   const [motels, setMotels] = useState<Motel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [statusFilter, setStatusFilter] = useState<MotelStatus | 'ALL'>('ALL');
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,10 +52,15 @@ export default function MotelsAdminPage() {
   const pageSize = 20;
   const filtersKeyRef = useRef('');
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
+  const hasMore = motels.length < totalItems;
 
-  const fetchMotels = async () => {
+  const fetchMotels = async (isLoadingMore = false) => {
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+
+    if (isLoadingMore) {
+      setLoadingMore(true);
+    }
 
     try {
       const params = new URLSearchParams();
@@ -74,36 +82,49 @@ export default function MotelsAdminPage() {
         : [];
       const meta = Array.isArray(data) ? undefined : data?.meta;
 
-      setMotels(motelsData);
+      setMotels((prev) => (isLoadingMore ? [...prev, ...motelsData] : motelsData));
       setTotalItems(meta?.total ?? motelsData.length);
       setSummary(meta?.summary ?? { statusCounts: {}, activeCounts: {} });
     } catch (error) {
       // Error de red, timeout o parsing - asignar array vacío sin loguear
-      setMotels([]);
-      setTotalItems(0);
+      if (!isLoadingMore) {
+        setMotels([]);
+        setTotalItems(0);
+      }
     } finally {
       window.clearTimeout(timeoutId);
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
     const nextKey = `${statusFilter}|${activeFilter}|${debouncedSearchQuery.trim()}`;
-    if (filtersKeyRef.current !== nextKey) {
+    const filtersChanged = filtersKeyRef.current !== nextKey;
+
+    if (filtersChanged) {
       filtersKeyRef.current = nextKey;
-      if (page !== 1) {
-        setPage(1);
-        return;
-      }
+      setMotels([]);
+      setPage(1);
+      setLoading(true);
+      fetchMotels(false);
+    } else {
+      const isLoadingMore = page > 1;
+      fetchMotels(isLoadingMore);
     }
-    fetchMotels();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, statusFilter, activeFilter, debouncedSearchQuery]);
 
   const motelsArray = Array.isArray(motels) ? motels : [];
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const allPageSelected =
     motelsArray.length > 0 && motelsArray.every((motel) => selectedMotels.has(motel.id));
+
+  const { sentinelRef } = useInfiniteScroll({
+    loading: loadingMore,
+    hasMore,
+    onLoadMore: () => setPage((prev) => prev + 1),
+    threshold: 200,
+  });
 
   const getStatusBadge = (status: MotelStatus) => {
     const styles = {
@@ -685,15 +706,23 @@ export default function MotelsAdminPage() {
           </tbody>
         </table>
           </div>
-          {totalItems > 0 && (
-            <div className="px-6 pb-6">
-              <PaginationControls
-                page={page}
-                totalPages={totalPages}
-                totalItems={totalItems}
-                pageSize={pageSize}
-                onPageChange={setPage}
-              />
+
+          {/* Infinite scroll sentinel y loader */}
+          {motelsArray.length > 0 && (
+            <div ref={sentinelRef} className="px-6 pb-6">
+              {loadingMore && (
+                <div className="flex justify-center items-center gap-2 py-4">
+                  <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm text-slate-600">Cargando más moteles...</span>
+                </div>
+              )}
+              {!hasMore && totalItems > pageSize && (
+                <div className="text-center py-4">
+                  <p className="text-sm text-slate-500">
+                    Mostrando todos los moteles ({motelsArray.length} de {totalItems})
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -701,36 +730,48 @@ export default function MotelsAdminPage() {
 
       {/* Vista Grid */}
       {viewMode === 'grid' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {motelsArray.length === 0 ? (
-            <div className="col-span-full flex flex-col items-center gap-4 py-12">
-              <span className="text-6xl text-slate-300">🔍</span>
-              <p className="text-slate-500 font-medium text-lg">
-                {searchQuery || statusFilter !== 'ALL' || activeFilter !== 'ALL'
-                  ? 'No se encontraron moteles con estos filtros'
-                  : 'No hay moteles registrados'}
-              </p>
-              <p className="text-sm text-slate-400">
-                {searchQuery || statusFilter !== 'ALL' || activeFilter !== 'ALL'
-                  ? 'Intentá con otros criterios de búsqueda'
-                  : 'Los moteles aparecerán aquí cuando sean creados'}
-              </p>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {motelsArray.length === 0 ? (
+              <div className="col-span-full flex flex-col items-center gap-4 py-12">
+                <span className="text-6xl text-slate-300">🔍</span>
+                <p className="text-slate-500 font-medium text-lg">
+                  {searchQuery || statusFilter !== 'ALL' || activeFilter !== 'ALL'
+                    ? 'No se encontraron moteles con estos filtros'
+                    : 'No hay moteles registrados'}
+                </p>
+                <p className="text-sm text-slate-400">
+                  {searchQuery || statusFilter !== 'ALL' || activeFilter !== 'ALL'
+                    ? 'Intentá con otros criterios de búsqueda'
+                    : 'Los moteles aparecerán aquí cuando sean creados'}
+                </p>
+              </div>
+            ) : (
+              motelsArray.map((motel) => (
+                <MotelCard key={motel.id} motel={motel} />
+              ))
+            )}
+          </div>
+
+          {/* Infinite scroll sentinel y loader para grid */}
+          {motelsArray.length > 0 && (
+            <div ref={sentinelRef} className="mt-6">
+              {loadingMore && (
+                <div className="flex justify-center items-center gap-2 py-4">
+                  <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm text-slate-600">Cargando más moteles...</span>
+                </div>
+              )}
+              {!hasMore && totalItems > pageSize && (
+                <div className="text-center py-4">
+                  <p className="text-sm text-slate-500">
+                    Mostrando todos los moteles ({motelsArray.length} de {totalItems})
+                  </p>
+                </div>
+              )}
             </div>
-          ) : (
-            motelsArray.map((motel) => (
-              <MotelCard key={motel.id} motel={motel} />
-            ))
           )}
-        </div>
-      )}
-      {viewMode === 'grid' && totalItems > 0 && (
-        <PaginationControls
-          page={page}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          pageSize={pageSize}
-          onPageChange={setPage}
-        />
+        </>
       )}
     </div>
   );

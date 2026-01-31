@@ -70,12 +70,13 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
   }
 
   // Get main photo
+  const featuredPhotoWeb = motel.featuredPhotoWeb || motel.featuredPhoto || null;
   const facadePhoto = motel.photos.find((p) => p.kind === 'FACADE');
-  const mainPhoto = facadePhoto || motel.photos[0] || (motel.featuredPhoto ? { url: motel.featuredPhoto } : undefined);
-  const heroPhotoUrl = mainPhoto?.url || motel.featuredPhoto || null;
+  const mainPhoto = facadePhoto || motel.photos[0] || (featuredPhotoWeb ? { url: featuredPhotoWeb } : undefined);
+  const heroPhotoUrl = mainPhoto?.url || featuredPhotoWeb || null;
   const hasHeroPhoto = Boolean(heroPhotoUrl);
   const galleryPhotos = [
-    ...(motel.featuredPhoto ? [{ url: motel.featuredPhoto, alt: motel.name }] : []),
+    ...(featuredPhotoWeb ? [{ url: featuredPhotoWeb, alt: motel.name }] : []),
     ...motel.photos.map((photo) => ({ url: photo.url, alt: motel.name })),
   ].filter((photo, index, list) => list.findIndex((item) => item.url === photo.url) === index);
 

@@ -18,6 +18,8 @@ export async function GET() {
         city: true,
         isActive: true,
         featuredPhoto: true,
+        featuredPhotoWeb: true,
+        featuredPhotoApp: true,
         plan: true,
       },
       orderBy: {
