@@ -1,0 +1,2 @@
+-- Placeholder migration to align local history with production.
+-- The original 20251117184545_init migration is missing from the repo.

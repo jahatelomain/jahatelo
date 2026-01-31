@@ -128,6 +128,8 @@ model Motel {
   website          String?
   instagram        String?
   featuredPhoto    String?         // Foto principal/portada del motel
+  featuredPhotoWeb String?         // Portada 16:9 para web
+  featuredPhotoApp String?         // Portada 4:5 para app
   status           MotelStatus     @default(PENDING)
   isActive         Boolean         @default(false)
   contactName      String?

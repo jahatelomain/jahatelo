@@ -1,4 +1,11 @@
 -- CreateEnum
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'PaymentType') THEN
+    CREATE TYPE "PaymentType" AS ENUM ('DIRECT_DEBIT', 'TRANSFER', 'EXCHANGE');
+  END IF;
+END $$;
+
 CREATE TYPE "PaymentStatus" AS ENUM ('PAID', 'PENDING', 'FAILED', 'REFUNDED');
 
 -- CreateTable

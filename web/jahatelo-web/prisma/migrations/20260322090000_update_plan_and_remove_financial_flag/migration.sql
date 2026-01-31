@@ -1,8 +1,18 @@
 -- Update PlanType enum and remove isFinanciallyEnabled from Motel
 
-ALTER TYPE "PlanType" RENAME TO "PlanType_old";
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'PlanType') THEN
+    ALTER TYPE "PlanType" RENAME TO "PlanType_old";
+  END IF;
+END $$;
 
-CREATE TYPE "PlanType" AS ENUM ('FREE', 'BASIC', 'GOLD', 'DIAMOND');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'PlanType') THEN
+    CREATE TYPE "PlanType" AS ENUM ('FREE', 'BASIC', 'GOLD', 'DIAMOND');
+  END IF;
+END $$;
 
 ALTER TABLE "Motel" ALTER COLUMN "plan" DROP DEFAULT;
 
@@ -20,6 +30,11 @@ ALTER TABLE "Motel"
 
 ALTER TABLE "Motel" ALTER COLUMN "plan" SET DEFAULT 'BASIC';
 
-ALTER TABLE "Motel" DROP COLUMN "isFinanciallyEnabled";
+ALTER TABLE "Motel" DROP COLUMN IF EXISTS "isFinanciallyEnabled";
 
-DROP TYPE "PlanType_old";
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'PlanType_old') THEN
+    DROP TYPE "PlanType_old";
+  END IF;
+END $$;

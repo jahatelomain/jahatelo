@@ -1,11 +1,41 @@
--- AlterTable
-ALTER TABLE "UserNotificationPreferences" ADD COLUMN     "enableAdvertisingPush" BOOLEAN NOT NULL DEFAULT true,
-ADD COLUMN     "enableMaintenancePush" BOOLEAN NOT NULL DEFAULT true,
-ADD COLUMN     "enableSecurityPush" BOOLEAN NOT NULL DEFAULT true,
-ADD COLUMN     "notifyContactMessages" BOOLEAN NOT NULL DEFAULT true,
-ADD COLUMN     "notifyMotelApprovals" BOOLEAN NOT NULL DEFAULT true,
-ADD COLUMN     "notifyNewProspects" BOOLEAN NOT NULL DEFAULT true,
-ADD COLUMN     "notifyPaymentReminders" BOOLEAN NOT NULL DEFAULT true;
+-- Ensure base table exists for legacy environments/shadow DB
+CREATE TABLE IF NOT EXISTS "UserNotificationPreferences" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "enableAdvertisingPush" BOOLEAN NOT NULL DEFAULT true,
+    "enableSecurityPush" BOOLEAN NOT NULL DEFAULT true,
+    "enableMaintenancePush" BOOLEAN NOT NULL DEFAULT true,
+    "enableNotifications" BOOLEAN NOT NULL DEFAULT true,
+    "enableEmail" BOOLEAN NOT NULL DEFAULT true,
+    "enablePush" BOOLEAN NOT NULL DEFAULT true,
+    "notifyNewPromos" BOOLEAN NOT NULL DEFAULT true,
+    "notifyPriceDrops" BOOLEAN NOT NULL DEFAULT true,
+    "notifyUpdates" BOOLEAN NOT NULL DEFAULT true,
+    "notifyReviewReplies" BOOLEAN NOT NULL DEFAULT true,
+    "notifyReviewLikes" BOOLEAN NOT NULL DEFAULT false,
+    "notifyPromotions" BOOLEAN NOT NULL DEFAULT true,
+    "notifyNewMotels" BOOLEAN NOT NULL DEFAULT false,
+    "notifyContactMessages" BOOLEAN NOT NULL DEFAULT true,
+    "notifyNewProspects" BOOLEAN NOT NULL DEFAULT true,
+    "notifyPaymentReminders" BOOLEAN NOT NULL DEFAULT true,
+    "notifyMotelApprovals" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UserNotificationPreferences_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "UserNotificationPreferences_userId_key" UNIQUE ("userId"),
+    CONSTRAINT "UserNotificationPreferences_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- AlterTable (ensure new columns exist on older DBs)
+ALTER TABLE "UserNotificationPreferences"
+  ADD COLUMN IF NOT EXISTS "enableAdvertisingPush" BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS "enableMaintenancePush" BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS "enableSecurityPush" BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS "notifyContactMessages" BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS "notifyMotelApprovals" BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS "notifyNewProspects" BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS "notifyPaymentReminders" BOOLEAN NOT NULL DEFAULT true;
 
 -- CreateTable
 CREATE TABLE "PushToken" (
@@ -75,4 +105,3 @@ CREATE INDEX "ScheduledNotification_category_idx" ON "ScheduledNotification"("ca
 
 -- AddForeignKey
 ALTER TABLE "PushToken" ADD CONSTRAINT "PushToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
