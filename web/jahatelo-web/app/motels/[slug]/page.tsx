@@ -67,6 +67,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
 
   if (!motel || motel.status !== 'APPROVED' || !motel.isActive || motel.plan === 'FREE') {
     notFound();
+    return null;
   }
 
   // Get main photo
