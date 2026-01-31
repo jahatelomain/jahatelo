@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import PaginationControls from '../components/PaginationControls';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 type AuditLog = {
   id: string;
@@ -21,6 +21,7 @@ type AuditLog = {
 export default function AuditPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [actionFilter, setActionFilter] = useState('');
   const [entityFilter, setEntityFilter] = useState('');
@@ -29,6 +30,7 @@ export default function AuditPage() {
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const pageSize = 20;
+  const hasMore = logs.length < totalItems;
 
   const getAuditLink = (log: AuditLog) => {
     const metadata = log.metadata || {};
@@ -61,9 +63,14 @@ export default function AuditPage() {
     }
   };
 
-  const fetchLogs = async () => {
-    try {
+  const fetchLogs = async (isLoadingMore = false) => {
+    if (isLoadingMore) {
+      setLoadingMore(true);
+    } else {
       setLoading(true);
+    }
+
+    try {
       setErrorMessage('');
       const params = new URLSearchParams();
       if (actionFilter) params.set('action', actionFilter);
@@ -77,8 +84,10 @@ export default function AuditPage() {
       const response = await fetch(`/api/admin/audit${params.toString() ? `?${params.toString()}` : ''}`);
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
-        setErrorMessage(error.error || 'No se pudo cargar la auditoría');
-        setLogs([]);
+        if (!isLoadingMore) {
+          setErrorMessage(error.error || 'No se pudo cargar la auditoría');
+          setLogs([]);
+        }
         return;
       }
 
@@ -89,26 +98,35 @@ export default function AuditPage() {
         ? data.data
         : [];
       const meta = Array.isArray(data) ? undefined : data?.meta;
-      setLogs(logsData);
+      setLogs((prev) => (isLoadingMore ? [...prev, ...logsData] : logsData));
       setTotalItems(meta?.total ?? logsData.length);
     } catch (error) {
       console.error('Error fetching audit logs:', error);
-      setErrorMessage('No se pudo cargar la auditoría');
+      if (!isLoadingMore) {
+        setErrorMessage('No se pudo cargar la auditoría');
+      }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    fetchLogs();
+    const isLoadingMore = page > 1;
+    fetchLogs(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
+
+  const { sentinelRef } = useInfiniteScroll({
+    loading: loadingMore,
+    hasMore,
+    onLoadMore: () => setPage((prev) => prev + 1),
+    threshold: 200,
+  });
 
   useEffect(() => {
     setPage(1);
   }, [logs.length]);
-
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   const uniqueUsers = Array.from(
     new Map(
@@ -286,14 +304,24 @@ export default function AuditPage() {
           </tbody>
         </table>
       </div>
-      {totalItems > 0 && (
-        <PaginationControls
-          page={page}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          pageSize={pageSize}
-          onPageChange={setPage}
-        />
+
+      {/* Infinite scroll sentinel y loader */}
+      {logs.length > 0 && (
+        <div ref={sentinelRef}>
+          {loadingMore && (
+            <div className="flex justify-center items-center gap-2 py-4">
+              <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-slate-600">Cargando más registros...</span>
+            </div>
+          )}
+          {!hasMore && totalItems > pageSize && (
+            <div className="text-center py-4">
+              <p className="text-sm text-slate-500">
+                Mostrando todos los registros ({logs.length} de {totalItems})
+              </p>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

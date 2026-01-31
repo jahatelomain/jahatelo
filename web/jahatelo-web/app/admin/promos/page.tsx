@@ -5,8 +5,8 @@ import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import DirtyBanner from '@/components/admin/DirtyBanner';
-import PaginationControls from '../components/PaginationControls';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 type Motel = {
   id: string;
@@ -32,6 +32,7 @@ export default function PromosAdminPage() {
   const [promos, setPromos] = useState<Promo[]>([]);
   const [motels, setMotels] = useState<Motel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement | null>(null);
@@ -56,6 +57,7 @@ export default function PromosAdminPage() {
     typeCounts: Record<string, number>;
   }>({ activeCounts: {}, typeCounts: {} });
   const pageSize = 20;
+  const hasMore = promos.length < totalItems;
   const filtersKeyRef = useRef('');
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
@@ -92,7 +94,11 @@ export default function PromosAdminPage() {
     fetchMotels();
   }, []);
 
-  const fetchPromos = async () => {
+  const fetchPromos = async (isLoadingMore = false) => {
+    if (isLoadingMore) {
+      setLoadingMore(true);
+    }
+
     try {
       const params = new URLSearchParams();
       params.set('page', String(page));
@@ -111,7 +117,7 @@ export default function PromosAdminPage() {
         ? data.promos
         : [];
       const meta = Array.isArray(data) ? undefined : data?.meta;
-      setPromos(promosData);
+      setPromos((prev) => (isLoadingMore ? [...prev, ...promosData] : promosData));
       setTotalItems(meta?.total ?? promosData.length);
       setSummary({
         activeCounts: meta?.summary?.activeCounts ?? {},
@@ -119,9 +125,12 @@ export default function PromosAdminPage() {
       });
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Error al cargar promociones');
+      if (!isLoadingMore) {
+        toast.error('Error al cargar promociones');
+      }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -306,7 +315,6 @@ export default function PromosAdminPage() {
     }
   };
 
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const selectedMotel = motels.find((motel) => motel.id === formData.motelId);
   const selectedPlan = selectedMotel?.plan ?? null;
   const selectedPromoLimit = getPromoLimit(selectedPlan);
@@ -320,9 +328,17 @@ export default function PromosAdminPage() {
         return;
       }
     }
-    fetchPromos();
+    const isLoadingMore = page > 1;
+    fetchPromos(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, filterStatus, filterType, debouncedSearchQuery]);
+
+  const { sentinelRef } = useInfiniteScroll({
+    loading: loadingMore,
+    hasMore,
+    onLoadMore: () => setPage((prev) => prev + 1),
+    threshold: 200,
+  });
 
   if (loading) {
     return (
@@ -784,15 +800,23 @@ export default function PromosAdminPage() {
             </tbody>
           </table>
         </div>
-        {totalItems > 0 && (
-          <div className="px-6 pb-6">
-            <PaginationControls
-              page={page}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              pageSize={pageSize}
-              onPageChange={setPage}
-            />
+
+        {/* Infinite scroll sentinel y loader */}
+        {promos.length > 0 && (
+          <div ref={sentinelRef} className="px-6 pb-6">
+            {loadingMore && (
+              <div className="flex justify-center items-center gap-2 py-4">
+                <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-slate-600">Cargando más promociones...</span>
+              </div>
+            )}
+            {!hasMore && totalItems > pageSize && (
+              <div className="text-center py-4">
+                <p className="text-sm text-slate-500">
+                  Mostrando todas las promociones ({promos.length} de {totalItems})
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

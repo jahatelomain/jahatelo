@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { ADMIN_MODULES, ADMIN_MODULE_LABELS } from '@/lib/adminModules';
 import type { AdminModule } from '@/lib/adminModules';
-import PaginationControls from '../components/PaginationControls';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 type UserRole = 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
 
@@ -33,6 +33,7 @@ export default function RolesPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editingPermissions, setEditingPermissions] = useState<string[]>([]);
@@ -42,6 +43,7 @@ export default function RolesPage() {
   const [moduleFilter, setModuleFilter] = useState<AdminModule | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const pageSize = 20;
+  const hasMore = users.length < totalItems;
   const filtersKeyRef = useRef('');
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
@@ -66,7 +68,13 @@ export default function RolesPage() {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (isLoadingMore = false) => {
+    if (isLoadingMore) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+
     try {
       let url = '/api/admin/users';
       const params = new URLSearchParams();
@@ -88,14 +96,17 @@ export default function RolesPage() {
           ? data.users
           : [];
         const meta = Array.isArray(data) ? undefined : data?.meta;
-        setUsers(usersData);
+        setUsers((prev) => (isLoadingMore ? [...prev, ...usersData] : usersData));
         setTotalItems(meta?.total ?? usersData.length);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast.error('Error al cargar usuarios');
+      if (!isLoadingMore) {
+        toast.error('Error al cargar usuarios');
+      }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -155,8 +166,6 @@ export default function RolesPage() {
     return user.modulePermissions?.length || 0;
   };
 
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-
   useEffect(() => {
     const nextKey = `${roleFilter}|${moduleFilter}|${debouncedSearchQuery.trim()}`;
     if (filtersKeyRef.current !== nextKey) {
@@ -166,9 +175,17 @@ export default function RolesPage() {
         return;
       }
     }
-    fetchUsers();
+    const isLoadingMore = page > 1;
+    fetchUsers(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, roleFilter, moduleFilter, debouncedSearchQuery]);
+
+  const { sentinelRef } = useInfiniteScroll({
+    loading: loadingMore,
+    hasMore,
+    onLoadMore: () => setPage((prev) => prev + 1),
+    threshold: 200,
+  });
 
   if (loading) {
     return (
@@ -395,15 +412,23 @@ export default function RolesPage() {
             </tbody>
           </table>
         </div>
-        {totalItems > 0 && (
-          <div className="px-6 pb-6">
-            <PaginationControls
-              page={page}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              pageSize={pageSize}
-              onPageChange={setPage}
-            />
+
+        {/* Infinite scroll sentinel y loader */}
+        {users.length > 0 && (
+          <div ref={sentinelRef} className="px-6 pb-6">
+            {loadingMore && (
+              <div className="flex justify-center items-center gap-2 py-4">
+                <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-slate-600">Cargando más usuarios...</span>
+              </div>
+            )}
+            {!hasMore && totalItems > pageSize && (
+              <div className="text-center py-4">
+                <p className="text-sm text-slate-500">
+                  Mostrando todos los usuarios ({users.length} de {totalItems})
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

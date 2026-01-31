@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
-import PaginationControls from '../components/PaginationControls';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 type UserRole = 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
 
@@ -49,6 +49,7 @@ export default function UsersPage() {
   const [motels, setMotels] = useState<Motel[]>([]);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -70,6 +71,7 @@ export default function UsersPage() {
   const pageSize = 20;
   const filtersKeyRef = useRef('');
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
+  const hasMore = users.length < totalItems;
 
   // Form state para crear
   const [createForm, setCreateForm] = useState({
@@ -123,7 +125,11 @@ export default function UsersPage() {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (isLoadingMore = false) => {
+    if (isLoadingMore) {
+      setLoadingMore(true);
+    }
+
     try {
       const params = new URLSearchParams();
       params.set('page', String(page));
@@ -142,7 +148,7 @@ export default function UsersPage() {
           ? data.users
           : [];
         const meta = Array.isArray(data) ? undefined : data?.meta;
-        setUsers(usersData);
+        setUsers((prev) => (isLoadingMore ? [...prev, ...usersData] : usersData));
         setTotalItems(meta?.total ?? usersData.length);
         setSummary({
           activeCount: meta?.summary?.activeCount ?? usersData.filter((u: User) => u.isActive).length,
@@ -154,9 +160,12 @@ export default function UsersPage() {
       }
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast.error('Error al cargar usuarios');
+      if (!isLoadingMore) {
+        toast.error('Error al cargar usuarios');
+      }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -336,6 +345,13 @@ export default function UsersPage() {
     setShowEditModal(true);
   };
 
+  const { sentinelRef } = useInfiniteScroll({
+    loading: loadingMore,
+    hasMore,
+    onLoadMore: () => setPage((prev) => prev + 1),
+    threshold: 200,
+  });
+
   const getRoleBadge = (role: UserRole) => {
     const badges = {
       SUPERADMIN: 'bg-purple-100 text-purple-700 border-purple-200',
@@ -345,18 +361,20 @@ export default function UsersPage() {
     return badges[role];
   };
 
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-
   useEffect(() => {
     const nextKey = `${roleFilter}|${statusFilter}|${debouncedSearchQuery.trim()}`;
-    if (filtersKeyRef.current !== nextKey) {
+    const filtersChanged = filtersKeyRef.current !== nextKey;
+
+    if (filtersChanged) {
       filtersKeyRef.current = nextKey;
-      if (page !== 1) {
-        setPage(1);
-        return;
-      }
+      setUsers([]);
+      setPage(1);
+      setLoading(true);
+      fetchUsers(false);
+    } else {
+      const isLoadingMore = page > 1;
+      fetchUsers(isLoadingMore);
     }
-    fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, roleFilter, statusFilter, debouncedSearchQuery]);
 
@@ -681,15 +699,23 @@ export default function UsersPage() {
             </tbody>
           </table>
         </div>
-        {totalItems > 0 && (
-          <div className="px-6 pb-6">
-            <PaginationControls
-              page={page}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              pageSize={pageSize}
-              onPageChange={setPage}
-            />
+
+        {/* Infinite scroll sentinel y loader */}
+        {users.length > 0 && (
+          <div ref={sentinelRef} className="px-6 pb-6">
+            {loadingMore && (
+              <div className="flex justify-center items-center gap-2 py-4">
+                <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-slate-600">Cargando más usuarios...</span>
+              </div>
+            )}
+            {!hasMore && totalItems > pageSize && (
+              <div className="text-center py-4">
+                <p className="text-sm text-slate-500">
+                  Mostrando todos los usuarios ({users.length} de {totalItems})
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

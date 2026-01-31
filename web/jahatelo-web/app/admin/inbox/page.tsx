@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/contexts/ToastContext';
 import ConfirmModal from '@/components/admin/ConfirmModal';
-import PaginationControls from '../components/PaginationControls';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 interface ContactMessage {
   id: string;
@@ -18,6 +18,7 @@ interface ContactMessage {
 export default function InboxPage() {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -26,6 +27,7 @@ export default function InboxPage() {
     unreadCount: 0,
   });
   const pageSize = 20;
+  const hasMore = messages.length < totalItems;
   const filtersKeyRef = useRef('');
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
@@ -37,9 +39,14 @@ export default function InboxPage() {
   } | null>(null);
   const { showToast } = useToast();
 
-  const fetchMessages = async () => {
-    try {
+  const fetchMessages = async (isLoadingMore = false) => {
+    if (isLoadingMore) {
+      setLoadingMore(true);
+    } else {
       setLoading(true);
+    }
+
+    try {
       const params = new URLSearchParams();
       params.set('page', String(page));
       params.set('limit', String(pageSize));
@@ -54,17 +61,20 @@ export default function InboxPage() {
         ? data.data
         : [];
       const meta = Array.isArray(data) ? undefined : data?.meta;
-      setMessages(messagesData);
+      setMessages((prev) => (isLoadingMore ? [...prev, ...messagesData] : messagesData));
       setTotalItems(meta?.total ?? messagesData.length);
       setSummary({
         readCount: meta?.summary?.readCount ?? 0,
         unreadCount: meta?.summary?.unreadCount ?? 0,
       });
     } catch (error) {
-      showToast('Error al cargar mensajes', 'error');
+      if (!isLoadingMore) {
+        showToast('Error al cargar mensajes', 'error');
+      }
       console.error('Error fetching messages:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -77,9 +87,17 @@ export default function InboxPage() {
         return;
       }
     }
-    fetchMessages();
+    const isLoadingMore = page > 1;
+    fetchMessages(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, filter]);
+
+  const { sentinelRef } = useInfiniteScroll({
+    loading: loadingMore,
+    hasMore,
+    onLoadMore: () => setPage((prev) => prev + 1),
+    threshold: 200,
+  });
 
   const toggleReadStatus = async (id: string, currentStatus: boolean) => {
     try {
@@ -128,8 +146,6 @@ export default function InboxPage() {
       },
     });
   };
-
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   return (
     <div className="space-y-6">
@@ -314,14 +330,24 @@ export default function InboxPage() {
           ))}
         </div>
       )}
-      {!loading && totalItems > 0 && (
-        <PaginationControls
-          page={page}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          pageSize={pageSize}
-          onPageChange={setPage}
-        />
+
+      {/* Infinite scroll sentinel y loader */}
+      {!loading && messages.length > 0 && (
+        <div ref={sentinelRef}>
+          {loadingMore && (
+            <div className="flex justify-center items-center gap-2 py-4">
+              <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-slate-600">Cargando más mensajes...</span>
+            </div>
+          )}
+          {!hasMore && totalItems > pageSize && (
+            <div className="text-center py-4">
+              <p className="text-sm text-slate-500">
+                Mostrando todos los mensajes ({messages.length} de {totalItems})
+              </p>
+            </div>
+          )}
+        </div>
       )}
       <ConfirmModal
         open={Boolean(confirmAction)}

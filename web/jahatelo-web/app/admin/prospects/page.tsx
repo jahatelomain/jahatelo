@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
-import PaginationControls from '../components/PaginationControls';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 type ProspectStatus = 'NEW' | 'CONTACTED' | 'IN_NEGOTIATION' | 'WON' | 'LOST';
 type ProspectChannel = 'WEB' | 'APP' | 'MANUAL';
@@ -61,6 +61,7 @@ export default function ProspectsPage() {
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [notes, setNotes] = useState('');
@@ -75,6 +76,7 @@ export default function ProspectsPage() {
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const pageSize = 20;
+  const hasMore = prospects.length < totalItems;
 
   // Estado para crear prospect manual
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -89,9 +91,17 @@ export default function ProspectsPage() {
   }, []);
 
   useEffect(() => {
-    fetchProspects();
+    const isLoadingMore = page > 1;
+    fetchProspects(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
+
+  const { sentinelRef } = useInfiniteScroll({
+    loading: loadingMore,
+    hasMore,
+    onLoadMore: () => setPage((prev) => prev + 1),
+    threshold: 200,
+  });
 
   const checkAccess = async () => {
     try {
@@ -110,9 +120,14 @@ export default function ProspectsPage() {
     }
   };
 
-  const fetchProspects = async () => {
-    try {
+  const fetchProspects = async (isLoadingMore = false) => {
+    if (isLoadingMore) {
+      setLoadingMore(true);
+    } else {
       setLoading(true);
+    }
+
+    try {
       const params = new URLSearchParams();
       params.set('page', String(page));
       params.set('limit', String(pageSize));
@@ -125,16 +140,21 @@ export default function ProspectsPage() {
           ? data.data
           : [];
         const meta = Array.isArray(data) ? undefined : data?.meta;
-        setProspects(prospectsData);
+        setProspects((prev) => (isLoadingMore ? [...prev, ...prospectsData] : prospectsData));
         setTotalItems(meta?.total ?? prospectsData.length);
       } else {
-        toast?.showToast('Error al cargar prospects', 'error');
+        if (!isLoadingMore) {
+          toast?.showToast('Error al cargar prospects', 'error');
+        }
       }
     } catch (error) {
       console.error('Error fetching prospects:', error);
-      toast?.showToast('Error al cargar prospects', 'error');
+      if (!isLoadingMore) {
+        toast?.showToast('Error al cargar prospects', 'error');
+      }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -416,15 +436,23 @@ export default function ProspectsPage() {
             </tbody>
           </table>
         </div>
-        {totalItems > 0 && (
-          <div className="px-6 pb-6">
-            <PaginationControls
-              page={page}
-              totalPages={Math.max(1, Math.ceil(totalItems / pageSize))}
-              totalItems={totalItems}
-              pageSize={pageSize}
-              onPageChange={setPage}
-            />
+
+        {/* Infinite scroll sentinel y loader */}
+        {prospects.length > 0 && (
+          <div ref={sentinelRef} className="px-6 pb-6">
+            {loadingMore && (
+              <div className="flex justify-center items-center gap-2 py-4">
+                <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-slate-600">Cargando más prospects...</span>
+              </div>
+            )}
+            {!hasMore && totalItems > pageSize && (
+              <div className="text-center py-4">
+                <p className="text-sm text-slate-500">
+                  Mostrando todos los prospects ({prospects.length} de {totalItems})
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

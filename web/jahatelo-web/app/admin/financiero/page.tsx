@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import Link from 'next/link';
-import PaginationControls from '../components/PaginationControls';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 type PaymentType = 'DIRECT_DEBIT' | 'TRANSFER' | 'EXCHANGE';
 type FinancialStatus = 'ACTIVE' | 'INACTIVE' | 'DISABLED';
@@ -55,6 +55,7 @@ export default function FinancieroPage() {
   const [motels, setMotels] = useState<Motel[]>([]);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | FinancialStatus>('ALL');
   const [paymentFilter, setPaymentFilter] = useState<'ALL' | PaymentType>('ALL');
@@ -65,6 +66,7 @@ export default function FinancieroPage() {
     paymentCounts: Record<string, number>;
   }>({ statusCounts: {}, paymentCounts: {} });
   const pageSize = 20;
+  const hasMore = motels.length < totalItems;
   const filtersKeyRef = useRef('');
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
@@ -82,9 +84,17 @@ export default function FinancieroPage() {
         return;
       }
     }
-    fetchMotels();
+    const isLoadingMore = page > 1;
+    fetchMotels(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, statusFilter, paymentFilter, debouncedSearchQuery, currentUser]);
+
+  const { sentinelRef } = useInfiniteScroll({
+    loading: loadingMore,
+    hasMore,
+    onLoadMore: () => setPage((prev) => prev + 1),
+    threshold: 200,
+  });
 
   const checkAccess = async () => {
     try {
@@ -103,9 +113,14 @@ export default function FinancieroPage() {
     }
   };
 
-  const fetchMotels = async () => {
-    try {
+  const fetchMotels = async (isLoadingMore = false) => {
+    if (isLoadingMore) {
+      setLoadingMore(true);
+    } else {
       setLoading(true);
+    }
+
+    try {
       const params = new URLSearchParams();
       params.set('page', String(page));
       params.set('limit', String(pageSize));
@@ -121,20 +136,25 @@ export default function FinancieroPage() {
           ? data.data
           : [];
         const meta = Array.isArray(data) ? undefined : data?.meta;
-        setMotels(motelsData);
+        setMotels((prev) => (isLoadingMore ? [...prev, ...motelsData] : motelsData));
         setTotalItems(meta?.total ?? motelsData.length);
         setSummary({
           statusCounts: meta?.summary?.statusCounts ?? {},
           paymentCounts: meta?.summary?.paymentCounts ?? {},
         });
       } else {
-        toast?.showToast('Error al cargar moteles', 'error');
+        if (!isLoadingMore) {
+          toast?.showToast('Error al cargar moteles', 'error');
+        }
       }
     } catch (error) {
       console.error('Error fetching motels:', error);
-      toast?.showToast('Error al cargar moteles', 'error');
+      if (!isLoadingMore) {
+        toast?.showToast('Error al cargar moteles', 'error');
+      }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -148,7 +168,6 @@ export default function FinancieroPage() {
   }
 
   const motelsArray = Array.isArray(motels) ? motels : [];
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   return (
     <div className="space-y-6">
@@ -394,15 +413,23 @@ export default function FinancieroPage() {
             </tbody>
           </table>
         </div>
-        {totalItems > 0 && (
-          <div className="px-6 pb-6">
-            <PaginationControls
-              page={page}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              pageSize={pageSize}
-              onPageChange={setPage}
-            />
+
+        {/* Infinite scroll sentinel y loader */}
+        {motelsArray.length > 0 && (
+          <div ref={sentinelRef} className="px-6 pb-6">
+            {loadingMore && (
+              <div className="flex justify-center items-center gap-2 py-4">
+                <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-slate-600">Cargando más moteles...</span>
+              </div>
+            )}
+            {!hasMore && totalItems > pageSize && (
+              <div className="text-center py-4">
+                <p className="text-sm text-slate-500">
+                  Mostrando todos los moteles ({motelsArray.length} de {totalItems})
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

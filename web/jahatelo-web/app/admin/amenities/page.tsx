@@ -7,8 +7,8 @@ import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import DirtyBanner from '@/components/admin/DirtyBanner';
-import PaginationControls from '../components/PaginationControls';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 type Amenity = {
   id: string;
@@ -42,6 +42,7 @@ export default function AmenitiesPage() {
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>;
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement | null>(null);
@@ -54,10 +55,15 @@ export default function AmenitiesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
   const pageSize = 20;
+  const hasMore = amenities.length < totalItems;
   const filtersKeyRef = useRef('');
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
-  const fetchAmenities = async () => {
+  const fetchAmenities = async (isLoadingMore = false) => {
+    if (isLoadingMore) {
+      setLoadingMore(true);
+    }
+
     try {
       const params = new URLSearchParams();
       params.set('page', String(page));
@@ -73,15 +79,18 @@ export default function AmenitiesPage() {
         ? data.data
         : [];
       const meta = Array.isArray(data) ? undefined : data?.meta;
-      setAmenities(amenitiesData);
+      setAmenities((prev) => (isLoadingMore ? [...prev, ...amenitiesData] : amenitiesData));
       setTotalItems(meta?.total ?? amenitiesData.length);
       setExpandedAmenity(null);
     } catch (error) {
       console.error('Error fetching amenities:', error);
-      setAmenities([]);
-      toast.error('Error al cargar amenities');
+      if (!isLoadingMore) {
+        setAmenities([]);
+        toast.error('Error al cargar amenities');
+      }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -94,9 +103,17 @@ export default function AmenitiesPage() {
         return;
       }
     }
-    fetchAmenities();
+    const isLoadingMore = page > 1;
+    fetchAmenities(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, typeFilter, debouncedSearchQuery]);
+
+  const { sentinelRef } = useInfiniteScroll({
+    loading: loadingMore,
+    hasMore,
+    onLoadMore: () => setPage((prev) => prev + 1),
+    threshold: 200,
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,8 +203,6 @@ export default function AmenitiesPage() {
     };
     return labels[type] || type;
   };
-
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   if (loading) {
     return (
@@ -637,14 +652,23 @@ export default function AmenitiesPage() {
         </table>
       </div>
 
-      {totalItems > 0 && (
-        <PaginationControls
-          page={page}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          pageSize={pageSize}
-          onPageChange={setPage}
-        />
+      {/* Infinite scroll sentinel y loader */}
+      {amenities.length > 0 && (
+        <div ref={sentinelRef}>
+          {loadingMore && (
+            <div className="flex justify-center items-center gap-2 py-4">
+              <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-slate-600">Cargando más amenities...</span>
+            </div>
+          )}
+          {!hasMore && totalItems > pageSize && (
+            <div className="text-center py-4">
+              <p className="text-sm text-slate-500">
+                Mostrando todos los amenities ({amenities.length} de {totalItems})
+              </p>
+            </div>
+          )}
+        </div>
       )}
 
       <ConfirmModal

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
-import PaginationControls from '../components/PaginationControls';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 const placementLabels: Record<string, string> = {
   POPUP_HOME: 'Popup Home',
@@ -35,9 +35,11 @@ export default function AdvertisementsAdminPage() {
   const toast = useToast();
   const [ads, setAds] = useState<Advertisement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const pageSize = 20;
+  const hasMore = ads.length < totalItems;
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -47,7 +49,11 @@ export default function AdvertisementsAdminPage() {
     onConfirm: () => void;
   } | null>(null);
 
-  const fetchAds = async () => {
+  const fetchAds = async (isLoadingMore = false) => {
+    if (isLoadingMore) {
+      setLoadingMore(true);
+    }
+
     try {
       const params = new URLSearchParams();
       params.set('page', String(page));
@@ -61,20 +67,31 @@ export default function AdvertisementsAdminPage() {
         ? data.data
         : [];
       const meta = Array.isArray(data) ? undefined : data?.meta;
-      setAds(adsData);
+      setAds((prev) => (isLoadingMore ? [...prev, ...adsData] : adsData));
       setTotalItems(meta?.total ?? adsData.length);
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Error al cargar anuncios');
+      if (!isLoadingMore) {
+        toast.error('Error al cargar anuncios');
+      }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    fetchAds();
+    const isLoadingMore = page > 1;
+    fetchAds(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
+
+  const { sentinelRef } = useInfiniteScroll({
+    loading: loadingMore,
+    hasMore,
+    onLoadMore: () => setPage((prev) => prev + 1),
+    threshold: 200,
+  });
 
 
   const handleDelete = async (id: string) => {
@@ -223,15 +240,23 @@ export default function AdvertisementsAdminPage() {
               )}
             </tbody>
           </table>
+
+          {/* Infinite scroll sentinel y loader */}
           {ads.length > 0 && (
-            <div className="px-6 pb-6">
-              <PaginationControls
-                page={page}
-                totalPages={Math.max(1, Math.ceil(totalItems / pageSize))}
-                totalItems={totalItems}
-                pageSize={pageSize}
-                onPageChange={setPage}
-              />
+            <div ref={sentinelRef} className="px-6 pb-6">
+              {loadingMore && (
+                <div className="flex justify-center items-center gap-2 py-4">
+                  <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm text-slate-600">Cargando más anuncios...</span>
+                </div>
+              )}
+              {!hasMore && totalItems > pageSize && (
+                <div className="text-center py-4">
+                  <p className="text-sm text-slate-500">
+                    Mostrando todos los anuncios ({ads.length} de {totalItems})
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
