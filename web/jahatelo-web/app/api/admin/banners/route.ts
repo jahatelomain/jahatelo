@@ -94,6 +94,8 @@ export async function POST(request: NextRequest) {
         advertiser: validated.advertiser,
         imageUrl: validated.imageUrl,
         largeImageUrl: validated.largeImageUrl ?? null,
+        largeImageUrlWeb: validated.largeImageUrlWeb ?? null,
+        largeImageUrlApp: validated.largeImageUrlApp ?? null,
         description: validated.description ?? null,
         linkUrl: validated.linkUrl ?? null,
         placement: validated.placement,

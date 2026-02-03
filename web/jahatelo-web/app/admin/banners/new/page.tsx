@@ -16,7 +16,9 @@ export default function NewAdvertisementPage() {
   const toast = useToast();
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadingLargeImage, setUploadingLargeImage] = useState(false);
+  const [uploadingPopupImage, setUploadingPopupImage] = useState(false);
+  const [uploadingPopupWeb, setUploadingPopupWeb] = useState(false);
+  const [uploadingPopupApp, setUploadingPopupApp] = useState(false);
   const [formDirty, setFormDirty] = useState(false);
   const formSnapshotRef = useRef('');
   const [form, setForm] = useState({
@@ -24,6 +26,8 @@ export default function NewAdvertisementPage() {
     advertiser: '',
     imageUrl: '',
     largeImageUrl: '',
+    largeImageUrlWeb: '',
+    largeImageUrlApp: '',
     description: '',
     linkUrl: '',
     placement: 'POPUP_HOME',
@@ -35,7 +39,106 @@ export default function NewAdvertisementPage() {
     maxClicks: '',
   });
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isLarge: boolean = false) => {
+  const loadImageFromFile = (file: File) =>
+    new Promise<{ image: HTMLImageElement; revoke: () => void }>((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const image = new Image();
+      image.onload = () => resolve({ image, revoke: () => URL.revokeObjectURL(url) });
+      image.onerror = (event) => {
+        URL.revokeObjectURL(url);
+        reject(event);
+      };
+      image.src = url;
+    });
+
+  const cropImageToRatio = (
+    image: HTMLImageElement,
+    ratio: number,
+    outputType = 'image/jpeg'
+  ) =>
+    new Promise<Blob>((resolve, reject) => {
+      const sourceWidth = image.naturalWidth || image.width;
+      const sourceHeight = image.naturalHeight || image.height;
+      if (!sourceWidth || !sourceHeight) {
+        reject(new Error('La imagen no tiene dimensiones válidas.'));
+        return;
+      }
+
+      const sourceRatio = sourceWidth / sourceHeight;
+      let cropWidth = sourceWidth;
+      let cropHeight = sourceHeight;
+      let cropX = 0;
+      let cropY = 0;
+
+      if (sourceRatio > ratio) {
+        cropWidth = Math.round(sourceHeight * ratio);
+        cropX = Math.round((sourceWidth - cropWidth) / 2);
+      } else if (sourceRatio < ratio) {
+        cropHeight = Math.round(sourceWidth / ratio);
+        cropY = Math.round((sourceHeight - cropHeight) / 2);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = cropWidth;
+      canvas.height = cropHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('No se pudo crear el canvas.'));
+        return;
+      }
+
+      ctx.drawImage(image, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('No se pudo procesar la imagen.'));
+            return;
+          }
+          resolve(blob);
+        },
+        outputType,
+        0.9
+      );
+    });
+
+  const createCroppedFile = async (file: File, ratio: number, suffix: string) => {
+    const { image, revoke } = await loadImageFromFile(file);
+    try {
+      const blob = await cropImageToRatio(image, ratio);
+      const baseName = file.name.replace(/\.[^.]+$/, '');
+      const fileName = `${baseName}-${suffix}.jpg`;
+      return new File([blob], fileName, { type: blob.type || 'image/jpeg' });
+    } finally {
+      revoke();
+    }
+  };
+
+  const uploadFileToS3 = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', 'advertisements');
+
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      let message = 'Error al subir imagen';
+      try {
+        const data = await res.json();
+        if (data?.error) message = data.error;
+      } catch {
+        // ignore parse errors
+      }
+      throw new Error(message);
+    }
+
+    const data = await res.json();
+    return data.url as string;
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -44,41 +147,83 @@ export default function NewAdvertisementPage() {
       return;
     }
 
-    if (isLarge) {
-      setUploadingLargeImage(true);
-    } else {
-      setUploadingImage(true);
-    }
+    setUploadingImage(true);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', 'advertisements');
-
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error('Error al subir imagen');
-
-      const data = await res.json();
-
-      if (isLarge) {
-        setForm((prev) => ({ ...prev, largeImageUrl: data.url }));
-      } else {
-        setForm((prev) => ({ ...prev, imageUrl: data.url }));
-      }
-
+      const url = await uploadFileToS3(file);
+      setForm((prev) => ({ ...prev, imageUrl: url }));
       toast.success('Imagen subida correctamente');
     } catch (error: any) {
       toast.error(error.message || 'Error al subir imagen');
     } finally {
-      if (isLarge) {
-        setUploadingLargeImage(false);
-      } else {
-        setUploadingImage(false);
-      }
+      setUploadingImage(false);
+    }
+  };
+
+  const handlePopupFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.warning('La imagen no puede superar 10MB');
+      return;
+    }
+
+    setUploadingPopupImage(true);
+    try {
+      const [webFile, appFile] = await Promise.all([
+        createCroppedFile(file, 16 / 9, 'web'),
+        createCroppedFile(file, 4 / 5, 'app'),
+      ]);
+      const [webUrl, appUrl] = await Promise.all([
+        uploadFileToS3(webFile),
+        uploadFileToS3(appFile),
+      ]);
+      setForm((prev) => ({
+        ...prev,
+        largeImageUrlWeb: webUrl,
+        largeImageUrlApp: appUrl,
+        largeImageUrl: prev.largeImageUrl || webUrl,
+      }));
+      toast.success('Imagen de popup procesada correctamente');
+    } catch (error: any) {
+      toast.error(error.message || 'Error al subir imagen');
+    } finally {
+      setUploadingPopupImage(false);
+      event.target.value = '';
+    }
+  };
+
+  const handlePopupVariantFileChange = async (
+    variant: 'web' | 'app',
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.warning('La imagen no puede superar 10MB');
+      return;
+    }
+
+    const setUploading = variant === 'web' ? setUploadingPopupWeb : setUploadingPopupApp;
+    setUploading(true);
+    try {
+      const targetRatio = variant === 'web' ? 16 / 9 : 4 / 5;
+      const croppedFile = await createCroppedFile(file, targetRatio, variant);
+      const url = await uploadFileToS3(croppedFile);
+      setForm((prev) => ({
+        ...prev,
+        largeImageUrlWeb: variant === 'web' ? url : prev.largeImageUrlWeb,
+        largeImageUrlApp: variant === 'app' ? url : prev.largeImageUrlApp,
+        largeImageUrl: prev.largeImageUrl || url,
+      }));
+      toast.success('Imagen actualizada correctamente');
+    } catch (error: any) {
+      toast.error(error.message || 'Error al subir imagen');
+    } finally {
+      setUploading(false);
+      event.target.value = '';
     }
   };
 
@@ -219,57 +364,127 @@ export default function NewAdvertisementPage() {
         </div>
 
         <div>
-          <label className="text-sm text-slate-700 block mb-2">
-            Imagen grande (popup)
-          </label>
-          <div className="space-y-3">
+          <label className="text-sm text-slate-700 block mb-2">Imagen grande (popup)</label>
+          <p className="text-xs text-slate-500 mb-3">
+            Se generan versiones para Web (16:9) y App (4:5). Puedes reemplazarlas manualmente si lo necesitas.
+          </p>
+          <div className="space-y-4">
             <div className="flex items-center gap-4">
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleImageUpload(e, true)}
+                onChange={handlePopupFileChange}
                 className="hidden"
-                id="large-image-upload"
-                disabled={uploadingLargeImage}
+                id="popup-image-upload"
+                disabled={uploadingPopupImage}
               />
               <label
-                htmlFor="large-image-upload"
+                htmlFor="popup-image-upload"
                 className={`inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors ${
-                  uploadingLargeImage ? 'opacity-50 cursor-not-allowed' : ''
+                  uploadingPopupImage ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                {uploadingLargeImage ? (
+                {uploadingPopupImage ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
-                    Subiendo...
+                    Procesando...
                   </>
                 ) : (
                   <>
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    Subir desde computadora
+                    Subir imagen base
                   </>
                 )}
               </label>
-              <span className="text-sm text-slate-500">o</span>
+              <span className="text-sm text-slate-500">Genera ambas versiones automáticamente</span>
             </div>
-            <input
-              type="url"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2"
-              value={form.largeImageUrl}
-              onChange={(event) => setForm({ ...form, largeImageUrl: event.target.value })}
-              placeholder="https://... (pegar URL de imagen)"
-            />
-            {form.largeImageUrl && (
-              <div className="mt-2">
-                <img
-                  src={form.largeImageUrl}
-                  alt="Preview"
-                  className="h-32 w-auto rounded-lg border border-slate-200 object-cover"
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-slate-700">Versión web (16:9)</p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => handlePopupVariantFileChange('web', event)}
+                    className="hidden"
+                    id="popup-web-upload"
+                    disabled={uploadingPopupWeb}
+                  />
+                  <label
+                    htmlFor="popup-web-upload"
+                    className={`text-xs px-3 py-1.5 border border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50 ${
+                      uploadingPopupWeb ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {uploadingPopupWeb ? 'Subiendo...' : 'Reemplazar'}
+                  </label>
+                </div>
+                <input
+                  type="url"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                  value={form.largeImageUrlWeb}
+                  onChange={(event) => setForm({ ...form, largeImageUrlWeb: event.target.value })}
+                  placeholder="https://... (URL web 16:9)"
                 />
+                {(form.largeImageUrlWeb || form.largeImageUrl) && (
+                  <img
+                    src={form.largeImageUrlWeb || form.largeImageUrl}
+                    alt="Preview web"
+                    className="w-full aspect-[16/9] rounded-lg border border-slate-200 object-cover"
+                  />
+                )}
               </div>
-            )}
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-slate-700">Versión app (4:5)</p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => handlePopupVariantFileChange('app', event)}
+                    className="hidden"
+                    id="popup-app-upload"
+                    disabled={uploadingPopupApp}
+                  />
+                  <label
+                    htmlFor="popup-app-upload"
+                    className={`text-xs px-3 py-1.5 border border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50 ${
+                      uploadingPopupApp ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {uploadingPopupApp ? 'Subiendo...' : 'Reemplazar'}
+                  </label>
+                </div>
+                <input
+                  type="url"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                  value={form.largeImageUrlApp}
+                  onChange={(event) => setForm({ ...form, largeImageUrlApp: event.target.value })}
+                  placeholder="https://... (URL app 4:5)"
+                />
+                {(form.largeImageUrlApp || form.largeImageUrl) && (
+                  <img
+                    src={form.largeImageUrlApp || form.largeImageUrl}
+                    alt="Preview app"
+                    className="w-full aspect-[4/5] rounded-lg border border-slate-200 object-cover"
+                  />
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-500">URL fallback (legacy)</label>
+              <input
+                type="url"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 mt-1"
+                value={form.largeImageUrl}
+                onChange={(event) => setForm({ ...form, largeImageUrl: event.target.value })}
+                placeholder="https://... (se usa si faltan variantes)"
+              />
+            </div>
           </div>
         </div>
 

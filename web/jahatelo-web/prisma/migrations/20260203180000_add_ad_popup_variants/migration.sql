@@ -1,0 +1,3 @@
+ALTER TABLE "Advertisement"
+ADD COLUMN IF NOT EXISTS "largeImageUrlWeb" TEXT,
+ADD COLUMN IF NOT EXISTS "largeImageUrlApp" TEXT;

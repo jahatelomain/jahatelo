@@ -25,7 +25,7 @@ export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClic
   const [imageLoaded, setImageLoaded] = useState(false);
   const [ready, setReady] = useState(false);
 
-  const imageUrl = ad?.largeImageUrl || ad?.imageUrl;
+  const imageUrl = ad?.largeImageUrlApp || ad?.largeImageUrl || ad?.imageUrl;
 
   useEffect(() => {
     if (visible && ad) {

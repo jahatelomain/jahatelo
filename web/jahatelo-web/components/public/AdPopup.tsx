@@ -13,7 +13,7 @@ export default function AdPopup() {
   const [imageReady, setImageReady] = useState(false);
 
   const ad = useMemo(() => ads[0], [ads]);
-  const imageUrl = ad?.largeImageUrl || '/motel-placeholder.png';
+  const imageUrl = ad?.largeImageUrlWeb || ad?.largeImageUrl || ad?.imageUrl || '/motel-placeholder.png';
 
   useEffect(() => {
     if (!ad) return;

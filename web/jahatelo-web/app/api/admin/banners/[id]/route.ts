@@ -58,6 +58,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         advertiser: validated.advertiser,
         imageUrl: validated.imageUrl,
         largeImageUrl: validated.largeImageUrl ?? null,
+        largeImageUrlWeb: validated.largeImageUrlWeb ?? null,
+        largeImageUrlApp: validated.largeImageUrlApp ?? null,
         description: validated.description ?? null,
         linkUrl: validated.linkUrl ?? null,
         placement: validated.placement,

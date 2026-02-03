@@ -1054,7 +1054,14 @@ export default function MotelDetailPage() {
     });
 
     if (!res.ok) {
-      throw new Error('No se pudo subir la imagen');
+      let message = 'No se pudo subir la imagen';
+      try {
+        const data = await res.json();
+        if (data?.error) message = data.error;
+      } catch {
+        // ignore parse errors
+      }
+      throw new Error(message);
     }
 
     const data = await res.json();

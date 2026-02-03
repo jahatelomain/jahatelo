@@ -200,6 +200,8 @@ export const AdvertisementSchema = z.object({
   advertiser: z.string().min(2, 'Anunciante muy corto').max(100, 'Anunciante muy largo'),
   imageUrl: z.string().url('URL de imagen inválida'),
   largeImageUrl: z.string().url('URL de imagen grande inválida').optional().nullable(),
+  largeImageUrlWeb: z.string().url('URL de imagen grande (web) inválida').optional().nullable(),
+  largeImageUrlApp: z.string().url('URL de imagen grande (app) inválida').optional().nullable(),
   description: z.string().max(500, 'Descripción muy larga').optional().nullable(),
   linkUrl: z.string().url('URL de enlace inválida').optional().nullable(),
   placement: z.enum(['POPUP_HOME', 'CAROUSEL', 'LIST_INLINE']),

@@ -631,6 +631,8 @@ model Advertisement {
   advertiser    String
   imageUrl      String
   largeImageUrl String?
+  largeImageUrlWeb String?
+  largeImageUrlApp String?
   description   String?
   linkUrl       String?
   placement     AdPlacement
