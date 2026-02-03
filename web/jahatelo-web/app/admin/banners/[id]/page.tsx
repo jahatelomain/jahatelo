@@ -353,7 +353,7 @@ export default function EditAdvertisementPage() {
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleImageUpload(e, false)}
+                onChange={(e) => handleImageUpload(e)}
                 className="hidden"
                 id="image-upload"
                 disabled={uploadingImage}
