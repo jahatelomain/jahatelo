@@ -8,6 +8,8 @@ export type Advertisement = {
   advertiser: string;
   imageUrl: string;
   largeImageUrl?: string | null;
+  largeImageUrlWeb?: string | null;
+  largeImageUrlApp?: string | null;
   description?: string | null;
   linkUrl?: string | null;
   placement: string;
