@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { MotelStatus, ProspectStatus } from '@prisma/client';
+import Link from 'next/link';
 import QuickActions from './components/QuickActions';
 import AnalyticsMetrics from './components/AnalyticsMetrics';
 import { cookies } from 'next/headers';

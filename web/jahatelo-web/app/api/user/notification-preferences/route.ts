@@ -19,13 +19,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const user = await verifyToken(token);
-    if (!user) {
+    const authUser = await verifyToken(token);
+    if (!authUser) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') ?? user.id;
+    const userId = searchParams.get('userId') ?? authUser.id;
     const parsed = UserIdSchema.safeParse(userId);
 
     if (!parsed.success) {
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       );
     }
     const { data: validUserId } = parsed;
-    if (user.role !== 'SUPERADMIN' && validUserId !== user.id) {
+    if (authUser.role !== 'SUPERADMIN' && validUserId !== authUser.id) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
@@ -76,15 +76,15 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const user = await verifyToken(token);
-    if (!user) {
+    const authUser = await verifyToken(token);
+    if (!authUser) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
 
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const { userId, ...preferencesData } = sanitized;
-    const parsed = UserIdSchema.safeParse(userId ?? user.id);
+    const parsed = UserIdSchema.safeParse(userId ?? authUser.id);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -93,7 +93,7 @@ export async function PUT(request: NextRequest) {
       );
     }
     const { data: validUserId } = parsed;
-    if (user.role !== 'SUPERADMIN' && validUserId !== user.id) {
+    if (authUser.role !== 'SUPERADMIN' && validUserId !== authUser.id) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
@@ -172,15 +172,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const user = await verifyToken(token);
-    if (!user) {
+    const authUser = await verifyToken(token);
+    if (!authUser) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
 
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const { userId } = sanitized;
-    const parsed = UserIdSchema.safeParse(userId ?? user.id);
+    const parsed = UserIdSchema.safeParse(userId ?? authUser.id);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
       );
     }
     const { data: validUserId } = parsed;
-    if (user.role !== 'SUPERADMIN' && validUserId !== user.id) {
+    if (authUser.role !== 'SUPERADMIN' && validUserId !== authUser.id) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
