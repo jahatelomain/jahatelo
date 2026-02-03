@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import * as LucideIcons from 'lucide-react';
 import { AMENITY_ICONS, ICON_CATEGORIES } from '@/lib/amenityIcons';
 import { useToast } from '@/contexts/ToastContext';
@@ -37,10 +38,17 @@ type ConfirmAction = {
   danger?: boolean;
 } | null;
 
+type CurrentUser = {
+  id: string;
+  role: 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
+};
+
 export default function AmenitiesPage() {
+  const router = useRouter();
   const toast = useToast();
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>;
   const [amenities, setAmenities] = useState<Amenity[]>([]);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -60,6 +68,7 @@ export default function AmenitiesPage() {
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
   const fetchAmenities = async (isLoadingMore = false) => {
+    if (!currentUser) return;
     if (isLoadingMore) {
       setLoadingMore(true);
     }
@@ -95,6 +104,11 @@ export default function AmenitiesPage() {
   };
 
   useEffect(() => {
+    checkAccess();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) return;
     const nextKey = `${typeFilter}|${debouncedSearchQuery.trim()}`;
     if (filtersKeyRef.current !== nextKey) {
       filtersKeyRef.current = nextKey;
@@ -106,7 +120,7 @@ export default function AmenitiesPage() {
     const isLoadingMore = page > 1;
     fetchAmenities(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, typeFilter, debouncedSearchQuery]);
+  }, [page, typeFilter, debouncedSearchQuery, currentUser]);
 
   const { sentinelRef } = useInfiniteScroll({
     loading: loadingMore,
@@ -114,6 +128,21 @@ export default function AmenitiesPage() {
     onLoadMore: () => setPage((prev) => prev + 1),
     threshold: 200,
   });
+
+  const checkAccess = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (!data.user || data.user.role !== 'SUPERADMIN') {
+        router.push('/admin');
+        return;
+      }
+      setCurrentUser(data.user);
+    } catch (error) {
+      console.error('Error checking access:', error);
+      router.push('/admin');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

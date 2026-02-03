@@ -167,6 +167,7 @@ export default function RolesPage() {
   };
 
   useEffect(() => {
+    if (!currentUser) return;
     const nextKey = `${roleFilter}|${moduleFilter}|${debouncedSearchQuery.trim()}`;
     if (filtersKeyRef.current !== nextKey) {
       filtersKeyRef.current = nextKey;
@@ -178,7 +179,7 @@ export default function RolesPage() {
     const isLoadingMore = page > 1;
     fetchUsers(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, roleFilter, moduleFilter, debouncedSearchQuery]);
+  }, [page, roleFilter, moduleFilter, debouncedSearchQuery, currentUser]);
 
   const { sentinelRef } = useInfiniteScroll({
     loading: loadingMore,

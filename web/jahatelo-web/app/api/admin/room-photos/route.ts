@@ -23,11 +23,15 @@ export async function POST(request: Request) {
 
     const roomType = await prisma.roomType.findUnique({
       where: { id: validated.roomTypeId },
-      select: { id: true, motel: { select: { plan: true } } },
+      select: { id: true, motelId: true, motel: { select: { plan: true } } },
     });
 
     if (!roomType) {
       return NextResponse.json({ error: 'Habitación no encontrada' }, { status: 404 });
+    }
+
+    if (access.user?.role === 'MOTEL_ADMIN' && roomType.motelId !== access.user.motelId) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
     const photoLimit = getRoomPhotoLimit(roomType.motel?.plan ?? 'BASIC');

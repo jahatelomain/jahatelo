@@ -14,7 +14,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'analytics');
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
     if (access.error) return access.error;
     const user = access.user;
 

@@ -16,7 +16,7 @@ const getPromoLimit = (plan?: string | null) => {
 // GET /api/admin/promos?motelId=xxx
 export async function GET(request: NextRequest) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'promos');
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
     if (access.error) return access.error;
 
     const { searchParams } = new URL(request.url);
@@ -30,6 +30,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
     const { motelId, search: searchQuery, status, type } = queryResult.data;
+    let effectiveMotelId = motelId;
+
+    if (access.user?.role === 'MOTEL_ADMIN') {
+      if (!access.user.motelId) {
+        return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+      }
+      if (effectiveMotelId && effectiveMotelId !== access.user.motelId) {
+        return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+      }
+      effectiveMotelId = access.user.motelId;
+    }
 
     const paginationResult = AdminPaginationSchema.safeParse({
       page: searchParams.get('page') || undefined,
@@ -44,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     const searchFilter = searchQuery?.trim();
     const baseWhere: Prisma.PromoWhereInput = {
-      ...(motelId ? { motelId } : {}),
+      ...(effectiveMotelId ? { motelId: effectiveMotelId } : {}),
       ...(searchFilter
         ? {
             OR: [
@@ -58,6 +69,7 @@ export async function GET(request: NextRequest) {
       ...baseWhere,
       ...(status ? { isActive: status === 'ACTIVE' } : {}),
       ...(type ? { isGlobal: type === 'GLOBAL' } : {}),
+      ...(access.user?.role === 'MOTEL_ADMIN' ? { isGlobal: false } : {}),
     };
     const total = await prisma.promo.count({ where: dataWhere });
 
@@ -121,12 +133,18 @@ export async function GET(request: NextRequest) {
 // POST /api/admin/promos
 export async function POST(request: NextRequest) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'promos');
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
     if (access.error) return access.error;
 
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const validated = PromoSchema.parse(sanitized);
+
+    if (access.user?.role === 'MOTEL_ADMIN') {
+      if (!access.user.motelId || validated.motelId !== access.user.motelId) {
+        return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+      }
+    }
 
     const motel = await prisma.motel.findUnique({
       where: { id: validated.motelId },
@@ -160,7 +178,7 @@ export async function POST(request: NextRequest) {
         validFrom: validated.validFrom ? new Date(validated.validFrom) : null,
         validUntil: validated.validUntil ? new Date(validated.validUntil) : null,
         isActive: validated.isActive ?? true,
-        isGlobal: validated.isGlobal ?? false,
+        isGlobal: access.user?.role === 'MOTEL_ADMIN' ? false : validated.isGlobal ?? false,
       },
     });
 

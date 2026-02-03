@@ -21,9 +21,18 @@ export async function DELETE(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const roomPhoto = await prisma.roomPhoto.delete({
+    const roomPhoto = await prisma.roomPhoto.findUnique({
       where: { id: idResult.data },
+      select: { id: true, roomTypeId: true, url: true, roomType: { select: { motelId: true } } },
     });
+    if (!roomPhoto) {
+      return NextResponse.json({ error: 'Foto no encontrada' }, { status: 404 });
+    }
+    if (access.user?.role === 'MOTEL_ADMIN' && roomPhoto.roomType?.motelId !== access.user.motelId) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
+
+    await prisma.roomPhoto.delete({ where: { id: idResult.data } });
 
     await logAuditEvent({
       userId: access.user?.id,
@@ -56,6 +65,17 @@ export async function PATCH(
     if (!idResult.success) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
+    const roomPhoto = await prisma.roomPhoto.findUnique({
+      where: { id: idResult.data },
+      select: { id: true, roomTypeId: true, url: true, roomType: { select: { motelId: true } } },
+    });
+    if (!roomPhoto) {
+      return NextResponse.json({ error: 'Foto no encontrada' }, { status: 404 });
+    }
+    if (access.user?.role === 'MOTEL_ADMIN' && roomPhoto.roomType?.motelId !== access.user.motelId) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
+
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const validated = UpdateRoomPhotoSchema.parse(sanitized);
@@ -66,7 +86,7 @@ export async function PATCH(
     }
     if (validated.url !== undefined) updateData.url = validated.url;
 
-    const roomPhoto = await prisma.roomPhoto.update({
+    const updatedPhoto = await prisma.roomPhoto.update({
       where: { id: idResult.data },
       data: updateData,
     });
@@ -75,11 +95,11 @@ export async function PATCH(
       userId: access.user?.id,
       action: 'UPDATE',
       entityType: 'RoomPhoto',
-      entityId: roomPhoto.id,
-      metadata: { roomTypeId: roomPhoto.roomTypeId, url: roomPhoto.url },
+      entityId: updatedPhoto.id,
+      metadata: { roomTypeId: updatedPhoto.roomTypeId, url: updatedPhoto.url },
     });
 
-    return NextResponse.json(roomPhoto);
+    return NextResponse.json(updatedPhoto);
   } catch (error) {
     console.error('Error updating room photo:', error);
     if (error instanceof z.ZodError) {

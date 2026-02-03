@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     const page = paginationResult.data.page ?? 1;
     const limit = paginationResult.data.limit ?? 20;
     EmptySchema.parse({});
-    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'financiero');
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'financiero');
     if (access.error) return access.error;
 
     const searchFilter = searchQuery?.trim();
@@ -56,32 +56,42 @@ export async function GET(request: NextRequest) {
           }
         : {}),
     };
-    const dataWhere: Prisma.MotelWhereInput = {
-      ...baseWhere,
-      ...(status ? { financialStatus: status } : {}),
-      ...(payment ? { paymentType: payment } : {}),
-    };
+    const isMotelAdmin = access.user?.role === 'MOTEL_ADMIN';
+    const motelId = access.user?.motelId;
+    if (isMotelAdmin && !motelId) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
+
+    const dataWhere: Prisma.MotelWhereInput = isMotelAdmin
+      ? { id: motelId }
+      : {
+          ...baseWhere,
+          ...(status ? { financialStatus: status } : {}),
+          ...(payment ? { paymentType: payment } : {}),
+        };
     const total = await prisma.motel.count({ where: dataWhere });
 
-    const statusSummary = await prisma.motel.groupBy({
-      by: ['financialStatus'],
-      _count: { _all: true },
-      where: baseWhere,
-    });
-    const paymentSummary = await prisma.motel.groupBy({
-      by: ['paymentType'],
-      _count: { _all: true },
-      where: baseWhere,
-    });
-    const statusCounts = statusSummary.reduce<Record<string, number>>((acc, item) => {
-      acc[item.financialStatus] = item._count?._all ?? 0;
-      return acc;
-    }, {});
-    const paymentCounts = paymentSummary.reduce<Record<string, number>>((acc, item) => {
-      if (!item.paymentType) return acc;
-      acc[item.paymentType] = item._count?._all ?? 0;
-      return acc;
-    }, {});
+    const statusCounts: Record<string, number> = {};
+    const paymentCounts: Record<string, number> = {};
+    if (!isMotelAdmin) {
+      const statusSummary = await prisma.motel.groupBy({
+        by: ['financialStatus'],
+        _count: { _all: true },
+        where: baseWhere,
+      });
+      const paymentSummary = await prisma.motel.groupBy({
+        by: ['paymentType'],
+        _count: { _all: true },
+        where: baseWhere,
+      });
+      statusSummary.forEach((item) => {
+        statusCounts[item.financialStatus] = item._count?._all ?? 0;
+      });
+      paymentSummary.forEach((item) => {
+        if (!item.paymentType) return;
+        paymentCounts[item.paymentType] = item._count?._all ?? 0;
+      });
+    }
 
     const motels = await prisma.motel.findMany({
       where: dataWhere,
@@ -106,7 +116,7 @@ export async function GET(request: NextRequest) {
       ...(usePagination ? { skip: (page - 1) * limit, take: limit } : {}),
     });
 
-    if (!usePagination) {
+    if (!usePagination || isMotelAdmin) {
       return NextResponse.json(motels);
     }
 

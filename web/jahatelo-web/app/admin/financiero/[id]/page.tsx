@@ -38,6 +38,12 @@ interface PaymentHistory {
   createdAt: string;
 }
 
+interface CurrentUser {
+  id: string;
+  role: 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
+  motelId?: string | null;
+}
+
 const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
   DIRECT_DEBIT: 'Débito automático',
   TRANSFER: 'Transferencia',
@@ -64,6 +70,8 @@ export default function EditFinancieroPage() {
   const toast = useToast();
   const [motel, setMotel] = useState<Motel | null>(null);
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [readOnly, setReadOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [addingPayment, setAddingPayment] = useState(false);
@@ -93,10 +101,54 @@ export default function EditFinancieroPage() {
   });
 
   useEffect(() => {
-    if (params?.id) {
-      fetchMotel(params.id as string);
-    }
+    if (!params?.id) return;
+    const init = async () => {
+      const targetId = await checkAccess(params.id as string);
+      if (targetId) {
+        fetchMotel(targetId);
+      }
+    };
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params?.id]);
+
+  const checkAccess = async (id: string) => {
+    try {
+      const response = await fetch('/api/auth/me');
+      const data = await response.json();
+      if (!data.user) {
+        router.push('/admin');
+        return null;
+      }
+
+      const user = data.user as CurrentUser;
+      setCurrentUser(user);
+
+      if (user.role === 'MOTEL_ADMIN') {
+        if (!user.motelId) {
+          router.push('/admin');
+          return null;
+        }
+        setReadOnly(true);
+        if (user.motelId !== id) {
+          router.replace(`/admin/financiero/${user.motelId}`);
+        }
+        return user.motelId;
+      }
+
+      if (user.role !== 'SUPERADMIN') {
+        router.push('/admin');
+        return null;
+      }
+
+      setReadOnly(false);
+      return id;
+    } catch (error) {
+      console.error('Error checking access:', error);
+      router.push('/admin');
+      return null;
+    }
+  };
 
   const fetchMotel = async (id: string) => {
     try {
@@ -135,6 +187,10 @@ export default function EditFinancieroPage() {
 
   const handleAddPayment = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (readOnly) {
+      toast?.showToast('Solo visualización para moteles', 'error');
+      return;
+    }
     if (!paymentForm.amount) {
       toast?.showToast('El monto es obligatorio', 'error');
       return;
@@ -207,6 +263,10 @@ export default function EditFinancieroPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) {
+      toast?.showToast('Solo visualización para moteles', 'error');
+      return;
+    }
     setSaving(true);
 
     try {
@@ -278,19 +338,23 @@ export default function EditFinancieroPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="mb-6">
-        <Link
-          href="/admin/financiero"
-          className="text-purple-600 hover:text-purple-700 text-sm mb-2 inline-block"
-        >
-          ← Volver a Financiero
-        </Link>
+        {!readOnly && (
+          <Link
+            href="/admin/financiero"
+            className="text-purple-600 hover:text-purple-700 text-sm mb-2 inline-block"
+          >
+            ← Volver a Financiero
+          </Link>
+        )}
         <h1 className="text-2xl font-semibold text-slate-900">{motel.name}</h1>
-        <p className="text-sm text-slate-600 mt-1">Editar datos financieros y de contacto</p>
+        <p className="text-sm text-slate-600 mt-1">
+          {readOnly ? 'Vista financiera (solo lectura)' : 'Editar datos financieros y de contacto'}
+        </p>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        <DirtyBanner visible={formDirty} />
+        {!readOnly && <DirtyBanner visible={formDirty} />}
         {/* Datos de cobro */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Datos de Cobro</h2>
@@ -305,6 +369,7 @@ export default function EditFinancieroPage() {
                 max="31"
                 value={formData.billingDay}
                 onChange={(e) => setFormData({ ...formData, billingDay: e.target.value })}
+                disabled={readOnly}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Ej: 3"
               />
@@ -317,6 +382,7 @@ export default function EditFinancieroPage() {
               <select
                 value={formData.paymentType}
                 onChange={(e) => setFormData({ ...formData, paymentType: e.target.value })}
+                disabled={readOnly}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               >
                 <option value="">Seleccionar...</option>
@@ -333,6 +399,7 @@ export default function EditFinancieroPage() {
               <select
                 value={formData.plan}
                 onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
+                disabled={readOnly}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               >
                 <option value="FREE">FREE</option>
@@ -351,6 +418,7 @@ export default function EditFinancieroPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, financialStatus: e.target.value as FinancialStatus })
                 }
+                disabled={readOnly}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               >
                 <option value="ACTIVE">Activo</option>
@@ -374,6 +442,7 @@ export default function EditFinancieroPage() {
                 type="text"
                 value={formData.billingCompanyName}
                 onChange={(e) => setFormData({ ...formData, billingCompanyName: e.target.value })}
+                disabled={readOnly}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Ej: Empresa S.A."
               />
@@ -387,6 +456,7 @@ export default function EditFinancieroPage() {
                 type="text"
                 value={formData.billingTaxId}
                 onChange={(e) => setFormData({ ...formData, billingTaxId: e.target.value })}
+                disabled={readOnly}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Ej: 12345678-9"
               />
@@ -406,6 +476,7 @@ export default function EditFinancieroPage() {
                 type="text"
                 value={formData.adminContactName}
                 onChange={(e) => setFormData({ ...formData, adminContactName: e.target.value })}
+                disabled={readOnly}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Ej: Juan Pérez"
               />
@@ -417,6 +488,7 @@ export default function EditFinancieroPage() {
                 type="text"
                 value={formData.adminContactPhone}
                 onChange={(e) => setFormData({ ...formData, adminContactPhone: e.target.value })}
+                disabled={readOnly}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Ej: 0981 123 456"
               />
@@ -428,6 +500,7 @@ export default function EditFinancieroPage() {
                 type="email"
                 value={formData.adminContactEmail}
                 onChange={(e) => setFormData({ ...formData, adminContactEmail: e.target.value })}
+                disabled={readOnly}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="Ej: admin@motel.com"
               />
@@ -436,21 +509,23 @@ export default function EditFinancieroPage() {
         </div>
 
         {/* Actions */}
-        <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 px-4 -mx-4 sm:-mx-6 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-          <Link
-            href="/admin/financiero"
-            className="px-6 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50"
-          >
-            Cancelar
-          </Link>
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-purple-200"
-          >
-            {saving ? 'Guardando...' : 'Guardar cambios'}
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 px-4 -mx-4 sm:-mx-6 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+            <Link
+              href="/admin/financiero"
+              className="px-6 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50"
+            >
+              Cancelar
+            </Link>
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-purple-200"
+            >
+              {saving ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+          </div>
+        )}
       </form>
 
       {/* Historial de pagos */}
@@ -464,111 +539,113 @@ export default function EditFinancieroPage() {
           </div>
         </div>
 
-        <form onSubmit={handleAddPayment} className="mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-            <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Monto</label>
-              <input
-                type="number"
-                min="1"
-                value={paymentForm.amount}
-                onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                placeholder="Ej: 250000"
-              />
-            </div>
+        {!readOnly && (
+          <form onSubmit={handleAddPayment} className="mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Monto</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={paymentForm.amount}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  placeholder="Ej: 250000"
+                />
+              </div>
 
-            <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Moneda</label>
-              <input
-                type="text"
-                value={paymentForm.currency}
-                onChange={(e) => setPaymentForm({ ...paymentForm, currency: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                placeholder="PYG"
-              />
-            </div>
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Moneda</label>
+                <input
+                  type="text"
+                  value={paymentForm.currency}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, currency: e.target.value })}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  placeholder="PYG"
+                />
+              </div>
 
-            <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Fecha</label>
-              <input
-                type="date"
-                value={paymentForm.paidAt}
-                onChange={(e) => setPaymentForm({ ...paymentForm, paidAt: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-              />
-            </div>
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Fecha</label>
+                <input
+                  type="date"
+                  value={paymentForm.paidAt}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, paidAt: e.target.value })}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                />
+              </div>
 
-            <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Estado</label>
-              <select
-                value={paymentForm.status}
-                onChange={(e) =>
-                  setPaymentForm({
-                    ...paymentForm,
-                    status: e.target.value as PaymentStatus,
-                  })
-                }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-              >
-                <option value="PAID">Pagado</option>
-                <option value="PENDING">Pendiente</option>
-                <option value="FAILED">Fallido</option>
-                <option value="REFUNDED">Reembolsado</option>
-              </select>
-            </div>
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Estado</label>
+                <select
+                  value={paymentForm.status}
+                  onChange={(e) =>
+                    setPaymentForm({
+                      ...paymentForm,
+                      status: e.target.value as PaymentStatus,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                >
+                  <option value="PAID">Pagado</option>
+                  <option value="PENDING">Pendiente</option>
+                  <option value="FAILED">Fallido</option>
+                  <option value="REFUNDED">Reembolsado</option>
+                </select>
+              </div>
 
-            <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Tipo</label>
-              <select
-                value={paymentForm.paymentType}
-                onChange={(e) =>
-                  setPaymentForm({ ...paymentForm, paymentType: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-              >
-                <option value="">Seleccionar...</option>
-                <option value="DIRECT_DEBIT">Débito automático</option>
-                <option value="TRANSFER">Transferencia</option>
-                <option value="EXCHANGE">Canje</option>
-              </select>
-            </div>
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Tipo</label>
+                <select
+                  value={paymentForm.paymentType}
+                  onChange={(e) =>
+                    setPaymentForm({ ...paymentForm, paymentType: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="DIRECT_DEBIT">Débito automático</option>
+                  <option value="TRANSFER">Transferencia</option>
+                  <option value="EXCHANGE">Canje</option>
+                </select>
+              </div>
 
-            <div className="md:col-span-1 flex items-end">
-              <button
-                type="submit"
-                disabled={addingPayment}
-                className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {addingPayment ? 'Guardando...' : 'Registrar pago'}
-              </button>
-            </div>
+              <div className="md:col-span-1 flex items-end">
+                <button
+                  type="submit"
+                  disabled={addingPayment}
+                  className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {addingPayment ? 'Guardando...' : 'Registrar pago'}
+                </button>
+              </div>
 
-            <div className="md:col-span-3">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Referencia</label>
-              <input
-                type="text"
-                value={paymentForm.reference}
-                onChange={(e) =>
-                  setPaymentForm({ ...paymentForm, reference: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                placeholder="Ej: Transferencia #123"
-              />
-            </div>
+              <div className="md:col-span-3">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Referencia</label>
+                <input
+                  type="text"
+                  value={paymentForm.reference}
+                  onChange={(e) =>
+                    setPaymentForm({ ...paymentForm, reference: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  placeholder="Ej: Transferencia #123"
+                />
+              </div>
 
-            <div className="md:col-span-3">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Notas</label>
-              <input
-                type="text"
-                value={paymentForm.notes}
-                onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                placeholder="Observaciones opcionales"
-              />
+              <div className="md:col-span-3">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Notas</label>
+                <input
+                  type="text"
+                  value={paymentForm.notes}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  placeholder="Observaciones opcionales"
+                />
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
+        )}
 
         {paymentHistory.length === 0 ? (
           <div className="text-sm text-slate-500">Sin pagos registrados.</div>

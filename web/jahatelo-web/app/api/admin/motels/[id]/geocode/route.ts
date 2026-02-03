@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { geocodeAddress } from '@/lib/geocoding';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
+import { canAccessMotel } from '@/lib/auth';
 import { IdSchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
 
@@ -22,6 +23,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
     if (access.error) return access.error;
     const resolvedId = IdSchema.parse(id);
+    if (!canAccessMotel(access.user || null, resolvedId)) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
 
     // Get motel from database
     const motel = await prisma.motel.findUnique({

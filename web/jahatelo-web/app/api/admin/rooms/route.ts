@@ -15,6 +15,12 @@ export async function POST(request: NextRequest) {
     const sanitized = sanitizeObject(body);
     const validated = RoomAdminSchema.parse(sanitized);
 
+    if (access.user?.role === 'MOTEL_ADMIN') {
+      if (!access.user.motelId || validated.motelId !== access.user.motelId) {
+        return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+      }
+    }
+
     const room = await prisma.roomType.create({
       data: {
         motelId: validated.motelId,

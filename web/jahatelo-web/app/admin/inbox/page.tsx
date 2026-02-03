@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -15,8 +16,15 @@ interface ContactMessage {
   updatedAt: string;
 }
 
+interface CurrentUser {
+  id: string;
+  role: 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
+}
+
 export default function InboxPage() {
+  const router = useRouter();
   const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
@@ -40,6 +48,7 @@ export default function InboxPage() {
   const { showToast } = useToast();
 
   const fetchMessages = async (isLoadingMore = false) => {
+    if (!currentUser) return;
     if (isLoadingMore) {
       setLoadingMore(true);
     } else {
@@ -79,6 +88,11 @@ export default function InboxPage() {
   };
 
   useEffect(() => {
+    checkAccess();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) return;
     const nextKey = filter;
     if (filtersKeyRef.current !== nextKey) {
       filtersKeyRef.current = nextKey;
@@ -90,7 +104,7 @@ export default function InboxPage() {
     const isLoadingMore = page > 1;
     fetchMessages(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, filter]);
+  }, [page, filter, currentUser]);
 
   const { sentinelRef } = useInfiniteScroll({
     loading: loadingMore,
@@ -98,6 +112,21 @@ export default function InboxPage() {
     onLoadMore: () => setPage((prev) => prev + 1),
     threshold: 200,
   });
+
+  const checkAccess = async () => {
+    try {
+      const response = await fetch('/api/auth/me');
+      const data = await response.json();
+      if (!data.user || data.user.role !== 'SUPERADMIN') {
+        router.push('/admin');
+        return;
+      }
+      setCurrentUser(data.user);
+    } catch (error) {
+      console.error('Error checking access:', error);
+      router.push('/admin');
+    }
+  };
 
   const toggleReadStatus = async (id: string, currentStatus: boolean) => {
     try {

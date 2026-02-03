@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { sanitizeObject } from '@/lib/sanitize';
+import { getTokenFromRequest, verifyToken } from '@/lib/auth';
 
 const UserIdSchema = z.string().min(1).max(100);
 
@@ -13,8 +14,18 @@ const UserIdSchema = z.string().min(1).max(100);
  */
 export async function GET(request: NextRequest) {
   try {
+    const token = await getTokenFromRequest(request);
+    if (!token) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const user = await verifyToken(token);
+    if (!user) {
+      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const userId = searchParams.get('userId') ?? user.id;
     const parsed = UserIdSchema.safeParse(userId);
 
     if (!parsed.success) {
@@ -24,6 +35,9 @@ export async function GET(request: NextRequest) {
       );
     }
     const { data: validUserId } = parsed;
+    if (user.role !== 'SUPERADMIN' && validUserId !== user.id) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
 
     // Buscar preferencias existentes o crear con valores por defecto
     let preferences = await prisma.userNotificationPreferences.findUnique({
@@ -57,10 +71,20 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
+    const token = await getTokenFromRequest(request);
+    if (!token) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const user = await verifyToken(token);
+    if (!user) {
+      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    }
+
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const { userId, ...preferencesData } = sanitized;
-    const parsed = UserIdSchema.safeParse(userId);
+    const parsed = UserIdSchema.safeParse(userId ?? user.id);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -69,6 +93,9 @@ export async function PUT(request: NextRequest) {
       );
     }
     const { data: validUserId } = parsed;
+    if (user.role !== 'SUPERADMIN' && validUserId !== user.id) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
 
     // Validar que el usuario existe
     const user = await prisma.user.findUnique({
@@ -140,10 +167,20 @@ export async function PUT(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    const token = await getTokenFromRequest(request);
+    if (!token) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const user = await verifyToken(token);
+    if (!user) {
+      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    }
+
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const { userId } = sanitized;
-    const parsed = UserIdSchema.safeParse(userId);
+    const parsed = UserIdSchema.safeParse(userId ?? user.id);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -152,6 +189,9 @@ export async function POST(request: NextRequest) {
       );
     }
     const { data: validUserId } = parsed;
+    if (user.role !== 'SUPERADMIN' && validUserId !== user.id) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
 
     // Validar que el usuario existe
     const user = await prisma.user.findUnique({

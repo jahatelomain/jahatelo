@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 type AuditLog = {
@@ -18,8 +19,15 @@ type AuditLog = {
   } | null;
 };
 
+type CurrentUser = {
+  id: string;
+  role: 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
+};
+
 export default function AuditPage() {
+  const router = useRouter();
   const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -64,6 +72,7 @@ export default function AuditPage() {
   };
 
   const fetchLogs = async (isLoadingMore = false) => {
+    if (!currentUser) return;
     if (isLoadingMore) {
       setLoadingMore(true);
     } else {
@@ -112,10 +121,15 @@ export default function AuditPage() {
   };
 
   useEffect(() => {
+    checkAccess();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) return;
     const isLoadingMore = page > 1;
     fetchLogs(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, currentUser]);
 
   const { sentinelRef } = useInfiniteScroll({
     loading: loadingMore,
@@ -123,6 +137,21 @@ export default function AuditPage() {
     onLoadMore: () => setPage((prev) => prev + 1),
     threshold: 200,
   });
+
+  const checkAccess = async () => {
+    try {
+      const response = await fetch('/api/auth/me');
+      const data = await response.json();
+      if (!data.user || data.user.role !== 'SUPERADMIN') {
+        router.push('/admin');
+        return;
+      }
+      setCurrentUser(data.user);
+    } catch (error) {
+      console.error('Error checking access:', error);
+      router.push('/admin');
+    }
+  };
 
   useEffect(() => {
     setPage(1);

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
@@ -31,9 +32,16 @@ type Advertisement = {
   createdAt: string;
 };
 
+type CurrentUser = {
+  id: string;
+  role: 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
+};
+
 export default function AdvertisementsAdminPage() {
+  const router = useRouter();
   const toast = useToast();
   const [ads, setAds] = useState<Advertisement[]>([]);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
@@ -50,6 +58,7 @@ export default function AdvertisementsAdminPage() {
   } | null>(null);
 
   const fetchAds = async (isLoadingMore = false) => {
+    if (!currentUser) return;
     if (isLoadingMore) {
       setLoadingMore(true);
     }
@@ -81,10 +90,15 @@ export default function AdvertisementsAdminPage() {
   };
 
   useEffect(() => {
+    checkAccess();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) return;
     const isLoadingMore = page > 1;
     fetchAds(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, currentUser]);
 
   const { sentinelRef } = useInfiniteScroll({
     loading: loadingMore,
@@ -92,6 +106,21 @@ export default function AdvertisementsAdminPage() {
     onLoadMore: () => setPage((prev) => prev + 1),
     threshold: 200,
   });
+
+  const checkAccess = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (!data.user || data.user.role !== 'SUPERADMIN') {
+        router.push('/admin');
+        return;
+      }
+      setCurrentUser(data.user);
+    } catch (error) {
+      console.error('Error checking access:', error);
+      router.push('/admin');
+    }
+  };
 
 
   const handleDelete = async (id: string) => {

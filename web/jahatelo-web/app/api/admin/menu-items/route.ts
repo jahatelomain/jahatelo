@@ -15,6 +15,19 @@ export async function POST(request: NextRequest) {
     const sanitized = sanitizeObject(body);
     const validated = MenuItemSchema.parse(sanitized);
 
+    if (access.user?.role === 'MOTEL_ADMIN') {
+      const category = await prisma.menuCategory.findUnique({
+        where: { id: validated.categoryId },
+        select: { id: true, motelId: true },
+      });
+      if (!category) {
+        return NextResponse.json({ error: 'Categoría no encontrada' }, { status: 404 });
+      }
+      if (!access.user.motelId || category.motelId !== access.user.motelId) {
+        return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+      }
+    }
+
     const item = await prisma.menuItem.create({
       data: {
         categoryId: validated.categoryId,

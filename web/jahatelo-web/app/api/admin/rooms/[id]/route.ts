@@ -24,6 +24,17 @@ export async function PATCH(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
+    const roomOwner = await prisma.roomType.findUnique({
+      where: { id: idResult.data },
+      select: { id: true, motelId: true },
+    });
+    if (!roomOwner) {
+      return NextResponse.json({ error: 'Habitación no encontrada' }, { status: 404 });
+    }
+    if (access.user?.role === 'MOTEL_ADMIN' && roomOwner.motelId !== access.user.motelId) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
+
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const validated = UpdateRoomAdminSchema.parse(sanitized);
@@ -101,9 +112,18 @@ export async function DELETE(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const room = await prisma.roomType.delete({
+    const room = await prisma.roomType.findUnique({
       where: { id: idResult.data },
+      select: { id: true, motelId: true, name: true },
     });
+    if (!room) {
+      return NextResponse.json({ error: 'Habitación no encontrada' }, { status: 404 });
+    }
+    if (access.user?.role === 'MOTEL_ADMIN' && room.motelId !== access.user.motelId) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
+
+    await prisma.roomType.delete({ where: { id: idResult.data } });
 
     await logAuditEvent({
       userId: access.user?.id,

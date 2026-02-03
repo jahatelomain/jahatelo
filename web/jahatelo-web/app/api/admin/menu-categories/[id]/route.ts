@@ -25,6 +25,17 @@ export async function PATCH(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
+    const existingCategory = await prisma.menuCategory.findUnique({
+      where: { id: idResult.data },
+      select: { id: true, motelId: true, title: true },
+    });
+    if (!existingCategory) {
+      return NextResponse.json({ error: 'Categoría no encontrada' }, { status: 404 });
+    }
+    if (access.user?.role === 'MOTEL_ADMIN' && existingCategory.motelId !== access.user.motelId) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
+
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const validated = UpdateMenuCategorySchema.parse(sanitized);
@@ -73,9 +84,18 @@ export async function DELETE(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const category = await prisma.menuCategory.delete({
+    const category = await prisma.menuCategory.findUnique({
       where: { id: idResult.data },
+      select: { id: true, motelId: true, title: true },
     });
+    if (!category) {
+      return NextResponse.json({ error: 'Categoría no encontrada' }, { status: 404 });
+    }
+    if (access.user?.role === 'MOTEL_ADMIN' && category.motelId !== access.user.motelId) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
+
+    await prisma.menuCategory.delete({ where: { id: idResult.data } });
 
     await logAuditEvent({
       userId: access.user?.id,

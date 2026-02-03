@@ -164,7 +164,7 @@ export default function AdminLayout({
         { href: '/admin/analytics', label: 'Analytics', roles: ['SUPERADMIN'] },
       ],
     },
-    { href: '/admin/financiero', label: 'Financiero', roles: ['SUPERADMIN'] },
+    { href: '/admin/financiero', label: 'Financiero', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
     {
       section: 'Publicidad',
       collapsible: true,

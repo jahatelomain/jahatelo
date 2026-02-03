@@ -105,7 +105,6 @@ export default function UsersPage() {
 
   useEffect(() => {
     checkAccess();
-    fetchMotels();
   }, []);
 
   const checkAccess = async () => {
@@ -126,6 +125,7 @@ export default function UsersPage() {
   };
 
   const fetchUsers = async (isLoadingMore = false) => {
+    if (!currentUser) return;
     if (isLoadingMore) {
       setLoadingMore(true);
     }
@@ -170,6 +170,7 @@ export default function UsersPage() {
   };
 
   const fetchMotels = async () => {
+    if (!currentUser || currentUser.role !== 'SUPERADMIN') return;
     try {
       const response = await fetch('/api/admin/motels');
       if (response.ok) {
@@ -362,6 +363,7 @@ export default function UsersPage() {
   };
 
   useEffect(() => {
+    if (!currentUser) return;
     const nextKey = `${roleFilter}|${statusFilter}|${debouncedSearchQuery.trim()}`;
     const filtersChanged = filtersKeyRef.current !== nextKey;
 
@@ -376,7 +378,13 @@ export default function UsersPage() {
       fetchUsers(isLoadingMore);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, roleFilter, statusFilter, debouncedSearchQuery]);
+  }, [page, roleFilter, statusFilter, debouncedSearchQuery, currentUser]);
+
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'SUPERADMIN') return;
+    fetchMotels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
 
   if (loading) {
     return (

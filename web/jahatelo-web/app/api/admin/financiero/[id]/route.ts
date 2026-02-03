@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
+import { canAccessMotel } from '@/lib/auth';
 import { logAuditEvent } from '@/lib/audit';
 import { FinancialUpdateSchema, IdSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
@@ -15,13 +16,17 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'financiero');
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'financiero');
     if (access.error) return access.error;
 
     const { id } = await params;
     const idResult = IdSchema.safeParse(id);
     if (!idResult.success) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+
+    if (!canAccessMotel(access.user || null, idResult.data)) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
     const motel = await prisma.motel.findUnique({

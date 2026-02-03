@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
@@ -30,8 +31,15 @@ type MotelOption = {
   name: string;
 };
 
+type CurrentUser = {
+  id: string;
+  role: 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
+};
+
 export default function NotificationsAdminPage() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<ScheduledNotification[]>([]);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -57,10 +65,11 @@ export default function NotificationsAdminPage() {
   });
 
   useEffect(() => {
-    fetchNotifications();
+    checkAccess();
   }, []);
 
   useEffect(() => {
+    if (!currentUser) return;
     if (formData.segmentType !== 'MOTEL' || motels.length > 0) {
       return;
     }
@@ -83,7 +92,7 @@ export default function NotificationsAdminPage() {
     };
 
     fetchMotels();
-  }, [formData.segmentType, motels.length, toast]);
+  }, [formData.segmentType, motels.length, toast, currentUser]);
 
   const timeOptions = useMemo(() => {
     const options: string[] = [];
@@ -96,6 +105,7 @@ export default function NotificationsAdminPage() {
   }, []);
 
   const fetchNotifications = async () => {
+    if (!currentUser) return;
     try {
       const res = await fetch('/api/notifications/schedule');
       if (!res.ok) throw new Error('Error al cargar notificaciones');
@@ -147,6 +157,7 @@ export default function NotificationsAdminPage() {
       return;
     }
 
+    if (!currentUser) return;
     setSending(true);
 
     try {
@@ -245,6 +256,27 @@ export default function NotificationsAdminPage() {
     if (!snapshot) return;
     setFormDirty(JSON.stringify(formData) !== snapshot);
   }, [formData, showForm]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    fetchNotifications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
+
+  const checkAccess = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (!data.user || data.user.role !== 'SUPERADMIN') {
+        router.push('/admin');
+        return;
+      }
+      setCurrentUser(data.user);
+    } catch (error) {
+      console.error('Error checking access:', error);
+      router.push('/admin');
+    }
+  };
 
   const getCategoryLabel = (category: string) => {
     switch (category) {

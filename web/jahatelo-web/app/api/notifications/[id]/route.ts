@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { IdSchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
+import { requireAdminAccess } from '@/lib/adminAccess';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'notifications');
+    if (access.error) return access.error;
+
     const resolvedParams = await params;
     const rawId = resolvedParams?.id ?? '';
     const decoded = decodeURIComponent(rawId).trim();

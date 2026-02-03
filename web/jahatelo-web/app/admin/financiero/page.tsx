@@ -29,6 +29,7 @@ interface Motel {
 interface CurrentUser {
   id: string;
   role: 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
+  motelId?: string | null;
 }
 
 const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
@@ -101,7 +102,21 @@ export default function FinancieroPage() {
       const response = await fetch('/api/auth/me');
       const data = await response.json();
 
-      if (!data.user || data.user.role !== 'SUPERADMIN') {
+      if (!data.user) {
+        router.push('/admin');
+        return;
+      }
+
+      if (data.user.role === 'MOTEL_ADMIN') {
+        if (!data.user.motelId) {
+          router.push('/admin');
+          return;
+        }
+        router.replace(`/admin/financiero/${data.user.motelId}`);
+        return;
+      }
+
+      if (data.user.role !== 'SUPERADMIN') {
         router.push('/admin');
         return;
       }

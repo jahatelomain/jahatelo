@@ -68,20 +68,55 @@ export async function GET(request: NextRequest) {
       ...(active ? { isActive: active === 'true' } : {}),
     };
 
-    const total = await prisma.motel.count({
-      where: dataWhere,
-    });
+    const [total, statusSummary, activeSummary, motels] = await Promise.all([
+      prisma.motel.count({ where: dataWhere }),
+      prisma.motel.groupBy({
+        by: ['status'],
+        _count: { _all: true },
+        where: baseWhere,
+      }),
+      prisma.motel.groupBy({
+        by: ['isActive'],
+        _count: { _all: true },
+        where: baseWhere,
+      }),
+      prisma.motel.findMany({
+        where: dataWhere,
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          city: true,
+          neighborhood: true,
+          status: true,
+          isActive: true,
+          contactName: true,
+          contactEmail: true,
+          contactPhone: true,
+          description: true,
+          address: true,
+          phone: true,
+          whatsapp: true,
+          featuredPhoto: true,
+          featuredPhotoWeb: true,
+          featuredPhotoApp: true,
+          _count: {
+            select: {
+              photos: true,
+              rooms: true,
+              motelAmenities: true,
+            },
+          },
+          createdAt: true,
+        },
+        orderBy: [
+          { status: 'asc' }, // PENDING first
+          { createdAt: 'desc' },
+        ],
+        ...(usePagination ? { skip: (page - 1) * limit, take: limit } : {}),
+      }),
+    ]);
 
-    const statusSummary = await prisma.motel.groupBy({
-      by: ['status'],
-      _count: { _all: true },
-      where: baseWhere,
-    });
-    const activeSummary = await prisma.motel.groupBy({
-      by: ['isActive'],
-      _count: { _all: true },
-      where: baseWhere,
-    });
     const statusCounts = statusSummary.reduce<Record<string, number>>((acc, item) => {
       acc[item.status] = item._count?._all ?? 0;
       return acc;
@@ -90,42 +125,6 @@ export async function GET(request: NextRequest) {
       acc[item.isActive ? 'active' : 'inactive'] = item._count?._all ?? 0;
       return acc;
     }, {});
-
-    const motels = await prisma.motel.findMany({
-      where: dataWhere,
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        city: true,
-        neighborhood: true,
-        status: true,
-        isActive: true,
-        contactName: true,
-        contactEmail: true,
-        contactPhone: true,
-        description: true,
-        address: true,
-        phone: true,
-        whatsapp: true,
-        featuredPhoto: true,
-        featuredPhotoWeb: true,
-        featuredPhotoApp: true,
-        _count: {
-          select: {
-            photos: true,
-            rooms: true,
-            motelAmenities: true,
-          },
-        },
-        createdAt: true,
-      },
-      orderBy: [
-        { status: 'asc' }, // PENDING first
-        { createdAt: 'desc' },
-      ],
-      ...(usePagination ? { skip: (page - 1) * limit, take: limit } : {}),
-    });
 
     if (!usePagination) {
       return NextResponse.json(motels ?? []);

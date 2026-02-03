@@ -15,6 +15,12 @@ export async function POST(request: NextRequest) {
     const sanitized = sanitizeObject(body);
     const validated = MenuCategorySchema.parse(sanitized);
 
+    if (access.user?.role === 'MOTEL_ADMIN') {
+      if (!access.user.motelId || validated.motelId !== access.user.motelId) {
+        return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+      }
+    }
+
     const category = await prisma.menuCategory.create({
       data: {
         motelId: validated.motelId,

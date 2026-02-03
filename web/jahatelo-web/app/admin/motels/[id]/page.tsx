@@ -1384,17 +1384,6 @@ export default function MotelDetailPage() {
                   Ver mapa
                 </a>
               )}
-              {motel.website && (
-                <a
-                  href={motel.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-purple-200 hover:text-purple-700 transition-colors"
-                >
-                  <LucideIcons.Globe className="w-3.5 h-3.5" />
-                  Sitio web
-                </a>
-              )}
               {whatsappLink && (
                 <a
                   href={whatsappLink}
@@ -1778,26 +1767,6 @@ export default function MotelDetailPage() {
                     <dd className="mt-1 text-sm text-slate-900">{motel.whatsapp || '-'}</dd>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                    <dt className="text-xs font-medium text-slate-500 uppercase">Sitio web</dt>
-                    <dd className="mt-1 text-sm text-slate-900">{motel.website || '-'}</dd>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                    <dt className="text-xs font-medium text-slate-500 uppercase">Instagram</dt>
-                    <dd className="mt-1 text-sm text-slate-900">{motel.instagram || '-'}</dd>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                    <dt className="text-xs font-medium text-slate-500 uppercase">Contacto usuarios</dt>
-                    <dd className="mt-1 text-sm text-slate-900">{motel.contactName || '-'}</dd>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                    <dt className="text-xs font-medium text-slate-500 uppercase">Correo usuarios</dt>
-                    <dd className="mt-1 text-sm text-slate-900">{motel.contactEmail || '-'}</dd>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                    <dt className="text-xs font-medium text-slate-500 uppercase">Teléfono usuarios</dt>
-                    <dd className="mt-1 text-sm text-slate-900">{motel.contactPhone || '-'}</dd>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                     <dt className="text-xs font-medium text-slate-500 uppercase">Calificación</dt>
                     <dd className="mt-1 text-sm text-slate-900">
                       {safeRatingAvg.toFixed(1)} ⭐ {safeRatingCount === 0 ? '(Sin reseñas aún)' : `(${safeRatingCount} ${safeRatingCount === 1 ? 'reseña' : 'reseñas'})`}
@@ -2098,38 +2067,6 @@ export default function MotelDetailPage() {
                         type="text"
                         value={motelForm.whatsapp}
                         onChange={(e) => setMotelForm({ ...motelForm, whatsapp: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                        placeholder="+595..."
-                      />
-                    </div>
-                  </div>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">Contacto usuarios</label>
-                      <input
-                        type="text"
-                        value={motelForm.contactName}
-                        onChange={(e) => setMotelForm({ ...motelForm, contactName: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                        placeholder="Nombre"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">Correo usuarios</label>
-                      <input
-                        type="email"
-                        value={motelForm.contactEmail}
-                        onChange={(e) => setMotelForm({ ...motelForm, contactEmail: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                        placeholder="correo@dominio.com"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">Teléfono usuarios</label>
-                      <input
-                        type="text"
-                        value={motelForm.contactPhone}
-                        onChange={(e) => setMotelForm({ ...motelForm, contactPhone: e.target.value })}
                         className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="+595..."
                       />

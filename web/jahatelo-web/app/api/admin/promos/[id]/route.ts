@@ -12,7 +12,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'promos');
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
     if (access.error) return access.error;
 
     const { id } = await params;
@@ -23,6 +23,20 @@ export async function PATCH(
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const validated = UpdatePromoSchema.parse(sanitized);
+
+    const existingPromo = await prisma.promo.findUnique({
+      where: { id: idResult.data },
+      select: { id: true, motelId: true },
+    });
+    if (!existingPromo) {
+      return NextResponse.json({ error: 'Promo no encontrada' }, { status: 404 });
+    }
+    if (access.user?.role === 'MOTEL_ADMIN' && existingPromo.motelId !== access.user.motelId) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
+    if (access.user?.role === 'MOTEL_ADMIN' && validated.isGlobal === true) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
 
     const promo = await prisma.promo.update({
       where: { id: idResult.data },
@@ -61,7 +75,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'promos');
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
     if (access.error) return access.error;
 
     const { id } = await params;
@@ -70,9 +84,18 @@ export async function DELETE(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const promo = await prisma.promo.delete({
+    const promo = await prisma.promo.findUnique({
       where: { id: idResult.data },
+      select: { id: true, motelId: true, title: true },
     });
+    if (!promo) {
+      return NextResponse.json({ error: 'Promo no encontrada' }, { status: 404 });
+    }
+    if (access.user?.role === 'MOTEL_ADMIN' && promo.motelId !== access.user.motelId) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
+
+    await prisma.promo.delete({ where: { id: idResult.data } });
 
     await logAuditEvent({
       userId: access.user?.id,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
@@ -28,9 +29,16 @@ type Promo = {
   createdAt: string;
 };
 
+type CurrentUser = {
+  id: string;
+  role: 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
+};
+
 export default function PromosAdminPage() {
+  const router = useRouter();
   const [promos, setPromos] = useState<Promo[]>([]);
   const [motels, setMotels] = useState<Motel[]>([]);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -91,10 +99,17 @@ export default function PromosAdminPage() {
   });
 
   useEffect(() => {
-    fetchMotels();
+    checkAccess();
   }, []);
 
+  useEffect(() => {
+    if (!currentUser) return;
+    fetchMotels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
+
   const fetchPromos = async (isLoadingMore = false) => {
+    if (!currentUser) return;
     if (isLoadingMore) {
       setLoadingMore(true);
     }
@@ -135,6 +150,7 @@ export default function PromosAdminPage() {
   };
 
   const fetchMotels = async () => {
+    if (!currentUser || currentUser.role !== 'SUPERADMIN') return;
     try {
       const res = await fetch('/api/admin/motels');
       if (!res.ok) throw new Error('Error al cargar moteles');
@@ -320,6 +336,7 @@ export default function PromosAdminPage() {
   const selectedPromoLimit = getPromoLimit(selectedPlan);
 
   useEffect(() => {
+    if (!currentUser) return;
     const nextKey = `${filterStatus}|${filterType}|${debouncedSearchQuery.trim()}`;
     if (filtersKeyRef.current !== nextKey) {
       filtersKeyRef.current = nextKey;
@@ -331,7 +348,22 @@ export default function PromosAdminPage() {
     const isLoadingMore = page > 1;
     fetchPromos(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, filterStatus, filterType, debouncedSearchQuery]);
+  }, [page, filterStatus, filterType, debouncedSearchQuery, currentUser]);
+
+  const checkAccess = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (!data.user || data.user.role !== 'SUPERADMIN') {
+        router.push('/admin');
+        return;
+      }
+      setCurrentUser(data.user);
+    } catch (error) {
+      console.error('Error checking access:', error);
+      router.push('/admin');
+    }
+  };
 
   const { sentinelRef } = useInfiniteScroll({
     loading: loadingMore,

@@ -1,12 +1,40 @@
 import { prisma } from '@/lib/prisma';
-import { MotelStatus, ProspectStatus, PlanType } from '@prisma/client';
-import Link from 'next/link';
+import { MotelStatus, ProspectStatus } from '@prisma/client';
 import QuickActions from './components/QuickActions';
 import AnalyticsMetrics from './components/AnalyticsMetrics';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { verifyToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboard() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('auth_token')?.value;
+
+  if (!token) {
+    redirect('/admin/login');
+  }
+
+  const user = await verifyToken(token);
+  if (!user) {
+    redirect('/admin/login');
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { role: true, motelId: true },
+  });
+  const role = dbUser?.role || user.role;
+  const motelId = dbUser?.motelId || user.motelId;
+
+  if (role === 'MOTEL_ADMIN') {
+    if (!motelId) {
+      redirect('/admin/login');
+    }
+    redirect(`/admin/financiero/${motelId}`);
+  }
+
   const e2eMode = process.env.E2E_MODE === '1';
   let totalViews = 0;
   let pendingMotels = 0;

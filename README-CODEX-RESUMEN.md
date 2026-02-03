@@ -55,7 +55,6 @@
 - Se hicieron varios commits y pushes durante esta ronda. Ver `git log` si hace falta el detalle.
 
 ## Pendientes sugeridos
-- Migrar/commitear cambios de popup ads (campos + admin + api + app/web).
 - Revisar paridad web vs app restante (favoritos como seccion, busqueda con chips rapidos, etc).
 - Resolver push notifications en app con development build (Expo Go no soporta push remoto en SDK 53).
 - Mejorar visualizacion de amenities en detalles de moteles.

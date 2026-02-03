@@ -41,11 +41,17 @@ interface Motel {
   name: string;
 }
 
+interface CurrentUser {
+  id: string;
+  role: 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
+}
+
 export default function GlobalAnalyticsPage() {
   const router = useRouter();
   const toast = useToast();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [motels, setMotels] = useState<Motel[]>([]);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('30');
   const [selectedMotelId, setSelectedMotelId] = useState<string>('');
@@ -55,12 +61,18 @@ export default function GlobalAnalyticsPage() {
 
   useEffect(() => {
     checkAccess();
-    fetchMotels();
   }, []);
 
   useEffect(() => {
+    if (!currentUser) return;
+    fetchMotels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) return;
     fetchAnalytics(period, selectedMotelId, sourceFilter, deviceFilter, eventTypeFilter);
-  }, [period, selectedMotelId, sourceFilter, deviceFilter, eventTypeFilter]);
+  }, [period, selectedMotelId, sourceFilter, deviceFilter, eventTypeFilter, currentUser]);
 
   const checkAccess = async () => {
     try {
@@ -71,6 +83,7 @@ export default function GlobalAnalyticsPage() {
         router.push('/admin');
         return;
       }
+      setCurrentUser(data.user);
     } catch (error) {
       console.error('Error checking access:', error);
       router.push('/admin');
@@ -78,6 +91,7 @@ export default function GlobalAnalyticsPage() {
   };
 
   const fetchMotels = async () => {
+    if (!currentUser) return;
     try {
       const response = await fetch('/api/admin/motels');
       if (response.ok) {

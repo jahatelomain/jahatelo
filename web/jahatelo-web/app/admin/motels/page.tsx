@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import MotelCard from '../components/MotelCard';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -34,6 +35,9 @@ type Motel = {
 };
 
 export default function MotelsAdminPage() {
+  const router = useRouter();
+  const [roleChecked, setRoleChecked] = useState(false);
+  const [isMotelAdmin, setIsMotelAdmin] = useState(false);
   const [motels, setMotels] = useState<Motel[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -54,7 +58,31 @@ export default function MotelsAdminPage() {
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
   const hasMore = motels.length < totalItems;
 
+  useEffect(() => {
+    let mounted = true;
+    const checkUser = async () => {
+      try {
+        const res = await fetch('/api/auth/me', { cache: 'no-store' });
+        const data = await res.json();
+        if (!mounted) return;
+        if (data?.user?.role === 'MOTEL_ADMIN' && data?.user?.motelId) {
+          setIsMotelAdmin(true);
+          router.push(`/admin/motels/${data.user.motelId}`);
+        }
+      } catch (error) {
+        // ignore
+      } finally {
+        if (mounted) setRoleChecked(true);
+      }
+    };
+    checkUser();
+    return () => {
+      mounted = false;
+    };
+  }, [router]);
+
   const fetchMotels = async (isLoadingMore = false) => {
+    if (!roleChecked || isMotelAdmin) return;
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), 8000);
 
@@ -99,6 +127,7 @@ export default function MotelsAdminPage() {
   };
 
   useEffect(() => {
+    if (!roleChecked || isMotelAdmin) return;
     const nextKey = `${statusFilter}|${activeFilter}|${debouncedSearchQuery.trim()}`;
     const filtersChanged = filtersKeyRef.current !== nextKey;
 
@@ -113,7 +142,7 @@ export default function MotelsAdminPage() {
       fetchMotels(isLoadingMore);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, statusFilter, activeFilter, debouncedSearchQuery]);
+  }, [page, statusFilter, activeFilter, debouncedSearchQuery, roleChecked, isMotelAdmin]);
 
   const motelsArray = Array.isArray(motels) ? motels : [];
   const allPageSelected =
@@ -286,7 +315,7 @@ export default function MotelsAdminPage() {
     }
   };
 
-  if (loading) {
+  if (!roleChecked || isMotelAdmin || loading) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">

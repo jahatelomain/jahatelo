@@ -44,8 +44,9 @@ export function hasModuleAccess(
     return user.modulePermissions.includes(module);
   }
   if (user.role === 'MOTEL_ADMIN') {
+    if (module === 'financiero') return true;
     if (!user.modulePermissions || user.modulePermissions.length === 0) {
-      return module === 'dashboard' || module === 'motels';
+      return module === 'dashboard' || module === 'motels' || module === 'financiero';
     }
     return user.modulePermissions.includes(module);
   }

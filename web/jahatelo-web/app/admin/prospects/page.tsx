@@ -91,10 +91,11 @@ export default function ProspectsPage() {
   }, []);
 
   useEffect(() => {
+    if (!currentUser) return;
     const isLoadingMore = page > 1;
     fetchProspects(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, currentUser]);
 
   const { sentinelRef } = useInfiniteScroll({
     loading: loadingMore,
@@ -121,6 +122,7 @@ export default function ProspectsPage() {
   };
 
   const fetchProspects = async (isLoadingMore = false) => {
+    if (!currentUser) return;
     if (isLoadingMore) {
       setLoadingMore(true);
     } else {

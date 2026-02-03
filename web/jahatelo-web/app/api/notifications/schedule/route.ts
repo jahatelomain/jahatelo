@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { scheduleNotification, sendPromoNotificationToFavorites, processScheduledNotificationById } from '@/lib/push-notifications';
 import { sanitizeObject } from '@/lib/sanitize';
+import { requireAdminAccess } from '@/lib/adminAccess';
 
 const NotificationScheduleSchema = z.object({
   title: z.string().min(1).max(65),
@@ -43,6 +44,9 @@ const NotificationScheduleQuerySchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'notifications');
+    if (access.error) return access.error;
+
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const parsed = NotificationScheduleSchema.safeParse(sanitized);
@@ -174,6 +178,9 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'notifications');
+    if (access.error) return access.error;
+
     const { searchParams } = new URL(request.url);
     const parsed = NotificationScheduleQuerySchema.safeParse({
       sent: searchParams.get('sent') ?? undefined,
