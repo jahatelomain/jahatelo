@@ -3,6 +3,39 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 
+const BASE_PIN_WIDTH = 32;
+const BASE_PIN_HEIGHT = 45;
+const BASE_PIN_CENTER = 16;
+const BASE_PIN_RADIUS = 13;
+const GLOBAL_PIN_SCALE = 1.1;
+
+function createPinElement(color: string, opacity: number, scale: number) {
+  if (typeof document === 'undefined') {
+    const fallback = { style: {}, innerHTML: '' } as unknown as HTMLDivElement;
+    return fallback;
+  }
+  const width = Math.round(BASE_PIN_WIDTH * scale);
+  const height = Math.round(BASE_PIN_HEIGHT * scale);
+  const strokeWidth = Math.max(2, Math.round(3 * scale));
+  const circleRadius = Math.round(BASE_PIN_RADIUS * scale);
+  const center = Math.round(BASE_PIN_CENTER * scale);
+
+  const pin = document.createElement('div');
+  pin.style.width = `${width}px`;
+  pin.style.height = `${height}px`;
+  pin.style.transform = 'translate(0, 0)';
+  pin.style.display = 'block';
+  pin.style.pointerEvents = 'auto';
+
+  pin.innerHTML = `
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="${center}" cy="${center}" r="${circleRadius}" fill="${color}" fill-opacity="${opacity}" stroke="white" stroke-width="${strokeWidth}"/>
+      <path d="M${center} ${Math.round(20.5 * scale)}C${center} ${Math.round(20.5 * scale)} ${Math.round(11.5 * scale)} ${Math.round(17.5 * scale)} ${Math.round(11.5 * scale)} ${Math.round(14.5 * scale)}C${Math.round(11.5 * scale)} ${Math.round(12.5 * scale)} ${Math.round(13 * scale)} ${Math.round(11 * scale)} ${Math.round(14.5 * scale)} ${Math.round(11 * scale)}C${Math.round(15.5 * scale)} ${Math.round(11 * scale)} ${center} ${Math.round(11.5 * scale)} ${center} ${Math.round(11.5 * scale)}C${center} ${Math.round(11.5 * scale)} ${Math.round(16.5 * scale)} ${Math.round(11 * scale)} ${Math.round(17.5 * scale)} ${Math.round(11 * scale)}C${Math.round(19 * scale)} ${Math.round(11 * scale)} ${Math.round(20.5 * scale)} ${Math.round(12.5 * scale)} ${Math.round(20.5 * scale)} ${Math.round(14.5 * scale)}C${Math.round(20.5 * scale)} ${Math.round(17.5 * scale)} ${center} ${Math.round(20.5 * scale)} ${center} ${Math.round(20.5 * scale)}Z" fill="white"/>
+    </svg>
+  `;
+  return pin;
+}
+
 type MapMotel = {
   id: string;
   name: string;
@@ -146,12 +179,6 @@ export default function GoogleMapComponent({
     overlaysRef.current.forEach((overlay) => overlay.setMap(null));
     overlaysRef.current = [];
 
-    const BASE_PIN_WIDTH = 32;
-    const BASE_PIN_HEIGHT = 45;
-    const BASE_PIN_CENTER = 16;
-    const BASE_PIN_RADIUS = 13;
-    const GLOBAL_PIN_SCALE = 1.1;
-
     const getPlanZIndex = (plan?: MapMotel['plan']) => {
       switch (plan) {
         case 'DIAMOND':
@@ -178,29 +205,6 @@ export default function GoogleMapComponent({
         default:
           return { color: '#8E2DE2', labelColor: '#8E2DE2', opacity: 1, scale: 1, badge: null, glow: null };
       }
-    };
-
-    const createPinElement = (color: string, opacity: number, scale: number) => {
-      const width = Math.round(BASE_PIN_WIDTH * scale);
-      const height = Math.round(BASE_PIN_HEIGHT * scale);
-      const strokeWidth = Math.max(2, Math.round(3 * scale));
-      const circleRadius = Math.round(BASE_PIN_RADIUS * scale);
-      const center = Math.round(BASE_PIN_CENTER * scale);
-
-      const pin = document.createElement('div');
-      pin.style.width = `${width}px`;
-      pin.style.height = `${height}px`;
-      pin.style.transform = 'translate(0, 0)';
-      pin.style.display = 'block';
-      pin.style.pointerEvents = 'auto';
-
-      pin.innerHTML = `
-        <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="${center}" cy="${center}" r="${circleRadius}" fill="${color}" fill-opacity="${opacity}" stroke="white" stroke-width="${strokeWidth}"/>
-          <path d="M${center} ${Math.round(20.5 * scale)}C${center} ${Math.round(20.5 * scale)} ${Math.round(11.5 * scale)} ${Math.round(17.5 * scale)} ${Math.round(11.5 * scale)} ${Math.round(14.5 * scale)}C${Math.round(11.5 * scale)} ${Math.round(12.5 * scale)} ${Math.round(13 * scale)} ${Math.round(11 * scale)} ${Math.round(14.5 * scale)} ${Math.round(11 * scale)}C${Math.round(15.5 * scale)} ${Math.round(11 * scale)} ${center} ${Math.round(11.5 * scale)} ${center} ${Math.round(11.5 * scale)}C${center} ${Math.round(11.5 * scale)} ${Math.round(16.5 * scale)} ${Math.round(11 * scale)} ${Math.round(17.5 * scale)} ${Math.round(11 * scale)}C${Math.round(19 * scale)} ${Math.round(11 * scale)} ${Math.round(20.5 * scale)} ${Math.round(12.5 * scale)} ${Math.round(20.5 * scale)} ${Math.round(14.5 * scale)}C${Math.round(20.5 * scale)} ${Math.round(17.5 * scale)} ${center} ${Math.round(20.5 * scale)} ${center} ${Math.round(20.5 * scale)}Z" fill="white"/>
-        </svg>
-      `;
-      return pin;
     };
 
     const sortedMotels = [...motels].sort(

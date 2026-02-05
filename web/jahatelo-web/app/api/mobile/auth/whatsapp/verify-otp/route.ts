@@ -79,10 +79,10 @@ export async function POST(request: NextRequest) {
     });
 
     const phoneNoPlus = phone.replace(/^\+/, '');
+    const rawName = (sanitized as { name?: unknown }).name;
     const desiredName =
-      typeof (sanitized as { name?: string }).name === 'string' &&
-      (sanitized as { name?: string }).name.trim().length >= 2
-        ? (sanitized as { name?: string }).name.trim()
+      typeof rawName === 'string' && rawName.trim().length >= 2
+        ? rawName.trim()
         : null;
     const users = await prisma.user.findMany({
       where: {
