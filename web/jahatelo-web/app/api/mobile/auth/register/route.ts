@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { createToken } from '@/lib/auth';
 import { sanitizeObject } from '@/lib/sanitize';
+import { createEmailVerificationToken } from '@/lib/emailVerification';
+import { sendEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,6 +95,35 @@ export async function POST(request: NextRequest) {
       name: user.name || undefined,
     });
 
+    // Enviar email de verificación si corresponde (no bloquear)
+    let emailVerificationSent = false;
+    if (provider === 'email') {
+      try {
+        const token = await createEmailVerificationToken(user.email);
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+        const verifyUrl = `${baseUrl}/api/auth/email/verify?token=${encodeURIComponent(token)}`;
+        const subject = 'Verifica tu correo - Jahatelo';
+        const html = `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
+            <h2>Verifica tu correo</h2>
+            <p>${user.name || 'Hola'}, gracias por registrarte en Jahatelo.</p>
+            <p>Para activar tu cuenta, hacé clic en el siguiente botón:</p>
+            <p>
+              <a href="${verifyUrl}" style="display:inline-block;background:#6d28d9;color:#fff;text-decoration:none;padding:12px 18px;border-radius:8px;">
+                Verificar correo
+              </a>
+            </p>
+            <p>Si no solicitaste esto, podés ignorar este mensaje.</p>
+          </div>
+        `;
+        const text = `Verifica tu correo: ${verifyUrl}`;
+        await sendEmail({ to: user.email, subject, html, text });
+        emailVerificationSent = true;
+      } catch (err) {
+        console.error('Mobile email verification send error:', err);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       user: {
@@ -105,6 +136,7 @@ export async function POST(request: NextRequest) {
         createdAt: user.createdAt,
       },
       token,
+      emailVerificationSent,
     }, { status: 201 });
 
   } catch (error) {

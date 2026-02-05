@@ -44,22 +44,8 @@ interface Motel {
   plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
 }
 
-const popularSearches = [
-  'Jacuzzi',
-  'Asunción',
-  'Fernando de la Mora',
-  'Garage privado',
-  'Wi-Fi',
-  'Netflix',
-];
 
-const QUICK_FILTERS = [
-  { label: 'Jacuzzi', value: 'jacuzzi' },
-  { label: 'Garage privado', value: 'garage' },
-  { label: 'Room service', value: 'room service' },
-  { label: 'WiFi gratis', value: 'wifi' },
-  { label: 'A/C', value: 'aire' },
-];
+type QuickAmenity = { id: string; name: string };
 
 export default function SearchResults({ initialParams }: SearchResultsProps) {
   const router = useRouter();
@@ -73,6 +59,8 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
   const [selectedAmenity, setSelectedAmenity] = useState(initialParams.amenities || '');
   const [cities, setCities] = useState<string[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
+  const [quickAmenities, setQuickAmenities] = useState<QuickAmenity[]>([]);
+  const [quickAmenitiesLoading, setQuickAmenitiesLoading] = useState(false);
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   useEffect(() => {
@@ -96,6 +84,25 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     };
 
     fetchCities();
+  }, []);
+
+  useEffect(() => {
+    const fetchQuickAmenities = async () => {
+      setQuickAmenitiesLoading(true);
+      try {
+        const response = await fetch('/api/amenities/active');
+        const data = await response.json();
+        const list: QuickAmenity[] = Array.isArray(data?.data) ? data.data : [];
+        setQuickAmenities(list);
+      } catch (error) {
+        console.error('Error fetching amenities:', error);
+        setQuickAmenities([]);
+      } finally {
+        setQuickAmenitiesLoading(false);
+      }
+    };
+
+    fetchQuickAmenities();
   }, []);
 
   // Fetch motels when search params change
@@ -164,10 +171,6 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchQuery, selectedCity, onlyPromos, onlyFeatured, selectedAmenity]);
 
-  const handlePopularSearch = (query: string) => {
-    setSearchQuery(query);
-  };
-
   const clearSearch = () => {
     setSearchQuery('');
     setSelectedCity('');
@@ -216,26 +219,30 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
       </div>
 
       {/* Filters Section */}
-      <div className="mb-8 max-w-5xl mx-auto space-y-6">
+      <div className="mb-6 max-w-5xl mx-auto space-y-5">
         {/* Quick Amenity Filters */}
-        <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Filtros rápidos:</h3>
-          <div className="flex flex-wrap gap-2">
-            {QUICK_FILTERS.map((filter) => (
-              <button
-                key={filter.value}
-                onClick={() => toggleAmenity(filter.value)}
-                className={`px-4 py-2 rounded-full font-medium border-2 transition-all ${
-                  selectedAmenity === filter.value
-                    ? 'bg-purple-600 text-white border-purple-600 shadow-md'
-                    : 'bg-white text-gray-700 border-gray-200 hover:border-purple-300'
-                }`}
-              >
-                {filter.label}
-              </button>
-            ))}
+        {quickAmenities.length > 0 && (
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">
+              {quickAmenitiesLoading ? 'Cargando amenities...' : 'Filtros rápidos:'}
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {quickAmenities.map((amenity) => (
+                <button
+                  key={amenity.id}
+                  onClick={() => toggleAmenity(amenity.id)}
+                  className={`px-4 py-2 rounded-full font-medium border-2 transition-all ${
+                    selectedAmenity === amenity.id
+                      ? 'bg-purple-600 text-white border-purple-600 shadow-md'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-purple-300'
+                  }`}
+                >
+                  {amenity.name}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* City and Toggle Filters */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4 items-center">
@@ -286,24 +293,6 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
         </div>
       </div>
 
-      {/* Popular Searches */}
-      {!searchQuery && !selectedCity && !onlyPromos && !onlyFeatured && !selectedAmenity && (
-        <div className="mb-8">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Búsquedas populares:</h3>
-          <div className="flex flex-wrap gap-2">
-            {popularSearches.map((search) => (
-              <button
-                key={search}
-                onClick={() => handlePopularSearch(search)}
-                className="px-4 py-2 bg-white border border-purple-200 text-purple-600 rounded-full hover:bg-purple-50 hover:border-purple-300 transition-colors text-sm font-medium"
-              >
-                {search}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Active Filters */}
       {(searchQuery || selectedCity || onlyPromos || onlyFeatured || selectedAmenity) && (
         <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -330,7 +319,9 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
           )}
           {selectedAmenity && (
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
-              <span>{QUICK_FILTERS.find(f => f.value === selectedAmenity)?.label || selectedAmenity}</span>
+              <span>
+                {quickAmenities.find((a) => a.id === selectedAmenity)?.name || selectedAmenity}
+              </span>
               <button onClick={() => setSelectedAmenity('')} className="hover:text-purple-900">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

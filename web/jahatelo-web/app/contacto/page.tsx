@@ -79,7 +79,7 @@ export default function ContactoPage() {
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Contáctanos</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Contactanos</h1>
           <p className="text-lg text-gray-600">
             ¿Tienes alguna pregunta o sugerencia? Nos encantaría escucharte.
           </p>

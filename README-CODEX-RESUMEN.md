@@ -26,6 +26,10 @@
 - Web: orden por plan en `search` y `nearby` (prioriza `DIAMOND`/`GOLD`).
 - App/Web: visuales de planes en mapa (pines + badges) y animaciones para planes superiores.
 - Seguridad web: CSRF en middleware ajustado para same-origin en prod (Vercel).
+- Web: chips rápidos de amenities en /search ahora salen solo de amenities activos (endpoint nuevo /api/amenities/active).
+- Web: eliminada sección “Búsquedas populares” en /search y compacto el layout de filtros.
+- Web: “Contáctanos” sin acento en header + páginas.
+- Web: mapa con pines AdvancedMarker (corazón) + jerarquía por plan + tamaño aumentado.
 
 ## Fixes recientes
 - Migraciones legacy corregidas (add_scheduled_notifications, add_payment_history, update_plan/remove_financial_flag) + placeholder `20251117184545_init`.
@@ -37,11 +41,19 @@
 - Imagenes: placeholder en web con calidad balanceada para mejor performance percibida.
 - Admin: conteo de "Promociones Activas" usa `promo.isActive` + motel aprobado/activo.
 - Auth: se removio Facebook en UI/web/app/docs; solo Google + Apple (iOS) + email/password.
+- Auth: login SMS OTP (web + mobile) con AWS SNS, rate limit y expiración.
 
 ## Cambios de DB (Supabase)
 - Migraciones de planes y eliminacion de `SECTION_BANNER` se ejecutaron via SQL Editor (por limitaciones IPv6).
 
 ## Estado actual de trabajo (sin commit)
+- OTP SMS: backend usa AWS SNS (Twilio removido); `.env.example` actualizado con AWS_SNS_* y OTP_DEFAULT_COUNTRY_CODE.
+- OTP: validación de teléfono relajada para OTP; normalización con country code default.
+- App: Login con SMS OTP + registro con toggle SMS/Email (SMS primero). Nick en registro.
+- Web: registro con toggle SMS/Email (SMS primero). Nick en registro. Email sin teléfono.
+- Web: endpoint /api/amenities/active agregado y usado en /search.
+- Web: mapa pines (AdvancedMarker) + orden por plan + tamaños aumentados.
+- Nota: endpoints /api/mobile/auth/whatsapp/* daban 404; se requiere limpiar `.next` y reiniciar para que aparezcan.
 - Publicidad popup: agregados campos `largeImageUrlWeb` y `largeImageUrlApp` en `Advertisement` + migration `20260203180000_add_ad_popup_variants`.
 - Admin banners (nuevo y editar): subida base genera variantes 16:9/4:5 + reemplazo manual + previews.
 - Web popup usa `largeImageUrlWeb`, app usa `largeImageUrlApp` (fallback a legacy).
@@ -60,4 +72,4 @@
 - Mejorar visualizacion de amenities en detalles de moteles.
 - Tree-shaking de `lucide-react` (hoy se usa import dinamico para iconos de amenities).
 - EAS iOS/Android queda pendiente por costo de build.
-- OTP WhatsApp + verificacion email + Apple Sign-In: pendiente de credenciales (Meta WABA, proveedor email, Apple Developer).
+- OTP SMS + verificacion email + Apple Sign-In: pendiente de credenciales (AWS SNS, proveedor email, Apple Developer).

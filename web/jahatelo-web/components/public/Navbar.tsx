@@ -84,7 +84,7 @@ export default function Navbar() {
                   : 'text-gray-600 hover:text-purple-600'
               }`}
             >
-              Contáctanos
+              Contactanos
             </Link>
 
             {/* Auth Section */}
@@ -231,7 +231,7 @@ export default function Navbar() {
                     : 'text-gray-600 hover:text-purple-600'
                 }`}
               >
-                Contáctanos
+                Contactanos
               </Link>
 
               {/* Mobile Auth Section */}

@@ -51,6 +51,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (user.provider === 'email' && !user.isEmailVerified) {
+      return NextResponse.json(
+        { error: 'Email no verificado', needsVerification: true },
+        { status: 403 }
+      );
+    }
+
     // Crear JWT token
     const token = await createToken({
       id: user.id,
@@ -80,6 +87,7 @@ export async function POST(request: NextRequest) {
         role: user.role,
         motelId: user.motelId,
         modulePermissions: user.modulePermissions ?? [],
+        isEmailVerified: user.isEmailVerified,
       },
     });
   } catch (error) {

@@ -28,6 +28,7 @@ export async function GET() {
         name: true,
         email: true,
         motelId: true,
+        isEmailVerified: true,
       },
     });
 
@@ -39,6 +40,7 @@ export async function GET() {
         email: dbUser?.email || user.email,
         motelId: dbUser?.motelId || user.motelId,
         modulePermissions: dbUser?.modulePermissions ?? user.modulePermissions ?? [],
+        isEmailVerified: dbUser?.isEmailVerified ?? (user as any).isEmailVerified ?? false,
       },
     }, { status: 200 });
   } catch (error) {

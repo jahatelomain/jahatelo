@@ -9,14 +9,15 @@ interface User {
   name?: string;
   phone?: string;
   role?: string;
+  isEmailVerified?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (data: { email: string; password: string; name?: string; phone?: string }) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; needsVerification?: boolean }>;
+  register: (data: { email: string; password: string; name?: string; phone?: string }) => Promise<{ success: boolean; error?: string; emailVerificationSent?: boolean; autoLogin?: boolean }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -69,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data.user);
         return { success: true };
       } else {
-        return { success: false, error: data.error || 'Error al iniciar sesión' };
+        return { success: false, error: data.error || 'Error al iniciar sesión', needsVerification: data.needsVerification };
       }
     } catch (error) {
       return { success: false, error: 'Error de conexión' };
@@ -88,8 +89,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
 
       if (response.ok) {
-        setUser(data.user);
-        return { success: true };
+        if (data.autoLogin !== false) {
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
+        return { success: true, emailVerificationSent: data.emailVerificationSent, autoLogin: data.autoLogin };
       } else {
         return { success: false, error: data.error || 'Error al registrarse' };
       }

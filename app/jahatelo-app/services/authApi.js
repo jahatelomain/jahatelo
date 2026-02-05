@@ -5,6 +5,16 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 const TOKEN_KEY = '@jahatelo_auth_token';
 const USER_KEY = '@jahatelo_user';
 
+async function safeJson(response) {
+  const text = await response.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text };
+  }
+}
+
 /**
  * Guarda el token y usuario en AsyncStorage
  */
@@ -157,6 +167,62 @@ export async function loginWithOAuth({ provider, providerId, email, name, pushTo
     return data;
   } catch (error) {
     console.error('Error in loginWithOAuth:', error);
+    throw error;
+  }
+}
+
+/**
+ * Solicitar OTP por SMS
+ */
+export async function requestSmsOtp({ phone }) {
+  try {
+    const response = await fetch(`${API_URL}/api/mobile/auth/whatsapp/request-otp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ phone }),
+    });
+
+    const data = await safeJson(response);
+
+    if (!response.ok) {
+      throw new Error(data?.error || 'No se pudo enviar el código');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in requestSmsOtp:', error);
+    throw error;
+  }
+}
+
+/**
+ * Verificar OTP por SMS
+ */
+export async function verifySmsOtp({ phone, code, name }) {
+  try {
+    const response = await fetch(`${API_URL}/api/mobile/auth/whatsapp/verify-otp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ phone, code, name }),
+    });
+
+    const data = await safeJson(response);
+
+    if (!response.ok) {
+      throw new Error(data?.error || 'Código inválido');
+    }
+
+    if (data.success && data.token && data.user) {
+      await saveAuthData(data.token, data.user);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in verifySmsOtp:', error);
     throw error;
   }
 }

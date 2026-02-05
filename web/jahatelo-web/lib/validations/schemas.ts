@@ -7,14 +7,11 @@ export const IdSchema = z.string().min(1, 'ID inválido');
 // ============================================
 
 export const RegisterSchema = z.object({
-  name: z.string().min(2, 'Nombre muy corto').max(100, 'Nombre muy largo'),
+  name: z.string().min(2, 'Nombre muy corto').max(100, 'Nombre muy largo').optional(),
   email: z.string().email('Email inválido').max(255),
   password: z.string()
-    .min(8, 'Contraseña debe tener mínimo 8 caracteres')
-    .max(100, 'Contraseña muy larga')
-    .regex(/[A-Z]/, 'Debe contener al menos una mayúscula')
-    .regex(/[a-z]/, 'Debe contener al menos una minúscula')
-    .regex(/[0-9]/, 'Debe contener al menos un número'),
+    .min(6, 'Contraseña debe tener mínimo 6 caracteres')
+    .max(100, 'Contraseña muy larga'),
   telefono: z.string().regex(/^\+?[0-9]{9,15}$/, 'Teléfono inválido').optional(),
   phone: z.string().regex(/^\+?[0-9]{9,15}$/, 'Teléfono inválido').optional(),
 });
@@ -22,6 +19,23 @@ export const RegisterSchema = z.object({
 export const LoginSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(1, 'Contraseña requerida'),
+});
+
+const LoosePhoneSchema = z
+  .string()
+  .max(50, 'Teléfono muy largo')
+  .refine((value) => {
+    const digits = value.replace(/\D/g, '');
+    return digits.length >= 9 && digits.length <= 15;
+  }, 'Teléfono inválido');
+
+export const WhatsappOtpRequestSchema = z.object({
+  phone: LoosePhoneSchema,
+});
+
+export const WhatsappOtpVerifySchema = z.object({
+  phone: LoosePhoneSchema,
+  code: z.string().regex(/^[0-9]{6}$/, 'Código inválido'),
 });
 
 // ============================================

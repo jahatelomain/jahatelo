@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,19 +9,34 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
-  const { register } = useAuth();
+  const { register, refreshUser } = useAuth();
 
+  const [registerMethod, setRegisterMethod] = useState<'sms' | 'email'>('sms');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpVerifyLoading, setOtpVerifyLoading] = useState(false);
+  const [resendSeconds, setResendSeconds] = useState(0);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (registerMethod === 'sms') {
+      if (!otpSent) {
+        await handleSendOtp();
+      } else {
+        await handleVerifyOtp();
+      }
+      return;
+    }
 
     // Validar que las contraseñas coincidan
     if (password !== confirmPassword) {
@@ -42,10 +57,15 @@ function RegisterForm() {
         email,
         password,
         name: name || undefined,
-        phone: phone || undefined,
       });
 
       if (result.success) {
+        if (registerMethod === 'email') {
+          const target = `/login?sent=1&email=${encodeURIComponent(email)}`;
+          router.push(target);
+          router.refresh();
+          return;
+        }
         // Registro exitoso - redirigir
         const target = redirect || '/';
         router.push(target);
@@ -60,6 +80,76 @@ function RegisterForm() {
       setLoading(false);
     }
   };
+
+  const handleSendOtp = async () => {
+    setError('');
+    if (!phone.trim()) {
+      setError('Ingresa tu número de teléfono');
+      return;
+    }
+    setOtpLoading(true);
+    try {
+      const res = await fetch('/api/auth/whatsapp/request-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ phone }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'No se pudo enviar el código');
+        return;
+      }
+      setOtpSent(true);
+      setResendSeconds(60);
+      if (data?.debugCode && process.env.NODE_ENV === 'development') {
+        setOtpCode(data.debugCode);
+      }
+    } catch (err) {
+      console.error('OTP error:', err);
+      setError('Error al conectar con el servidor');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode.trim()) {
+      setError('Ingresa el código');
+      return;
+    }
+    setOtpVerifyLoading(true);
+    try {
+      const res = await fetch('/api/auth/whatsapp/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ phone, code: otpCode, name }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Código inválido');
+        return;
+      }
+      await refreshUser();
+      const target = redirect || '/';
+      router.push(target);
+      router.refresh();
+    } catch (err) {
+      console.error('OTP verify error:', err);
+      setError('Error al conectar con el servidor');
+    } finally {
+      setOtpVerifyLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (resendSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setResendSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendSeconds]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center px-4 py-12">
@@ -94,12 +184,47 @@ function RegisterForm() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="flex items-center gap-2 rounded-lg bg-slate-100 p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setRegisterMethod('sms');
+                  setError('');
+                  setOtpSent(false);
+                  setOtpCode('');
+                  setResendSeconds(0);
+                  setPassword('');
+                  setConfirmPassword('');
+                  setEmail('');
+                }}
+                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  registerMethod === 'sms' ? 'bg-white text-slate-900 shadow' : 'text-slate-600'
+                }`}
+              >
+                SMS
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRegisterMethod('email');
+                  setError('');
+                  setOtpSent(false);
+                  setOtpCode('');
+                  setResendSeconds(0);
+                }}
+                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  registerMethod === 'email' ? 'bg-white text-slate-900 shadow' : 'text-slate-600'
+                }`}
+              >
+                Email
+              </button>
+            </div>
             <div>
               <label
                 htmlFor="name"
                 className="block text-sm font-medium text-slate-700 mb-2"
               >
-                Nombre (opcional)
+                Nick (opcional)
               </label>
               <input
                 id="name"
@@ -107,91 +232,135 @@ function RegisterForm() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
-                placeholder="Tu nombre"
+                placeholder="Tu nick"
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-slate-700 mb-2"
-              >
-                Email *
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
-                placeholder="tu@email.com"
-              />
-            </div>
+            {registerMethod === 'sms' ? (
+              <>
+                <div>
+                  <label
+                    htmlFor="phone"
+                    className="block text-sm font-medium text-slate-700 mb-2"
+                  >
+                    Teléfono *
+                  </label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
+                    placeholder="+595 981 234567"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">
+                    Te enviaremos un código por SMS.
+                  </p>
+                </div>
 
-            <div>
-              <label
-                htmlFor="phone"
-                className="block text-sm font-medium text-slate-700 mb-2"
-              >
-                Teléfono (opcional)
-              </label>
-              <input
-                id="phone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
-                placeholder="+595 981 234567"
-              />
-            </div>
+                {otpSent && (
+                  <div>
+                    <label
+                      htmlFor="otpCode"
+                      className="block text-sm font-medium text-slate-700 mb-2"
+                    >
+                      Código *
+                    </label>
+                    <input
+                      id="otpCode"
+                      type="text"
+                      inputMode="numeric"
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value)}
+                      required
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
+                      placeholder="000000"
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-slate-700 mb-2"
+                  >
+                    Email *
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
+                    placeholder="tu@email.com"
+                  />
+                </div>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-slate-700 mb-2"
-              >
-                Contraseña *
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
-                placeholder="••••••••"
-              />
-              <p className="mt-1 text-xs text-slate-500">Mínimo 6 caracteres</p>
-            </div>
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-slate-700 mb-2"
+                  >
+                    Contraseña *
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
+                    placeholder="••••••••"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">Mínimo 6 caracteres</p>
+                </div>
 
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-slate-700 mb-2"
-              >
-                Confirmar Contraseña *
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
-                placeholder="••••••••"
-              />
-            </div>
+                <div>
+                  <label
+                    htmlFor="confirmPassword"
+                    className="block text-sm font-medium text-slate-700 mb-2"
+                  >
+                    Confirmar Contraseña *
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </>
+            )}
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={registerMethod === 'sms' ? (otpSent ? otpVerifyLoading : otpLoading) : loading}
               className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creando cuenta...' : 'Crear cuenta'}
+              {registerMethod === 'sms'
+                ? (otpSent ? (otpVerifyLoading ? 'Verificando...' : 'Verificar y crear cuenta') : (otpLoading ? 'Enviando...' : 'Enviar código'))
+                : (loading ? 'Creando cuenta...' : 'Crear cuenta')}
             </button>
+
+            {registerMethod === 'sms' && otpSent && (
+              <button
+                type="button"
+                onClick={handleSendOtp}
+                disabled={resendSeconds > 0 || otpLoading}
+                className="w-full text-sm text-purple-600 hover:text-purple-700 font-medium disabled:text-slate-400"
+              >
+                {resendSeconds > 0 ? `Reenviar en ${resendSeconds}s` : 'Reenviar código por SMS'}
+              </button>
+            )}
           </form>
 
           {/* Footer */}

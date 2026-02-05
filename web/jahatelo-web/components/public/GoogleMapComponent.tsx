@@ -133,7 +133,15 @@ export default function GoogleMapComponent({
     if (!googleMapRef.current || !window.google) return;
 
     // Clear existing markers
-    markersRef.current.forEach(marker => marker.setMap(null));
+    markersRef.current.forEach((marker) => {
+      if (marker?.setMap) {
+        marker.setMap(null);
+        return;
+      }
+      if ('map' in marker) {
+        marker.map = null;
+      }
+    });
     markersRef.current = [];
     overlaysRef.current.forEach((overlay) => overlay.setMap(null));
     overlaysRef.current = [];
@@ -142,6 +150,7 @@ export default function GoogleMapComponent({
     const BASE_PIN_HEIGHT = 45;
     const BASE_PIN_CENTER = 16;
     const BASE_PIN_RADIUS = 13;
+    const GLOBAL_PIN_SCALE = 1.1;
 
     const getPlanZIndex = (plan?: MapMotel['plan']) => {
       switch (plan) {
@@ -171,46 +180,44 @@ export default function GoogleMapComponent({
       }
     };
 
-    const createPinSvg = (color: string, opacity: number) => `
-      <svg width="${BASE_PIN_WIDTH}" height="${BASE_PIN_HEIGHT}" viewBox="0 0 32 45" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="${BASE_PIN_CENTER}" cy="${BASE_PIN_CENTER}" r="${BASE_PIN_RADIUS}" fill="${color}" fill-opacity="${opacity}" stroke="white" stroke-width="3"/>
-        <path d="M16 20.5C16 20.5 11.5 17.5 11.5 14.5C11.5 12.5 13 11 14.5 11C15.5 11 16 11.5 16 11.5C16 11.5 16.5 11 17.5 11C19 11 20.5 12.5 20.5 14.5C20.5 17.5 16 20.5 16 20.5Z" fill="white"/>
-      </svg>
-    `;
+    const createPinElement = (color: string, opacity: number, scale: number) => {
+      const width = Math.round(BASE_PIN_WIDTH * scale);
+      const height = Math.round(BASE_PIN_HEIGHT * scale);
+      const strokeWidth = Math.max(2, Math.round(3 * scale));
+      const circleRadius = Math.round(BASE_PIN_RADIUS * scale);
+      const center = Math.round(BASE_PIN_CENTER * scale);
 
-    // Red pin with heart for user location ONLY
-    const redPinSVG = `
-      <svg width="32" height="45" viewBox="0 0 32 45" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="16" cy="16" r="13" fill="#EF4444" stroke="white" stroke-width="3"/>
-        <path d="M16 20.5C16 20.5 11.5 17.5 11.5 14.5C11.5 12.5 13 11 14.5 11C15.5 11 16 11.5 16 11.5C16 11.5 16.5 11 17.5 11C19 11 20.5 12.5 20.5 14.5C20.5 17.5 16 20.5 16 20.5Z" fill="white"/>
-      </svg>
-    `;
+      const pin = document.createElement('div');
+      pin.style.width = `${width}px`;
+      pin.style.height = `${height}px`;
+      pin.style.transform = 'translate(0, 0)';
+      pin.style.display = 'block';
+      pin.style.pointerEvents = 'auto';
 
-    const redPinIcon = {
-      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(redPinSVG)}`,
-      scaledSize: new window.google.maps.Size(32, 45),
-      anchor: new window.google.maps.Point(16, 45),
-      labelOrigin: new window.google.maps.Point(16, -14),
+      pin.innerHTML = `
+        <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="${center}" cy="${center}" r="${circleRadius}" fill="${color}" fill-opacity="${opacity}" stroke="white" stroke-width="${strokeWidth}"/>
+          <path d="M${center} ${Math.round(20.5 * scale)}C${center} ${Math.round(20.5 * scale)} ${Math.round(11.5 * scale)} ${Math.round(17.5 * scale)} ${Math.round(11.5 * scale)} ${Math.round(14.5 * scale)}C${Math.round(11.5 * scale)} ${Math.round(12.5 * scale)} ${Math.round(13 * scale)} ${Math.round(11 * scale)} ${Math.round(14.5 * scale)} ${Math.round(11 * scale)}C${Math.round(15.5 * scale)} ${Math.round(11 * scale)} ${center} ${Math.round(11.5 * scale)} ${center} ${Math.round(11.5 * scale)}C${center} ${Math.round(11.5 * scale)} ${Math.round(16.5 * scale)} ${Math.round(11 * scale)} ${Math.round(17.5 * scale)} ${Math.round(11 * scale)}C${Math.round(19 * scale)} ${Math.round(11 * scale)} ${Math.round(20.5 * scale)} ${Math.round(12.5 * scale)} ${Math.round(20.5 * scale)} ${Math.round(14.5 * scale)}C${Math.round(20.5 * scale)} ${Math.round(17.5 * scale)} ${center} ${Math.round(20.5 * scale)} ${center} ${Math.round(20.5 * scale)}Z" fill="white"/>
+        </svg>
+      `;
+      return pin;
     };
 
+    const sortedMotels = [...motels].sort(
+      (a, b) => getPlanZIndex(a.plan ?? null) - getPlanZIndex(b.plan ?? null)
+    );
+
     // Create markers for each motel
-    motels.forEach((motel) => {
+    sortedMotels.forEach((motel) => {
       const planConfig = getPlanConfig(motel.plan ?? null);
       const planZIndex = getPlanZIndex(motel.plan ?? null);
-      const pinSvg = createPinSvg(planConfig.color, planConfig.opacity);
-      const pinWidth = Math.round(BASE_PIN_WIDTH * planConfig.scale);
-      const pinHeight = Math.round(BASE_PIN_HEIGHT * planConfig.scale);
-      const pinIcon = {
-        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(pinSvg)}`,
-        scaledSize: new window.google.maps.Size(pinWidth, pinHeight),
-        anchor: new window.google.maps.Point(pinWidth / 2, pinHeight),
-      };
-      const marker = new window.google.maps.Marker({
+      const effectiveScale = planConfig.scale * GLOBAL_PIN_SCALE;
+      const pinElement = createPinElement(planConfig.color, planConfig.opacity, effectiveScale);
+      const marker = new window.google.maps.marker.AdvancedMarkerElement({
         position: { lat: motel.latitude, lng: motel.longitude },
         map: googleMapRef.current,
-        icon: pinIcon,
+        content: pinElement,
         zIndex: planZIndex,
-        // NO usamos label para evitar tooltip nativo
       });
 
       // Crear etiqueta HTML personalizada como overlay
@@ -230,10 +237,10 @@ export default function GoogleMapComponent({
           this.div.style.position = 'absolute';
           this.div.style.background = planConfig.labelColor;
           this.div.style.color = '#FFFFFF';
-          this.div.style.padding = `${Math.round(6 * planConfig.scale)}px ${Math.round(12 * planConfig.scale)}px`;
+          this.div.style.padding = `${Math.round(6 * effectiveScale)}px ${Math.round(12 * effectiveScale)}px`;
           this.div.style.borderRadius = `${Math.round(10 * planConfig.scale)}px`;
           this.div.style.border = '2px solid #FFFFFF';
-          this.div.style.fontSize = `${Math.round(13 * planConfig.scale)}px`;
+          this.div.style.fontSize = `${Math.round(13 * effectiveScale)}px`;
           this.div.style.fontWeight = '500';
           this.div.style.whiteSpace = 'nowrap';
           this.div.style.cursor = 'pointer';
@@ -243,7 +250,7 @@ export default function GoogleMapComponent({
             : '0 2px 8px rgba(0, 0, 0, 0.15)';
           this.div.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
           this.div.style.position = 'absolute';
-          this.div.style.maxWidth = `${Math.round(180 * planConfig.scale)}px`;
+          this.div.style.maxWidth = `${Math.round(180 * effectiveScale)}px`;
           this.div.style.overflow = 'visible';
           this.div.textContent = this.text;
           this.div.style.pointerEvents = 'auto';
@@ -255,17 +262,17 @@ export default function GoogleMapComponent({
             const badge = document.createElement('div');
             badge.textContent = planConfig.badge;
             badge.style.position = 'absolute';
-            badge.style.top = `${Math.round(-6 * planConfig.scale)}px`;
-            badge.style.right = `${Math.round(-6 * planConfig.scale)}px`;
-            badge.style.width = `${Math.round(18 * planConfig.scale)}px`;
-            badge.style.height = `${Math.round(18 * planConfig.scale)}px`;
+            badge.style.top = `${Math.round(-6 * effectiveScale)}px`;
+            badge.style.right = `${Math.round(-6 * effectiveScale)}px`;
+            badge.style.width = `${Math.round(18 * effectiveScale)}px`;
+            badge.style.height = `${Math.round(18 * effectiveScale)}px`;
             badge.style.borderRadius = '999px';
             badge.style.background = '#FFFFFF';
             badge.style.border = `2px solid ${planConfig.color}`;
             badge.style.display = 'flex';
             badge.style.alignItems = 'center';
             badge.style.justifyContent = 'center';
-            badge.style.fontSize = `${Math.round(10 * planConfig.scale)}px`;
+            badge.style.fontSize = `${Math.round(10 * effectiveScale)}px`;
             badge.style.fontWeight = '700';
             badge.style.color = planConfig.color;
             if (planConfig.glow) {
@@ -283,7 +290,7 @@ export default function GoogleMapComponent({
           });
 
           const panes = this.getPanes();
-          panes.overlayLayer.appendChild(this.div);
+          panes.floatPane.appendChild(this.div);
         }
 
         draw() {
@@ -293,7 +300,7 @@ export default function GoogleMapComponent({
             new window.google.maps.LatLng(this.position.lat, this.position.lng)
           );
           this.div.style.left = position.x - (this.div.offsetWidth / 2) + 'px';
-          const labelOffset = Math.round((BASE_PIN_HEIGHT * planConfig.scale) + (22 * planConfig.scale));
+          const labelOffset = Math.round((BASE_PIN_HEIGHT * effectiveScale) + (22 * effectiveScale));
           this.div.style.top = position.y - labelOffset + 'px';
         }
 
@@ -374,7 +381,7 @@ export default function GoogleMapComponent({
             m.infoWindow.close();
           }
         });
-        infoWindow.open(googleMapRef.current, marker);
+        infoWindow.open({ anchor: marker, map: googleMapRef.current });
       });
 
       marker.infoWindow = infoWindow;
@@ -397,27 +404,13 @@ export default function GoogleMapComponent({
       circleRef.current.setMap(null);
     }
 
-    // Red pin with heart for user location ONLY
-    const redUserPinSVG = `
-      <svg width="32" height="45" viewBox="0 0 32 45" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="16" cy="16" r="13" fill="#EF4444" stroke="white" stroke-width="3"/>
-        <path d="M16 20.5C16 20.5 11.5 17.5 11.5 14.5C11.5 12.5 13 11 14.5 11C15.5 11 16 11.5 16 11.5C16 11.5 16.5 11 17.5 11C19 11 20.5 12.5 20.5 14.5C20.5 17.5 16 20.5 16 20.5Z" fill="white"/>
-      </svg>
-    `;
+    const redUserPinElement = createPinElement('#EF4444', 1, GLOBAL_PIN_SCALE);
 
-    const redUserPinIcon = {
-      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(redUserPinSVG)}`,
-      scaledSize: new window.google.maps.Size(32, 45),
-      anchor: new window.google.maps.Point(16, 45),
-      labelOrigin: new window.google.maps.Point(16, -14),
-    };
-
-    const marker = new window.google.maps.Marker({
+    const marker = new window.google.maps.marker.AdvancedMarkerElement({
       position: { lat: location[0], lng: location[1] },
       map: googleMapRef.current,
-      icon: redUserPinIcon,
+      content: redUserPinElement,
       zIndex: 1200,
-      // NO usamos label para evitar tooltip nativo
     });
 
     // Crear etiqueta HTML personalizada para ubicación de usuario

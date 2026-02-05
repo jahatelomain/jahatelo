@@ -68,6 +68,13 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      if (user.provider === 'email' && !user.isEmailVerified) {
+        return NextResponse.json(
+          { error: 'Email no verificado', needsVerification: true },
+          { status: 403 }
+        );
+      }
+
       // Actualizar pushToken y deviceInfo si se proveen
       if (pushToken || deviceInfo) {
         await prisma.user.update({

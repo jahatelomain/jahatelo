@@ -135,6 +135,7 @@ export async function middleware(request: NextRequest) {
   if (
     pathname.startsWith('/api/') &&
     !csrfSafeMethods.has(request.method) &&
+    !pathname.startsWith('/api/auth/email/') &&
     !pathname.startsWith('/api/mobile/') &&
     !pathname.startsWith('/api/public/') &&
     !pathname.startsWith('/api/cron/') &&
