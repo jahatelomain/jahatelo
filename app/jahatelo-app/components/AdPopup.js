@@ -23,13 +23,22 @@ const POPUP_WIDTH = Math.min(SCREEN_WIDTH * 0.9, 400);
  */
 export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClick }) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const [ready, setReady] = useState(false);
 
   const imageUrl = ad?.largeImageUrlApp || ad?.largeImageUrl || ad?.imageUrl;
+  const hasContent = Boolean(
+    imageUrl ||
+    ad?.title ||
+    ad?.description ||
+    ad?.advertiser ||
+    ad?.linkUrl
+  );
 
   useEffect(() => {
     if (visible && ad) {
       setImageLoaded(false);
+      setImageError(false);
       setReady(false);
       if (imageUrl) {
         Image.prefetch(imageUrl)
@@ -48,7 +57,7 @@ export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClic
     }
   }, [visible, ready, ad, onTrackView]);
 
-  if (!ad) {
+  if (!ad || !hasContent) {
     return null;
   }
 
@@ -102,7 +111,7 @@ export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClic
             showsVerticalScrollIndicator
           >
             {/* Imagen del anuncio */}
-            {imageUrl && (
+            {imageUrl && !imageError ? (
               <View style={styles.imageContainer}>
                 <Image
                   source={{ uri: imageUrl }}
@@ -112,6 +121,10 @@ export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClic
                   ]}
                   resizeMode="cover"
                   onLoad={() => setImageLoaded(true)}
+                  onError={() => {
+                    setImageError(true);
+                    setImageLoaded(true);
+                  }}
                 />
                 {!imageLoaded && (
                   <View style={styles.loadingOverlay}>
@@ -119,13 +132,18 @@ export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClic
                   </View>
                 )}
               </View>
+            ) : (
+              <View style={[styles.imageContainer, styles.fallbackImage]}>
+                <Ionicons name="megaphone" size={36} color={COLORS.white} />
+                <Text style={styles.fallbackText}>Publicidad</Text>
+              </View>
             )}
 
             {/* Información del anuncio */}
             <View style={styles.infoContainer}>
-              {ad.title && (
+              {(ad.title || !imageUrl || imageError) && (
                 <Text style={styles.title} numberOfLines={2}>
-                  {ad.title}
+                  {ad.title || 'Publicidad'}
                 </Text>
               )}
 
@@ -202,6 +220,8 @@ const styles = StyleSheet.create({
     width: '100%',
     height: POPUP_WIDTH * 1.2, // Proporción 5:6
     backgroundColor: COLORS.backgroundDark,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   image: {
     width: '100%',
@@ -219,6 +239,15 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.textMuted,
+  },
+  fallbackImage: {
+    backgroundColor: COLORS.primaryDark,
+    gap: SPACING.sm,
+  },
+  fallbackText: {
+    fontSize: FONT_SIZES.md,
+    color: COLORS.white,
+    fontWeight: '600',
   },
   infoContainer: {
     padding: SPACING.lg,

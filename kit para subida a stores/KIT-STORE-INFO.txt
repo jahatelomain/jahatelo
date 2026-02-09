@@ -1,0 +1,52 @@
+JAHATELO - KIT MINIMO PARA SUBIDA A STORES
+Fecha: 6 de febrero de 2026
+
+1) Identidad de la app
+- Nombre publico: Jahatelo
+- Tagline/Subtitulo corto: Encuentra moteles y promociones cerca de ti
+- Descripcion corta (<=80): Encuentra moteles, promos y ubicaciones cercanas en segundos.
+- Descripcion larga:
+  Jahatelo te ayuda a encontrar moteles cercanos con informacion clara, ubicaciones en mapa y promociones.
+  Busca por ciudad, filtra por servicios, guarda favoritos y consulta detalles antes de decidir.
+  Ideal para encontrar opciones rapido y con datos actualizados.
+
+2) Contacto y links
+- Sitio web: https://jahatelo.com
+- Soporte email: info@jahatelo.com
+- Email privacidad: privacidad@jahatelo.com
+- URL Politica de privacidad: https://jahatelo.com/privacy
+- URL Terminos y condiciones: https://jahatelo.com/terminos
+- URL Soporte: https://jahatelo.com/soporte
+
+3) Categoria sugerida
+- Apple: Travel o Lifestyle (definir final)
+- Google Play: Travel & Local o Lifestyle (definir final)
+- Huawei: Travel o Lifestyle (definir final)
+
+4) Pais/idioma
+- Idioma principal: Espanol (Latinoamerica)
+- Paises iniciales: Paraguay (y opcional LATAM)
+
+5) Datos que recopila la app (para formularios de privacidad)
+- Datos de cuenta: nombre, email, telefono
+- Datos de uso: busquedas, favoritos, interacciones
+- Ubicacion: solo si el usuario autoriza
+- Dispositivo: modelo, sistema, IP aproximada
+- Notificaciones: token push si acepta
+
+6) Permisos de la app
+- Ubicacion (si se usa mapa cerca mio)
+- Internet
+
+7) Login
+- Email + password
+- SMS OTP
+
+8) Materiales graficos pendientes
+- Icono 1024x1024 (iOS) / 512x512 (Android)
+- Screenshots (6-8 pantallas)
+- Feature graphic Android 1024x500
+
+9) Notas
+- Nombre legal del publicador: (definir segun persona/empresa)
+- Direccion legal: Asuncion, Paraguay (editar si aplica)

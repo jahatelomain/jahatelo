@@ -18,10 +18,13 @@
 
 ### ✅ Ya Creado
 - ✅ `web/jahatelo-web/public/logo.svg` - Logo vectorial base
+- ✅ **Fuente unica de assets**: `app/jahatelo-app/assets/`
+- ✅ `web/jahatelo-web/public/` usa **symlinks** a esa carpeta
 
 ### ⏳ Pendiente (Necesitas generar manualmente)
+- Ninguno pendiente en este repo. Verifica calidad visual y reemplaza si queres otra version.
 
-Usa una de estas opciones:
+Opciones por si queres regenerar:
 
 ### Opción 1: AppIcon.co (Más Fácil) ⭐
 1. Ve a https://appicon.co/
@@ -90,11 +93,11 @@ web/jahatelo-web/public/
 ### App Móvil (Expo)
 ```
 app/jahatelo-app/assets/
-├── logo-1024.png                   ⏳ (icono principal)
-├── ios-icon-1024.png               ⏳ (iOS específico)
-├── android-foreground-1080.png     ⏳ (foreground con padding 20%)
-├── splash-2732.png                 ⏳ (splash screen)
-└── favicon.png                     ⏳
+├── logo-1024.png                   ✅ (icono principal)
+├── ios-icon-1024.png               ✅ (iOS específico)
+├── android-foreground-1080.png     ✅ (foreground con padding 20%)
+├── splash-2732.png                 ✅ (splash screen)
+└── favicon.png                     ✅
 ```
 
 ---
@@ -146,10 +149,10 @@ app/jahatelo-app/assets/
 
 ### App Móvil (Expo)
 - [x] `app.json` actualizado con nuevos colores
-- [ ] Generar `logo-1024.png`
-- [ ] Generar `android-foreground-1080.png`
-- [ ] Generar `splash-2732.png`
-- [ ] Generar `ios-icon-1024.png`
+- [x] Generar `logo-1024.png`
+- [x] Generar `android-foreground-1080.png`
+- [x] Generar `splash-2732.png`
+- [x] Generar `ios-icon-1024.png`
 
 ---
 

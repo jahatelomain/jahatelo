@@ -124,12 +124,8 @@ export default function NearbyMotelsScreen({ navigation }) {
       const filtered = filterMotelsByDistance(motelsToFilter, latitude, longitude, radius);
       setMotels(filtered);
       debugLog(`🎯 Mostrando ${filtered.length} moteles dentro de ${radius}km`);
-
-      if (filtered.length === 0) {
-        setError(`No encontramos moteles a menos de ${radius} km de tu ubicación.`);
-      } else {
-        setError(null);
-      }
+      // No usar error para "sin resultados"; se maneja con el empty state
+      setError(null);
     }
   };
 
@@ -256,6 +252,14 @@ export default function NearbyMotelsScreen({ navigation }) {
               <Text style={styles.emptyText}>
                 No hay moteles cerca de tu ubicación
               </Text>
+              <TouchableOpacity
+                style={styles.emptyAction}
+                onPress={() => setShowRadiusModal(true)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="options" size={18} color={COLORS.white} />
+                <Text style={styles.emptyActionText}>Cambiar radio</Text>
+              </TouchableOpacity>
             </View>
           }
         />
@@ -423,6 +427,20 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginTop: 16,
     textAlign: 'center',
+  },
+  emptyAction: {
+    marginTop: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  emptyActionText: {
+    color: COLORS.white,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,

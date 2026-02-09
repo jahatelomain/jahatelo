@@ -244,8 +244,10 @@ export const fetchMotels = async (params = {}, useCache = true) => {
   const url = `${baseUrl}/motels${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
   // Si no hay filtros y useCache es true, intentar obtener del caché primero
+  // En desarrollo deshabilitamos caché para ver cambios al instante.
   const hasFilters = Object.keys(params).length > 0;
-  if (!hasFilters && useCache) {
+  const cacheEnabled = useCache && !__DEV__ && process.env.EXPO_PUBLIC_DISABLE_CACHE !== '1';
+  if (!hasFilters && cacheEnabled) {
     const cached = await getCachedMotelsList();
     if (cached) {
       debugLog('✅ Usando moteles del caché');
@@ -258,7 +260,7 @@ export const fetchMotels = async (params = {}, useCache = true) => {
     const motels = response.data.map(mapMotelSummary);
 
     // Cachear solo si no hay filtros
-    if (!hasFilters) {
+    if (!hasFilters && cacheEnabled) {
       await cacheMotelsList(motels);
       await updateLastSync();
     }
@@ -267,7 +269,7 @@ export const fetchMotels = async (params = {}, useCache = true) => {
   } catch (error) {
     // Si falla el fetch, intentar devolver del caché
     debugLog('⚠️ Error al obtener moteles, intentando caché...');
-    const cached = await getCachedMotelsList();
+    const cached = cacheEnabled ? await getCachedMotelsList() : null;
     if (cached) {
       debugLog('✅ Usando moteles del caché (offline)');
       return cached;

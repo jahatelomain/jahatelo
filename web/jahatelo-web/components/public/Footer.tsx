@@ -31,6 +31,21 @@ export default function Footer() {
                   Buscar moteles
                 </Link>
               </li>
+              <li>
+                <Link href="/soporte" className="text-gray-600 hover:text-purple-600 text-sm transition-colors">
+                  Soporte
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacidad" className="text-gray-600 hover:text-purple-600 text-sm transition-colors">
+                  Privacidad
+                </Link>
+              </li>
+              <li>
+                <Link href="/terminos" className="text-gray-600 hover:text-purple-600 text-sm transition-colors">
+                  Términos
+                </Link>
+              </li>
             </ul>
           </div>
 

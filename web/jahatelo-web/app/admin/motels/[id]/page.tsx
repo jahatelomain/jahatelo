@@ -435,7 +435,6 @@ export default function MotelDetailPage() {
   const getResponseError = async (res: Response, fallback: string) => {
     try {
       const data = await res.json();
-      if (data?.error) return data.error as string;
       if (Array.isArray(data?.details) && data.details.length > 0) {
         const messages = data.details
           .map((detail: { field?: string; message?: string }) => {
@@ -444,8 +443,10 @@ export default function MotelDetailPage() {
             return `${field}: ${message}`;
           })
           .join('\n');
-        return `Datos invalidos:\n${messages}`;
+        const base = (data?.error as string) || (data?.message as string) || 'Datos invalidos';
+        return `${base}:\n${messages}`;
       }
+      if (data?.error) return data.error as string;
       if (data?.message) return data.message as string;
     } catch (error) {
       console.error('Error parsing response:', error);
@@ -456,6 +457,18 @@ export default function MotelDetailPage() {
   const normalizeOptionalText = (value: string) => {
     const trimmed = value.trim();
     return trimmed === '' ? null : trimmed;
+  };
+
+  const normalizeUploadUrl = (value: string | null) => {
+    if (!value) return null;
+    const trimmed = value.trim();
+    if (trimmed === '') return null;
+    if (trimmed.startsWith('/uploads/')) {
+      if (typeof window !== 'undefined') {
+        return `${window.location.origin}${trimmed}`;
+      }
+    }
+    return trimmed;
   };
 
   const normalizeMapUrl = (value: string) => {
@@ -630,9 +643,9 @@ export default function MotelDetailPage() {
         operationsContactName: normalizeOptionalText(motelForm.operationsContactName || ''),
         operationsContactEmail: normalizeOptionalText(motelForm.operationsContactEmail || ''),
         operationsContactPhone: normalizeOptionalText(motelForm.operationsContactPhone || ''),
-        featuredPhoto: fallbackFeaturedPhoto,
-        featuredPhotoWeb: normalizeOptionalText(motelForm.featuredPhotoWeb || ''),
-        featuredPhotoApp: normalizeOptionalText(motelForm.featuredPhotoApp || ''),
+        featuredPhoto: normalizeUploadUrl(fallbackFeaturedPhoto),
+        featuredPhotoWeb: normalizeUploadUrl(motelForm.featuredPhotoWeb || ''),
+        featuredPhotoApp: normalizeUploadUrl(motelForm.featuredPhotoApp || ''),
         nextBillingAt: motelForm.nextBillingAt ? motelForm.nextBillingAt : null,
         ...(extractedCoords ? { latitude: extractedCoords.latitude, longitude: extractedCoords.longitude } : {}),
       };

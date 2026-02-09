@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (user.provider === 'email' && !user.isEmailVerified) {
+      if (user.role === 'USER' && user.provider === 'email' && !user.isEmailVerified) {
         return NextResponse.json(
           { error: 'Email no verificado', needsVerification: true },
           { status: 403 }
