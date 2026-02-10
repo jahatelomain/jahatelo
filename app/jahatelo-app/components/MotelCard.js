@@ -23,6 +23,10 @@ import { trackFavoriteAdd, trackFavoriteRemove } from '../services/analyticsServ
 export default function MotelCard({ motel, onPress }) {
   const { isFavorite, toggleFavorite } = useFavorites();
 
+  // Derivadas de motel con null safety — deben estar antes de los hooks
+  const isDisabled = motel?.plan === 'FREE';
+  const isDiamond = motel?.plan === 'DIAMOND';
+
   // Valores animados para la card
   const scale = useSharedValue(1);
   const elevation = useSharedValue(3);
@@ -36,21 +40,19 @@ export default function MotelCard({ motel, onPress }) {
   const diamondOrbit = useSharedValue(0);
   const diamondShimmer = useSharedValue(-1);
 
-  if (!motel) return null;
-
-  // Animación loop del badge PROMO
+  // Todos los useEffect ANTES del early return
   useEffect(() => {
-    if (motel.tienePromo) {
+    if (motel?.tienePromo) {
       promoBadgeScale.value = withRepeat(
         withSequence(
           withTiming(1.08, { duration: 1000 }),
           withTiming(1, { duration: 1000 })
         ),
-        -1, // Infinite
+        -1,
         false
       );
     }
-  }, [motel.tienePromo]);
+  }, [motel?.tienePromo]);
 
   useEffect(() => {
     if (!isDiamond) return;
@@ -75,6 +77,47 @@ export default function MotelCard({ motel, onPress }) {
       diamondShimmer.value = -1;
     };
   }, [isDiamond]);
+
+  // Todos los useAnimatedStyle ANTES del early return
+  const animatedCardStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+      elevation: elevation.value,
+      shadowOpacity: elevation.value === 3 ? 0.1 : 0.05,
+    };
+  });
+
+  const animatedHeartStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { scale: heartScale.value },
+        { rotate: `${heartRotation.value}deg` },
+      ],
+    };
+  });
+
+  const animatedPromoBadgeStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: promoBadgeScale.value }],
+    };
+  });
+
+  const animatedOrbitStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ rotate: `${diamondOrbit.value}deg` }],
+    };
+  });
+
+  const animatedShimmerStyle = useAnimatedStyle(() => {
+    const translateX = interpolate(diamondShimmer.value, [-1, 1], [-60, 60]);
+    return {
+      opacity: isDiamond ? 0.18 : 0,
+      transform: [{ translateX }, { rotate: '20deg' }],
+    };
+  });
+
+  // Early return después de todos los hooks
+  if (!motel) return null;
 
   const handleFavoritePress = (e) => {
     // Prevenir que se dispare el onPress de la card
@@ -146,45 +189,6 @@ export default function MotelCard({ motel, onPress }) {
     });
     elevation.value = withTiming(3, { duration: 200 });
   };
-
-  // Estilos animados
-  const animatedCardStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-      elevation: elevation.value,
-      shadowOpacity: elevation.value === 3 ? 0.1 : 0.05,
-    };
-  });
-
-  const animatedHeartStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { scale: heartScale.value },
-        { rotate: `${heartRotation.value}deg` },
-      ],
-    };
-  });
-
-  const animatedPromoBadgeStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: promoBadgeScale.value }],
-    };
-  });
-  const animatedOrbitStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ rotate: `${diamondOrbit.value}deg` }],
-    };
-  });
-  const animatedShimmerStyle = useAnimatedStyle(() => {
-    const translateX = interpolate(diamondShimmer.value, [-1, 1], [-60, 60]);
-    return {
-      opacity: isDiamond ? 0.18 : 0,
-      transform: [{ translateX }, { rotate: '20deg' }],
-    };
-  });
-
-  const isDisabled = motel.plan === 'FREE';
-  const isDiamond = motel.plan === 'DIAMOND';
 
   const cardBody = (
     <Animated.View style={[styles.card, animatedCardStyle, isDisabled && styles.disabledCard, isDiamond && styles.cardNoMargin]}>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   ImageBackground,
   StyleSheet,
@@ -36,7 +36,6 @@ export default function AdCarouselItem({
   onTrackView,
   onTrackClick
 }) {
-  const [imageLoaded, setImageLoaded] = useState(false);
   const viewTracked = useRef(false);
 
   useEffect(() => {
@@ -47,36 +46,14 @@ export default function AdCarouselItem({
     }
   }, [ad, onTrackView]);
 
-  if (!ad) {
-    return null;
-  }
-
-  const handleAdPress = async () => {
-    // Registrar click
-    onTrackClick(ad.id);
-
-    // Si tiene linkUrl, abrir en navegador
-    if (ad.linkUrl) {
-      try {
-        const canOpen = await Linking.canOpenURL(ad.linkUrl);
-        if (canOpen) {
-          await Linking.openURL(ad.linkUrl);
-        }
-      } catch (error) {
-        console.warn('Error opening ad link:', error);
-      }
-    }
-  };
-
-  // Usar imagen del anuncio o imagen grande si existe
-  const image = ad.imageUrl || ad.largeImageUrl || 'https://via.placeholder.com/400x300';
-
+  // inputRange no depende de ad, siempre se puede calcular
   const inputRange = [
     (index - 1) * (CARD_WIDTH + SPACING),
     index * (CARD_WIDTH + SPACING),
     (index + 1) * (CARD_WIDTH + SPACING),
   ];
 
+  // Hook siempre antes de cualquier return condicional
   const animatedStyle = useAnimatedStyle(() => {
     const scale = interpolate(
       scrollX.value,
@@ -98,6 +75,29 @@ export default function AdCarouselItem({
     };
   });
 
+  // Early return después de todos los hooks
+  if (!ad) return null;
+
+  const handleAdPress = async () => {
+    // Registrar click
+    onTrackClick(ad.id);
+
+    // Si tiene linkUrl, abrir en navegador
+    if (ad.linkUrl) {
+      try {
+        const canOpen = await Linking.canOpenURL(ad.linkUrl);
+        if (canOpen) {
+          await Linking.openURL(ad.linkUrl);
+        }
+      } catch (error) {
+        console.warn('Error opening ad link:', error);
+      }
+    }
+  };
+
+  // Usar imagen del anuncio o imagen grande si existe
+  const image = ad.imageUrl || ad.largeImageUrl || 'https://via.placeholder.com/400x300';
+
   return (
     <Animated.View style={[styles.cardWrapper, animatedStyle]}>
       <TouchableOpacity activeOpacity={0.9} onPress={handleAdPress}>
@@ -105,7 +105,6 @@ export default function AdCarouselItem({
           source={{ uri: image }}
           style={styles.card}
           imageStyle={styles.cardImage}
-          onLoad={() => setImageLoaded(true)}
         >
           {/* Badge de Publicidad */}
           <View style={styles.adBadge}>

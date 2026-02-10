@@ -19,17 +19,10 @@ const COLORS = {
 };
 
 export default function MotelCardSmall({ motel, onPress }) {
-  if (!motel) return null;
+  // isDiamond con null safety — debe estar antes de los hooks
+  const isDiamond = motel?.plan === 'DIAMOND';
 
-  const fallbackPattern = require('../assets/motel-placeholder.png');
-  const image = motel.photos?.[0] || motel.thumbnail || null;
-  const imageSource = image ? { uri: image } : fallbackPattern;
-  const isPlaceholder = !image;
-  const ratingText =
-    typeof motel.rating === 'number' && motel.rating > 0
-      ? motel.rating.toFixed(1)
-      : 'N/A';
-  const isDiamond = motel.plan === 'DIAMOND';
+  // Todos los hooks ANTES del early return
   const diamondOrbit = useSharedValue(0);
   const diamondShimmer = useSharedValue(-1);
 
@@ -69,6 +62,18 @@ export default function MotelCardSmall({ motel, onPress }) {
       transform: [{ translateX }, { rotate: '20deg' }],
     };
   });
+
+  // Early return después de todos los hooks
+  if (!motel) return null;
+
+  const fallbackPattern = require('../assets/motel-placeholder.png');
+  const image = motel.photos?.[0] || motel.thumbnail || null;
+  const imageSource = image ? { uri: image } : fallbackPattern;
+  const isPlaceholder = !image;
+  const ratingText =
+    typeof motel.rating === 'number' && motel.rating > 0
+      ? motel.rating.toFixed(1)
+      : 'N/A';
 
   const cardBody = (
     <TouchableOpacity

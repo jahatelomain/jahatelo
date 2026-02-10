@@ -29,6 +29,16 @@ export default function AdListItem({ ad, onAdClick, onAdView }) {
     }
   }, [ad, onAdView]);
 
+  // Hook siempre antes de cualquier return condicional
+  const animatedCardStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+      elevation: elevation.value,
+      shadowOpacity: elevation.value === 3 ? 0.1 : 0.05,
+    };
+  });
+
+  // Early return después de todos los hooks
   if (!ad) return null;
 
   const handlePress = () => {
@@ -55,15 +65,6 @@ export default function AdListItem({ ad, onAdClick, onAdView }) {
     });
     elevation.value = withTiming(3, { duration: 200 });
   };
-
-  // Estilos animados
-  const animatedCardStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-      elevation: elevation.value,
-      shadowOpacity: elevation.value === 3 ? 0.1 : 0.05,
-    };
-  });
 
   return (
     <Pressable
