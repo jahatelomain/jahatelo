@@ -36,7 +36,7 @@ export default function MotelCardSmall({ motel, onPress }) {
     return () => {
       diamondOrbit.value = 0;
     };
-  }, [isDiamond]);
+  }, [isDiamond, diamondOrbit]);
 
   useEffect(() => {
     if (!isDiamond) return;
@@ -48,7 +48,7 @@ export default function MotelCardSmall({ motel, onPress }) {
     return () => {
       diamondShimmer.value = -1;
     };
-  }, [isDiamond]);
+  }, [isDiamond, diamondShimmer]);
 
   const animatedOrbitStyle = useAnimatedStyle(() => {
     return {

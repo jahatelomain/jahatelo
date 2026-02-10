@@ -52,7 +52,7 @@ export default function MotelCard({ motel, onPress }) {
         false
       );
     }
-  }, [motel?.tienePromo]);
+  }, [motel?.tienePromo, promoBadgeScale]);
 
   useEffect(() => {
     if (!isDiamond) return;
@@ -64,7 +64,7 @@ export default function MotelCard({ motel, onPress }) {
     return () => {
       diamondOrbit.value = 0;
     };
-  }, [isDiamond]);
+  }, [isDiamond, diamondOrbit]);
 
   useEffect(() => {
     if (!isDiamond) return;
@@ -76,7 +76,7 @@ export default function MotelCard({ motel, onPress }) {
     return () => {
       diamondShimmer.value = -1;
     };
-  }, [isDiamond]);
+  }, [isDiamond, diamondShimmer]);
 
   // Todos los useAnimatedStyle ANTES del early return
   const animatedCardStyle = useAnimatedStyle(() => {

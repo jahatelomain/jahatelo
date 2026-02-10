@@ -49,7 +49,7 @@ export default function LoadingScreen({ message = 'Cargando...' }) {
       -1,
       false
     );
-  }, []);
+  }, [opacity, rotate, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [

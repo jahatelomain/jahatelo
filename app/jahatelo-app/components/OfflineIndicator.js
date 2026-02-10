@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
-import { COLORS } from '../constants/theme';
 
 /**
  * Componente que muestra un banner cuando no hay conexión a internet
@@ -28,7 +27,7 @@ export default function OfflineIndicator() {
         useNativeDriver: true,
       }).start();
     }
-  }, [isOnline]);
+  }, [isOnline, slideAnim]);
 
   return (
     <Animated.View

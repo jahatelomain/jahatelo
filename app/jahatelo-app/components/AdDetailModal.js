@@ -17,12 +17,11 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
-  runOnJS,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../constants/theme';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MODAL_HEIGHT = SCREEN_HEIGHT * 0.7;
 
 /**
@@ -46,7 +45,7 @@ export default function AdDetailModal({ visible, ad, onClose, onTrackClick }) {
       backdropOpacity.value = withTiming(0, { duration: 200 });
       translateY.value = withTiming(MODAL_HEIGHT, { duration: 200 });
     }
-  }, [visible]);
+  }, [visible, backdropOpacity, translateY]);
 
   const backdropStyle = useAnimatedStyle(() => ({
     opacity: backdropOpacity.value,

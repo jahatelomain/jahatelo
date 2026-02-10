@@ -51,7 +51,7 @@ export default function AnimatedSplash({ onFinish }) {
       // 3. Delay pequeño
       Animated.delay(150),
     ]).start();
-  }, []);
+  }, [fadeAnim, scaleAnim, pinDropAnim, textFadeAnim]);
 
   return (
     <View style={styles.container}>

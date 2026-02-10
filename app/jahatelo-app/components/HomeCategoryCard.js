@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -10,7 +10,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import Svg, { Defs, Pattern, Rect, Path, Circle, Line, Polygon } from 'react-native-svg';
+import Svg, { Defs, Pattern, Rect, Path, Circle, Line } from 'react-native-svg';
 
 const COLORS = {
   text: '#2E0338',
@@ -182,7 +182,7 @@ export default function HomeCategoryCard({ label, iconName = 'ellipse', onPress,
   const PatternComponent = theme.PatternComponent;
 
   // Animación de pulso/wave automática
-  const triggerPulseAnimation = () => {
+  const triggerPulseAnimation = useCallback(() => {
     // Pulso del ícono con rotación sutil
     iconScale.value = withSequence(
       withSpring(1.15, { damping: 8, stiffness: 200 }),
@@ -201,7 +201,7 @@ export default function HomeCategoryCard({ label, iconName = 'ellipse', onPress,
       withTiming(0.6, { duration: 400 }),
       withDelay(200, withTiming(0, { duration: 600 }))
     );
-  };
+  }, [iconScale, iconRotate, glowOpacity]);
 
   useEffect(() => {
     // Animación inicial al montar (después de 500ms)
@@ -220,7 +220,7 @@ export default function HomeCategoryCard({ label, iconName = 'ellipse', onPress,
         clearInterval(intervalRef.current);
       }
     };
-  }, []);
+  }, [triggerPulseAnimation]);
 
   const handlePressIn = () => {
     cardScale.value = withSpring(0.95, { damping: 15, stiffness: 400 });

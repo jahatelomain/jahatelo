@@ -23,7 +23,7 @@ export default function MotelCardSkeleton() {
       -1, // Infinite
       false
     );
-  }, []);
+  }, [shimmerTranslateX]);
 
   const shimmerStyle = useAnimatedStyle(() => {
     return {

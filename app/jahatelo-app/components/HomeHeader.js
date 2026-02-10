@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Animated as RNAnimated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -47,7 +47,7 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
   }, [placeholderOpacity]);
 
   // Animación de pulse para los íconos
-  const triggerIconsPulse = () => {
+  const triggerIconsPulse = useCallback(() => {
     // Lupa (search) - pulso con rotación
     searchIconScale.value = withSequence(
       withSpring(1.15, { damping: 8, stiffness: 200 }),
@@ -88,7 +88,7 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
         withSpring(1, { damping: 12 })
       )
     );
-  };
+  }, [searchIconScale, searchIconRotate, arrowIconScale, arrowIconRotate, bellIconScale]);
 
   useEffect(() => {
     // Animación inicial al montar
@@ -107,7 +107,7 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
         clearInterval(intervalRef.current);
       }
     };
-  }, []);
+  }, [triggerIconsPulse]);
 
   const handleNearbyPress = () => {
     navigation?.navigate('NearbyMotels');
