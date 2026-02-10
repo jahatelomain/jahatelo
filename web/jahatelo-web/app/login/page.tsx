@@ -52,7 +52,7 @@ function LoginForm() {
         router.refresh();
       } else {
         setError(result.error || 'Error al iniciar sesión');
-        setNeedsVerification(!!result.needsVerification);
+        setNeedsVerification('needsVerification' in result ? !!result.needsVerification : false);
         setLoading(false);
       }
     } catch (err) {
