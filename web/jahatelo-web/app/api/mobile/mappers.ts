@@ -169,6 +169,8 @@ export function mapMotelToListItem(motel: MotelForList) {
     promoDescription: firstPromo?.description || null,
     // Plan del motel para badges y ordenamiento
     plan: motel.plan,
+    // Timestamp de última actualización para cache-busting en la app
+    updatedAt: motel.updatedAt,
   };
 }
 

@@ -319,12 +319,19 @@ export async function GET(request: NextRequest) {
         photos: normalizeList(motel.photos) || [],
       }));
 
+    // Timestamp del motel más recientemente actualizado para cache-busting en la app
+    const latestUpdatedAt = motels.reduce((max, m: any) => {
+      const t = m.updatedAt ? new Date(m.updatedAt).getTime() : 0;
+      return t > max ? t : max;
+    }, 0);
+
     return NextResponse.json({
       data,
       meta: {
         page,
         limit,
         total,
+        latestUpdatedAt,
       },
     });
   } catch (error) {

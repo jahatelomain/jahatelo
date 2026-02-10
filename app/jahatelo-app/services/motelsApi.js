@@ -4,6 +4,7 @@ import {
   getCachedMotelsList,
   cacheMotelDetail,
   getCachedMotelDetail,
+  clearMotelDetailCaches,
   addToRecentViews,
   updateLastSync,
 } from './cacheService';
@@ -247,32 +248,42 @@ export const fetchMotels = async (params = {}, useCache = true) => {
   // En desarrollo deshabilitamos caché para ver cambios al instante.
   const hasFilters = Object.keys(params).length > 0;
   const cacheEnabled = useCache && !__DEV__ && process.env.EXPO_PUBLIC_DISABLE_CACHE !== '1';
+
+  // Caché rápido: si no expiró el TTL, usar sin request al servidor
   if (!hasFilters && cacheEnabled) {
-    const cached = await getCachedMotelsList();
-    if (cached) {
+    const cachedData = await getCachedMotelsList();
+    if (cachedData) {
       debugLog('✅ Usando moteles del caché');
-      return cached;
+      return cachedData.motels;
     }
   }
 
   try {
     const response = await fetchJson(url);
     const motels = response.data.map(mapMotelSummary);
+    const serverUpdatedAt = response.meta?.latestUpdatedAt ?? null;
 
-    // Cachear solo si no hay filtros
     if (!hasFilters && cacheEnabled) {
-      await cacheMotelsList(motels);
+      // Si el servidor tiene datos más nuevos, limpiar detalles en caché para evitar stale data
+      const prevCache = await getCachedMotelsList();
+      if (prevCache?.serverUpdatedAt && serverUpdatedAt && prevCache.serverUpdatedAt !== serverUpdatedAt) {
+        debugLog('🔄 Datos cambiaron en el servidor, limpiando caché de detalles');
+        await clearMotelDetailCaches();
+      }
+      await cacheMotelsList(motels, serverUpdatedAt);
       await updateLastSync();
     }
 
     return motels;
   } catch (error) {
-    // Si falla el fetch, intentar devolver del caché
+    // Si falla el fetch, intentar devolver del caché (modo offline)
     debugLog('⚠️ Error al obtener moteles, intentando caché...');
-    const cached = cacheEnabled ? await getCachedMotelsList() : null;
-    if (cached) {
-      debugLog('✅ Usando moteles del caché (offline)');
-      return cached;
+    if (cacheEnabled) {
+      const cachedData = await getCachedMotelsList();
+      if (cachedData) {
+        debugLog('✅ Usando moteles del caché (offline)');
+        return cachedData.motels;
+      }
     }
     throw error;
   }
@@ -325,13 +336,13 @@ export const fetchMotelBySlug = async (slugOrId, useCache = true) => {
   // En desarrollo deshabilitamos caché para ver cambios al instante
   const cacheEnabled = useCache && !__DEV__ && process.env.EXPO_PUBLIC_DISABLE_CACHE !== '1';
 
-  let cachedDetail = null;
+  let cachedItem = null;
   if (cacheEnabled) {
-    const cached = await getCachedMotelDetail(slugOrId);
-    if (cached) {
-      cachedDetail = normalizeMotelPhotos(cached);
+    const cachedData = await getCachedMotelDetail(slugOrId);
+    if (cachedData) {
+      cachedItem = cachedData;
       debugLog('✅ Usando detalle del caché:', slugOrId);
-      return cachedDetail;
+      return normalizeMotelPhotos(cachedData.motel);
     }
   }
 
@@ -339,10 +350,11 @@ export const fetchMotelBySlug = async (slugOrId, useCache = true) => {
     const apiMotel = await fetchJson(url);
     const motelDetail = mapMotelDetail(apiMotel);
     const normalizedDetail = normalizeMotelPhotos(motelDetail);
+    // updatedAt viene del servidor en la respuesta del detalle
+    const serverUpdatedAt = apiMotel.updatedAt ?? null;
 
-    // Cachear el detalle solo si está habilitado
     if (cacheEnabled) {
-      await cacheMotelDetail(slugOrId, normalizedDetail);
+      await cacheMotelDetail(slugOrId, normalizedDetail, serverUpdatedAt);
     }
 
     // Agregar a vistos recientemente (formato resumido)
@@ -360,11 +372,11 @@ export const fetchMotelBySlug = async (slugOrId, useCache = true) => {
 
     return normalizedDetail;
   } catch (error) {
-    // Si falla el fetch, intentar devolver del caché
+    // Si falla el fetch, intentar devolver del caché (modo offline)
     debugLog(`⚠️ Error al obtener motel ${slugOrId}, intentando caché...`);
-    if (cachedDetail) {
+    if (cachedItem) {
       debugLog(`✅ Usando detalle de motel del caché (offline): ${slugOrId}`);
-      return cachedDetail;
+      return normalizeMotelPhotos(cachedItem.motel);
     }
     throw error;
   }

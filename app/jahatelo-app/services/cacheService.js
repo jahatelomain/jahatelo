@@ -10,9 +10,10 @@ const CACHE_KEYS = {
 };
 
 // Tiempo de expiración del caché (en milisegundos)
+// TTLs cortos para que los cambios del admin sean visibles rápido en producción
 const CACHE_EXPIRY = {
-  MOTELS_LIST: 1000 * 60 * 30, // 30 minutos
-  MOTEL_DETAIL: 1000 * 60 * 60, // 1 hora
+  MOTELS_LIST: 1000 * 60 * 5,   // 5 minutos (antes: 30 min)
+  MOTEL_DETAIL: 1000 * 60 * 10, // 10 minutos (antes: 60 min)
   RECENT_VIEWS: 1000 * 60 * 60 * 24 * 7, // 7 días
   SEARCH_HISTORY: 1000 * 60 * 60 * 24 * 30, // 30 días
 };
@@ -74,33 +75,64 @@ export const clearCache = async () => {
 };
 
 /**
- * Guarda la lista de moteles en caché
+ * Guarda la lista de moteles en caché junto con el serverUpdatedAt del servidor.
+ * El serverUpdatedAt permite detectar cambios en el backend y limpiar detalles stale.
  */
-export const cacheMotelsList = async (motels) => {
-  return await setCache(CACHE_KEYS.MOTELS_LIST, motels);
+export const cacheMotelsList = async (motels, serverUpdatedAt = null) => {
+  return await setCache(CACHE_KEYS.MOTELS_LIST, { motels, serverUpdatedAt });
 };
 
 /**
- * Obtiene la lista de moteles del caché
+ * Obtiene la lista de moteles del caché.
+ * Devuelve { motels, serverUpdatedAt } o null si no hay caché válido.
+ * Incluye compatibilidad con el formato viejo (array plano).
  */
 export const getCachedMotelsList = async () => {
-  return await getCache(CACHE_KEYS.MOTELS_LIST, CACHE_EXPIRY.MOTELS_LIST);
+  const cached = await getCache(CACHE_KEYS.MOTELS_LIST, CACHE_EXPIRY.MOTELS_LIST);
+  if (!cached) return null;
+  // Compatibilidad con formato viejo (array plano sin serverUpdatedAt)
+  if (Array.isArray(cached)) return { motels: cached, serverUpdatedAt: null };
+  return cached;
 };
 
 /**
- * Guarda el detalle de un motel en caché
+ * Guarda el detalle de un motel en caché junto con el serverUpdatedAt.
  */
-export const cacheMotelDetail = async (motelId, motelData) => {
+export const cacheMotelDetail = async (motelId, motelData, serverUpdatedAt = null) => {
   const key = `${CACHE_KEYS.MOTEL_DETAIL}${motelId}`;
-  return await setCache(key, motelData);
+  return await setCache(key, { motel: motelData, serverUpdatedAt });
 };
 
 /**
- * Obtiene el detalle de un motel del caché
+ * Obtiene el detalle de un motel del caché.
+ * Devuelve { motel, serverUpdatedAt } o null si no hay caché válido.
+ * Incluye compatibilidad con el formato viejo (objeto directo sin wrapper).
  */
 export const getCachedMotelDetail = async (motelId) => {
   const key = `${CACHE_KEYS.MOTEL_DETAIL}${motelId}`;
-  return await getCache(key, CACHE_EXPIRY.MOTEL_DETAIL);
+  const cached = await getCache(key, CACHE_EXPIRY.MOTEL_DETAIL);
+  if (!cached) return null;
+  // Compatibilidad con formato viejo (objeto directo sin wrapper { motel, serverUpdatedAt })
+  if (cached && !cached.motel) return { motel: cached, serverUpdatedAt: null };
+  return cached;
+};
+
+/**
+ * Limpia el caché de todos los detalles de moteles.
+ * Útil cuando se detecta que el servidor tiene datos más nuevos que el caché de lista.
+ */
+export const clearMotelDetailCaches = async () => {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const detailKeys = keys.filter(key => key.startsWith(CACHE_KEYS.MOTEL_DETAIL));
+    if (detailKeys.length > 0) {
+      await AsyncStorage.multiRemove(detailKeys);
+    }
+    return true;
+  } catch (error) {
+    console.error('Error clearing motel detail caches:', error);
+    return false;
+  }
 };
 
 /**
