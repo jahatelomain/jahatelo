@@ -2,6 +2,23 @@ import { z } from 'zod';
 
 export const IdSchema = z.string().min(1, 'ID inválido');
 
+const emptyToUndefined = (value: unknown) => (value === '' ? undefined : value);
+
+const UploadOrUrlSchema = z.string().refine(
+  (value) => value.startsWith('/uploads/') || z.string().url().safeParse(value).success,
+  'URL de imagen inválida'
+);
+
+const UploadOrUrlOptionalSchema = z.preprocess(
+  emptyToUndefined,
+  UploadOrUrlSchema.optional().nullable()
+);
+
+const UrlOptionalSchema = z.preprocess(
+  emptyToUndefined,
+  z.string().url('URL inválida').optional().nullable()
+);
+
 // ============================================
 // AUTENTICACIÓN
 // ============================================
@@ -56,9 +73,30 @@ export const MotelSchema = z.object({
   whatsapp: z.string().regex(/^\+?[0-9]{9,15}$/, 'WhatsApp inválido').optional().nullable(),
   website: z.string().url('URL inválida').optional().nullable(),
   instagram: z.string().optional().nullable(),
-  featuredPhoto: z.string().url('URL de imagen inválida').optional().nullable(),
-  featuredPhotoWeb: z.string().url('URL de imagen inválida').optional().nullable(),
-  featuredPhotoApp: z.string().url('URL de imagen inválida').optional().nullable(),
+  featuredPhoto: z
+    .string()
+    .refine(
+      (value) => value.startsWith('/uploads/') || z.string().url().safeParse(value).success,
+      'URL de imagen inválida'
+    )
+    .optional()
+    .nullable(),
+  featuredPhotoWeb: z
+    .string()
+    .refine(
+      (value) => value.startsWith('/uploads/') || z.string().url().safeParse(value).success,
+      'URL de imagen inválida'
+    )
+    .optional()
+    .nullable(),
+  featuredPhotoApp: z
+    .string()
+    .refine(
+      (value) => value.startsWith('/uploads/') || z.string().url().safeParse(value).success,
+      'URL de imagen inválida'
+    )
+    .optional()
+    .nullable(),
   status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
   isActive: z.boolean().optional(),
   contactName: z.string().min(2).max(100).optional().nullable(),
@@ -158,7 +196,7 @@ export const PromoSchema = z.object({
   motelId: IdSchema,
   title: z.string().min(3, 'Título muy corto').max(100, 'Título muy largo'),
   description: z.string().max(500, 'Descripción muy larga').optional().nullable(),
-  imageUrl: z.string().url('URL de imagen inválida').optional().nullable(),
+  imageUrl: UploadOrUrlOptionalSchema,
   validFrom: z.string().datetime('Fecha de inicio inválida').optional().nullable(),
   validUntil: z.string().datetime('Fecha de fin inválida').optional().nullable(),
   isActive: z.boolean().optional(),
@@ -212,12 +250,12 @@ export const NotificationSchema = z.object({
 export const AdvertisementSchema = z.object({
   title: z.string().min(3, 'Título muy corto').max(100, 'Título muy largo'),
   advertiser: z.string().min(2, 'Anunciante muy corto').max(100, 'Anunciante muy largo'),
-  imageUrl: z.string().url('URL de imagen inválida'),
-  largeImageUrl: z.string().url('URL de imagen grande inválida').optional().nullable(),
-  largeImageUrlWeb: z.string().url('URL de imagen grande (web) inválida').optional().nullable(),
-  largeImageUrlApp: z.string().url('URL de imagen grande (app) inválida').optional().nullable(),
+  imageUrl: UploadOrUrlSchema,
+  largeImageUrl: UploadOrUrlOptionalSchema,
+  largeImageUrlWeb: UploadOrUrlOptionalSchema,
+  largeImageUrlApp: UploadOrUrlOptionalSchema,
   description: z.string().max(500, 'Descripción muy larga').optional().nullable(),
-  linkUrl: z.string().url('URL de enlace inválida').optional().nullable(),
+  linkUrl: UrlOptionalSchema,
   placement: z.enum(['POPUP_HOME', 'CAROUSEL', 'LIST_INLINE']),
   status: z.enum(['ACTIVE', 'PAUSED', 'INACTIVE']),
   priority: z.number().int().min(0, 'Prioridad mínima 0').max(100, 'Prioridad máxima 100'),
@@ -490,7 +528,7 @@ export const FinancialPaymentCreateSchema = z.object({
 
 export const RoomPhotoSchema = z.object({
   roomTypeId: IdSchema,
-  url: z.string().url('URL de imagen inválida'),
+  url: UploadOrUrlSchema,
   order: z.coerce.number().int().min(0).optional().nullable(),
 });
 
@@ -529,7 +567,7 @@ export const MenuItemSchema = z.object({
   name: z.string().min(2).max(100),
   description: z.string().max(500).optional().nullable(),
   price: z.coerce.number().int().min(0),
-  photoUrl: z.string().url().optional().nullable(),
+  photoUrl: UploadOrUrlOptionalSchema,
 });
 
 export const UpdateMenuItemSchema = MenuItemSchema.partial().omit({ categoryId: true });
@@ -601,7 +639,7 @@ export const MobileReviewQuerySchema = z.object({
 export const MobileProfileUpdateSchema = z.object({
   name: z.string().min(2).max(100).optional().nullable(),
   phone: z.string().regex(/^\+?[0-9]{9,15}$/).optional().nullable(),
-  profilePhoto: z.string().url().optional().nullable(),
+  profilePhoto: UploadOrUrlOptionalSchema,
   pushToken: z.string().max(200).optional().nullable(),
   deviceInfo: z.record(z.string(), z.any()).optional().nullable(),
 });

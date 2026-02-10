@@ -176,7 +176,7 @@ export default function HomeScreen() {
           }
         >
           <PromoCarousel
-            promos={featured.length ? featured : motels.slice(0, 5)}
+            promos={featured}
             ads={bannerAds}
             onPromoPress={handleMotelPress}
             onAdClick={handleAdClick}

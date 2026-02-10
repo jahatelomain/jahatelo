@@ -70,8 +70,7 @@ export async function POST(request: Request) {
       const targetPath = path.join(uploadDir, filename);
       await writeFile(targetPath, buffer);
       const relativeDir = path.dirname(key).replace(/^uploads\//, '');
-      const base = process.env.LOCAL_UPLOADS_BASE_URL || new URL(request.url).origin;
-      const url = `${base}/uploads/${relativeDir}/${filename}`;
+      const url = `/uploads/${relativeDir}/${filename}`;
       return NextResponse.json({ url });
     }
 

@@ -54,11 +54,21 @@ function LoginForm() {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-0 mb-4">
-              <img src="/logo-icon.png" alt="Jahatelo" className="w-16 h-16 object-contain" />
+              <img
+                src="/logo-icon.png"
+                alt="Jahatelo"
+                className="w-16 h-16 object-contain"
+                onError={(event) => {
+                  event.currentTarget.src = '/logo-master.png';
+                }}
+              />
               <img
                 src="/logo-text-gradient.png"
                 alt="Jahatelo"
                 className="h-9 w-auto object-contain -ml-0.5"
+                onError={(event) => {
+                  event.currentTarget.src = '/logo-master.png';
+                }}
               />
             </div>
             <h2 className="text-xl font-semibold text-slate-900 mb-2">

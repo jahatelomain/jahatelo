@@ -322,11 +322,16 @@ export const fetchMotelBySlug = async (slugOrId, useCache = true) => {
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}/motels/${slugOrId}`;
 
+  // En desarrollo deshabilitamos caché para ver cambios al instante
+  const cacheEnabled = useCache && !__DEV__ && process.env.EXPO_PUBLIC_DISABLE_CACHE !== '1';
+
   let cachedDetail = null;
-  if (useCache) {
+  if (cacheEnabled) {
     const cached = await getCachedMotelDetail(slugOrId);
     if (cached) {
       cachedDetail = normalizeMotelPhotos(cached);
+      debugLog('✅ Usando detalle del caché:', slugOrId);
+      return cachedDetail;
     }
   }
 
@@ -335,8 +340,10 @@ export const fetchMotelBySlug = async (slugOrId, useCache = true) => {
     const motelDetail = mapMotelDetail(apiMotel);
     const normalizedDetail = normalizeMotelPhotos(motelDetail);
 
-    // Cachear el detalle
-    await cacheMotelDetail(slugOrId, normalizedDetail);
+    // Cachear el detalle solo si está habilitado
+    if (cacheEnabled) {
+      await cacheMotelDetail(slugOrId, normalizedDetail);
+    }
 
     // Agregar a vistos recientemente (formato resumido)
     await addToRecentViews({

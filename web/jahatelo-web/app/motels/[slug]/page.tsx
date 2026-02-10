@@ -1,12 +1,11 @@
 import { notFound } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import FavoriteButtonClient from '@/components/public/FavoriteButtonClient';
 import ContactButtons from '@/components/public/ContactButtons';
 import PromosTab from '@/components/public/PromosTab';
-import ImageGallery from '@/components/public/ImageGallery';
 import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
 import ShareButton from '@/components/public/ShareButton';
 import ReviewsSection from '@/components/public/ReviewsSection';
@@ -16,6 +15,8 @@ import * as LucideIcons from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { generateBreadcrumbSchema, generateMotelSchema } from '@/lib/seo';
 import Tabs from '@/components/public/Tabs';
+import { headers } from 'next/headers';
+import { normalizeLocalUploadPath } from '@/lib/normalizeLocalUrl';
 
 interface MotelDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -24,8 +25,12 @@ interface MotelDetailPageProps {
 export default async function MotelDetailPage({ params }: MotelDetailPageProps) {
   const { slug } = await params;
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
+  const headersList = await headers();
+  const host = headersList.get('x-forwarded-host') || headersList.get('host');
+  const protocol = headersList.get('x-forwarded-proto') || 'http';
+  const baseUrl = host ? `${protocol}://${host}` : 'http://localhost:3000';
 
-  const motel = await prisma.motel.findUnique({
+  let motel = await prisma.motel.findUnique({
     where: { slug },
     include: {
       photos: {
@@ -70,16 +75,48 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     return null;
   }
 
+  const normalizedMotel = {
+    ...motel,
+    featuredPhoto: normalizeLocalUploadPath(motel.featuredPhoto),
+    featuredPhotoWeb: normalizeLocalUploadPath(motel.featuredPhotoWeb),
+    featuredPhotoApp: normalizeLocalUploadPath(motel.featuredPhotoApp),
+    photos: motel.photos.map((photo) => ({
+      ...photo,
+      url: normalizeLocalUploadPath(photo.url) || photo.url,
+    })),
+    promos: motel.promos.map((promo) => ({
+      ...promo,
+      imageUrl: normalizeLocalUploadPath(promo.imageUrl),
+    })),
+    rooms: motel.rooms.map((room) => ({
+      ...room,
+      photos: room.photos.map((photo) => ({
+        ...photo,
+        url: normalizeLocalUploadPath(photo.url) || photo.url,
+      })),
+    })),
+    menuCategories: motel.menuCategories.map((cat) => ({
+      ...cat,
+      items: cat.items.map((item) => ({
+        ...item,
+        photoUrl: normalizeLocalUploadPath(item.photoUrl),
+      })),
+    })),
+  };
+
+  motel = normalizedMotel as typeof motel;
+
   // Get main photo
   const featuredPhotoWeb = motel.featuredPhotoWeb || motel.featuredPhoto || null;
   const facadePhoto = motel.photos.find((p) => p.kind === 'FACADE');
-  const mainPhoto = facadePhoto || motel.photos[0] || (featuredPhotoWeb ? { url: featuredPhotoWeb } : undefined);
-  const heroPhotoUrl = mainPhoto?.url || featuredPhotoWeb || null;
-  const hasHeroPhoto = Boolean(heroPhotoUrl);
-  const galleryPhotos = [
-    ...(featuredPhotoWeb ? [{ url: featuredPhotoWeb, alt: motel.name }] : []),
-    ...motel.photos.map((photo) => ({ url: photo.url, alt: motel.name })),
-  ].filter((photo, index, list) => list.findIndex((item) => item.url === photo.url) === index);
+  const mainPhoto =
+    facadePhoto || motel.photos[0] || (featuredPhotoWeb ? { url: featuredPhotoWeb } : undefined);
+  const heroPhotoUrl =
+    featuredPhotoWeb ||
+    motel.featuredPhotoApp ||
+    motel.featuredPhoto ||
+    mainPhoto?.url ||
+    null;
 
   // Safe rating
   const safeRating = motel.ratingAvg || 0;
@@ -94,11 +131,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     label: 'Detalles',
     content: (
         <div>
-          {galleryPhotos.length > 0 && (
-            <div className="mb-8">
-              <ImageGallery images={galleryPhotos} />
-            </div>
-          )}
+          {/* Galería removida: la imagen principal vive en el header */}
           {/* Description */}
           {motel.description && (
             <div className="mb-8">
@@ -452,19 +485,15 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
         className="relative h-96"
         style={{
           ...MOTEL_PATTERN_STYLE,
+          ...(heroPhotoUrl
+            ? {
+                backgroundImage: `url(${heroPhotoUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }
+            : {}),
         }}
       >
-        {hasHeroPhoto ? (
-          <Image
-            src={heroPhotoUrl as string}
-            alt={motel.name}
-            fill
-            priority
-            quality={85}
-            className="object-cover"
-            sizes="100vw"
-          />
-        ) : null}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
         {/* Badges */}

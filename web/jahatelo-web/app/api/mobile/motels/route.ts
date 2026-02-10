@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { mapMotelToListItem } from '../mappers';
+import { normalizeLocalUrl, normalizeLocalUrls } from '@/lib/normalizeLocalUrl';
 import { MobileMotelsQuerySchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
 
@@ -54,6 +56,12 @@ const equalsFilter = (value?: string) =>
 
 export async function GET(request: NextRequest) {
   try {
+    const headersList = await headers();
+    const host = headersList.get('x-forwarded-host') || headersList.get('host');
+    const protocol = headersList.get('x-forwarded-proto') || 'http';
+    const baseUrl = host ? `${protocol}://${host}` : 'http://localhost:3000';
+    const normalizeList = (list?: string[] | null) =>
+      normalizeLocalUrls(list, baseUrl);
     const { searchParams } = new URL(request.url);
     const queryResult = MobileMotelsQuerySchema.safeParse({
       search: searchParams.get('search') || undefined,
@@ -301,7 +309,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Map motels to mobile format
-    const data = motels.map(mapMotelToListItem);
+    const data = motels
+      .map(mapMotelToListItem)
+      .map((motel) => ({
+        ...motel,
+        thumbnail: normalizeLocalUrl(motel.thumbnail, baseUrl),
+        featuredPhoto: normalizeLocalUrl(motel.featuredPhoto, baseUrl),
+        promoImageUrl: normalizeLocalUrl(motel.promoImageUrl, baseUrl),
+        photos: normalizeList(motel.photos) || [],
+      }));
 
     return NextResponse.json({
       data,

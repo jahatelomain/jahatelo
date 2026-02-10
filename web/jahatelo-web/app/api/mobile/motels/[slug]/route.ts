@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { mapMotelToDetail } from '../../mappers';
+import { normalizeLocalUrl, normalizeLocalUrls } from '@/lib/normalizeLocalUrl';
 import { MobileMotelSlugSchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
 
@@ -9,6 +11,12 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const headersList = await headers();
+    const host = headersList.get('x-forwarded-host') || headersList.get('host');
+    const protocol = headersList.get('x-forwarded-proto') || 'http';
+    const baseUrl = host ? `${protocol}://${host}` : 'http://localhost:3000';
+    const normalizeList = (list?: string[] | null) =>
+      normalizeLocalUrls(list, baseUrl);
     const { slug } = await params;
     const slugResult = MobileMotelSlugSchema.safeParse({ slug });
     if (!slugResult.success) {
@@ -89,8 +97,30 @@ export async function GET(
     }
 
     const data = mapMotelToDetail(motel);
+    const normalized = {
+      ...data,
+      thumbnail: normalizeLocalUrl(data.thumbnail, baseUrl),
+      featuredPhoto: normalizeLocalUrl(data.featuredPhoto, baseUrl),
+      photos: normalizeList(data.photos) || [],
+      allPhotos: normalizeList(data.allPhotos) || [],
+      promos: (data.promos || []).map((promo) => ({
+        ...promo,
+        imageUrl: normalizeLocalUrl(promo.imageUrl, baseUrl),
+      })),
+      menu: (data.menu || []).map((cat) => ({
+        ...cat,
+        items: (cat.items || []).map((item) => ({
+          ...item,
+          photoUrl: normalizeLocalUrl(item.photoUrl, baseUrl),
+        })),
+      })),
+      rooms: (data.rooms || []).map((room) => ({
+        ...room,
+        photos: normalizeList(room.photos) || [],
+      })),
+    };
 
-    return NextResponse.json(data);
+    return NextResponse.json(normalized);
   } catch (error) {
     console.error('Error in GET /api/mobile/motels/[slug]:', error);
     if (error instanceof z.ZodError) {

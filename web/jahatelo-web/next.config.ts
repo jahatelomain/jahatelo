@@ -58,7 +58,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               `script-src 'self'${isDev ? " 'unsafe-eval'" : ''} 'unsafe-inline' https://maps.googleapis.com`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: https: blob: https://jahatelo-media.s3.us-east-1.amazonaws.com",
+              `img-src 'self' data: https:${isDev ? ' http:' : ''} blob: https://jahatelo-media.s3.us-east-1.amazonaws.com`,
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://jahatelo.com https://www.jahatelo.com https://maps.googleapis.com https://exp.host https://jahatelo-media.s3.us-east-1.amazonaws.com",
               "frame-src 'self' https://maps.google.com",

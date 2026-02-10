@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
 import Image from 'next/image';
 
 type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -47,7 +48,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
     );
   };
 
-  const displayPhoto = motel.featuredPhotoWeb || motel.featuredPhoto || null;
+  const displayPhoto = normalizeLocalUrl(motel.featuredPhotoWeb || motel.featuredPhoto || null);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-all group">

@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { EmptySchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
+import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 60; // Cache por 60 segundos
@@ -14,6 +16,10 @@ export const revalidate = 60; // Cache por 60 segundos
  */
 export async function GET() {
   try {
+    const headersList = await headers();
+    const host = headersList.get('x-forwarded-host') || headersList.get('host');
+    const protocol = headersList.get('x-forwarded-proto') || 'http';
+    const baseUrl = host ? `${protocol}://${host}` : 'http://localhost:3000';
     EmptySchema.parse({});
     // Query optimizada: sin joins innecesarios, solo campos esenciales
     const motels = await prisma.motel.findMany({
@@ -54,7 +60,7 @@ export async function GET() {
           longitude: m.longitude!,
           plan: m.plan,
           isFeatured: m.isFeatured,
-          featuredPhoto: m.featuredPhotoApp ?? m.featuredPhotoWeb ?? m.featuredPhoto ?? null,
+          featuredPhoto: normalizeLocalUrl(m.featuredPhotoApp ?? m.featuredPhotoWeb ?? m.featuredPhoto ?? null, baseUrl),
           hasPromo: m.promos.length > 0,
         })),
       },

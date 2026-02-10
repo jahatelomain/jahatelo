@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import * as LucideIcons from 'lucide-react';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import DirtyBanner from '@/components/admin/DirtyBanner';
+import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
 
 type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -124,6 +125,7 @@ export default function MotelDetailPage() {
   const [motel, setMotel] = useState<Motel | null>(null);
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [geocoding, setGeocoding] = useState(false);
   const [activeTab, setActiveTab] = useState<'promos' | 'details' | 'rooms' | 'menu' | 'commercial'>('details');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
@@ -321,12 +323,19 @@ export default function MotelDetailPage() {
 
   const fetchMotel = async () => {
     try {
+      setFetchError(null);
       const res = await fetch(`/api/admin/motels/${id}`);
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          const next = encodeURIComponent(`/admin/motels/${id}`);
+          router.replace(`/admin/login?next=${next}`);
+          return;
+        }
         setMotel(null);
+        setFetchError(data?.error || 'No se pudo cargar el motel');
         return;
       }
-      const data = await res.json();
       setMotel(data);
       setMotelForm({
         name: data.name,
@@ -354,12 +363,13 @@ export default function MotelDetailPage() {
         plan: data.plan || 'BASIC',
         nextBillingAt: data.nextBillingAt || '',
         isFeatured: data.isFeatured || false,
-        featuredPhoto: data.featuredPhoto || '',
-        featuredPhotoWeb: data.featuredPhotoWeb || '',
-        featuredPhotoApp: data.featuredPhotoApp || '',
+        featuredPhoto: normalizeUploadUrl(data.featuredPhoto || '') || '',
+        featuredPhotoWeb: normalizeUploadUrl(data.featuredPhotoWeb || '') || '',
+        featuredPhotoApp: normalizeUploadUrl(data.featuredPhotoApp || '') || '',
       });
     } catch (error) {
       console.error('Error fetching motel:', error);
+      setFetchError('Error al obtener motel');
     } finally {
       setLoading(false);
     }
@@ -463,12 +473,14 @@ export default function MotelDetailPage() {
     if (!value) return null;
     const trimmed = value.trim();
     if (trimmed === '') return null;
-    if (trimmed.startsWith('/uploads/')) {
-      if (typeof window !== 'undefined') {
-        return `${window.location.origin}${trimmed}`;
-      }
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      const match = trimmed.match(/\/uploads\/.+$/);
+      if (match) return match[0];
     }
-    return trimmed;
+    if (trimmed.startsWith('/uploads/')) {
+      return trimmed;
+    }
+    return normalizeLocalUrl(trimmed);
   };
 
   const normalizeMapUrl = (value: string) => {
@@ -1242,7 +1254,11 @@ export default function MotelDetailPage() {
   }
 
   if (!motel) {
-    return <div className="text-center py-8">Motel no encontrado</div>;
+    return (
+      <div className="text-center py-8">
+        {fetchError || 'Motel no encontrado'}
+      </div>
+    );
   }
 
   // Constantes seguras para evitar errores de undefined
@@ -1253,8 +1269,8 @@ export default function MotelDetailPage() {
   // Constantes seguras para valores numéricos
   const safeRatingAvg = typeof motel.ratingAvg === 'number' ? motel.ratingAvg : 0;
   const safeRatingCount = typeof motel.ratingCount === 'number' ? motel.ratingCount : 0;
-  const featuredPhotoWeb = motel.featuredPhotoWeb || motel.featuredPhoto || null;
-  const featuredPhotoApp = motel.featuredPhotoApp || motel.featuredPhoto || null;
+  const featuredPhotoWeb = normalizeLocalUrl(motel.featuredPhotoWeb || motel.featuredPhoto || null);
+  const featuredPhotoApp = normalizeLocalUrl(motel.featuredPhotoApp || motel.featuredPhoto || null);
 
   // Función helper para formatear precios de forma segura
   const formatPrice = (price: number | null | undefined): string => {
@@ -1986,7 +2002,7 @@ export default function MotelDetailPage() {
                         {motelForm.featuredPhotoWeb && (
                           <div className="mt-3">
                             <img
-                              src={motelForm.featuredPhotoWeb}
+                              src={normalizeLocalUrl(motelForm.featuredPhotoWeb) || ''}
                               alt="Preview web"
                               className="w-full aspect-[16/9] object-cover rounded-lg border border-slate-200"
                               onError={(e) => {
@@ -2040,7 +2056,7 @@ export default function MotelDetailPage() {
                         {motelForm.featuredPhotoApp && (
                           <div className="mt-3">
                             <img
-                              src={motelForm.featuredPhotoApp}
+                              src={normalizeLocalUrl(motelForm.featuredPhotoApp) || ''}
                               alt="Preview app"
                               className="w-full aspect-[4/5] object-cover rounded-lg border border-slate-200"
                               onError={(e) => {
@@ -2890,7 +2906,7 @@ export default function MotelDetailPage() {
                               }`}
                             >
                               <img
-                                src={photo.url}
+                                src={normalizeLocalUrl(photo.url) || ''}
                                 alt="Room photo"
                                 className="w-full h-32 object-cover rounded-lg border border-slate-200 pointer-events-none"
                                 onError={(e) => {

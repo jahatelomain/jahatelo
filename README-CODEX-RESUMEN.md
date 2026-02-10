@@ -1,75 +1,49 @@
 # Codex resumen (estado actual)
 
 ## Ultimo estado
-- Admin: infinite scroll en listas (moteles, usuarios, banners, promos, prospects, inbox, audit, financiero, roles, amenities) con hook `useInfiniteScroll`.
-- Moteles: variantes de foto principal `featuredPhotoWeb` (16:9) y `featuredPhotoApp` (4:5) + auto-crop al subir y previews en admin.
-- Web/App: uso de `featuredPhotoWeb` en web y `featuredPhotoApp` en app (fallback a `featuredPhoto`).
-- Script: `scripts/update-coordinates-from-mapurl.js` para actualizar lat/long desde `mapUrl`.
-- Next: `turbopack.root` configurado en `web/jahatelo-web/next.config.ts` para evitar root incorrecto.
-- DB local (Docker): `jahatelo-postgres` corre en 5433, DB `jahatelo_local` con datos (116 moteles).
-- Se alineo el modelo de planes: `FREE/BASIC/GOLD/DIAMOND`. Se elimino `isFinanciallyEnabled` y se paso el control a plan + `isActive` (habilitado/deshabilitado).
-- Se bloqueo el acceso a detalles para plan `FREE` en web/app (lista visible, detalle bloqueado).
-- Se unifico UX de anuncios: inline abre modal con info + link si existe. En app, listas ahora abren `AdDetailModal`.
-- Se elimino `SECTION_BANNER` y se dejo solo `CAROUSEL`, `POPUP_HOME`, `LIST_INLINE` (schema + admin + app + web).
-- Web: carrusel ahora mezcla moteles + anuncios `CAROUSEL` con modal; listado promos filtrable con `?promos=1`.
-- Web: se agrego pagina `/ciudades` para listar ciudades primero (como en la app). Home enlaza a `/ciudades`.
-- Web: botones de favoritos en cards (`MotelCard`) para paridad con app.
-- Vercel: `web/jahatelo-web/vercel.json` ya no ejecuta migraciones en build (solo `prisma generate && next build`).
-- Prisma: `prisma.config.ts` usa `DIRECT_URL` para migraciones (cuando aplique).
-- App: promos con filtro de radio (2/5/10/20/50/Todos) y acceso a promos por ciudad.
-- App: skeletons y anuncios inline solo aparecen cuando hay datos reales (evita glitch de carga).
-- App: sonidos para favoritos y settings para activar/desactivar sonidos y notificaciones de publicidad.
-- Web: anuncios inline y cards de ciudades con estilo alineado al resto del listado.
-- Performance: cache de ciudades en web a 5 min, FlatList con `maxToRenderPerBatch`/`initialNumToRender`, Next/Image con `quality=85`.
-- Web: se elimino `/motels` y se dejo solo `/search` con nombre "Buscar Moteles"; navbar/footer y links actualizados.
-- Web: placeholders de imagen con `motel-placeholder.png` unificados en cards, carrusel y galeria cuando no hay foto.
-- Web: orden por plan en `search` y `nearby` (prioriza `DIAMOND`/`GOLD`).
-- App/Web: visuales de planes en mapa (pines + badges) y animaciones para planes superiores.
-- Seguridad web: CSRF en middleware ajustado para same-origin en prod (Vercel).
-- Web: chips rápidos de amenities en /search ahora salen solo de amenities activos (endpoint nuevo /api/amenities/active).
-- Web: eliminada sección “Búsquedas populares” en /search y compacto el layout de filtros.
-- Web: “Contáctanos” sin acento en header + páginas.
-- Web: mapa con pines AdvancedMarker (corazón) + jerarquía por plan + tamaño aumentado.
+### Web
+- Detalle de motel sin galeria inferior; hero en header con imagen de fondo.
+- Normalizacion de URLs de imagenes para entornos locales (helpers y uso en home/detalle/admin/mobile API).
+- Upload local devuelve rutas relativas `/uploads/...`.
+- Admin: formularios y previews de imagen normalizan rutas locales; header del detalle usa URL normalizada.
+- Admin: errores muestran mensaje real (y redirige a login en 401/403) en detalle de motel.
+- CSP: permite `http:` en `img-src` solo en dev para evitar bloqueos de imagen local.
+- Soporte: pagina `/soporte` creada con header/footer y link solo en footer/perfil (no en navbar).
+### App
+- Assets unificados en `app/jahatelo-app/assets` y web usa symlinks; kit de tiendas completo en `kit para subida a stores`.
+- Email verification completo (request/verify), SMTP Hostinger, admins exentos de verificacion.
+- SMS OTP funcionando con AWS SNS; endpoints mobile/auth/whatsapp.
+- Carrusel de destacados solo muestra `isFeatured` (sin fallback a primeros 5).
+- Cache deshabilitable en dev; `fetchMotels` y `fetchMotelBySlug` respetan `EXPO_PUBLIC_DISABLE_CACHE`.
+- Popup ads con fallback seguro cuando imagen falla.
 
 ## Fixes recientes
-- Migraciones legacy corregidas (add_scheduled_notifications, add_payment_history, update_plan/remove_financial_flag) + placeholder `20251117184545_init`.
-- Nuevo migration: `20260131160000_add_featured_photo_variants`.
-- Se corrigio type error en `app/motels/[slug]/page.tsx` con guard despues de `notFound()`.
-- Web ads fetch: se evita parsear HTML como JSON (proteccion de respuesta no JSON).
-- TypeScript: `promos` agregado a `searchParams` en `web/jahatelo-web/app/motels/page.tsx`.
-- Input de filtros en web con texto negro para legibilidad.
-- Imagenes: placeholder en web con calidad balanceada para mejor performance percibida.
-- Admin: conteo de "Promociones Activas" usa `promo.isActive` + motel aprobado/activo.
-- Auth: se removio Facebook en UI/web/app/docs; solo Google + Apple (iOS) + email/password.
-- Auth: login SMS OTP (web + mobile) con AWS SNS, rate limit y expiración.
+- Admin Banners: error 500 por columna faltante (`largeImageUrlWeb`) se resolvio aplicando migraciones pendientes en DB local con `DATABASE_URL="postgresql://postgres:postgres@localhost:5433/jahatelo_local" DIRECT_URL="postgresql://postgres:postgres@localhost:5433/jahatelo_local" npx prisma migrate deploy` (migraciones `20260203180000_add_ad_popup_variants` y `20260205190000_add_whatsapp_otp_updated_at`). Supabase ya tenia estas columnas y estaba al dia.
+- Validaciones Zod de URLs/imagenes ahora aceptan `/uploads/...` y strings vacios en campos opcionales: anuncios (web/app), promos, fotos de habitaciones, menu items y profilePhoto (mobile).
 
-## Cambios de DB (Supabase)
-- Migraciones de planes y eliminacion de `SECTION_BANNER` se ejecutaron via SQL Editor (por limitaciones IPv6).
+## Configuracion de DB por entorno (web)
 
-## Estado actual de trabajo (sin commit)
-- OTP SMS: backend usa AWS SNS (Twilio removido); `.env.example` actualizado con AWS_SNS_* y OTP_DEFAULT_COUNTRY_CODE.
-- OTP: validación de teléfono relajada para OTP; normalización con country code default.
-- App: Login con SMS OTP + registro con toggle SMS/Email (SMS primero). Nick en registro.
-- Web: registro con toggle SMS/Email (SMS primero). Nick en registro. Email sin teléfono.
-- Web: endpoint /api/amenities/active agregado y usado en /search.
-- Web: mapa pines (AdvancedMarker) + orden por plan + tamaños aumentados.
-- Nota: endpoints /api/mobile/auth/whatsapp/* daban 404; se requiere limpiar `.next` y reiniciar para que aparezcan.
-- Publicidad popup: agregados campos `largeImageUrlWeb` y `largeImageUrlApp` en `Advertisement` + migration `20260203180000_add_ad_popup_variants`.
-- Admin banners (nuevo y editar): subida base genera variantes 16:9/4:5 + reemplazo manual + previews.
-- Web popup usa `largeImageUrlWeb`, app usa `largeImageUrlApp` (fallback a legacy).
-- Upload errors ahora muestran mensaje real del backend (faltan credenciales AWS en local).
-- Pendiente: **no commiteado** (ver `git status`).
+| Entorno | Archivo | DATABASE_URL |
+|---------|---------|-------------|
+| Dev local | `.env.local` | `postgresql://postgres:postgres@localhost:5433/jahatelo_local` |
+| Produccion / Vercel | `.env` | Supabase pooler (`aws-0-us-west-2.pooler.supabase.com:6543`) |
+| CLI Prisma (migrate, studio) | `.env` via `dotenv/config` | Supabase (DIRECT_URL) |
+
+**Regla**: Next.js dev carga `.env.local` con prioridad sobre `.env`. El CLI de Prisma usa `.env` salvo que se pase `DATABASE_URL=...` inline.
+
+**Comandos para aplicar migraciones en DB local** (cuando hay pendientes):
+```
+DATABASE_URL="postgresql://postgres:postgres@localhost:5433/jahatelo_local" DIRECT_URL="postgresql://postgres:postgres@localhost:5433/jahatelo_local" npx prisma migrate deploy
+```
 
 ## Tests
-- No se corrieron tests recientes en esta etapa.
+- No se corrieron tests recientes.
 
 ## Git
-- Se hicieron varios commits y pushes durante esta ronda. Ver `git log` si hace falta el detalle.
+- Pendiente hacer commit/push del bloque reciente.
 
 ## Pendientes sugeridos
-- Revisar paridad web vs app restante (favoritos como seccion, busqueda con chips rapidos, etc).
-- Resolver push notifications en app con development build (Expo Go no soporta push remoto en SDK 53).
-- Mejorar visualizacion de amenities en detalles de moteles.
-- Tree-shaking de `lucide-react` (hoy se usa import dinamico para iconos de amenities).
-- EAS iOS/Android queda pendiente por costo de build.
-- OTP SMS + verificacion email + Apple Sign-In: pendiente de credenciales (AWS SNS, proveedor email, Apple Developer).
+1. Revisar por que AuthProvider no envuelve siempre y evitar fallback permanente.
+2. Normalizar URLs de imagen en backend admin API (para no depender del front).
+3. Compartir moteles desde detalle/listado.
+4. Notificacion in-app de nueva version disponible.

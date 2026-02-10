@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import FeaturedCarousel from '@/components/public/FeaturedCarousel';
+import { normalizeLocalUploadPath } from '@/lib/normalizeLocalUrl';
 import CategoriesGrid from '@/components/public/CategoriesGrid';
 import SocialLinks from '@/components/public/SocialLinks';
 import SearchBar from '@/components/public/SearchBar';
@@ -14,6 +15,11 @@ import { prisma } from '@/lib/prisma';
 import { headers } from 'next/headers';
 
 export default async function HomePage() {
+  const headersList = await headers();
+  const host = headersList.get('x-forwarded-host') || headersList.get('host');
+  const protocol = headersList.get('x-forwarded-proto') || 'http';
+  const baseUrl = host ? `${protocol}://${host}` : 'http://localhost:3000';
+
   const promosMotelsRaw = await prisma.motel.findMany({
     where: {
       status: 'APPROVED',
@@ -41,16 +47,14 @@ export default async function HomePage() {
 
   const promosMotels = promosMotelsRaw.map((motel) => ({
     ...motel,
+    featuredPhoto: normalizeLocalUploadPath(motel.featuredPhoto),
+    featuredPhotoWeb: normalizeLocalUploadPath(motel.featuredPhotoWeb),
+    featuredPhotoApp: normalizeLocalUploadPath(motel.featuredPhotoApp),
     photos: motel.photos.map((photo) => ({
-      url: photo.url,
+      url: normalizeLocalUploadPath(photo.url) || photo.url,
       kind: photo.kind ?? 'OTHER',
     })),
   }));
-
-  const headersList = await headers();
-  const host = headersList.get('x-forwarded-host') || headersList.get('host');
-  const protocol = headersList.get('x-forwarded-proto') || 'http';
-  const baseUrl = host ? `${protocol}://${host}` : 'http://localhost:3000';
 
   const citiesResponse = await fetch(`${baseUrl}/api/mobile/cities`, {
     next: { revalidate: 60 },
@@ -95,8 +99,11 @@ export default async function HomePage() {
 
   const featuredMotels = featuredMotelsRaw.map((motel) => ({
     ...motel,
+    featuredPhoto: normalizeLocalUploadPath(motel.featuredPhoto),
+    featuredPhotoWeb: normalizeLocalUploadPath(motel.featuredPhotoWeb),
+    featuredPhotoApp: normalizeLocalUploadPath(motel.featuredPhotoApp),
     photos: motel.photos.map((photo) => ({
-      url: photo.url,
+      url: normalizeLocalUploadPath(photo.url) || photo.url,
       kind: photo.kind ?? 'OTHER',
     })),
   }));
@@ -124,8 +131,11 @@ export default async function HomePage() {
 
   const recentMotels = recentMotelsRaw.map((motel) => ({
     ...motel,
+    featuredPhoto: normalizeLocalUploadPath(motel.featuredPhoto),
+    featuredPhotoWeb: normalizeLocalUploadPath(motel.featuredPhotoWeb),
+    featuredPhotoApp: normalizeLocalUploadPath(motel.featuredPhotoApp),
     photos: motel.photos.map((photo) => ({
-      url: photo.url,
+      url: normalizeLocalUploadPath(photo.url) || photo.url,
       kind: photo.kind ?? 'OTHER',
     })),
   }));
