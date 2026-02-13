@@ -3,19 +3,23 @@ import { z } from 'zod';
 export const IdSchema = z.string().min(1, 'ID inválido');
 
 const emptyToUndefined = (value: unknown) => (value === '' ? undefined : value);
+const trimString = (value: unknown) => (typeof value === 'string' ? value.trim() : value);
 
-const UploadOrUrlSchema = z.string().refine(
-  (value) => value.startsWith('/uploads/') || z.string().url().safeParse(value).success,
-  'URL de imagen inválida'
+const UploadOrUrlSchema = z.preprocess(
+  trimString,
+  z.string().refine(
+    (value) => value.startsWith('/uploads/') || z.string().url().safeParse(value).success,
+    'URL de imagen inválida'
+  )
 );
 
 const UploadOrUrlOptionalSchema = z.preprocess(
-  emptyToUndefined,
+  (value) => emptyToUndefined(trimString(value)),
   UploadOrUrlSchema.optional().nullable()
 );
 
 const UrlOptionalSchema = z.preprocess(
-  emptyToUndefined,
+  (value) => emptyToUndefined(trimString(value)),
   z.string().url('URL inválida').optional().nullable()
 );
 
@@ -197,8 +201,28 @@ export const PromoSchema = z.object({
   title: z.string().min(3, 'Título muy corto').max(100, 'Título muy largo'),
   description: z.string().max(500, 'Descripción muy larga').optional().nullable(),
   imageUrl: UploadOrUrlOptionalSchema,
-  validFrom: z.string().datetime('Fecha de inicio inválida').optional().nullable(),
-  validUntil: z.string().datetime('Fecha de fin inválida').optional().nullable(),
+  validFrom: z.preprocess(
+    (value) => {
+      const cleaned = emptyToUndefined(value);
+      if (typeof cleaned !== 'string') return cleaned;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+        return `${cleaned}T00:00:00Z`;
+      }
+      return cleaned;
+    },
+    z.string().datetime('Fecha de inicio inválida').optional().nullable()
+  ),
+  validUntil: z.preprocess(
+    (value) => {
+      const cleaned = emptyToUndefined(value);
+      if (typeof cleaned !== 'string') return cleaned;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+        return `${cleaned}T00:00:00Z`;
+      }
+      return cleaned;
+    },
+    z.string().datetime('Fecha de fin inválida').optional().nullable()
+  ),
   isActive: z.boolean().optional(),
   isGlobal: z.boolean().optional(),
 });
@@ -265,7 +289,9 @@ export const AdvertisementSchema = z.object({
   maxClicks: z.number().int().positive('Clicks deben ser positivos').optional().nullable(),
 });
 
-export const UpdateAdvertisementSchema = AdvertisementSchema.partial();
+export const UpdateAdvertisementSchema = AdvertisementSchema.partial().extend({
+  imageUrl: UploadOrUrlOptionalSchema,
+});
 
 export const AdvertisementAdminUpdateSchema = UpdateAdvertisementSchema.extend({
   viewCount: z.number().int().min(0, 'Vistas inválidas').optional(),

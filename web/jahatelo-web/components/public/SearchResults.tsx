@@ -1,9 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
 import MotelCard from './MotelCard';
+
+// Haversine formula – same as app's utils/location.js
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+const RADIUS_OPTIONS = [
+  { value: 2, label: '2 km' },
+  { value: 5, label: '5 km' },
+  { value: 10, label: '10 km' },
+  { value: 20, label: '20 km' },
+  { value: 50, label: '50 km' },
+  { value: null, label: 'Todos' },
+];
 
 interface SearchResultsProps {
   initialParams: {
@@ -42,6 +63,9 @@ interface Motel {
     price12h: number | null;
   }>;
   plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  distanceKm?: number;
 }
 
 
@@ -62,6 +86,13 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
   const [quickAmenities, setQuickAmenities] = useState<QuickAmenity[]>([]);
   const [quickAmenitiesLoading, setQuickAmenitiesLoading] = useState(false);
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
+  // Nearby (Cerca de mí) state
+  const [nearbyEnabled, setNearbyEnabled] = useState(false);
+  const [nearbyRadius, setNearbyRadius] = useState<number | null>(10);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCities = async () => {
@@ -177,7 +208,50 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     setOnlyPromos(false);
     setOnlyFeatured(false);
     setSelectedAmenity('');
+    setNearbyEnabled(false);
   };
+
+  const handleNearbyClick = () => {
+    if (nearbyEnabled) {
+      setNearbyEnabled(false);
+      return;
+    }
+    if (userLocation) {
+      setNearbyEnabled(true);
+      return;
+    }
+    if (!navigator.geolocation) {
+      setLocationError('Tu navegador no soporta geolocalización');
+      return;
+    }
+    setLocationLoading(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+        setNearbyEnabled(true);
+        setLocationLoading(false);
+      },
+      () => {
+        setLocationError('No se pudo obtener tu ubicación. Verificá los permisos.');
+        setLocationLoading(false);
+      },
+      { enableHighAccuracy: false, timeout: 10000 },
+    );
+  };
+
+  // Client-side distance filtering (same Haversine as the app)
+  const displayedMotels = useMemo(() => {
+    if (!nearbyEnabled || !userLocation) return motels;
+    const withDist = motels
+      .filter((m) => m.latitude != null && m.longitude != null)
+      .map((m) => ({
+        ...m,
+        distanceKm: Math.round(calculateDistance(userLocation.lat, userLocation.lng, m.latitude!, m.longitude!) * 10) / 10,
+      }));
+    const filtered = nearbyRadius === null ? withDist : withDist.filter((m) => m.distanceKm! <= nearbyRadius);
+    return filtered.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
+  }, [motels, nearbyEnabled, userLocation, nearbyRadius]);
 
   const toggleAmenity = (amenityValue: string) => {
     if (selectedAmenity === amenityValue) {
@@ -266,7 +340,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
             </select>
           </div>
 
-          <div className="flex gap-3 md:pt-7">
+          <div className="flex flex-wrap gap-3 md:pt-7">
             <button
               type="button"
               onClick={() => setOnlyPromos((prev) => !prev)}
@@ -289,12 +363,58 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
             >
               Solo destacados
             </button>
+            <button
+              type="button"
+              onClick={handleNearbyClick}
+              disabled={locationLoading}
+              className={`px-4 py-2 rounded-lg font-medium border-2 transition-colors flex items-center gap-2 ${
+                nearbyEnabled
+                  ? 'bg-purple-600 text-white border-purple-600'
+                  : 'bg-white text-gray-700 border-gray-200 hover:border-purple-300'
+              } disabled:opacity-50`}
+            >
+              {locationLoading ? (
+                <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              )}
+              Cerca de mí
+            </button>
           </div>
         </div>
+
+        {/* Nearby radius selector */}
+        {nearbyEnabled && (
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Radio de búsqueda:</h3>
+            <div className="flex flex-wrap gap-2">
+              {RADIUS_OPTIONS.map((opt) => (
+                <button
+                  key={opt.label}
+                  type="button"
+                  onClick={() => setNearbyRadius(opt.value)}
+                  className={`px-4 py-2 rounded-full font-medium border-2 transition-all text-sm ${
+                    nearbyRadius === opt.value
+                      ? 'bg-purple-600 text-white border-purple-600 shadow-md'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-purple-300'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {locationError && (
+              <p className="mt-2 text-sm text-red-600">{locationError}</p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Active Filters */}
-      {(searchQuery || selectedCity || onlyPromos || onlyFeatured || selectedAmenity) && (
+      {(searchQuery || selectedCity || onlyPromos || onlyFeatured || selectedAmenity || nearbyEnabled) && (
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <span className="text-sm font-medium text-gray-700">Filtros activos:</span>
           {searchQuery && (
@@ -349,6 +469,16 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
               </button>
             </div>
           )}
+          {nearbyEnabled && (
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+              <span>Cerca de mí {nearbyRadius !== null ? `(${nearbyRadius} km)` : ''}</span>
+              <button onClick={() => setNearbyEnabled(false)} className="hover:text-purple-900">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
           <button
             onClick={clearSearch}
             className="text-sm text-gray-600 hover:text-gray-900 underline"
@@ -370,18 +500,19 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
       {!loading && (
         <>
           {/* Results Count */}
-          {(searchQuery || selectedCity) && (
+          {(searchQuery || selectedCity || nearbyEnabled) && (
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
-                {motels.length} {motels.length === 1 ? 'resultado' : 'resultados'}
+                {displayedMotels.length} {displayedMotels.length === 1 ? 'resultado' : 'resultados'}
+                {nearbyEnabled && nearbyRadius !== null && ` cerca de ti (${nearbyRadius} km)`}
               </h2>
             </div>
           )}
 
           {/* Motels Grid */}
-          {motels.length > 0 ? (
+          {displayedMotels.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {motels.map((motel) => (
+              {displayedMotels.map((motel) => (
                 <MotelCard key={motel.id} motel={motel} />
               ))}
             </div>
@@ -393,10 +524,16 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {searchQuery || selectedCity ? 'No se encontraron resultados' : 'Iniciá una búsqueda'}
+                {nearbyEnabled
+                  ? `No hay moteles en un radio de ${nearbyRadius} km`
+                  : searchQuery || selectedCity
+                  ? 'No se encontraron resultados'
+                  : 'Iniciá una búsqueda'}
               </h3>
               <p className="text-gray-600 mb-6">
-                {searchQuery || selectedCity
+                {nearbyEnabled
+                  ? 'Intentá ampliar el radio de búsqueda'
+                  : searchQuery || selectedCity
                   ? 'Intenta con otros términos o filtros'
                   : 'Usá la barra de búsqueda o seleccioná una búsqueda popular'}
               </p>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { PublicAdvertisementQuerySchema } from '@/lib/validations/schemas';
+import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
     const { placement } = queryResult.data;
+    const baseUrl = request.headers.get('origin') || new URL(request.url).origin;
 
     const now = new Date();
     const ads = await prisma.advertisement.findMany({
@@ -36,7 +38,15 @@ export async function GET(request: NextRequest) {
       return withinViews && withinClicks;
     });
 
-    return NextResponse.json(filtered, {
+    const normalized = filtered.map((ad) => ({
+      ...ad,
+      imageUrl: normalizeLocalUrl(ad.imageUrl, baseUrl),
+      largeImageUrl: normalizeLocalUrl(ad.largeImageUrl, baseUrl),
+      largeImageUrlWeb: normalizeLocalUrl(ad.largeImageUrlWeb, baseUrl),
+      largeImageUrlApp: normalizeLocalUrl(ad.largeImageUrlApp, baseUrl),
+    }));
+
+    return NextResponse.json(normalized, {
       headers: { 'Cache-Control': 'no-store' },
     });
   } catch (error) {

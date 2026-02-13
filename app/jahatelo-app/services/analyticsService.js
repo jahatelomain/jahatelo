@@ -3,7 +3,9 @@
  * Servicio para trackear eventos de analytics en la app móvil
  */
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+import { getApiRoot } from './apiBaseUrl';
+
+const API_URL = getApiRoot();
 const debugLog = (...args) => {
   if (__DEV__) console.log(...args);
 };

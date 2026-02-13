@@ -20,6 +20,7 @@ export default async function HomePage() {
   const protocol = headersList.get('x-forwarded-proto') || 'http';
   const baseUrl = host ? `${protocol}://${host}` : 'http://localhost:3000';
 
+  const now = new Date();
   const promosMotelsRaw = await prisma.motel.findMany({
     where: {
       status: 'APPROVED',
@@ -27,6 +28,11 @@ export default async function HomePage() {
       promos: {
         some: {
           isActive: true,
+          isGlobal: true,
+          AND: [
+            { OR: [{ validFrom: null }, { validFrom: { lte: now } }] },
+            { OR: [{ validUntil: null }, { validUntil: { gte: now } }] },
+          ],
         },
       },
     },
@@ -38,6 +44,11 @@ export default async function HomePage() {
       promos: {
         where: {
           isActive: true,
+          isGlobal: true,
+          AND: [
+            { OR: [{ validFrom: null }, { validFrom: { lte: now } }] },
+            { OR: [{ validUntil: null }, { validUntil: { gte: now } }] },
+          ],
         },
       },
     },
@@ -46,13 +57,24 @@ export default async function HomePage() {
   });
 
   const promosMotels = promosMotelsRaw.map((motel) => ({
-    ...motel,
+    id: motel.id,
+    name: motel.name,
+    slug: motel.slug,
     featuredPhoto: normalizeLocalUploadPath(motel.featuredPhoto),
     featuredPhotoWeb: normalizeLocalUploadPath(motel.featuredPhotoWeb),
     featuredPhotoApp: normalizeLocalUploadPath(motel.featuredPhotoApp),
     photos: motel.photos.map((photo) => ({
       url: normalizeLocalUploadPath(photo.url) || photo.url,
       kind: photo.kind ?? 'OTHER',
+    })),
+    promos: motel.promos.map((promo) => ({
+      id: promo.id,
+      title: promo.title,
+      description: promo.description ?? null,
+      imageUrl: normalizeLocalUploadPath(promo.imageUrl),
+      isActive: promo.isActive,
+      validFrom: promo.validFrom ? promo.validFrom.toISOString() : null,
+      validUntil: promo.validUntil ? promo.validUntil.toISOString() : null,
     })),
   }));
 

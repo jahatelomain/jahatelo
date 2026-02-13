@@ -19,8 +19,9 @@ import {
   getAdvertisingPushEnabled,
   setAdvertisingPushEnabled,
 } from '../services/preferencesService';
+import { getApiRoot } from '../services/apiBaseUrl';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.100:3000';
+const API_URL = getApiRoot();
 
 export default function NotificationPreferencesScreen({ navigation }) {
   const { isAuthenticated, token } = useAuth();

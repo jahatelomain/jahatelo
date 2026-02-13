@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import AdInlineCard from '@/components/public/AdInlineCard';
@@ -19,12 +19,16 @@ const getActivePromo = (promos: any[] = []) => {
 
 const PromoCard = ({ motel }: { motel: any }) => {
   const promo = getActivePromo(motel.promos || []);
-  const photoUrl =
-    promo?.imageUrl ||
-    motel.photos?.[0]?.url ||
+  // Image priority matches app's getMotelImageUrl:
+  // promoImageUrl (promo.imageUrl) → featuredPhotoApp → featuredPhotoWeb → featuredPhoto → photos[0]
+  const fallbackUrl =
+    motel.featuredPhotoApp ||
     motel.featuredPhotoWeb ||
     motel.featuredPhoto ||
+    motel.photos?.[0]?.url ||
     '/motel-placeholder.png';
+  const primaryUrl = promo?.imageUrl || fallbackUrl;
+  const [imgSrc, setImgSrc] = useState(primaryUrl);
 
   return (
     <Link
@@ -33,7 +37,7 @@ const PromoCard = ({ motel }: { motel: any }) => {
     >
       <div className="relative h-48 bg-gray-200">
         <Image
-          src={photoUrl}
+          src={imgSrc}
           alt={promo?.title || motel.name}
           fill
           quality={85}
@@ -42,6 +46,7 @@ const PromoCard = ({ motel }: { motel: any }) => {
           loading="lazy"
           placeholder="blur"
           blurDataURL={BLUR_DATA_URL}
+          onError={() => { if (imgSrc !== fallbackUrl) setImgSrc(fallbackUrl); }}
         />
         <div className="absolute top-3 right-3 bg-purple-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
           Promo

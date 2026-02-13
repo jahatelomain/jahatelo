@@ -12,8 +12,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { COLORS } from '../../constants/theme';
+import { getApiRoot } from '../../services/apiBaseUrl';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.100:3000';
+const API_URL = getApiRoot();
 
 export default function ReviewsTab({ route, navigation }) {
   const { motel } = route.params || {};

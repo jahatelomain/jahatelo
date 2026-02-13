@@ -2,9 +2,10 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { playFavoriteSound } from '../services/soundService';
+import { getApiRoot } from '../services/apiBaseUrl';
 
 const STORAGE_KEY = '@jahatelo/favorites';
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.100:3000';
+const API_URL = getApiRoot();
 
 const FavoritesContext = createContext({
   favorites: [],

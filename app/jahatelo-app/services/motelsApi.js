@@ -8,13 +8,13 @@ import {
   addToRecentViews,
   updateLastSync,
 } from './cacheService';
+import { getMobileApiBase } from './apiBaseUrl';
 
 /**
  * Obtiene la URL base del API desde las variables de entorno
  */
 export const getApiBaseUrl = () => {
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-  return `${apiUrl}/api/mobile`;
+  return getMobileApiBase();
 };
 
 const debugLog = (...args) => {

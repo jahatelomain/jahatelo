@@ -16,8 +16,9 @@ import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { useNavigation } from '@react-navigation/native';
+import { getApiRoot } from '../services/apiBaseUrl';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = getApiRoot();
 const IS_ANDROID = Platform.OS === 'android';
 const debugLog = (...args) => {
   if (__DEV__) console.log(...args);

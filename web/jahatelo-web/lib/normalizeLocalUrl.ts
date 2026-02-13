@@ -33,8 +33,18 @@ export const normalizeLocalUploadPath = (value?: string | null): string | null =
   if (!value) return null;
   const trimmed = value.trim();
   if (trimmed === '') return null;
-  const match = trimmed.match(/\/uploads\/.+$/);
-  if (match) return match[0];
+
+  // Already a relative /uploads/ path — return as-is
+  if (trimmed.startsWith('/uploads/')) return trimmed;
+
+  // localhost / local-network URL → extract only the /uploads/... path
+  const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|192\.168\.\d+\.\d+)(:\d+)?\//.test(trimmed);
+  if (isLocal) {
+    const match = trimmed.match(/\/uploads\/.+$/);
+    if (match) return match[0];
+  }
+
+  // External URL (S3, CDN, etc.) — keep as-is
   return trimmed;
 };
 

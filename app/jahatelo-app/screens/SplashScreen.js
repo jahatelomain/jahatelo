@@ -2,16 +2,21 @@ import React, { useEffect, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AnimatedSplash from '../components/AnimatedSplash';
+import { getApiRoot } from '../services/apiBaseUrl';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = getApiRoot();
 
 export default function SplashScreen({ navigation }) {
   const didNavigate = useRef(false);
 
   const checkAgeGateAndNavigate = async () => {
     try {
+      const apiRoot = getApiRoot();
+      if (__DEV__) {
+        console.log('🌐 API root (Splash):', apiRoot);
+      }
       // Consultar si el age gate está habilitado
-      const response = await fetch(`${API_URL}/api/settings/public`);
+      const response = await fetch(`${apiRoot}/api/settings/public`);
       const data = await response.json();
 
       // Si el age gate está habilitado, navegar a AgeGate

@@ -579,8 +579,8 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        {/* Tabs — id="promos" enables #promos hash navigation from promo cards */}
+        <div id="promos" className="bg-white rounded-lg shadow-sm p-6">
           <Tabs tabs={tabs} defaultTab={tabs[0]?.id} />
         </div>
       </div>

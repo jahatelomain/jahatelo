@@ -1,12 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
+import { getApiBase } from '../services/apiBaseUrl';
 
 /**
  * Obtiene la URL base del API
  */
-const getApiBaseUrl = () => {
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-  return `${apiUrl}/api`;
-};
+const getApiBaseUrl = () => getApiBase();
 
 /**
  * Hook para manejar anuncios publicitarios
