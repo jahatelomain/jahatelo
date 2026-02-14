@@ -29,7 +29,7 @@ export default function Navbar() {
             <img
               src="/logo-master.png"
               alt="Jahatelo"
-              className="h-10 w-auto object-contain"
+              className="h-20 w-auto object-contain"
             />
           </Link>
 

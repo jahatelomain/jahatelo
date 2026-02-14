@@ -319,9 +319,16 @@ export async function GET(request: NextRequest) {
         photos: normalizeList(motel.photos) || [],
       }));
 
-    // Timestamp del motel más recientemente actualizado para cache-busting en la app
+    // Timestamp del motel (o promo) más recientemente actualizado para cache-busting en la app.
+    // Se incluyen las promos para que un cambio de imagen de promo invalide el cache inmediatamente.
     const latestUpdatedAt = motels.reduce((max, m: any) => {
-      const t = m.updatedAt ? new Date(m.updatedAt).getTime() : 0;
+      let t = m.updatedAt ? new Date(m.updatedAt).getTime() : 0;
+      if (Array.isArray(m.promos)) {
+        for (const promo of m.promos) {
+          const pt = promo.updatedAt ? new Date(promo.updatedAt).getTime() : 0;
+          if (pt > t) t = pt;
+        }
+      }
       return t > max ? t : max;
     }, 0);
 
