@@ -77,8 +77,8 @@ function AppContent() {
   };
 
   useEffect(() => {
-    // Ocultar el splash nativo inmediatamente cuando la app carga
-    SplashScreen.hideAsync();
+    // El splash nativo se oculta en SplashScreen.js cuando AnimatedSplash ya está montado,
+    // evitando el flash blanco entre el splash estático y la animación Lottie.
 
     // Inicializar notificaciones push
     const setupNotifications = async () => {

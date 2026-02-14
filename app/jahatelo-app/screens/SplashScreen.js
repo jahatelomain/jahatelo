@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as ExpoSplashScreen from 'expo-splash-screen';
 import AnimatedSplash from '../components/AnimatedSplash';
 import { getApiRoot } from '../services/apiBaseUrl';
 
@@ -8,6 +9,13 @@ const API_URL = getApiRoot();
 
 export default function SplashScreen({ navigation }) {
   const didNavigate = useRef(false);
+
+  // Ocultar el splash nativo en este punto: AnimatedSplash ya está montado y listo.
+  // Al llamarlo aquí (y no en App.js) se elimina el flash blanco entre el splash
+  // nativo estático y la animación Lottie.
+  useEffect(() => {
+    ExpoSplashScreen.hideAsync();
+  }, []);
 
   const checkAgeGateAndNavigate = async () => {
     try {
