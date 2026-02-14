@@ -10,7 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { fetchMotels } from '../services/motelsApi';
+import { fetchMotels, fetchFeaturedMotels } from '../services/motelsApi';
 
 import HomeCategoriesGrid from '../components/HomeCategoriesGrid';
 import HomeHeader from '../components/HomeHeader';
@@ -24,6 +24,7 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   const colors = COLORS;
   const [motels, setMotels] = useState([]);
+  const [featuredMotels, setFeaturedMotels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -39,8 +40,13 @@ export default function HomeScreen() {
     try {
       if (!isRefreshing) setLoading(true);
       setError(null);
-      const data = await fetchMotels();
+      // Cargar en paralelo: lista general (para búsqueda/ciudades/promos) y destacados (para carrusel)
+      const [data, featured] = await Promise.all([
+        fetchMotels(),
+        fetchFeaturedMotels(),
+      ]);
       setMotels(data || []);
+      setFeaturedMotels(featured || []);
     } catch (err) {
       console.error('Error al cargar moteles:', err);
       setError(err.message || 'Error al cargar moteles');
@@ -106,7 +112,8 @@ export default function HomeScreen() {
   ];
 
   const promos = useMemo(() => motels.filter((motel) => motel.tienePromo), [motels]);
-  const featured = useMemo(() => motels.filter((motel) => motel.isFeatured), [motels]);
+  // featuredMotels viene de fetchFeaturedMotels() con featured=true&limit=50
+  // para no perder destacados que no caigan en el top-20 de la lista general
 
   if (loading && !refreshing) {
     return (
@@ -176,7 +183,7 @@ export default function HomeScreen() {
           }
         >
           <PromoCarousel
-            promos={featured}
+            promos={featuredMotels}
             ads={bannerAds}
             onPromoPress={handleMotelPress}
             onAdClick={handleAdClick}

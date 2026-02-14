@@ -53,7 +53,7 @@ export default async function HomePage() {
       },
     },
     take: 5,
-    orderBy: [{ plan: 'desc' }, { createdAt: 'desc' }],
+    orderBy: [{ plan: 'desc' }, { ratingAvg: 'desc' }, { createdAt: 'desc' }],
   });
 
   const promosMotels = promosMotelsRaw.map((motel) => ({
@@ -116,7 +116,7 @@ export default async function HomePage() {
       },
     },
     take: 6,
-    orderBy: [{ plan: 'desc' }, { createdAt: 'desc' }],
+    orderBy: [{ plan: 'desc' }, { ratingAvg: 'desc' }, { createdAt: 'desc' }],
   });
 
   const featuredMotels = featuredMotelsRaw.map((motel) => ({
@@ -148,7 +148,7 @@ export default async function HomePage() {
       },
     },
     take: 6,
-    orderBy: [{ plan: 'desc' }, { createdAt: 'desc' }],
+    orderBy: [{ plan: 'desc' }, { ratingAvg: 'desc' }, { createdAt: 'desc' }],
   });
 
   const recentMotels = recentMotelsRaw.map((motel) => ({

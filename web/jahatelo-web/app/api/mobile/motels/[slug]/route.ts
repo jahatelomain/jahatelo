@@ -36,6 +36,7 @@ export async function GET(
       },
       rooms: {
         where: { isActive: true },
+        orderBy: [{ isFeatured: 'desc' as const }, { name: 'asc' as const }],
         include: {
           photos: {
             orderBy: { order: 'asc' as const },
@@ -61,7 +62,6 @@ export async function GET(
       promos: {
         where: { isActive: true },
       },
-      paymentMethods: true,
       schedules: {
         orderBy: { dayOfWeek: 'asc' as const },
       },

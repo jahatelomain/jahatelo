@@ -252,7 +252,6 @@ export function mapMotelToDetail(
   motel: MotelWithRelations & {
     schedules?: { dayOfWeek: number; openTime: string | null; closeTime: string | null; is24Hours: boolean; isClosed: boolean }[];
     menuCategories?: { id: string; name: string | null; items: { id: string; name: string; price: number; description: string | null; photoUrl: string | null }[] }[];
-    paymentMethods?: { method: string }[];
   }
 ) {
   const listItem = mapMotelToListItem(motel);
@@ -282,8 +281,6 @@ export function mapMotelToDetail(
     contact: {
       phone: motel.phone,
       whatsapp: motel.whatsapp,
-      website: motel.website,
-      instagram: motel.instagram,
       contactEmail: motel.contactEmail,
       contactPhone: motel.contactPhone,
     },
@@ -303,7 +300,6 @@ export function mapMotelToDetail(
         })),
       })) || [],
     rooms: motel.rooms?.filter((r) => r.isActive).map(mapRoomForMobile) || [],
-    paymentMethods: motel.paymentMethods?.map((pm) => pm.method) || [],
     hasPhotos:
       motel.photos.length > 0 ||
       Boolean(motel.featuredPhotoApp || motel.featuredPhotoWeb || motel.featuredPhoto),
