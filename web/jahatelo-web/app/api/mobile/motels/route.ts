@@ -332,15 +332,18 @@ export async function GET(request: NextRequest) {
       return t > max ? t : max;
     }, 0);
 
-    return NextResponse.json({
-      data,
-      meta: {
-        page,
-        limit,
-        total,
-        latestUpdatedAt,
+    return NextResponse.json(
+      {
+        data,
+        meta: {
+          page,
+          limit,
+          total,
+          latestUpdatedAt,
+        },
       },
-    });
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
   } catch (error) {
     console.error('Error in GET /api/mobile/motels:', error);
     if (error instanceof z.ZodError) {

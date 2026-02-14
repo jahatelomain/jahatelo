@@ -38,12 +38,22 @@ export async function GET(request: NextRequest) {
       return withinViews && withinClicks;
     });
 
+    // Agrega ?v=timestamp para cache-busting en React Native.
+    // El timestamp cambia cuando el anuncio se edita, forzando la recarga de la imagen.
+    const addV = (url: string | null, updatedAt: Date) => {
+      if (!url) return null;
+      const normalized = normalizeLocalUrl(url, baseUrl);
+      if (!normalized) return null;
+      const sep = normalized.includes('?') ? '&' : '?';
+      return `${normalized}${sep}v=${updatedAt.getTime()}`;
+    };
+
     const normalized = filtered.map((ad) => ({
       ...ad,
-      imageUrl: normalizeLocalUrl(ad.imageUrl, baseUrl),
-      largeImageUrl: normalizeLocalUrl(ad.largeImageUrl, baseUrl),
-      largeImageUrlWeb: normalizeLocalUrl(ad.largeImageUrlWeb, baseUrl),
-      largeImageUrlApp: normalizeLocalUrl(ad.largeImageUrlApp, baseUrl),
+      imageUrl: addV(ad.imageUrl, ad.updatedAt),
+      largeImageUrl: addV(ad.largeImageUrl, ad.updatedAt),
+      largeImageUrlWeb: addV(ad.largeImageUrlWeb, ad.updatedAt),
+      largeImageUrlApp: addV(ad.largeImageUrlApp, ad.updatedAt),
     }));
 
     return NextResponse.json(normalized, {

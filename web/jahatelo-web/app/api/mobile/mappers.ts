@@ -98,6 +98,18 @@ const getPreferredFeaturedPhoto = (motel: Motel) => {
 };
 
 /**
+ * Agrega un query param ?v=timestamp para cache-busting de imágenes en la app.
+ * Usar updatedAt del registro (promo o motel) para que cambie solo cuando la imagen cambia.
+ */
+function addVersionParam(url: string | null | undefined, updatedAt?: Date | null): string | null {
+  if (!url) return null;
+  const ts = updatedAt?.getTime();
+  if (!ts) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}v=${ts}`;
+}
+
+/**
  * Verifica si hay promos activas
  */
 export function hasActivePromos(promos?: Promo[]): boolean {
@@ -164,7 +176,8 @@ export function mapMotelToListItem(motel: MotelForList) {
     photos: getListPhotos(motel.photos, getPreferredFeaturedPhoto(motel)),
     featuredPhoto: getPreferredFeaturedPhoto(motel),
     // Incluir datos de la primera promo activa para el carrusel
-    promoImageUrl: firstPromo?.imageUrl || null,
+    // ?v=updatedAt fuerza al cache nativo de React Native a recargar cuando cambia la imagen
+    promoImageUrl: addVersionParam(firstPromo?.imageUrl, firstPromo?.updatedAt),
     promoTitle: firstPromo?.title || null,
     promoDescription: firstPromo?.description || null,
     // Plan del motel para badges y ordenamiento

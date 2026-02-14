@@ -31,11 +31,14 @@ export function useAdvertisements(placement) {
         setError(null);
 
         const baseUrl = getApiBaseUrl();
-        const url = `${baseUrl}/advertisements?placement=${placement}&status=ACTIVE`;
+        // _t=timestamp evita que el stack HTTP nativo (iOS/Android) sirva una respuesta cacheada
+        const url = `${baseUrl}/advertisements?placement=${placement}&status=ACTIVE&_t=${Date.now()}`;
 
         const response = await fetch(url, {
           headers: {
             'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
           },
         });
 
