@@ -473,13 +473,16 @@ export default function MotelDetailPage() {
     if (!value) return null;
     const trimmed = value.trim();
     if (trimmed === '') return null;
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    // Ya es ruta relativa — ok
+    if (trimmed.startsWith('/uploads/')) return trimmed;
+    // localhost / red local → convertir a ruta relativa para portabilidad
+    const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|192\.168\.\d+\.\d+)(:\d+)?\//.test(trimmed);
+    if (isLocal) {
       const match = trimmed.match(/\/uploads\/.+$/);
       if (match) return match[0];
     }
-    if (trimmed.startsWith('/uploads/')) {
-      return trimmed;
-    }
+    // URL externa (S3, CDN, etc.) → conservar completa
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
     return normalizeLocalUrl(trimmed);
   };
 
