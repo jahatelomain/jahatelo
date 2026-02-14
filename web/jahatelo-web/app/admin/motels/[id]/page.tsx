@@ -771,13 +771,20 @@ export default function MotelDetailPage() {
       : '/api/admin/rooms';
     const method = editingRoomId ? 'PATCH' : 'POST';
 
+    // Convert empty strings to null for numeric fields so Zod coercion doesn't fail
+    const numericFields = ['basePrice', 'price1h', 'price1_5h', 'price2h', 'price3h', 'price12h', 'price24h', 'priceNight', 'maxPersons'] as const;
+    const normalizedForm = { ...roomForm } as Record<string, unknown>;
+    numericFields.forEach((f) => {
+      if (normalizedForm[f] === '') normalizedForm[f] = null;
+    });
+
     try {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           motelId: id,
-          ...roomForm,
+          ...normalizedForm,
         }),
       });
 
