@@ -30,7 +30,8 @@ export async function POST(request: Request) {
 
     const missing = requiredEnv.filter((key) => !process.env[key]);
     const forceLocal = process.env.UPLOADS_USE_LOCAL === '1';
-    const useLocalFallback = isDev && (forceLocal || missing.length > 0);
+    const isVercel = process.env.VERCEL === '1';
+    const useLocalFallback = !isVercel && isDev && (forceLocal || missing.length > 0);
 
     const s3 = useLocalFallback
       ? null
