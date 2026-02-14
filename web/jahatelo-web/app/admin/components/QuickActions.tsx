@@ -132,15 +132,15 @@ export default function QuickActions({ initialMotels }: QuickActionsProps) {
           {motels.map((motel) => (
             <div
               key={motel.id}
-              className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200 gap-3"
+              className="flex flex-col gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200 sm:flex-row sm:items-center sm:justify-between"
             >
-              <div className="flex-1 min-w-0">
+              <div className="w-full min-w-0 sm:flex-1">
                 <p className="font-medium text-slate-900 truncate">{motel.name}</p>
                 <p className="text-xs text-slate-600">
                   {motel.city} • {motel.neighborhood} • Registrado {getTimeAgo(motel.createdAt)}
                 </p>
               </div>
-              <div className="flex gap-2 flex-shrink-0">
+              <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:justify-end sm:flex-shrink-0">
                 <button
                   onClick={() => handleQuickApprove(motel.id)}
                   disabled={loading === motel.id}

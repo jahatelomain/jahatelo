@@ -346,26 +346,13 @@ export default function AdminLayout({
                   )}
                 </svg>
               </button>
-              <div className="flex items-center justify-center gap-0">
+              <div className="flex items-center justify-center gap-3">
                 <img
-                  src="/logo-icon.png"
+                  src="/logo-master.png"
                   alt="Jahatelo"
-                  className="w-20 h-20 object-contain"
-                  onError={(event) => {
-                    event.currentTarget.src = '/logo-master.png';
-                  }}
+                  className="h-10 w-auto object-contain"
                 />
-                <div className="flex flex-col">
-                  <img
-                    src="/logo-text-gradient.png"
-                    alt="Jahatelo"
-                    className="h-8 w-auto object-contain -ml-0.5"
-                    onError={(event) => {
-                      event.currentTarget.src = '/logo-master.png';
-                    }}
-                  />
-                  <span className="text-xs text-slate-500 -mt-1 hidden sm:block">Admin Panel</span>
-                </div>
+                <span className="text-xs text-slate-500 hidden sm:block">Admin Panel</span>
               </div>
             </div>
 
