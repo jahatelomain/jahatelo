@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { touchMotel } from '@/lib/touchMotel';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
 import { IdSchema, UpdateMenuItemSchema } from '@/lib/validations/schemas';
@@ -50,6 +51,8 @@ export async function PATCH(
       },
     });
 
+    if (existingItem.category?.motelId) await touchMotel(existingItem.category.motelId);
+
     await logAuditEvent({
       userId: access.user?.id,
       action: 'UPDATE',
@@ -98,6 +101,8 @@ export async function DELETE(
     }
 
     await prisma.menuItem.delete({ where: { id: idResult.data } });
+
+    if (item.category?.motelId) await touchMotel(item.category.motelId);
 
     await logAuditEvent({
       userId: access.user?.id,

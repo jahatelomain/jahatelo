@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { touchMotel } from '@/lib/touchMotel';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
 import { MenuItemSchema } from '@/lib/validations/schemas';
@@ -15,14 +16,14 @@ export async function POST(request: NextRequest) {
     const sanitized = sanitizeObject(body);
     const validated = MenuItemSchema.parse(sanitized);
 
+    const category = await prisma.menuCategory.findUnique({
+      where: { id: validated.categoryId },
+      select: { id: true, motelId: true },
+    });
+    if (!category) {
+      return NextResponse.json({ error: 'Categoría no encontrada' }, { status: 404 });
+    }
     if (access.user?.role === 'MOTEL_ADMIN') {
-      const category = await prisma.menuCategory.findUnique({
-        where: { id: validated.categoryId },
-        select: { id: true, motelId: true },
-      });
-      if (!category) {
-        return NextResponse.json({ error: 'Categoría no encontrada' }, { status: 404 });
-      }
       if (!access.user.motelId || category.motelId !== access.user.motelId) {
         return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
       }
@@ -37,6 +38,8 @@ export async function POST(request: NextRequest) {
         photoUrl: validated.photoUrl ?? null,
       },
     });
+
+    await touchMotel(category.motelId);
 
     await logAuditEvent({
       userId: access.user?.id,

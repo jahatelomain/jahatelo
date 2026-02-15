@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
+import { touchMotel } from '@/lib/touchMotel';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
 import { AdminPaginationSchema, PromoQuerySchema, PromoSchema } from '@/lib/validations/schemas';
@@ -181,6 +182,8 @@ export async function POST(request: NextRequest) {
         isGlobal: access.user?.role === 'MOTEL_ADMIN' ? false : validated.isGlobal ?? false,
       },
     });
+
+    await touchMotel(promo.motelId);
 
     await logAuditEvent({
       userId: access.user?.id,
