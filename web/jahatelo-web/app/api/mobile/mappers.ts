@@ -12,6 +12,16 @@ type RoomPricingInfo = Pick<
   | 'priceNight'
 >;
 
+// Amenity data for list context (minimal fields)
+type RoomAmenityForList = {
+  amenity: Pick<Amenity, 'id' | 'name' | 'icon'>;
+};
+
+// Room type for list context: pricing + amenities
+type RoomForList = RoomPricingInfo & {
+  amenities?: RoomAmenityForList[];
+};
+
 // Types for detail mappers
 type RoomWithRelations = RoomType & {
   photos: Photo[];
@@ -23,7 +33,7 @@ type RoomWithRelations = RoomType & {
 type MotelForList = Motel & {
   photos: Photo[];
   motelAmenities: (MotelAmenity & { amenity: Amenity })[];
-  rooms?: (RoomPricingInfo | RoomWithRelations)[];
+  rooms?: (RoomForList | RoomWithRelations)[];
   promos?: Promo[];
 };
 
@@ -168,10 +178,23 @@ export function mapMotelToListItem(motel: MotelForList) {
     hasPromo: hasPromotions,
     tienePromo: hasPromotions,
     startingPrice: getStartingPrice(motel.rooms),
-    amenities: motel.motelAmenities.map((ma) => ({
-      name: ma.amenity.name,
-      icon: ma.amenity.icon,
-    })),
+    amenities: (() => {
+      // Aggregate unique amenities from motelAmenities + active room amenities
+      const map = new Map<string, { name: string; icon: string | null }>();
+      for (const ma of motel.motelAmenities) {
+        map.set(ma.amenity.id, { name: ma.amenity.name, icon: ma.amenity.icon });
+      }
+      for (const room of motel.rooms || []) {
+        if (!room.isActive) continue;
+        const roomAmenities = (room as RoomForList).amenities ?? (room as RoomWithRelations).amenities;
+        for (const ra of roomAmenities ?? []) {
+          if (!map.has(ra.amenity.id)) {
+            map.set(ra.amenity.id, { name: ra.amenity.name, icon: ra.amenity.icon });
+          }
+        }
+      }
+      return Array.from(map.values());
+    })(),
     thumbnail: getThumbnail(motel.photos, getPreferredFeaturedPhoto(motel)),
     photos: getListPhotos(motel.photos, getPreferredFeaturedPhoto(motel)),
     featuredPhoto: getPreferredFeaturedPhoto(motel),

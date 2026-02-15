@@ -83,6 +83,13 @@ export async function GET(request: NextRequest) {
             price12h: true,
             price24h: true,
             priceNight: true,
+            amenities: {
+              select: {
+                amenity: {
+                  select: { id: true, name: true, icon: true },
+                },
+              },
+            },
           },
         },
         promos: { where: { isActive: true } },
@@ -115,6 +122,20 @@ export async function GET(request: NextRequest) {
           );
         const precioDesde = allPrices.length > 0 ? Math.min(...allPrices) : 0;
 
+        // Aggregate unique amenities from motelAmenities + active room amenities
+        const amenityMap = new Map<string, { name: string; icon: string | null }>();
+        for (const ma of motel.motelAmenities) {
+          amenityMap.set(ma.amenity.id, { name: ma.amenity.name, icon: ma.amenity.icon });
+        }
+        for (const room of motel.rooms) {
+          if (!room.isActive) continue;
+          for (const ra of (room as any).amenities ?? []) {
+            if (!amenityMap.has(ra.amenity.id)) {
+              amenityMap.set(ra.amenity.id, { name: ra.amenity.name, icon: ra.amenity.icon });
+            }
+          }
+        }
+
         return {
           id: motel.id,
           slug: motel.slug,
@@ -122,10 +143,7 @@ export async function GET(request: NextRequest) {
           barrio: motel.neighborhood,
           ciudad: motel.city,
           precioDesde,
-          amenities: motel.motelAmenities.map((ma) => ({
-            name: ma.amenity.name,
-            icon: ma.amenity.icon,
-          })),
+          amenities: Array.from(amenityMap.values()),
           rating: motel.ratingAvg,
           tienePromo: motel.promos.some((p) => p.isActive),
           isFeatured: motel.isFeatured,

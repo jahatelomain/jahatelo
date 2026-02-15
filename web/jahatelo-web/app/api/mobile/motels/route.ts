@@ -222,6 +222,13 @@ export async function GET(request: NextRequest) {
                 price24h: true,
                 priceNight: true,
                 isActive: true,
+                amenities: {
+                  select: {
+                    amenity: {
+                      select: { id: true, name: true, icon: true },
+                    },
+                  },
+                },
               },
             },
             promos: {
@@ -276,6 +283,13 @@ export async function GET(request: NextRequest) {
                 price24h: true,
                 priceNight: true,
                 isActive: true,
+                amenities: {
+                  select: {
+                    amenity: {
+                      select: { id: true, name: true, icon: true },
+                    },
+                  },
+                },
               },
             },
             promos: {
