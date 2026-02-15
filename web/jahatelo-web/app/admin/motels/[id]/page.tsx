@@ -227,6 +227,7 @@ export default function MotelDetailPage() {
   const promoFormSnapshotRef = useRef('');
   const motelFormSnapshotRef = useRef('');
   const roomFormSnapshotRef = useRef('');
+  const roomFormRef = useRef<HTMLDivElement | null>(null);
   const categoryFormSnapshotRef = useRef('');
   const itemFormSnapshotRef = useRef('');
 
@@ -842,6 +843,9 @@ export default function MotelDetailPage() {
       amenityIds: (room.amenities ?? []).map((a) => a.amenity.id),
     });
     setShowRoomForm(true);
+    setTimeout(() => {
+      roomFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
   };
 
   const handleDeleteRoom = async (roomId: string) => {
@@ -2435,7 +2439,7 @@ export default function MotelDetailPage() {
           )}
 
           {showRoomForm && (
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div ref={roomFormRef} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-slate-900">
                   {editingRoomId ? 'Editar Habitación' : 'Nueva Habitación'}

@@ -262,13 +262,7 @@ export function mapMotelToDetail(
     allPhotos: getAllPhotos(motel.photos, getPreferredFeaturedPhoto(motel)),
     promos:
       motel.promos
-        ?.filter((promo) => {
-          if (!promo.isActive) return false;
-          const now = new Date();
-          if (promo.validFrom && promo.validFrom > now) return false;
-          if (promo.validUntil && promo.validUntil < now) return false;
-          return true;
-        })
+        ?.filter((promo) => promo.isActive)
         .map((promo) => ({
           id: promo.id,
           title: promo.title,
