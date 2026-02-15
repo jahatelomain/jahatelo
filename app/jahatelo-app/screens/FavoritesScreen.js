@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
@@ -17,9 +17,16 @@ import { COLORS } from '../constants/theme';
 
 export default function FavoritesScreen() {
   const navigation = useNavigation();
-  const { favorites, toggleFavorite } = useFavorites();
+  const { favorites, toggleFavorite, loadFavorites } = useFavorites();
   const [favoriteMotels, setFavoriteMotels] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Recargar favoritos frescos del servidor cada vez que la pantalla se enfoca
+  useFocusEffect(
+    useCallback(() => {
+      loadFavorites();
+    }, [])
+  );
 
   // Animación del corazón en empty state
   const heartScale = useSharedValue(1);

@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { playFavoriteSound } from '../services/soundService';
 import { getApiRoot } from '../services/apiBaseUrl';
+import { fetchMotels } from '../services/motelsApi';
 
 const STORAGE_KEY = '@jahatelo/favorites';
 const API_URL = getApiRoot();
@@ -64,14 +65,31 @@ export const FavoritesProvider = ({ children }) => {
 
         // Migración: convertir formato viejo (array de strings) a nuevo (array de objetos)
         if (parsedFavorites.length > 0 && typeof parsedFavorites[0] === 'string') {
-          // Formato viejo detectado, convertir a objetos
           const migratedFavorites = parsedFavorites.map(id => ({ id }));
           setFavorites(migratedFavorites);
-          // Guardar en el nuevo formato
           await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(migratedFavorites));
         } else {
-          // Formato nuevo, usar directamente
+          // Formato nuevo: mostrar snapshot local inmediatamente
           setFavorites(parsedFavorites);
+
+          // Luego intentar refrescar con datos frescos del servidor
+          const ids = parsedFavorites.map(f => f.id).filter(Boolean);
+          if (ids.length > 0) {
+            try {
+              const freshMotels = await fetchMotels({ ids: ids.join(',') }, false);
+              if (freshMotels && freshMotels.length > 0) {
+                // Preservar el orden original de favoritos
+                const motelMap = new Map(freshMotels.map(m => [m.id, m]));
+                const ordered = ids.map(id => motelMap.get(id)).filter(Boolean);
+                if (ordered.length > 0) {
+                  setFavorites(ordered);
+                  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(ordered));
+                }
+              }
+            } catch (_e) {
+              // Si falla el refresh, mantener el snapshot local
+            }
+          }
         }
       }
     } catch (error) {
