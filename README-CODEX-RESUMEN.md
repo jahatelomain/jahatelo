@@ -10,12 +10,15 @@
 - Admin: scroll al formulario al editar habitacion (para evitar “queda abajo”).
 - Publico: link del FeaturedCarousel ya es clickeable en toda la tarjeta (overlays no bloquean clicks).
 - Logos publicos/registro/login: estaban duplicados por symlinks en `public/`; se reemplazaron por archivos reales.
+- Amenities en web ahora se derivan de habitaciones activas (se elimina `motelAmenities` de queries y UI).
 
 ### App
 - Expo usa API dinamica basada en `hostUri` (sin IP fija); se puede forzar con `EXPO_PUBLIC_API_URL`.
 - Cache invalidation de promos/ads: URLs con `?v=updatedAt` + fetch con `?_t=Date.now()` para evitar cache HTTP.
 - Carrusel de destacados consulta `isFeatured=true&limit=50` (igual a web).
 - Splash: `hideAsync()` se llama cuando el Lottie ya esta montado (sin flash blanco).
+- RoomsTab: amenities con iconos en circulos + tooltip con long press.
+- Google auth en Expo Go usa `AuthSession.makeRedirectUri({ useProxy: true })` y client IDs nativos.
 
 ## Fixes recientes (ya pusheados a staging)
 - Migraciones pendientes aplicadas a DB local (columnas de ads y whatsapp OTP).
@@ -42,13 +45,8 @@
 DATABASE_URL="postgresql://postgres:postgres@localhost:5433/jahatelo_local" DIRECT_URL="postgresql://postgres:postgres@localhost:5433/jahatelo_local" npx prisma migrate deploy
 ```
 
-## Pendientes en working tree (sin commit)
-- App: `screens/motelDetail/RoomsTab.js` (amenities en circulos + tooltip con long press).
-- App: `services/googleAuthService.js` (AuthSession.makeRedirectUri, proxy Expo Go, client IDs nativos).
-- Web: mover amenities a nivel rooms (nearby/search/page/motel detail/admin amenities) y limpiar `motelAmenities`.
-- Web: cambios de UI/orden en cards/public pages (MotelCard/AdInlineCard/Nearby/Search).
-- Web: logo publico/registro/login reparado (archivos reales en `public/` en lugar de symlinks).
-- Archivo sin trackear: `Fotos/freixenet-logo.png` (definir si se commitea).
+## Git
+- Ultimo commit en staging: `f95d4f3` (amenities desde habitaciones + google auth Expo + logos publicos reales + README actualizado).
 
 ## Tests
 - No se corrieron tests recientes.
