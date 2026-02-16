@@ -17,9 +17,9 @@ interface VisitorStats {
 }
 
 const RANGES = [
-  { label: '7 días', value: '7' },
-  { label: '30 días', value: '30' },
-  { label: '90 días', value: '90' },
+  { label: '7 das', value: '7' },
+  { label: '30 das', value: '30' },
+  { label: '90 das', value: '90' },
 ];
 
 const PLATFORM_LABELS: Record<string, string> = {
@@ -67,7 +67,7 @@ export default function VisitorAnalyticsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Visitantes</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Estadísticas anónimas de usuarios únicos (web + app)
+            Estadsticas annimas de usuarios nicos (web + app)
           </p>
         </div>
         <div className="flex gap-2">
@@ -88,7 +88,7 @@ export default function VisitorAnalyticsPage() {
       </div>
 
       {loading && (
-        <div className="text-center py-12 text-gray-400">Cargando estadísticas...</div>
+        <div className="text-center py-12 text-gray-400">Cargando estadsticas...</div>
       )}
 
       {!loading && stats && (
@@ -101,14 +101,14 @@ export default function VisitorAnalyticsPage() {
               sub="acciones registradas"
             />
             <StatCard
-              label="Dispositivos únicos"
+              label="Dispositivos nicos"
               value={stats.summary.uniqueDevices.toLocaleString()}
               sub="usuarios distintos"
             />
             <StatCard
               label="Nuevos"
               value={stats.summary.newDevices.toLocaleString()}
-              sub="primera visita en el período"
+              sub="primera visita en el perodo"
             />
             <StatCard
               label="Recurrentes"
@@ -143,11 +143,11 @@ export default function VisitorAnalyticsPage() {
             </div>
           )}
 
-          {/* Gráfico diario */}
+          {/* Grfico diario */}
           {stats.daily.length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-200 p-5">
               <h2 className="text-sm font-semibold text-gray-700 mb-4">
-                Sesiones diarias (últimos {range} días)
+                Sesiones diarias (ltimos {range} das)
               </h2>
               <div className="flex items-end gap-1 h-32">
                 {stats.daily.map((d) => (
@@ -156,7 +156,7 @@ export default function VisitorAnalyticsPage() {
                       <div
                         className="w-full bg-purple-500 rounded-t hover:bg-purple-600 transition-colors"
                         style={{ height: `${Math.max(Math.round((d.sessions / maxSessions) * 112), 2)}px` }}
-                        title={`${d.day}: ${d.sessions} sesiones, ${d.uniqueDevices} únicos`}
+                        title={`${d.day}: ${d.sessions} sesiones, ${d.uniqueDevices} nicos`}
                       />
                     </div>
                   </div>
@@ -169,11 +169,11 @@ export default function VisitorAnalyticsPage() {
             </div>
           )}
 
-          {/* Top páginas */}
+          {/* Top pginas */}
           {stats.topPaths.length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-200 p-5">
               <h2 className="text-sm font-semibold text-gray-700 mb-4">
-                Páginas / pantallas más visitadas
+                Pginas / pantallas ms visitadas
               </h2>
               <div className="space-y-2">
                 {stats.topPaths.map((p, i) => {
@@ -206,7 +206,7 @@ export default function VisitorAnalyticsPage() {
 
           {stats.summary.totalEvents === 0 && (
             <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center text-gray-400">
-              No hay datos de visitantes para este período todavía.
+              No hay datos de visitantes para este perodo todava.
             </div>
           )}
         </>

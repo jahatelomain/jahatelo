@@ -7,8 +7,8 @@ import { trackVisitor, getOrCreateDeviceId } from '@/lib/analytics';
 /**
  * AnalyticsProvider
  * Coloca este componente en el root layout (app/layout.tsx).
- * Trackea automáticamente:
- *   - session_start: primera vez que el usuario llega (o nueva sesión)
+ * Trackea automticamente:
+ *   - session_start: primera vez que el usuario llega (o nueva sesin)
  *   - page_view: cada cambio de ruta
  */
 export default function AnalyticsProvider() {
@@ -22,7 +22,7 @@ export default function AnalyticsProvider() {
 
     if (!sessionTracked.current) {
       sessionTracked.current = true;
-      // Verificar si es una sesión nueva (no vista en los últimos 30 min)
+      // Verificar si es una sesin nueva (no vista en los ltimos 30 min)
       const lastActive = sessionStorage.getItem('jhtl_last_active');
       const now = Date.now();
       const SESSION_GAP = 30 * 60 * 1000; // 30 minutos
@@ -44,7 +44,7 @@ export default function AnalyticsProvider() {
 
     trackVisitor({ event: 'page_view', path: pathname });
 
-    // Actualizar última actividad
+    // Actualizar ltima actividad
     sessionStorage.setItem('jhtl_last_active', String(Date.now()));
   }, [pathname]);
 

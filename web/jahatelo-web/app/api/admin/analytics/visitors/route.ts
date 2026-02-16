@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 
 // GET /api/admin/analytics/visitors?range=30
-// Retorna estadísticas agregadas de visitantes anónimos (VisitorEvent)
+// Retorna estadsticas agregadas de visitantes annimos (VisitorEvent)
 export async function GET(request: NextRequest) {
   const access = await requireAdminAccess(request, ['SUPERADMIN'], 'analytics');
   if (access.error) return access.error;
@@ -97,6 +97,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching visitor analytics:', error);
-    return NextResponse.json({ error: 'Error al obtener estadísticas' }, { status: 500 });
+    return NextResponse.json({ error: 'Error al obtener estadsticas' }, { status: 500 });
   }
 }
