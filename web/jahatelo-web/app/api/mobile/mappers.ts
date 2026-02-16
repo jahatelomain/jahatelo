@@ -1,4 +1,4 @@
-import { Motel, RoomType, Photo, Amenity, MotelAmenity, RoomAmenity, Promo, RoomPhoto } from '@prisma/client';
+import { Motel, RoomType, Photo, Amenity, RoomAmenity, Promo, RoomPhoto } from '@prisma/client';
 
 type RoomPricingInfo = Pick<
   RoomType,
@@ -32,14 +32,12 @@ type RoomWithRelations = RoomType & {
 // Base type for list items - accepts both pricing info and full room data
 type MotelForList = Motel & {
   photos: Photo[];
-  motelAmenities: (MotelAmenity & { amenity: Amenity })[];
   rooms?: (RoomForList | RoomWithRelations)[];
   promos?: Promo[];
 };
 
 type MotelWithRelations = Motel & {
   photos: Photo[];
-  motelAmenities: (MotelAmenity & { amenity: Amenity })[];
   rooms?: RoomWithRelations[];
   promos?: Promo[];
 };
@@ -179,11 +177,8 @@ export function mapMotelToListItem(motel: MotelForList) {
     tienePromo: hasPromotions,
     startingPrice: getStartingPrice(motel.rooms),
     amenities: (() => {
-      // Aggregate unique amenities from motelAmenities + active room amenities
+      // Aggregate unique amenities from all active room amenities
       const map = new Map<string, { name: string; icon: string | null }>();
-      for (const ma of motel.motelAmenities) {
-        map.set(ma.amenity.id, { name: ma.amenity.name, icon: ma.amenity.icon });
-      }
       for (const room of motel.rooms || []) {
         if (!room.isActive) continue;
         const roomAmenities = (room as RoomForList).amenities ?? (room as RoomWithRelations).amenities;

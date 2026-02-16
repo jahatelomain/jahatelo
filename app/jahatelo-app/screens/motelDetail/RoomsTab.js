@@ -1,9 +1,107 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import React, { useState, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { formatPrice } from '../../services/motelsApi';
 import { getAmenityIconConfig } from '../../constants/amenityIcons';
 import { COLORS } from '../../constants/theme';
+
+function RoomCard({ room }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const tooltipTimer = useRef(null);
+
+  const handleAmenityLongPress = useCallback(() => {
+    if (tooltipTimer.current) clearTimeout(tooltipTimer.current);
+    setShowTooltip(true);
+    tooltipTimer.current = setTimeout(() => setShowTooltip(false), 3000);
+  }, []);
+
+  const amenities = room.amenities || [];
+
+  // Amenities que tienen icono configurado (para los círculos)
+  const amenitiesWithIcon = amenities
+    .map((a) => {
+      const data = typeof a === 'string' ? { name: a } : a;
+      return { name: data.name, iconConfig: getAmenityIconConfig(data.icon) };
+    })
+    .filter((a) => a.iconConfig);
+
+  // Todos los nombres para el tooltip
+  const allNames = amenities
+    .map((a) => (typeof a === 'string' ? a : a.name))
+    .filter(Boolean)
+    .join(' · ');
+
+  return (
+    <View style={styles.roomCard}>
+      <Text style={styles.roomName}>{room.name}</Text>
+
+      {room.description && (
+        <Text style={styles.roomDescription}>{room.description}</Text>
+      )}
+
+      {/* Fotos de la habitación */}
+      {room.photos && room.photos.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.photosScroll}
+          contentContainerStyle={styles.photosScrollContent}
+        >
+          {room.photos.map((photo, index) => (
+            <Image
+              key={index}
+              source={{ uri: photo }}
+              style={styles.roomPhoto}
+              resizeMode="cover"
+            />
+          ))}
+        </ScrollView>
+      )}
+
+      <View style={styles.roomPriceRow}>
+        {room.priceLabel && room.priceLabel.trim().length > 0 ? (
+          <Text style={[styles.roomPriceLabel, { fontWeight: '600' }]}>{room.priceLabel}</Text>
+        ) : (
+          <>
+            <Text style={styles.roomPriceLabel}>DESDE</Text>
+            <Text style={styles.roomPrice}>
+              {room.basePrice && room.basePrice > 0
+                ? formatPrice(room.basePrice)
+                : 'CONSULTAR'}
+            </Text>
+          </>
+        )}
+      </View>
+
+      {/* Amenities: solo iconos, long press muestra tooltip */}
+      {amenitiesWithIcon.length > 0 && (
+        <View style={styles.amenitiesSection}>
+          <View style={styles.amenitiesRow}>
+            {amenitiesWithIcon.map((amenity, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.amenityCircle}
+                onLongPress={handleAmenityLongPress}
+                delayLongPress={400}
+                activeOpacity={0.75}
+              >
+                <MaterialCommunityIcons
+                  name={amenity.iconConfig.name}
+                  size={18}
+                  color={COLORS.primary}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {showTooltip && (
+            <Text style={styles.tooltipText}>{allNames}</Text>
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
 
 export default function RoomsTab({ route }) {
   const { motel } = route.params || {};
@@ -19,71 +117,7 @@ export default function RoomsTab({ route }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {motel.rooms.map((room) => (
-        <View key={room.id} style={styles.roomCard}>
-          <Text style={styles.roomName}>{room.name}</Text>
-
-          {room.description && (
-            <Text style={styles.roomDescription}>{room.description}</Text>
-          )}
-
-          {/* Fotos de la habitación */}
-          {room.photos && room.photos.length > 0 && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.photosScroll}
-              contentContainerStyle={styles.photosScrollContent}
-            >
-              {room.photos.map((photo, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: photo }}
-                  style={styles.roomPhoto}
-                  resizeMode="cover"
-                />
-              ))}
-            </ScrollView>
-          )}
-
-          <View style={styles.roomPriceRow}>
-            {room.priceLabel && room.priceLabel.trim().length > 0 ? (
-              <Text style={[styles.roomPriceLabel, { fontWeight: '600' }]}>{room.priceLabel}</Text>
-            ) : (
-              <>
-                <Text style={styles.roomPriceLabel}>DESDE</Text>
-                <Text style={styles.roomPrice}>
-                  {room.basePrice && room.basePrice > 0
-                    ? formatPrice(room.basePrice)
-                    : 'CONSULTAR'}
-                </Text>
-              </>
-            )}
-          </View>
-
-          {/* Amenities de la habitación */}
-          {room.amenities && room.amenities.length > 0 && (
-            <View style={styles.amenitiesContainer}>
-              {room.amenities.map((amenity, index) => {
-                const amenityData = typeof amenity === 'string' ? { name: amenity } : amenity;
-                const iconConfig = getAmenityIconConfig(amenityData.icon);
-
-                return (
-                  <View key={index} style={styles.amenityPill}>
-                    {iconConfig && (
-                      <MaterialCommunityIcons
-                        name={iconConfig.name}
-                        size={14}
-                        color={COLORS.primary}
-                        style={styles.amenityIcon}
-                      />
-                    )}
-                    <Text style={styles.amenityText}>{amenityData.name}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          )}
-        </View>
+        <RoomCard key={room.id} room={room} />
       ))}
     </ScrollView>
   );
@@ -133,27 +167,28 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     marginHorizontal: 6,
   },
-  amenitiesContainer: {
+  amenitiesSection: {
+    marginBottom: 4,
+  },
+  amenitiesRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 12,
+    gap: 8,
   },
-  amenityPill: {
-    backgroundColor: '#F0E6F6',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    marginRight: 6,
-    marginBottom: 6,
-    flexDirection: 'row',
+  amenityCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  amenityText: {
+  tooltipText: {
+    marginTop: 8,
     fontSize: 12,
-    color: '#2A0038',
-  },
-  amenityIcon: {
-    marginRight: 4,
+    color: '#555',
+    fontStyle: 'italic',
+    lineHeight: 18,
   },
   photosScroll: {
     marginTop: 12,

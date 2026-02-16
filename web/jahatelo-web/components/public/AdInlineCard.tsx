@@ -45,11 +45,7 @@ export default function AdInlineCard({ ad, placement }: { ad: Advertisement; pla
                 blurDataURL={BLUR_DATA_URL}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-purple-200">
-                <svg className="w-6 h-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7h18M5 7v10a2 2 0 002 2h10a2 2 0 002-2V7m-2 0V5a2 2 0 00-2-2H9a2 2 0 00-2 2v2" />
-                </svg>
-              </div>
+              <div className="w-full h-full bg-gradient-to-br from-purple-100 to-purple-200" />
             )}
             <div className="absolute -top-2 -right-2 bg-purple-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-sm">
               Publicidad

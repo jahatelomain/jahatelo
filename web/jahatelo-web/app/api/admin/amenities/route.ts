@@ -51,21 +51,9 @@ export async function GET(request: NextRequest) {
     const amenities = await prisma.amenity.findMany({
       where,
       include: {
-        motelAmenities: {
-          include: {
-            motel: {
-              select: {
-                id: true,
-                name: true,
-                city: true,
-              },
-            },
-          },
-        },
         _count: {
           select: {
             roomAmenities: true,
-            motelAmenities: true,
           },
         },
       },

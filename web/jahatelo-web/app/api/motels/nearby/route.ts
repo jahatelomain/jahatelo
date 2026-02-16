@@ -33,18 +33,15 @@ export async function GET() {
           orderBy: { order: 'asc' },
           take: 1,
         },
-        motelAmenities: {
-          take: 3,
-          include: {
-            amenity: true,
-          },
-        },
         rooms: {
           where: { isActive: true },
           select: {
             price1h: true,
             price2h: true,
             price12h: true,
+            amenities: {
+              select: { amenity: { select: { id: true, name: true, icon: true } } },
+            },
           },
         },
       },

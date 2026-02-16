@@ -29,11 +29,7 @@ export async function GET(
       photos: {
         orderBy: { order: 'asc' as const },
       },
-      motelAmenities: {
-        include: {
-          amenity: true,
-        },
-      },
+
       rooms: {
         where: { isActive: true },
         orderBy: [{ isFeatured: 'desc' as const }, { name: 'asc' as const }],

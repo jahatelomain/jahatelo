@@ -206,11 +206,7 @@ export async function GET(request: NextRequest) {
             photos: {
               orderBy: { order: 'asc' },
             },
-            motelAmenities: {
-              include: {
-                amenity: true,
-              },
-            },
+
             rooms: {
               where: { isActive: true },
               select: {
@@ -267,11 +263,7 @@ export async function GET(request: NextRequest) {
             photos: {
               orderBy: { order: 'asc' },
             },
-            motelAmenities: {
-              include: {
-                amenity: true,
-              },
-            },
+
             rooms: {
               where: { isActive: true },
               select: {

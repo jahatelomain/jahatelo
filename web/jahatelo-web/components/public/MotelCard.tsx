@@ -24,8 +24,12 @@ interface MotelCardProps {
     featuredPhoto?: string | null;
     featuredPhotoWeb?: string | null;
     photos?: { url: string; kind: string }[];
-    motelAmenities?: { amenity: { name: string; icon?: string | null } }[];
-    rooms?: { price1h?: number | null; price2h?: number | null; price12h?: number | null }[];
+    rooms?: {
+      price1h?: number | null;
+      price2h?: number | null;
+      price12h?: number | null;
+      amenities?: { amenity: { name: string; icon?: string | null } }[];
+    }[];
     plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
     distanceKm?: number;
   };
@@ -54,8 +58,16 @@ export default function MotelCard({ motel }: MotelCardProps) {
   const safeRating = motel.ratingAvg || 0;
   const hasReviews = motel.ratingCount > 0;
 
-  // Get first 3 amenities
-  const topAmenities = motel.motelAmenities?.slice(0, 3) ?? [];
+  // Get first 3 amenities aggregated from rooms
+  const amenityMap = new Map<string, { name: string; icon?: string | null }>();
+  for (const room of motel.rooms ?? []) {
+    for (const ra of room.amenities ?? []) {
+      if (!amenityMap.has(ra.amenity.name)) {
+        amenityMap.set(ra.amenity.name, ra.amenity);
+      }
+    }
+  }
+  const topAmenities = Array.from(amenityMap.values()).slice(0, 3);
   const isDisabled = motel.plan === 'FREE';
   const isDiamond = motel.plan === 'DIAMOND';
 
@@ -136,9 +148,9 @@ export default function MotelCard({ motel }: MotelCardProps) {
           {/* Amenities */}
           {topAmenities.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
-              {topAmenities.map((ma, idx) => {
-                const label = ma.amenity.name;
-                const IconComponent = ma.amenity.icon ? iconLibrary[ma.amenity.icon] : undefined;
+              {topAmenities.map((amenity, idx) => {
+                const label = amenity.name;
+                const IconComponent = amenity.icon ? iconLibrary[amenity.icon] : undefined;
                 return (
                   <span
                     key={idx}

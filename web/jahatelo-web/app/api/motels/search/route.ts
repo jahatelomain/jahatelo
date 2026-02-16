@@ -66,10 +66,12 @@ export async function GET(request: NextRequest) {
         { city: { contains: search, mode: 'insensitive' } },
         { neighborhood: { contains: search, mode: 'insensitive' } },
         {
-          motelAmenities: {
+          rooms: {
             some: {
-              amenity: {
-                name: { contains: search, mode: 'insensitive' },
+              amenities: {
+                some: {
+                  amenity: { name: { contains: search, mode: 'insensitive' } },
+                },
               },
             },
           },
@@ -90,10 +92,10 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      whereClause.motelAmenities = {
+      whereClause.rooms = {
         some: {
-          amenityId: {
-            in: amenityIds,
+          amenities: {
+            some: { amenityId: { in: amenityIds } },
           },
         },
       };
@@ -118,18 +120,15 @@ export async function GET(request: NextRequest) {
           orderBy: { order: 'asc' },
           take: 1,
         },
-        motelAmenities: {
-          take: 3,
-          include: {
-            amenity: true,
-          },
-        },
         rooms: {
           where: { isActive: true },
           select: {
             price1h: true,
             price2h: true,
             price12h: true,
+            amenities: {
+              select: { amenity: { select: { id: true, name: true, icon: true } } },
+            },
           },
         },
       },

@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       },
       include: {
         photos: { orderBy: { order: 'asc' as const }, take: 3 },
-        motelAmenities: { include: { amenity: true } },
+
         rooms: {
           where: { isActive: true },
           select: {
@@ -122,11 +122,8 @@ export async function GET(request: NextRequest) {
           );
         const precioDesde = allPrices.length > 0 ? Math.min(...allPrices) : 0;
 
-        // Aggregate unique amenities from motelAmenities + active room amenities
+        // Aggregate unique amenities from all active room amenities
         const amenityMap = new Map<string, { name: string; icon: string | null }>();
-        for (const ma of motel.motelAmenities) {
-          amenityMap.set(ma.amenity.id, { name: ma.amenity.name, icon: ma.amenity.icon });
-        }
         for (const room of motel.rooms) {
           if (!room.isActive) continue;
           for (const ra of (room as any).amenities ?? []) {

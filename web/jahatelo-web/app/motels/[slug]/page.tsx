@@ -36,11 +36,6 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
       photos: {
         orderBy: { order: 'asc' },
       },
-      motelAmenities: {
-        include: {
-          amenity: true,
-        },
-      },
       promos: {
         where: { isActive: true },
         orderBy: { createdAt: 'desc' },
@@ -122,6 +117,17 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
   const safeRating = motel.ratingAvg || 0;
   const hasReviews = motel.ratingCount > 0;
 
+  // Aggregate unique amenities from all active rooms
+  const amenityAggMap = new Map<string, { id: string; name: string; icon: string | null }>();
+  for (const room of motel.rooms) {
+    for (const ra of room.amenities) {
+      if (!amenityAggMap.has(ra.amenity.id)) {
+        amenityAggMap.set(ra.amenity.id, { id: ra.amenity.id, name: ra.amenity.name, icon: ra.amenity.icon });
+      }
+    }
+  }
+  const motelAmenitiesFromRooms = Array.from(amenityAggMap.values());
+
   // Build tabs dynamically
   const tabs = [];
 
@@ -140,20 +146,20 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
             </div>
           )}
 
-          {/* Amenities */}
-          {motel.motelAmenities.length > 0 && (
+          {/* Amenities derived from rooms */}
+          {motelAmenitiesFromRooms.length > 0 && (
             <div className="mb-8">
               <h3 className="text-xl font-semibold text-gray-900 mb-3">Servicios e instalaciones</h3>
               <div className="flex flex-wrap gap-3">
-                {motel.motelAmenities.map((ma) => (
+                {motelAmenitiesFromRooms.map((amenity) => (
                   <div
-                    key={ma.id}
-                    title={ma.amenity.name}
-                    aria-label={ma.amenity.name}
+                    key={amenity.id}
+                    title={amenity.name}
+                    aria-label={amenity.name}
                     className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-purple-50 text-purple-600"
                   >
                     {(() => {
-                      const IconComponent = ma.amenity.icon ? iconLibrary[ma.amenity.icon] : undefined;
+                      const IconComponent = amenity.icon ? iconLibrary[amenity.icon] : undefined;
                       return IconComponent ? (
                         <IconComponent size={18} />
                       ) : (

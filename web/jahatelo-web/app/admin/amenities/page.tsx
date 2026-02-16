@@ -18,15 +18,7 @@ type Amenity = {
   icon: string | null;
   _count: {
     roomAmenities: number;
-    motelAmenities: number;
   };
-  motelAmenities?: {
-    motel: {
-      id: string;
-      name: string;
-      city: string;
-    };
-  }[];
 };
 
 type ConfirmAction = {
@@ -56,7 +48,6 @@ export default function AmenitiesPage() {
   const formRef = useRef<HTMLDivElement | null>(null);
   const [formDirty, setFormDirty] = useState(false);
   const [formData, setFormData] = useState({ name: '', type: '', icon: '' });
-  const [expandedAmenity, setExpandedAmenity] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -90,7 +81,6 @@ export default function AmenitiesPage() {
       const meta = Array.isArray(data) ? undefined : data?.meta;
       setAmenities((prev) => (isLoadingMore ? [...prev, ...amenitiesData] : amenitiesData));
       setTotalItems(meta?.total ?? amenitiesData.length);
-      setExpandedAmenity(null);
     } catch (error) {
       console.error('Error fetching amenities:', error);
       if (!isLoadingMore) {
@@ -217,10 +207,6 @@ export default function AmenitiesPage() {
     setEditingId(null);
     setFormData({ name: '', type: '', icon: '' });
     setFormDirty(false);
-  };
-
-  const toggleExpanded = (id: string) => {
-    setExpandedAmenity((prev) => (prev === id ? null : id));
   };
 
   const getTypeLabel = (type: string | null) => {
@@ -572,9 +558,7 @@ export default function AmenitiesPage() {
               </tr>
             ) : (
               amenities.map((amenity) => {
-                const motelCount = amenity._count.motelAmenities;
                 const roomCount = amenity._count.roomAmenities;
-                const motels = amenity.motelAmenities ?? [];
 
                 return (
                   <Fragment key={amenity.id}>
@@ -606,26 +590,12 @@ export default function AmenitiesPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                        <div className="flex flex-col gap-1">
-                          <button
-                            type="button"
-                            onClick={() => (motelCount > 0 ? toggleExpanded(amenity.id) : undefined)}
-                            className={`inline-flex items-center gap-1.5 ${
-                              motelCount > 0 ? 'text-purple-600 hover:text-purple-700 cursor-pointer' : 'text-slate-500 cursor-default'
-                            }`}
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                            </svg>
-                            {motelCount} {motelCount === 1 ? 'motel' : 'moteles'}
-                          </button>
-                          <span className="inline-flex items-center gap-1.5 text-slate-500">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2" />
-                            </svg>
-                            {roomCount} {roomCount === 1 ? 'habitación' : 'habitaciones'}
-                          </span>
-                        </div>
+                        <span className="inline-flex items-center gap-1.5 text-slate-500">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2" />
+                          </svg>
+                          {roomCount} {roomCount === 1 ? 'habitación' : 'habitaciones'}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex items-center gap-2">
@@ -653,26 +623,6 @@ export default function AmenitiesPage() {
                         </div>
                       </td>
                     </tr>
-                    {expandedAmenity === amenity.id && motels.length > 0 && (
-                      <tr className="bg-slate-50">
-                        <td colSpan={5} className="px-6 py-4">
-                          <div className="mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            Moteles que utilizan este amenity
-                          </div>
-                          <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-slate-700">
-                            {motels.map(({ motel }) => (
-                              <li key={motel.id} className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2">
-                                <span className="text-purple-600">🏨</span>
-                                <div>
-                                  <p className="font-medium text-slate-900">{motel.name}</p>
-                                  <p className="text-xs text-slate-500">{motel.city}</p>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </td>
-                      </tr>
-                    )}
                   </Fragment>
                 );
               })
