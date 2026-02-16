@@ -5,6 +5,7 @@ import PwaRegistrar from "@/components/public/PwaRegistrar";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AgeGate from "@/components/public/AgeGate";
+import AnalyticsProvider from "@/components/AnalyticsProvider";
 
 const lato = Lato({
   weight: ['400', '700'],
@@ -77,6 +78,7 @@ export default function RootLayout({
           <ToastProvider>
             <AgeGate />
             <PwaRegistrar />
+            <AnalyticsProvider />
             {children}
           </ToastProvider>
         </AuthProvider>

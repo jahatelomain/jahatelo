@@ -161,7 +161,8 @@ export default function AdminLayout({
       collapsible: true,
       items: [
         { href: '/admin/prospects', label: 'Prospects', roles: ['SUPERADMIN'] },
-        { href: '/admin/analytics', label: 'Analytics', roles: ['SUPERADMIN'] },
+        { href: '/admin/analytics', label: 'Analytics moteles', roles: ['SUPERADMIN'] },
+        { href: '/admin/analytics/visitors', label: 'Visitantes', roles: ['SUPERADMIN'] },
       ],
     },
     { href: '/admin/financiero', label: 'Financiero', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
