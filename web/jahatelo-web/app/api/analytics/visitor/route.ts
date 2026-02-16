@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 const TrackSchema = z.object({
@@ -16,12 +17,12 @@ const TrackSchema = z.object({
   ]),
   path: z.string().max(500).optional(),
   referrer: z.string().max(500).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // POST /api/analytics/visitor
-// Registra un evento anónimo de visitante (web o app)
-// Endpoint público, no requiere autenticación
+// Registra un evento anonimo de visitante (web o app)
+// Endpoint publico, no requiere autenticacion
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -40,13 +41,13 @@ export async function POST(request: NextRequest) {
         event,
         path: path ?? null,
         referrer: referrer ?? null,
-        metadata: metadata ? (metadata as object) : null,
+        metadata: metadata ? (metadata as Prisma.InputJsonValue) : undefined,
       },
     });
 
     return NextResponse.json({ ok: true });
   } catch {
-    // Silencioso  el tracking nunca debe romper la experiencia del usuario
+    // Silencioso: el tracking nunca debe romper la experiencia del usuario
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
