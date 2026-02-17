@@ -19,7 +19,14 @@
       "icon": "./assets/ios-icon-1024.png",
       "bundleIdentifier": "app.jahatelo.mobile",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Necesitamos tu ubicación para mostrarte moteles cercanos."
+        "NSLocationWhenInUseUsageDescription": "Necesitamos tu ubicación para mostrarte moteles cercanos.",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.538770919156-iguu9u41nf7fakboh06vvm09be25ip38"
+            ]
+          }
+        ]
       }
     },
     "android": {

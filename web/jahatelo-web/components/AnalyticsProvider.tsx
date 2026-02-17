@@ -18,14 +18,16 @@ export default function AnalyticsProvider() {
 
   // Inicializar deviceId y disparar session_start al montar
   useEffect(() => {
-    getOrCreateDeviceId(); // Asegura que el UUID existe desde el primer render
+    // No trackear rutas del panel admin
+    if (pathname?.startsWith('/admin')) return;
+
+    getOrCreateDeviceId();
 
     if (!sessionTracked.current) {
       sessionTracked.current = true;
-      // Verificar si es una sesin nueva (no vista en los ltimos 30 min)
       const lastActive = sessionStorage.getItem('jhtl_last_active');
       const now = Date.now();
-      const SESSION_GAP = 30 * 60 * 1000; // 30 minutos
+      const SESSION_GAP = 30 * 60 * 1000;
 
       if (!lastActive || now - parseInt(lastActive, 10) > SESSION_GAP) {
         trackVisitor({ event: 'session_start', path: pathname });
@@ -39,12 +41,12 @@ export default function AnalyticsProvider() {
     if (!pathname || pathname === lastPath.current) return;
     lastPath.current = pathname;
 
-    // No trackear el primer render (ya lo captura session_start)
+    // No trackear admin ni el primer render
+    if (pathname.startsWith('/admin')) return;
     if (!sessionTracked.current) return;
 
     trackVisitor({ event: 'page_view', path: pathname });
 
-    // Actualizar ltima actividad
     sessionStorage.setItem('jhtl_last_active', String(Date.now()));
   }, [pathname]);
 

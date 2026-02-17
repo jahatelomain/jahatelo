@@ -37,11 +37,18 @@ export const useGoogleAuth = () => {
       : { scheme: 'jahatelo', path: 'oauth/google' }
   );
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId,
-    scopes: ['profile', 'email'],
-    redirectUri,
-  });
+  // En Expo Go: clientId genérico + redirectUri manual (Desktop app client)
+  // En build nativo: iosClientId/androidClientId → expo-auth-session deriva
+  //   automáticamente el redirect URI como com.googleusercontent.apps.XXX:/oauth2redirect/google
+  const [request, response, promptAsync] = Google.useAuthRequest(
+    isExpoGo
+      ? { clientId, scopes: ['profile', 'email'], redirectUri }
+      : {
+          iosClientId: IOS_CLIENT_ID,
+          androidClientId: ANDROID_CLIENT_ID,
+          scopes: ['profile', 'email'],
+        }
+  );
 
   if (__DEV__) {
     console.log('Google Auth Config:', {

@@ -104,7 +104,9 @@ export default function AdminLayout({
     if (path === '/admin') {
       return pathname === '/admin';
     }
-    return pathname.startsWith(path);
+    // Exact match primero, luego startsWith solo si el siguiente char es '/' o fin
+    if (pathname === path) return true;
+    return pathname.startsWith(path + '/');
   };
 
   const toggleSection = (sectionName: string) => {
