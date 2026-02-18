@@ -176,11 +176,13 @@ export const FavoritesProvider = ({ children }) => {
       try {
         if (isRemoving) {
           // Quitar de favoritos en la nube
-          const response = await fetch(`${API_URL}/api/mobile/favorites?motelId=${motel.id}`, {
+          const response = await fetch(`${API_URL}/api/mobile/favorites`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
             },
+            body: JSON.stringify({ motelId: motel.id }),
           });
 
           if (response.ok) {

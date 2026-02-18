@@ -1,0 +1,20 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "W8X3Y9Z123.app.jahatelo.mobile",
+        "paths": [
+          "/motels/*",
+          "/ciudades",
+          "/ciudades/*",
+          "/search",
+          "/search/*"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["W8X3Y9Z123.app.jahatelo.mobile"]
+  }
+}

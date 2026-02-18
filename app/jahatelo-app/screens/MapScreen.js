@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
   StatusBar,
   Platform,
   Animated,
 } from 'react-native';
+import LoadingScreen from '../components/LoadingScreen';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -353,15 +353,7 @@ export default function MapScreen() {
   }, [navigation]);
 
   if (loading) {
-    return (
-      <>
-        <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Cargando mapa...</Text>
-        </View>
-      </>
-    );
+    return <LoadingScreen message="Cargando mapa..." />;
   }
 
   if (error) {

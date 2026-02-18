@@ -5,6 +5,7 @@ import { sanitizeObject } from '@/lib/sanitize';
 import { generateOtpCode, hashOtp, isValidPhone, normalizePhone } from '@/lib/otp';
 import { sendSmsOtp } from '@/lib/sms';
 import { z } from 'zod';
+import logger from '@/lib/logger';
 
 const OTP_EXPIRY_MINUTES = 5;
 const OTP_SEND_COOLDOWN_SECONDS = 60;
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    console.error('Error requesting SMS OTP:', error);
+    logger.error({ message: 'Error requesting SMS OTP', error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Error al solicitar OTP' },
       { status: 500 }

@@ -130,10 +130,16 @@ export async function GET(request: NextRequest) {
     }
 
     if (amenity) {
+      // Criterio: la app mobile envía nombres de amenidades (strings).
+      // El endpoint web (/api/motels/search) acepta también IDs — aquí solo nombres.
+      // Busca tanto por nombre exacto (insensible a mayúsculas) como por coincidencia parcial.
       where.motelAmenities = {
         some: {
           amenity: {
-            name: containsFilter(amenity),
+            OR: [
+              { name: containsFilter(amenity) },
+              { id: amenity }, // fallback por si se envía ID directo
+            ],
           },
         },
       };
@@ -240,16 +246,13 @@ export async function GET(request: NextRequest) {
           ],
         });
 
-        // Ordenar por plan en memoria
+        // Ordenar: plan → isFeatured → rating → fecha (igual que web)
         motels.sort((a: any, b: any) => {
           const planDiff = getPlanPriority(a.plan) - getPlanPriority(b.plan);
           if (planDiff !== 0) return planDiff;
-
-          // Si tienen el mismo plan, ordenar por rating
+          if (b.isFeatured !== a.isFeatured) return b.isFeatured ? 1 : -1;
           const ratingDiff = (b.ratingAvg || 0) - (a.ratingAvg || 0);
           if (ratingDiff !== 0) return ratingDiff;
-
-          // Si tienen el mismo rating, ordenar por fecha de creación
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
       }
@@ -300,16 +303,13 @@ export async function GET(request: NextRequest) {
         }),
       ]);
 
-      // Ordenar por plan en memoria
+      // Ordenar: plan → isFeatured → rating → fecha (igual que web)
       motels.sort((a: any, b: any) => {
         const planDiff = getPlanPriority(a.plan) - getPlanPriority(b.plan);
         if (planDiff !== 0) return planDiff;
-
-        // Si tienen el mismo plan, ordenar por rating
+        if (b.isFeatured !== a.isFeatured) return b.isFeatured ? 1 : -1;
         const ratingDiff = (b.ratingAvg || 0) - (a.ratingAvg || 0);
         if (ratingDiff !== 0) return ratingDiff;
-
-        // Si tienen el mismo rating, ordenar por fecha de creación
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
     }

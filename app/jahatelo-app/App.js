@@ -9,6 +9,10 @@ import { AuthProvider } from './contexts/AuthContext';
 import { NavigationProvider, useNavigationContext } from './contexts/NavigationContext';
 import RootNavigation from './navigation/RootNavigation';
 import { initializeNotifications } from './services/notificationService';
+import { initSentry } from './services/sentryService';
+
+// Inicializar Sentry lo antes posible
+initSentry();
 
 // Prevenir que el splash nativo se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
@@ -123,15 +127,18 @@ function AppContent() {
 
   // Effect para manejar navegación pendiente cuando el navegador esté listo
   useEffect(() => {
-    if (navigationRef.current && notificationDataRef.current) {
-      const unsubscribe = navigationRef.current.addListener('state', () => {
-        if (navigationRef.current.isReady() && notificationDataRef.current) {
-          performNavigation(notificationDataRef.current);
-        }
-      });
+    if (!navigationRef.current || !notificationDataRef.current) return;
 
-      return unsubscribe;
-    }
+    const unsubscribe = navigationRef.current.addListener('state', () => {
+      if (navigationRef.current?.isReady() && notificationDataRef.current) {
+        const data = notificationDataRef.current;
+        notificationDataRef.current = null; // Limpiar ref para evitar re-disparo
+        performNavigation(data);
+        unsubscribe(); // Desuscribir inmediatamente después de navegar
+      }
+    });
+
+    return unsubscribe;
   }, []);
 
   return (

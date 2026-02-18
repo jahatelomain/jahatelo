@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/public/Navbar';
@@ -18,8 +19,62 @@ import Tabs from '@/components/public/Tabs';
 import { headers } from 'next/headers';
 import { normalizeLocalUploadPath } from '@/lib/normalizeLocalUrl';
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
+
 interface MotelDetailPageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: MotelDetailPageProps): Promise<Metadata> {
+  const { slug } = await params;
+
+  const motel = await prisma.motel.findUnique({
+    where: { slug },
+    select: {
+      name: true,
+      description: true,
+      city: true,
+      neighborhood: true,
+      featuredPhoto: true,
+      featuredPhotoWeb: true,
+      status: true,
+      isActive: true,
+      plan: true,
+    },
+  });
+
+  if (!motel || motel.status !== 'APPROVED' || !motel.isActive || motel.plan === 'FREE') {
+    return { title: 'Motel no encontrado | Jahatelo' };
+  }
+
+  const title = `${motel.name} — ${motel.city} | Jahatelo`;
+  const description =
+    motel.description
+      ? motel.description.slice(0, 155).trim()
+      : `Reservá en ${motel.name}, ubicado en ${motel.neighborhood ? `${motel.neighborhood}, ` : ''}${motel.city}. Habitaciones, precios y promos en Jahatelo.`;
+
+  const ogImage = motel.featuredPhotoWeb || motel.featuredPhoto || undefined;
+  const url = `${BASE_URL}/motels/${slug}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      type: 'website',
+      siteName: 'Jahatelo',
+      ...(ogImage ? { images: [{ url: ogImage, width: 1200, height: 630, alt: motel.name }] } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      ...(ogImage ? { images: [ogImage] } : {}),
+    },
+  };
 }
 
 export default async function MotelDetailPage({ params }: MotelDetailPageProps) {
@@ -441,13 +496,13 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     ratingAvg: motel.ratingAvg,
     ratingCount: motel.ratingCount,
     phone: motel.phone,
-    url: `https://jahatelo.vercel.app/motels/${motel.slug}`,
+    url: `${BASE_URL}/motels/${motel.slug}`,
   });
 
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Inicio', url: 'https://jahatelo.vercel.app' },
-    { name: 'Buscar Moteles', url: 'https://jahatelo.vercel.app/search' },
-    { name: motel.name, url: `https://jahatelo.vercel.app/motels/${motel.slug}` },
+    { name: 'Inicio', url: BASE_URL },
+    { name: 'Buscar Moteles', url: `${BASE_URL}/search` },
+    { name: motel.name, url: `${BASE_URL}/motels/${motel.slug}` },
   ]);
 
   return (
@@ -528,7 +583,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
             <div className="flex items-center gap-3">
               <ContactButtons motelId={motel.id} phone={motel.phone} whatsapp={motel.whatsapp} />
               <FavoriteButtonClient motelId={motel.id} source="DETAIL" />
-      <ShareButton title={motel.name} url={`https://jahatelo.vercel.app/motels/${motel.slug}`} />
+      <ShareButton title={motel.name} url={`${BASE_URL}/motels/${motel.slug}`} />
             </div>
           </div>
 

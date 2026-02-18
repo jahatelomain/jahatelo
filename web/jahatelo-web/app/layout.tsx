@@ -23,11 +23,11 @@ export const metadata: Metadata = {
   keywords: ["moteles", "alojamiento", "hospedaje", "promociones", "jahatelo"],
   authors: [{ name: "Jahatelo" }],
   creator: "Jahatelo",
-  metadataBase: new URL('https://jahatelo.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com'),
   openGraph: {
     title: "Jahatelo - Encuentra tu motel ideal",
     description: "Descubre los mejores moteles cerca de ti",
-    url: 'https://jahatelo.vercel.app',
+    url: process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com',
     siteName: 'Jahatelo',
     images: [
       {

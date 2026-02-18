@@ -6,10 +6,11 @@ import { cookies } from 'next/headers';
 import { LoginSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
+import logger from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
-    const isDev = process.env.NODE_ENV === 'development';
+    const isDev = process.env.NODE_ENV !== 'production';
     const body = await request.json();
     const sanitized = sanitizeObject(body);
 
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error('Login error:', error);
+    logger.error({ message: 'Login error', error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Error al procesar login' },
       { status: 500 }

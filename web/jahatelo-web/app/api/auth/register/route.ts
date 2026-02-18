@@ -6,6 +6,7 @@ import { sanitizeText } from '@/lib/sanitize';
 import { createEmailVerificationToken } from '@/lib/emailVerification';
 import { sendEmail } from '@/lib/email';
 import { z } from 'zod';
+import logger from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
       await sendEmail({ to: user.email, subject, html, text });
       emailVerificationSent = true;
     } catch (err) {
-      console.error('Email verification send error:', err);
+      logger.error({ message: 'Email verification send error', error: err instanceof Error ? err.message : String(err) });
     }
 
     return NextResponse.json({ user, emailVerificationSent, autoLogin: false }, { status: 201 });
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error('Register error:', error);
+    logger.error({ message: 'Register error', error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Error al crear usuario' },
       { status: 500 }

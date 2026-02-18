@@ -518,7 +518,7 @@ export const PaymentSchema = z.object({
   motelId: IdSchema,
   amount: z.number().positive('Monto debe ser positivo'),
   currency: z.string().length(3).default('PYG'),
-  method: z.enum(['cash', 'transfer', 'card', 'mercadopago']),
+  method: z.enum(['cash', 'transfer', 'card']),
   status: z.enum(['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED']).optional(),
   description: z.string().max(500).optional().nullable(),
   dueDate: z.string().datetime().optional().nullable(),

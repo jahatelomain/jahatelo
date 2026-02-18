@@ -270,8 +270,8 @@ export async function POST(request: NextRequest) {
 /**
  * DELETE /api/mobile/favorites
  *
- * Elimina un favorito
- * Query: ?motelId=xxx
+ * Elimina un favorito.
+ * Acepta: body JSON { motelId } (recomendado) o query param ?motelId=xxx (legacy).
  */
 export async function DELETE(request: NextRequest) {
   try {
@@ -293,10 +293,24 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const { searchParams } = new URL(request.url);
-    const motelId = searchParams.get('motelId');
+    // Intentar leer motelId desde body; fallback a query param (compatibilidad)
+    let motelIdRaw: string | null = null;
+    const contentType = request.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      try {
+        const body = await request.json();
+        motelIdRaw = sanitizeObject(body)?.motelId ?? null;
+      } catch {
+        // body vacío o inválido — continuar con query param
+      }
+    }
+    if (!motelIdRaw) {
+      const { searchParams } = new URL(request.url);
+      motelIdRaw = searchParams.get('motelId');
+    }
+
     const parsed = MobileFavoriteSchema.pick({ motelId: true }).safeParse({
-      motelId: motelId ?? undefined,
+      motelId: motelIdRaw ?? undefined,
     });
     if (!parsed.success) {
       return NextResponse.json(

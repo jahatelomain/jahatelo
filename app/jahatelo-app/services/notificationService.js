@@ -64,7 +64,10 @@ export async function registerForPushNotificationsAsync() {
       Constants.expoConfig?.extra?.projectId;
 
     if (!projectId) {
-      console.log('projectId faltante para Expo Push');
+      console.error(
+        '[Notifications] projectId no definido. ' +
+        'Verificá que extra.eas.projectId esté en app.json y que el build se haya generado con EAS.'
+      );
       return null;
     }
 
@@ -235,6 +238,25 @@ export async function dismissAllNotificationsAsync() {
  * @param {function} options.onNotificationResponse - Handler para interacción con notificaciones
  * @returns {Promise<object>} Objeto con token y funciones de cleanup
  */
+/**
+ * Registra el token en el backend con reintentos.
+ * @param {string} token
+ * @param {string|null} userId
+ * @param {number} maxRetries - Intentos máximos (default 3)
+ */
+async function registerPushTokenWithRetry(token, userId, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const success = await registerPushToken(token, userId);
+    if (success) return true;
+    if (attempt < maxRetries) {
+      const delay = attempt * 2000; // back-off: 2s, 4s
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  console.error('[Notifications] No se pudo registrar el token tras', maxRetries, 'intentos.');
+  return false;
+}
+
 export async function initializeNotifications(options = {}) {
   const { userId = null, onNotificationReceived, onNotificationResponse } = options;
 
@@ -242,12 +264,14 @@ export async function initializeNotifications(options = {}) {
   const token = await registerForPushNotificationsAsync();
 
   if (!token) {
-    console.log('No se pudo obtener el token de notificaciones');
+    if (!__DEV__) {
+      console.error('[Notifications] No se pudo obtener el token de notificaciones push.');
+    }
     return { token: null, cleanup: () => {} };
   }
 
-  // Registrar token en el backend
-  await registerPushToken(token, userId);
+  // Registrar token en el backend con retry
+  await registerPushTokenWithRetry(token, userId);
 
   // Configurar listeners
   const receivedSubscription = onNotificationReceived

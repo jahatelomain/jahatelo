@@ -152,8 +152,38 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 3. Rate Limiting para autenticación
-  if (pathname.startsWith('/api/auth/login') || pathname.startsWith('/api/auth/register')) {
+  // 2.2. Chequeo de versión mínima para requests de la app móvil
+  const MIN_APP_VERSION = process.env.MIN_APP_VERSION || '1.0.0';
+  if (pathname.startsWith('/api/mobile/')) {
+    const appVersion = request.headers.get('x-app-version');
+    if (appVersion && appVersion !== 'dev') {
+      const parseVersion = (v: string) => v.split('.').map(Number);
+      const [maj, min, patch] = parseVersion(appVersion);
+      const [minMaj, minMin, minPatch] = parseVersion(MIN_APP_VERSION);
+      const isOutdated =
+        maj < minMaj ||
+        (maj === minMaj && min < minMin) ||
+        (maj === minMaj && min === minMin && patch < minPatch);
+      if (isOutdated) {
+        return NextResponse.json(
+          {
+            error: 'Versión de app desactualizada. Por favor actualizá la aplicación.',
+            minVersion: MIN_APP_VERSION,
+            currentVersion: appVersion,
+          },
+          { status: 426 }
+        );
+      }
+    }
+  }
+
+  // 3. Rate Limiting para autenticación (login, register y OTP WhatsApp)
+  if (
+    pathname.startsWith('/api/auth/login') ||
+    pathname.startsWith('/api/auth/register') ||
+    pathname.startsWith('/api/auth/whatsapp/request-otp') ||
+    pathname.startsWith('/api/mobile/auth/whatsapp/request-otp')
+  ) {
     if (process.env.E2E_MODE === '1') {
       return NextResponse.next();
     }
