@@ -1,6 +1,12 @@
 # Codex resumen (estado actual)
 
 ## Ultimo estado
+### Guardrails staging -> produccion
+- Build de Vercel ahora bloquea deploy de `production` si no viene de la rama permitida (`ALLOWED_PRODUCTION_BRANCH`, por defecto `main`).
+- Script de control: `web/jahatelo-web/scripts/enforce-production-branch.js` (se ejecuta desde `web/jahatelo-web/vercel.json`).
+- Override de emergencia (solo si falta `VERCEL_GIT_COMMIT_REF`): `ALLOW_PROD_DEPLOY_WITHOUT_REF=1`.
+- Workflow agregado: `.github/workflows/enforce-main-from-staging.yml` para aceptar PR a `main` solo desde `staging`.
+
 ### Web
 - Staging activo en Vercel; prod y staging usan la misma DB y bucket (por ahora).
 - Uploads en staging/prod usan S3; en dev hay fallback local si faltan creds o `UPLOADS_USE_LOCAL=1`.
