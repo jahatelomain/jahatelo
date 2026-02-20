@@ -55,7 +55,7 @@ function LoginForm() {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
               <img
-                src="/logo-master.png"
+                src="/logo-icon.png"
                 alt="Jahatelo"
                 className="h-14 w-auto object-contain"
               />

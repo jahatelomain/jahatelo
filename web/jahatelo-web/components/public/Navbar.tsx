@@ -27,9 +27,9 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center justify-center">
             <img
-              src="/logo-master.png"
+              src="/logo-icon.png"
               alt="Jahatelo"
-              className="h-20 w-auto object-contain"
+              className="h-10 w-auto object-contain"
             />
           </Link>
 

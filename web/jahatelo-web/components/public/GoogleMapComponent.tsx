@@ -8,6 +8,8 @@ const BASE_PIN_HEIGHT = 45;
 const BASE_PIN_CENTER = 16;
 const BASE_PIN_RADIUS = 13;
 const GLOBAL_PIN_SCALE = 1.1;
+const BASE_LABEL_GAP = 22;
+const EXTRA_LABEL_GAP_PX = 3;
 
 function createPinElement(color: string, opacity: number, scale: number) {
   if (typeof document === 'undefined') {
@@ -256,8 +258,21 @@ export default function GoogleMapComponent({
           this.div.style.position = 'absolute';
           this.div.style.maxWidth = `${Math.round(180 * effectiveScale)}px`;
           this.div.style.overflow = 'visible';
-          this.div.textContent = this.text;
+          this.div.style.display = 'inline-flex';
+          this.div.style.alignItems = 'center';
           this.div.style.pointerEvents = 'auto';
+
+          // Keep labels dynamic but prevent long names from leaking past the pill.
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = this.text;
+          nameSpan.style.display = 'inline-block';
+          nameSpan.style.maxWidth = `${Math.round(150 * effectiveScale)}px`;
+          nameSpan.style.overflow = 'hidden';
+          nameSpan.style.textOverflow = 'ellipsis';
+          nameSpan.style.whiteSpace = 'nowrap';
+          nameSpan.style.verticalAlign = 'middle';
+          this.div.appendChild(nameSpan);
+
           if (planConfig.badge) {
             this.div.style.animation = 'jahatelo-pin-bounce 1.6s ease-in-out infinite';
           }
@@ -304,7 +319,9 @@ export default function GoogleMapComponent({
             new window.google.maps.LatLng(this.position.lat, this.position.lng)
           );
           this.div.style.left = position.x - (this.div.offsetWidth / 2) + 'px';
-          const labelOffset = Math.round((BASE_PIN_HEIGHT * effectiveScale) + (22 * effectiveScale));
+          const labelOffset = Math.round(
+            (BASE_PIN_HEIGHT * effectiveScale) + (BASE_LABEL_GAP * effectiveScale) + EXTRA_LABEL_GAP_PX
+          );
           this.div.style.top = position.y - labelOffset + 'px';
         }
 

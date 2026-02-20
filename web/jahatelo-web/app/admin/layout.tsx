@@ -351,7 +351,7 @@ export default function AdminLayout({
               </button>
               <div className="flex items-center justify-center gap-3">
                 <img
-                  src="/logo-master.png"
+                  src="/logo-icon.png"
                   alt="Jahatelo"
                   className="h-10 w-auto object-contain"
                 />

@@ -34,3 +34,5 @@ prisma/dev.db-journal
 # Build artifacts
 dist/
 build/
+.vercel
+.env*.local

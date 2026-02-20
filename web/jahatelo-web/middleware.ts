@@ -105,6 +105,34 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
   const origin = request.headers.get('origin');
+  const host = request.headers.get('host') || '';
+
+  // 0. Optional basic auth gate for staging/public preview hosts
+  const stagingGateEnabled = process.env.STAGING_GATE_ENABLED === '1';
+  const stagingGatePass = process.env.STAGING_GATE_PASSWORD;
+  const stagingGateHosts = (process.env.STAGING_GATE_HOSTS || '')
+    .split(',')
+    .map((v) => v.trim().toLowerCase())
+    .filter(Boolean);
+  const hostNormalized = host.toLowerCase();
+  const isStagingHost =
+    stagingGateHosts.length > 0
+      ? stagingGateHosts.some((h) => hostNormalized === h || hostNormalized.endsWith(`.${h}`))
+      : false;
+
+  if (stagingGateEnabled && stagingGatePass && isStagingHost) {
+    const authHeader = request.headers.get('authorization') || '';
+    const expected = `Basic ${btoa(`staging:${stagingGatePass}`)}`;
+    if (authHeader !== expected) {
+      return new NextResponse('Authentication required', {
+        status: 401,
+        headers: {
+          'WWW-Authenticate': 'Basic realm=\"Staging\"',
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
+  }
 
   // 1. HTTPS Redirect en producción
   if (
@@ -360,9 +388,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/admin/:path*',
-    '/api/:path*',
-    '/perfil/:path*',
-    '/mis-favoritos/:path*',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
   ],
 };
