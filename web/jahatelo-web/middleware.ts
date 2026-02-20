@@ -115,12 +115,22 @@ export async function middleware(request: NextRequest) {
     .map((v) => v.trim().toLowerCase())
     .filter(Boolean);
   const hostNormalized = host.toLowerCase();
+  const hostnameNormalized = request.nextUrl.hostname.toLowerCase();
   const isStagingHost =
     stagingGateHosts.length > 0
-      ? stagingGateHosts.some((h) => hostNormalized === h || hostNormalized.endsWith(`.${h}`))
+      ? stagingGateHosts.some(
+          (h) =>
+            hostNormalized === h ||
+            hostNormalized.endsWith(`.${h}`) ||
+            hostnameNormalized === h ||
+            hostnameNormalized.endsWith(`.${h}`)
+        )
       : false;
+  const isPreviewEnv = process.env.VERCEL_ENV === 'preview';
+  const shouldApplyStagingGate =
+    stagingGateEnabled && !!stagingGatePass && (isPreviewEnv || isStagingHost);
 
-  if (stagingGateEnabled && stagingGatePass && isStagingHost) {
+  if (shouldApplyStagingGate) {
     const authHeader = request.headers.get('authorization') || '';
     const expected = `Basic ${btoa(`staging:${stagingGatePass}`)}`;
     if (authHeader !== expected) {
