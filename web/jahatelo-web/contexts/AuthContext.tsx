@@ -17,6 +17,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; needsVerification?: boolean }>;
+  loginWithGoogle: (googleUser: { providerId: string; email: string; name?: string }) => Promise<{ success: boolean; error?: string }>;
   register: (data: { email: string; password: string; name?: string; phone?: string }) => Promise<{ success: boolean; error?: string; emailVerificationSent?: boolean; autoLogin?: boolean }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -77,6 +78,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithGoogle = async (googleUser: { providerId: string; email: string; name?: string }) => {
+    try {
+      const response = await fetch('/api/auth/google/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ provider: 'google', ...googleUser }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setUser(data.user);
+        return { success: true };
+      } else {
+        return { success: false, error: data.error || 'Error al iniciar sesión con Google' };
+      }
+    } catch (error) {
+      return { success: false, error: 'Error de conexión' };
+    }
+  };
+
   const register = async (registerData: { email: string; password: string; name?: string; phone?: string }) => {
     try {
       const response = await fetch('/api/auth/register', {
@@ -124,6 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated: !!user,
         login,
+        loginWithGoogle,
         register,
         logout,
         refreshUser,
@@ -145,6 +169,7 @@ export function useAuth() {
       isLoading: false,
       isAuthenticated: false,
       login: async () => ({ success: false, error: 'AuthProvider missing' }),
+      loginWithGoogle: async () => ({ success: false, error: 'AuthProvider missing' }),
       register: async () => ({ success: false, error: 'AuthProvider missing' }),
       logout: async () => {},
       refreshUser: async () => {},

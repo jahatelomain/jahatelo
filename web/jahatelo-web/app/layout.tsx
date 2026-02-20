@@ -6,6 +6,7 @@ import { ToastProvider } from "@/contexts/ToastContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AgeGate from "@/components/public/AgeGate";
 import AnalyticsProvider from "@/components/AnalyticsProvider";
+import GoogleAuthProvider from "@/components/GoogleAuthProvider";
 
 const lato = Lato({
   weight: ['400', '700'],
@@ -74,14 +75,16 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${lato.variable} antialiased bg-white text-slate-900`}>
-        <AuthProvider>
-          <ToastProvider>
-            <AgeGate />
-            <PwaRegistrar />
-            <AnalyticsProvider />
-            {children}
-          </ToastProvider>
-        </AuthProvider>
+        <GoogleAuthProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <AgeGate />
+              <PwaRegistrar />
+              <AnalyticsProvider />
+              {children}
+            </ToastProvider>
+          </AuthProvider>
+        </GoogleAuthProvider>
       </body>
     </html>
   );
