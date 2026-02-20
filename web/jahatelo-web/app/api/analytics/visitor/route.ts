@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { resolveAnalyticsEnvironment } from '@/lib/analyticsEnvironment';
 
 const TrackSchema = z.object({
   deviceId: z.string().min(8).max(64),
@@ -33,6 +34,11 @@ export async function POST(request: NextRequest) {
     }
 
     const { deviceId, platform, event, path, referrer, metadata } = parsed.data;
+    const environment = resolveAnalyticsEnvironment(request);
+    const metadataWithEnvironment = {
+      ...(metadata ?? {}),
+      environment,
+    };
 
     await prisma.visitorEvent.create({
       data: {
@@ -41,7 +47,7 @@ export async function POST(request: NextRequest) {
         event,
         path: path ?? null,
         referrer: referrer ?? null,
-        metadata: metadata ? (metadata as Prisma.InputJsonValue) : undefined,
+        metadata: metadataWithEnvironment as Prisma.InputJsonValue,
       },
     });
 

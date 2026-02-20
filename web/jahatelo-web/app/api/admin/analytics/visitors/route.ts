@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
+import type { Prisma } from '@prisma/client';
+import { resolveAnalyticsEnvironment } from '@/lib/analyticsEnvironment';
 
 // GET /api/admin/analytics/visitors?range=30
 // Retorna estadsticas agregadas de visitantes annimos (VisitorEvent)
@@ -11,26 +13,29 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const days = Math.min(Math.max(parseInt(searchParams.get('range') ?? '30', 10) || 30, 1), 365);
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-  const nonAdminPathWhere = {
-    OR: [{ path: null }, { path: { not: { startsWith: '/admin' } } }],
+  const analyticsEnvironment = resolveAnalyticsEnvironment(request);
+  const baseWhere: Prisma.VisitorEventWhereInput = {
+    createdAt: { gte: since },
+    AND: [
+      { OR: [{ path: null }, { path: { not: { startsWith: '/admin' } } }] },
+      { metadata: { path: ['environment'], equals: analyticsEnvironment } },
+    ],
   };
 
   try {
     const [totalEvents, uniqueDevices, platformBreakdown, dailyRaw, topPaths, returningRaw] =
       await Promise.all([
-        prisma.visitorEvent.count({
-          where: { createdAt: { gte: since }, ...nonAdminPathWhere },
-        }),
+        prisma.visitorEvent.count({ where: baseWhere }),
 
         prisma.visitorEvent.groupBy({
           by: ['deviceId'],
-          where: { createdAt: { gte: since }, ...nonAdminPathWhere },
+          where: baseWhere,
           _count: { deviceId: true },
         }),
 
         prisma.visitorEvent.groupBy({
           by: ['platform'],
-          where: { createdAt: { gte: since }, event: 'session_start', ...nonAdminPathWhere },
+          where: { ...baseWhere, event: 'session_start' },
           _count: { platform: true },
           orderBy: { _count: { platform: 'desc' } },
         }),
@@ -44,6 +49,7 @@ export async function GET(request: NextRequest) {
           WHERE event = 'session_start'
             AND "createdAt" >= ${since}
             AND ("path" IS NULL OR "path" NOT LIKE '/admin%')
+            AND COALESCE("metadata"->>'environment', '') = ${analyticsEnvironment}
           GROUP BY day
           ORDER BY day ASC
         `,
@@ -55,6 +61,7 @@ export async function GET(request: NextRequest) {
             event: { in: ['page_view', 'screen_view', 'motel_view'] },
             path: { not: null },
             NOT: { path: { startsWith: '/admin' } },
+            metadata: { path: ['environment'], equals: analyticsEnvironment },
           },
           _count: { path: true },
           orderBy: { _count: { path: 'desc' } },
@@ -71,6 +78,7 @@ export async function GET(request: NextRequest) {
             WHERE event = 'session_start'
               AND "createdAt" >= ${since}
               AND ("path" IS NULL OR "path" NOT LIKE '/admin%')
+              AND COALESCE("metadata"->>'environment', '') = ${analyticsEnvironment}
             GROUP BY "deviceId"
           ) sub
         `,
@@ -81,7 +89,7 @@ export async function GET(request: NextRequest) {
     const newCount = Number(returningRaw[0]?.single_visit ?? 0);
 
     return NextResponse.json({
-      period: { days, since: since.toISOString() },
+      period: { days, since: since.toISOString(), environment: analyticsEnvironment },
       summary: {
         totalEvents,
         uniqueDevices: uniqueCount,
