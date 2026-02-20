@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import AdInlineCard from '@/components/public/AdInlineCard';
@@ -19,12 +19,9 @@ const getActivePromo = (promos: any[] = []) => {
 
 const PromoCard = ({ motel }: { motel: any }) => {
   const promo = getActivePromo(motel.promos || []);
-  const photoUrl =
-    promo?.imageUrl ||
-    motel.photos?.[0]?.url ||
-    motel.featuredPhotoWeb ||
-    motel.featuredPhoto ||
-    '/motel-placeholder.png';
+  const promoImageUrl = promo?.imageUrl || null;
+  const [imgError, setImgError] = useState(false);
+  const showImage = promoImageUrl && !imgError;
 
   return (
     <Link
@@ -32,17 +29,26 @@ const PromoCard = ({ motel }: { motel: any }) => {
       className="block bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
     >
       <div className="relative h-48 bg-gray-200">
-        <Image
-          src={photoUrl}
-          alt={promo?.title || motel.name}
-          fill
-          quality={85}
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          loading="lazy"
-          placeholder="blur"
-          blurDataURL={BLUR_DATA_URL}
-        />
+        {showImage ? (
+          <Image
+            src={promoImageUrl}
+            alt={promo?.title || motel.name}
+            fill
+            quality={85}
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            loading="lazy"
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URL}
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-purple-50">
+            <svg className="w-12 h-12 text-purple-200" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
+            </svg>
+          </div>
+        )}
         <div className="absolute top-3 right-3 bg-purple-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
           Promo
         </div>

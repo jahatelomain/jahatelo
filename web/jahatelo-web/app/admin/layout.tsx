@@ -104,7 +104,9 @@ export default function AdminLayout({
     if (path === '/admin') {
       return pathname === '/admin';
     }
-    return pathname.startsWith(path);
+    // Exact match primero, luego startsWith solo si el siguiente char es '/' o fin
+    if (pathname === path) return true;
+    return pathname.startsWith(path + '/');
   };
 
   const toggleSection = (sectionName: string) => {
@@ -161,7 +163,8 @@ export default function AdminLayout({
       collapsible: true,
       items: [
         { href: '/admin/prospects', label: 'Prospects', roles: ['SUPERADMIN'] },
-        { href: '/admin/analytics', label: 'Analytics', roles: ['SUPERADMIN'] },
+        { href: '/admin/analytics', label: 'Analytics moteles', roles: ['SUPERADMIN'] },
+        { href: '/admin/analytics/visitors', label: 'Visitantes', roles: ['SUPERADMIN'] },
       ],
     },
     { href: '/admin/financiero', label: 'Financiero', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
@@ -346,26 +349,13 @@ export default function AdminLayout({
                   )}
                 </svg>
               </button>
-              <div className="flex items-center justify-center gap-0">
+              <div className="flex items-center justify-center gap-3">
                 <img
                   src="/logo-icon.png"
                   alt="Jahatelo"
-                  className="w-20 h-20 object-contain"
-                  onError={(event) => {
-                    event.currentTarget.src = '/logo-master.png';
-                  }}
+                  className="h-10 w-auto object-contain"
                 />
-                <div className="flex flex-col">
-                  <img
-                    src="/logo-text-gradient.png"
-                    alt="Jahatelo"
-                    className="h-8 w-auto object-contain -ml-0.5"
-                    onError={(event) => {
-                      event.currentTarget.src = '/logo-master.png';
-                    }}
-                  />
-                  <span className="text-xs text-slate-500 -mt-1 hidden sm:block">Admin Panel</span>
-                </div>
+                <span className="text-xs text-slate-500 hidden sm:block">Admin Panel</span>
               </div>
             </div>
 

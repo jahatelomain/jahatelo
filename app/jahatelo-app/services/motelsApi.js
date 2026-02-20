@@ -8,13 +8,13 @@ import {
   addToRecentViews,
   updateLastSync,
 } from './cacheService';
+import { getMobileApiBase } from './apiBaseUrl';
 
 /**
  * Obtiene la URL base del API desde las variables de entorno
  */
 export const getApiBaseUrl = () => {
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-  return `${apiUrl}/api/mobile`;
+  return getMobileApiBase();
 };
 
 const debugLog = (...args) => {
@@ -173,12 +173,12 @@ const mapMotelDetail = (apiMotel) => {
 
   return normalizeMotelPhotos({
     ...summary,
-    description: apiMotel.description,
+    address: apiMotel.address || null,
+    description: apiMotel.description || null,
     contact: apiMotel.contact || {},
     schedules: apiMotel.schedules || [],
     rooms: apiMotel.rooms?.map(mapRoom) || [],
     menu: apiMotel.menu?.map(mapMenuCategory) || [],
-    paymentMethods: apiMotel.paymentMethods || [],
     allPhotos: normalizePhotoList(apiMotel.allPhotos || apiMotel.photos),
     hasPhotos: apiMotel.hasPhotos || false,
     promos: apiMotel.promos || [],
@@ -290,11 +290,12 @@ export const fetchMotels = async (params = {}, useCache = true) => {
 };
 
 /**
- * Obtiene moteles destacados
+ * Obtiene todos los moteles destacados (isFeatured=true) para el carrusel.
+ * Usa limit:50 para no perder destacados que no caigan en el top-20 general.
  * @returns {Promise<Array>} Array de moteles destacados
  */
 export const fetchFeaturedMotels = async () => {
-  return fetchMotels({ featured: true });
+  return fetchMotels({ featured: true, limit: 50 });
 };
 
 /**

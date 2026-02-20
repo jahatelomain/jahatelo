@@ -18,8 +18,23 @@
       "supportsTablet": true,
       "icon": "./assets/ios-icon-1024.png",
       "bundleIdentifier": "app.jahatelo.mobile",
+      "associatedDomains": [
+        "applinks:jahatelo.com",
+        "webcredentials:jahatelo.com"
+      ],
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Necesitamos tu ubicación para mostrarte moteles cercanos."
+        "NSLocationWhenInUseUsageDescription": "Necesitamos tu ubicación para mostrarte moteles cercanos.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Necesitamos tu ubicación para mostrarte moteles cercanos.",
+        "NSCameraUsageDescription": "Usamos la cámara para que puedas subir fotos a tu perfil.",
+        "NSPhotoLibraryUsageDescription": "Accedemos a tus fotos para que puedas elegir una imagen de perfil.",
+        "NSPhotoLibraryAddOnlyUsageDescription": "Guardamos imágenes en tu galería cuando lo solicitás.",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.538770919156-iguu9u41nf7fakboh06vvm09be25ip38"
+            ]
+          }
+        ]
       }
     },
     "android": {
@@ -35,9 +50,37 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "jahatelo.com",
+              "pathPrefix": "/motels"
+            },
+            {
+              "scheme": "https",
+              "host": "jahatelo.com",
+              "pathPrefix": "/ciudades"
+            },
+            {
+              "scheme": "https",
+              "host": "jahatelo.com",
+              "pathPrefix": "/search"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE",
+        "POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -45,6 +88,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "@sentry/react-native/expo",
       "expo-router",
       "expo-web-browser",
       [
@@ -69,11 +113,13 @@
         "projectId": "98e7ed1c-2b9c-45e9-8058-4e8f94cd7235"
       },
       "router": {},
-      "googleClientIdExpo": "538770919156-pioslijk4die35brv5njd5pk4k5fcfbe.apps.googleusercontent.com",
+      "googleClientIdExpo": "538770919156-6c7dh7o9ddifj0hd8e75rlbtlk9jem08.apps.googleusercontent.com",
       "googleClientIdIos": "538770919156-iguu9u41nf7fakboh06vvm09be25ip38.apps.googleusercontent.com",
       "googleClientIdAndroid": "538770919156-f9enp1tnesjus884vk8tvi047utr3gfh.apps.googleusercontent.com",
       "googleClientIdWeb": "538770919156-pioslijk4die35brv5njd5pk4k5fcfbe.apps.googleusercontent.com"
     },
-    "owner": "jmongelos"
+    "owner": "jmongelos",
+    "privacyPolicyUrl": "https://jahatelo.com/privacidad",
+    "supportUrl": "https://jahatelo.com/soporte"
   }
 }

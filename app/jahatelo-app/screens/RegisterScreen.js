@@ -49,8 +49,11 @@ export default function RegisterScreen({ navigation }) {
     const newErrors = {};
 
     if (registerMethod === 'sms') {
-      if (!phone.trim()) {
+      const phoneClean = phone.trim();
+      if (!phoneClean) {
         newErrors.phone = 'El teléfono es requerido';
+      } else if (!/^\+?[\d\s\-()]{8,15}$/.test(phoneClean)) {
+        newErrors.phone = 'Formato de teléfono inválido';
       }
       if (otpSent && !otpCode.trim()) {
         newErrors.otpCode = 'El código es requerido';

@@ -130,10 +130,16 @@ export async function GET(request: NextRequest) {
     }
 
     if (amenity) {
+      // Criterio: la app mobile envía nombres de amenidades (strings).
+      // El endpoint web (/api/motels/search) acepta también IDs — aquí solo nombres.
+      // Busca tanto por nombre exacto (insensible a mayúsculas) como por coincidencia parcial.
       where.motelAmenities = {
         some: {
           amenity: {
-            name: containsFilter(amenity),
+            OR: [
+              { name: containsFilter(amenity) },
+              { id: amenity }, // fallback por si se envía ID directo
+            ],
           },
         },
       };
@@ -206,11 +212,7 @@ export async function GET(request: NextRequest) {
             photos: {
               orderBy: { order: 'asc' },
             },
-            motelAmenities: {
-              include: {
-                amenity: true,
-              },
-            },
+
             rooms: {
               where: { isActive: true },
               select: {
@@ -222,6 +224,13 @@ export async function GET(request: NextRequest) {
                 price24h: true,
                 priceNight: true,
                 isActive: true,
+                amenities: {
+                  select: {
+                    amenity: {
+                      select: { id: true, name: true, icon: true },
+                    },
+                  },
+                },
               },
             },
             promos: {
@@ -237,16 +246,13 @@ export async function GET(request: NextRequest) {
           ],
         });
 
-        // Ordenar por plan en memoria
+        // Ordenar: plan → isFeatured → rating → fecha (igual que web)
         motels.sort((a: any, b: any) => {
           const planDiff = getPlanPriority(a.plan) - getPlanPriority(b.plan);
           if (planDiff !== 0) return planDiff;
-
-          // Si tienen el mismo plan, ordenar por rating
+          if (b.isFeatured !== a.isFeatured) return b.isFeatured ? 1 : -1;
           const ratingDiff = (b.ratingAvg || 0) - (a.ratingAvg || 0);
           if (ratingDiff !== 0) return ratingDiff;
-
-          // Si tienen el mismo rating, ordenar por fecha de creación
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
       }
@@ -260,11 +266,7 @@ export async function GET(request: NextRequest) {
             photos: {
               orderBy: { order: 'asc' },
             },
-            motelAmenities: {
-              include: {
-                amenity: true,
-              },
-            },
+
             rooms: {
               where: { isActive: true },
               select: {
@@ -276,6 +278,13 @@ export async function GET(request: NextRequest) {
                 price24h: true,
                 priceNight: true,
                 isActive: true,
+                amenities: {
+                  select: {
+                    amenity: {
+                      select: { id: true, name: true, icon: true },
+                    },
+                  },
+                },
               },
             },
             promos: {
@@ -294,16 +303,13 @@ export async function GET(request: NextRequest) {
         }),
       ]);
 
-      // Ordenar por plan en memoria
+      // Ordenar: plan → isFeatured → rating → fecha (igual que web)
       motels.sort((a: any, b: any) => {
         const planDiff = getPlanPriority(a.plan) - getPlanPriority(b.plan);
         if (planDiff !== 0) return planDiff;
-
-        // Si tienen el mismo plan, ordenar por rating
+        if (b.isFeatured !== a.isFeatured) return b.isFeatured ? 1 : -1;
         const ratingDiff = (b.ratingAvg || 0) - (a.ratingAvg || 0);
         if (ratingDiff !== 0) return ratingDiff;
-
-        // Si tienen el mismo rating, ordenar por fecha de creación
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
     }
@@ -319,21 +325,31 @@ export async function GET(request: NextRequest) {
         photos: normalizeList(motel.photos) || [],
       }));
 
-    // Timestamp del motel más recientemente actualizado para cache-busting en la app
+    // Timestamp del motel (o promo) más recientemente actualizado para cache-busting en la app.
+    // Se incluyen las promos para que un cambio de imagen de promo invalide el cache inmediatamente.
     const latestUpdatedAt = motels.reduce((max, m: any) => {
-      const t = m.updatedAt ? new Date(m.updatedAt).getTime() : 0;
+      let t = m.updatedAt ? new Date(m.updatedAt).getTime() : 0;
+      if (Array.isArray(m.promos)) {
+        for (const promo of m.promos) {
+          const pt = promo.updatedAt ? new Date(promo.updatedAt).getTime() : 0;
+          if (pt > t) t = pt;
+        }
+      }
       return t > max ? t : max;
     }, 0);
 
-    return NextResponse.json({
-      data,
-      meta: {
-        page,
-        limit,
-        total,
-        latestUpdatedAt,
+    return NextResponse.json(
+      {
+        data,
+        meta: {
+          page,
+          limit,
+          total,
+          latestUpdatedAt,
+        },
       },
-    });
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
   } catch (error) {
     console.error('Error in GET /api/mobile/motels:', error);
     if (error instanceof z.ZodError) {

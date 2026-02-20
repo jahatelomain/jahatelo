@@ -781,3 +781,25 @@ model Settings {
 
   @@index([category])
 }
+
+// ============================================
+// VISITOR ANALYTICS (estadísticas anónimas de usuarios)
+// ============================================
+
+model VisitorEvent {
+  id         String   @id @default(cuid())
+  deviceId   String   // UUID anónimo por dispositivo/browser (persiste hasta desinstalar/limpiar datos)
+  platform   String   // "web" | "ios" | "android"
+  event      String   // "session_start" | "page_view" | "motel_view" | "search" | "screen_view"
+  path       String?  // Ruta web (ej: "/moteles/hotel-abc") o nombre de pantalla en app
+  referrer   String?  // Referrer web (de dónde viene el usuario)
+  metadata   Json?    // Contexto extra (motelId, ciudad, query de búsqueda, etc.)
+  createdAt  DateTime @default(now())
+
+  @@index([deviceId])
+  @@index([event])
+  @@index([platform])
+  @@index([createdAt])
+  @@index([deviceId, createdAt])
+  @@index([event, createdAt])
+}

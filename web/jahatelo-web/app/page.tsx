@@ -20,6 +20,7 @@ export default async function HomePage() {
   const protocol = headersList.get('x-forwarded-proto') || 'http';
   const baseUrl = host ? `${protocol}://${host}` : 'http://localhost:3000';
 
+  const now = new Date();
   const promosMotelsRaw = await prisma.motel.findMany({
     where: {
       status: 'APPROVED',
@@ -27,6 +28,11 @@ export default async function HomePage() {
       promos: {
         some: {
           isActive: true,
+          isGlobal: true,
+          AND: [
+            { OR: [{ validFrom: null }, { validFrom: { lte: now } }] },
+            { OR: [{ validUntil: null }, { validUntil: { gte: now } }] },
+          ],
         },
       },
     },
@@ -38,21 +44,37 @@ export default async function HomePage() {
       promos: {
         where: {
           isActive: true,
+          isGlobal: true,
+          AND: [
+            { OR: [{ validFrom: null }, { validFrom: { lte: now } }] },
+            { OR: [{ validUntil: null }, { validUntil: { gte: now } }] },
+          ],
         },
       },
     },
     take: 5,
-    orderBy: [{ plan: 'desc' }, { createdAt: 'desc' }],
+    orderBy: [{ plan: 'desc' }, { ratingAvg: 'desc' }, { createdAt: 'desc' }],
   });
 
   const promosMotels = promosMotelsRaw.map((motel) => ({
-    ...motel,
+    id: motel.id,
+    name: motel.name,
+    slug: motel.slug,
     featuredPhoto: normalizeLocalUploadPath(motel.featuredPhoto),
     featuredPhotoWeb: normalizeLocalUploadPath(motel.featuredPhotoWeb),
     featuredPhotoApp: normalizeLocalUploadPath(motel.featuredPhotoApp),
     photos: motel.photos.map((photo) => ({
       url: normalizeLocalUploadPath(photo.url) || photo.url,
       kind: photo.kind ?? 'OTHER',
+    })),
+    promos: motel.promos.map((promo) => ({
+      id: promo.id,
+      title: promo.title,
+      description: promo.description ?? null,
+      imageUrl: normalizeLocalUploadPath(promo.imageUrl),
+      isActive: promo.isActive,
+      validFrom: promo.validFrom ? promo.validFrom.toISOString() : null,
+      validUntil: promo.validUntil ? promo.validUntil.toISOString() : null,
     })),
   }));
 
@@ -78,23 +100,20 @@ export default async function HomePage() {
         orderBy: { order: 'asc' },
         take: 1,
       },
-      motelAmenities: {
-        take: 3,
-        include: {
-          amenity: true,
-        },
-      },
       rooms: {
         where: { isActive: true },
         select: {
           price1h: true,
           price2h: true,
           price12h: true,
+          amenities: {
+            select: { amenity: { select: { id: true, name: true, icon: true } } },
+          },
         },
       },
     },
     take: 6,
-    orderBy: [{ plan: 'desc' }, { createdAt: 'desc' }],
+    orderBy: [{ plan: 'desc' }, { ratingAvg: 'desc' }, { createdAt: 'desc' }],
   });
 
   const featuredMotels = featuredMotelsRaw.map((motel) => ({
@@ -119,14 +138,20 @@ export default async function HomePage() {
     },
     include: {
       photos: { orderBy: { order: 'asc' }, take: 1 },
-      motelAmenities: { take: 3, include: { amenity: true } },
       rooms: {
         where: { isActive: true },
-        select: { price1h: true, price2h: true, price12h: true },
+        select: {
+          price1h: true,
+          price2h: true,
+          price12h: true,
+          amenities: {
+            select: { amenity: { select: { id: true, name: true, icon: true } } },
+          },
+        },
       },
     },
     take: 6,
-    orderBy: [{ plan: 'desc' }, { createdAt: 'desc' }],
+    orderBy: [{ plan: 'desc' }, { ratingAvg: 'desc' }, { createdAt: 'desc' }],
   });
 
   const recentMotels = recentMotelsRaw.map((motel) => ({

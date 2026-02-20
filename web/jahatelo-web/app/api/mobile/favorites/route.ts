@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Buscar favoritos del usuario
-    const favorites = await prisma.favorite.findMany({
+    // Buscar IDs de los favoritos del usuario
+    const favoriteRecords = await prisma.favorite.findMany({
       where: {
         userId: payload.id,
       },
@@ -53,15 +53,107 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Extraer solo los IDs de moteles
-    const motelIds = favorites
-      .filter(f => f.motelId)
-      .map(f => f.motelId as string);
+    const motelIds = favoriteRecords
+      .filter((f) => f.motelId)
+      .map((f) => f.motelId as string);
+
+    // Si no hay favoritos, devolver vacío
+    if (motelIds.length === 0) {
+      return NextResponse.json({ success: true, favorites: [], motelIds: [] });
+    }
+
+    // Obtener datos frescos de los moteles
+    const motels = await prisma.motel.findMany({
+      where: {
+        id: { in: motelIds },
+        isActive: true,
+        status: 'APPROVED',
+      },
+      include: {
+        photos: { orderBy: { order: 'asc' as const }, take: 3 },
+
+        rooms: {
+          where: { isActive: true },
+          select: {
+            isActive: true,
+            price1h: true,
+            price1_5h: true,
+            price2h: true,
+            price3h: true,
+            price12h: true,
+            price24h: true,
+            priceNight: true,
+            amenities: {
+              select: {
+                amenity: {
+                  select: { id: true, name: true, icon: true },
+                },
+              },
+            },
+          },
+        },
+        promos: { where: { isActive: true } },
+      },
+    });
+
+    // Indexar moteles por id para preservar el orden de favoritos
+    const motelMap = new Map(motels.map((m) => [m.id, m]));
+
+    // Mapear a formato de app con datos frescos, en el orden original de favoritos
+    const favorites = motelIds
+      .map((mid) => motelMap.get(mid))
+      .filter((motel): motel is NonNullable<typeof motel> => motel !== undefined)
+      .map((motel) => {
+        const featuredPhoto =
+          motel.featuredPhotoApp || motel.featuredPhotoWeb || motel.featuredPhoto || null;
+        const thumbnail = featuredPhoto || motel.photos[0]?.url || null;
+        const photos = Array.from(
+          new Set([
+            ...(featuredPhoto ? [featuredPhoto] : []),
+            ...motel.photos.map((p) => p.url),
+          ])
+        ).slice(0, 3);
+
+        const allPrices = motel.rooms
+          .filter((r) => r.isActive)
+          .flatMap((r) =>
+            ([r.price1h, r.price1_5h, r.price2h, r.price3h, r.price12h, r.price24h, r.priceNight] as (number | null)[])
+              .filter((p): p is number => p !== null && p !== undefined)
+          );
+        const precioDesde = allPrices.length > 0 ? Math.min(...allPrices) : 0;
+
+        // Aggregate unique amenities from all active room amenities
+        const amenityMap = new Map<string, { name: string; icon: string | null }>();
+        for (const room of motel.rooms) {
+          if (!room.isActive) continue;
+          for (const ra of (room as any).amenities ?? []) {
+            if (!amenityMap.has(ra.amenity.id)) {
+              amenityMap.set(ra.amenity.id, { name: ra.amenity.name, icon: ra.amenity.icon });
+            }
+          }
+        }
+
+        return {
+          id: motel.id,
+          slug: motel.slug,
+          nombre: motel.name,
+          barrio: motel.neighborhood,
+          ciudad: motel.city,
+          precioDesde,
+          amenities: Array.from(amenityMap.values()),
+          rating: motel.ratingAvg,
+          tienePromo: motel.promos.some((p) => p.isActive),
+          isFeatured: motel.isFeatured,
+          thumbnail,
+          photos,
+          plan: motel.plan,
+        };
+      });
 
     return NextResponse.json({
       success: true,
       favorites,
-      motelIds, // Lista de IDs para facilitar el uso en el cliente
+      motelIds: favorites.map((f) => f.id),
     });
 
   } catch (error) {
@@ -178,8 +270,8 @@ export async function POST(request: NextRequest) {
 /**
  * DELETE /api/mobile/favorites
  *
- * Elimina un favorito
- * Query: ?motelId=xxx
+ * Elimina un favorito.
+ * Acepta: body JSON { motelId } (recomendado) o query param ?motelId=xxx (legacy).
  */
 export async function DELETE(request: NextRequest) {
   try {
@@ -201,10 +293,24 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const { searchParams } = new URL(request.url);
-    const motelId = searchParams.get('motelId');
+    // Intentar leer motelId desde body; fallback a query param (compatibilidad)
+    let motelIdRaw: string | null = null;
+    const contentType = request.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      try {
+        const body = await request.json();
+        motelIdRaw = sanitizeObject(body)?.motelId ?? null;
+      } catch {
+        // body vacío o inválido — continuar con query param
+      }
+    }
+    if (!motelIdRaw) {
+      const { searchParams } = new URL(request.url);
+      motelIdRaw = searchParams.get('motelId');
+    }
+
     const parsed = MobileFavoriteSchema.pick({ motelId: true }).safeParse({
-      motelId: motelId ?? undefined,
+      motelId: motelIdRaw ?? undefined,
     });
     if (!parsed.success) {
       return NextResponse.json(

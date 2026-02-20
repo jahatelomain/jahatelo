@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { PublicAdvertisementQuerySchema } from '@/lib/validations/schemas';
+import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
     const { placement } = queryResult.data;
+    const baseUrl = request.headers.get('origin') || new URL(request.url).origin;
 
     const now = new Date();
     const ads = await prisma.advertisement.findMany({
@@ -36,7 +38,25 @@ export async function GET(request: NextRequest) {
       return withinViews && withinClicks;
     });
 
-    return NextResponse.json(filtered, {
+    // Agrega ?v=timestamp para cache-busting en React Native.
+    // El timestamp cambia cuando el anuncio se edita, forzando la recarga de la imagen.
+    const addV = (url: string | null, updatedAt: Date) => {
+      if (!url) return null;
+      const normalized = normalizeLocalUrl(url, baseUrl);
+      if (!normalized) return null;
+      const sep = normalized.includes('?') ? '&' : '?';
+      return `${normalized}${sep}v=${updatedAt.getTime()}`;
+    };
+
+    const normalized = filtered.map((ad) => ({
+      ...ad,
+      imageUrl: addV(ad.imageUrl, ad.updatedAt),
+      largeImageUrl: addV(ad.largeImageUrl, ad.updatedAt),
+      largeImageUrlWeb: addV(ad.largeImageUrlWeb, ad.updatedAt),
+      largeImageUrlApp: addV(ad.largeImageUrlApp, ad.updatedAt),
+    }));
+
+    return NextResponse.json(normalized, {
       headers: { 'Cache-Control': 'no-store' },
     });
   } catch (error) {

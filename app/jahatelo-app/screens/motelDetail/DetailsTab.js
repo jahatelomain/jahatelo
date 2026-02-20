@@ -36,6 +36,14 @@ export default function DetailsTab({ route }) {
     setShowAmenitiesSheet(true);
   };
 
+  const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+  const formatScheduleTime = (time) => {
+    if (!time) return '';
+    // time can be "HH:MM:SS" or "HH:MM"
+    return time.slice(0, 5);
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Información básica */}
@@ -47,11 +55,18 @@ export default function DetailsTab({ route }) {
           </Text>
         </View>
 
+        {!!motel.address && (
+          <View style={styles.infoRow}>
+            <Ionicons name="navigate-outline" size={16} color="#666" />
+            <Text style={styles.infoText}>{motel.address}</Text>
+          </View>
+        )}
+
         {!!motel.rating && (
           <View style={styles.infoRow}>
             <Ionicons name="star" size={16} color="#FFD700" />
             <Text style={styles.infoText}>
-              {motel.rating} / 5.0
+              {typeof motel.rating === 'number' ? motel.rating.toFixed(1) : motel.rating}
             </Text>
           </View>
         )}
@@ -61,6 +76,14 @@ export default function DetailsTab({ route }) {
           <Text style={styles.price}>{formatPrice(motel.precioDesde)}</Text>
         </View>
       </View>
+
+      {/* Descripción */}
+      {!!motel.description && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Descripción</Text>
+          <Text style={styles.descriptionText}>{motel.description}</Text>
+        </View>
+      )}
 
       {/* Botón Google Maps */}
       <TouchableOpacity
@@ -74,6 +97,25 @@ export default function DetailsTab({ route }) {
           {hasLocation ? 'Ver ubicación en Google Maps' : 'Ubicación no disponible'}
         </Text>
       </TouchableOpacity>
+
+      {/* Horarios */}
+      {motel.schedules && motel.schedules.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Horarios</Text>
+          {motel.schedules.map((schedule) => (
+            <View key={schedule.dayOfWeek} style={styles.scheduleRow}>
+              <Text style={styles.scheduleDay}>{DAY_NAMES[schedule.dayOfWeek]}</Text>
+              <Text style={styles.scheduleTime}>
+                {schedule.isClosed
+                  ? 'Cerrado'
+                  : schedule.is24Hours
+                    ? 'Abierto 24h'
+                    : `${formatScheduleTime(schedule.openTime)} - ${formatScheduleTime(schedule.closeTime)}`}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* Amenities generales */}
       {amenitiesList.length > 0 && (
@@ -218,6 +260,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2A0038',
     marginBottom: 12,
+  },
+  descriptionText: {
+    fontSize: 14,
+    color: '#444',
+    lineHeight: 22,
+  },
+  scheduleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  scheduleDay: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  scheduleTime: {
+    fontSize: 14,
+    color: '#666',
   },
   amenitiesGrid: {
     flexDirection: 'row',

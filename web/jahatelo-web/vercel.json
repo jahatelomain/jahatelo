@@ -1,5 +1,5 @@
 {
-  "buildCommand": "prisma generate && next build",
+  "buildCommand": "node scripts/enforce-production-branch.js && prisma generate && next build",
   "installCommand": "npm install",
   "crons": [
     {

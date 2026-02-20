@@ -5,6 +5,8 @@ import PwaRegistrar from "@/components/public/PwaRegistrar";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AgeGate from "@/components/public/AgeGate";
+import AnalyticsProvider from "@/components/AnalyticsProvider";
+import GoogleAuthProvider from "@/components/GoogleAuthProvider";
 
 const lato = Lato({
   weight: ['400', '700'],
@@ -22,11 +24,11 @@ export const metadata: Metadata = {
   keywords: ["moteles", "alojamiento", "hospedaje", "promociones", "jahatelo"],
   authors: [{ name: "Jahatelo" }],
   creator: "Jahatelo",
-  metadataBase: new URL('https://jahatelo.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com'),
   openGraph: {
     title: "Jahatelo - Encuentra tu motel ideal",
     description: "Descubre los mejores moteles cerca de ti",
-    url: 'https://jahatelo.vercel.app',
+    url: process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com',
     siteName: 'Jahatelo',
     images: [
       {
@@ -73,13 +75,16 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${lato.variable} antialiased bg-white text-slate-900`}>
-        <AuthProvider>
-          <ToastProvider>
-            <AgeGate />
-            <PwaRegistrar />
-            {children}
-          </ToastProvider>
-        </AuthProvider>
+        <GoogleAuthProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <AgeGate />
+              <PwaRegistrar />
+              <AnalyticsProvider />
+              {children}
+            </ToastProvider>
+          </AuthProvider>
+        </GoogleAuthProvider>
       </body>
     </html>
   );

@@ -24,9 +24,14 @@ interface MotelCardProps {
     featuredPhoto?: string | null;
     featuredPhotoWeb?: string | null;
     photos?: { url: string; kind: string }[];
-    motelAmenities?: { amenity: { name: string; icon?: string | null } }[];
-    rooms?: { price1h?: number | null; price2h?: number | null; price12h?: number | null }[];
+    rooms?: {
+      price1h?: number | null;
+      price2h?: number | null;
+      price12h?: number | null;
+      amenities?: { amenity: { name: string; icon?: string | null } }[];
+    }[];
     plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
+    distanceKm?: number;
   };
 }
 
@@ -53,8 +58,16 @@ export default function MotelCard({ motel }: MotelCardProps) {
   const safeRating = motel.ratingAvg || 0;
   const hasReviews = motel.ratingCount > 0;
 
-  // Get first 3 amenities
-  const topAmenities = motel.motelAmenities?.slice(0, 3) ?? [];
+  // Get first 3 amenities aggregated from rooms
+  const amenityMap = new Map<string, { name: string; icon?: string | null }>();
+  for (const room of motel.rooms ?? []) {
+    for (const ra of room.amenities ?? []) {
+      if (!amenityMap.has(ra.amenity.name)) {
+        amenityMap.set(ra.amenity.name, ra.amenity);
+      }
+    }
+  }
+  const topAmenities = Array.from(amenityMap.values()).slice(0, 3);
   const isDisabled = motel.plan === 'FREE';
   const isDiamond = motel.plan === 'DIAMOND';
 
@@ -100,6 +113,15 @@ export default function MotelCard({ motel }: MotelCardProps) {
           </h3>
           <p className="text-sm text-gray-500 mb-3">
             {motel.city}, {motel.neighborhood}
+            {motel.distanceKm !== undefined && (
+              <span className="ml-2 inline-flex items-center gap-1 text-purple-600 font-medium">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {motel.distanceKm} km
+              </span>
+            )}
           </p>
 
           {/* Rating */}
@@ -126,9 +148,9 @@ export default function MotelCard({ motel }: MotelCardProps) {
           {/* Amenities */}
           {topAmenities.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
-              {topAmenities.map((ma, idx) => {
-                const label = ma.amenity.name;
-                const IconComponent = ma.amenity.icon ? iconLibrary[ma.amenity.icon] : undefined;
+              {topAmenities.map((amenity, idx) => {
+                const label = amenity.name;
+                const IconComponent = amenity.icon ? iconLibrary[amenity.icon] : undefined;
                 return (
                   <span
                     key={idx}

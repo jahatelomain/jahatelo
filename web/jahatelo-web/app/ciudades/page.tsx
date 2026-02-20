@@ -1,7 +1,23 @@
+import type { Metadata } from 'next';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import CityListWithAds from '@/components/public/CityListWithAds';
 import { headers } from 'next/headers';
+
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
+
+export const metadata: Metadata = {
+  title: 'Moteles por Ciudad | Jahatelo',
+  description: 'Explorá moteles en todas las ciudades de Argentina. Encontrá opciones cerca tuyo con precios, fotos y promos actualizadas.',
+  alternates: { canonical: `${BASE_URL}/ciudades` },
+  openGraph: {
+    title: 'Moteles por Ciudad | Jahatelo',
+    description: 'Explorá moteles en todas las ciudades de Argentina. Encontrá opciones cerca tuyo con precios, fotos y promos actualizadas.',
+    url: `${BASE_URL}/ciudades`,
+    type: 'website',
+    siteName: 'Jahatelo',
+  },
+};
 
 export default async function CitiesPage() {
   const headersList = await headers();

@@ -56,7 +56,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       data: {
         title: validated.title,
         advertiser: validated.advertiser,
-        imageUrl: validated.imageUrl,
+        imageUrl: validated.imageUrl ?? undefined,
         largeImageUrl: validated.largeImageUrl ?? null,
         largeImageUrlWeb: validated.largeImageUrlWeb ?? null,
         largeImageUrlApp: validated.largeImageUrlApp ?? null,

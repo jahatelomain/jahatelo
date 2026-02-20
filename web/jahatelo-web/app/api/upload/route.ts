@@ -3,6 +3,8 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 import { UploadFormSchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
+import { writeFile, mkdir } from 'fs/promises';
+import path from 'path';
 
 export const runtime = 'nodejs';
 
@@ -16,6 +18,8 @@ function createObjectKey(filename?: string | null, folder?: string) {
 
 export async function POST(request: Request) {
   try {
+    const isDev = process.env.NODE_ENV === 'development';
+
     // Validate AWS env vars
     const requiredEnv = [
       'AWS_ACCESS_KEY_ID',
@@ -25,21 +29,19 @@ export async function POST(request: Request) {
     ];
 
     const missing = requiredEnv.filter((key) => !process.env[key]);
-    if (missing.length > 0) {
-      return NextResponse.json(
-        { error: `Missing AWS config: ${missing.join(', ')}` },
-        { status: 500 },
-      );
-    }
+    const forceLocal = process.env.UPLOADS_USE_LOCAL === '1';
+    const isVercel = process.env.VERCEL === '1';
+    const useLocalFallback = !isVercel && isDev && (forceLocal || missing.length > 0);
 
-    // Initialize S3 client
-    const s3 = new S3Client({
-      region: process.env.AWS_S3_REGION!,
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-      },
-    });
+    const s3 = useLocalFallback
+      ? null
+      : new S3Client({
+          region: process.env.AWS_S3_REGION!,
+          credentials: {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+          },
+        });
 
     const formData = await request.formData();
     const file = formData.get('file');
@@ -68,6 +70,29 @@ export async function POST(request: Request) {
       typeof file.name === 'string' ? file.name : undefined,
       validated.folder ?? undefined,
     );
+
+    // Fallback local: guarda en public/uploads/... y devuelve URL relativa
+    if (useLocalFallback) {
+      const uploadDir = path.join(
+        process.cwd(),
+        'public',
+        'uploads',
+        path.dirname(key).replace(/^uploads\//, ''),
+      );
+      await mkdir(uploadDir, { recursive: true });
+      const filename = path.basename(key);
+      await writeFile(path.join(uploadDir, filename), buffer);
+      const relativeDir = path.dirname(key).replace(/^uploads\//, '');
+      const url = `/uploads/${relativeDir}/${filename}`;
+      return NextResponse.json({ url });
+    }
+
+    if (!s3) {
+      return NextResponse.json(
+        { error: `Missing AWS config: ${missing.join(', ')}` },
+        { status: 500 },
+      );
+    }
 
     await s3.send(
       new PutObjectCommand({

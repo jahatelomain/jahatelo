@@ -227,6 +227,7 @@ export default function MotelDetailPage() {
   const promoFormSnapshotRef = useRef('');
   const motelFormSnapshotRef = useRef('');
   const roomFormSnapshotRef = useRef('');
+  const roomFormRef = useRef<HTMLDivElement | null>(null);
   const categoryFormSnapshotRef = useRef('');
   const itemFormSnapshotRef = useRef('');
 
@@ -473,13 +474,16 @@ export default function MotelDetailPage() {
     if (!value) return null;
     const trimmed = value.trim();
     if (trimmed === '') return null;
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    // Ya es ruta relativa — ok
+    if (trimmed.startsWith('/uploads/')) return trimmed;
+    // localhost / red local → convertir a ruta relativa para portabilidad
+    const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|192\.168\.\d+\.\d+)(:\d+)?\//.test(trimmed);
+    if (isLocal) {
       const match = trimmed.match(/\/uploads\/.+$/);
       if (match) return match[0];
     }
-    if (trimmed.startsWith('/uploads/')) {
-      return trimmed;
-    }
+    // URL externa (S3, CDN, etc.) → conservar completa
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
     return normalizeLocalUrl(trimmed);
   };
 
@@ -768,13 +772,20 @@ export default function MotelDetailPage() {
       : '/api/admin/rooms';
     const method = editingRoomId ? 'PATCH' : 'POST';
 
+    // Convert empty strings to null for numeric fields so Zod coercion doesn't fail
+    const numericFields = ['basePrice', 'price1h', 'price1_5h', 'price2h', 'price3h', 'price12h', 'price24h', 'priceNight', 'maxPersons'] as const;
+    const normalizedForm = { ...roomForm } as Record<string, unknown>;
+    numericFields.forEach((f) => {
+      if (normalizedForm[f] === '') normalizedForm[f] = null;
+    });
+
     try {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           motelId: id,
-          ...roomForm,
+          ...normalizedForm,
         }),
       });
 
@@ -832,6 +843,9 @@ export default function MotelDetailPage() {
       amenityIds: (room.amenities ?? []).map((a) => a.amenity.id),
     });
     setShowRoomForm(true);
+    setTimeout(() => {
+      roomFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
   };
 
   const handleDeleteRoom = async (roomId: string) => {
@@ -2425,7 +2439,7 @@ export default function MotelDetailPage() {
           )}
 
           {showRoomForm && (
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div ref={roomFormRef} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-slate-900">
                   {editingRoomId ? 'Editar Habitación' : 'Nueva Habitación'}

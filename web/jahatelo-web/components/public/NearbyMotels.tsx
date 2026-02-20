@@ -30,17 +30,11 @@ interface Motel {
   ratingCount: number;
   distance?: number;
   photos: Array<{ url: string; kind: string }>;
-  motelAmenities: Array<{
-    amenity: {
-      id: string;
-      name: string;
-      icon: string | null;
-    };
-  }>;
   rooms: Array<{
     price1h: number | null;
     price2h: number | null;
     price12h: number | null;
+    amenities?: Array<{ amenity: { id: string; name: string; icon: string | null } }>;
   }>;
   plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
 }

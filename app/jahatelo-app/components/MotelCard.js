@@ -20,7 +20,7 @@ import { getAmenityIconConfig } from '../constants/amenityIcons';
 import { COLORS } from '../constants/theme';
 import { trackFavoriteAdd, trackFavoriteRemove } from '../services/analyticsService';
 
-export default function MotelCard({ motel, onPress }) {
+function MotelCardComponent({ motel, onPress }) {
   const { isFavorite, toggleFavorite } = useFavorites();
 
   // Derivadas de motel con null safety — deben estar antes de los hooks
@@ -499,3 +499,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+
+const MotelCard = React.memo(MotelCardComponent);
+export default MotelCard;

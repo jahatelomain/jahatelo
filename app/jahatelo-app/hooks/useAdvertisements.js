@@ -1,12 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
+import { getApiBase } from '../services/apiBaseUrl';
 
 /**
  * Obtiene la URL base del API
  */
-const getApiBaseUrl = () => {
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-  return `${apiUrl}/api`;
-};
+const getApiBaseUrl = () => getApiBase();
 
 /**
  * Hook para manejar anuncios publicitarios
@@ -33,11 +31,14 @@ export function useAdvertisements(placement) {
         setError(null);
 
         const baseUrl = getApiBaseUrl();
-        const url = `${baseUrl}/advertisements?placement=${placement}&status=ACTIVE`;
+        // _t=timestamp evita que el stack HTTP nativo (iOS/Android) sirva una respuesta cacheada
+        const url = `${baseUrl}/advertisements?placement=${placement}&status=ACTIVE&_t=${Date.now()}`;
 
         const response = await fetch(url, {
           headers: {
             'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
           },
         });
 

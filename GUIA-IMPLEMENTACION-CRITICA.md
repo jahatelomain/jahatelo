@@ -369,9 +369,6 @@ NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your-cloud-name"
 NEXT_PUBLIC_CLOUDINARY_API_KEY="your-api-key"
 CLOUDINARY_API_SECRET="your-api-secret"
 
-# MercadoPago (opcional)
-MERCADOPAGO_ACCESS_TOKEN="your-mp-token"
-
 # Cron Secret
 CRON_SECRET="your-cron-secret"
 

@@ -25,7 +25,7 @@
 ❌ **Seguridad HTTP** (rate limiting, validaciones, CORS)
 ❌ **Testing** (0% cobertura actual)
 ❌ **Monitoring** (sin Sentry ni logs)
-❌ **Integración de pagos** (MercadoPago)
+❌ **Integración de pagos**
 ❌ **Optimizaciones** (paginación, caché, CDN)
 
 ### ¿Cuánto tiempo?
@@ -96,7 +96,7 @@
 - ✅ Validación de inputs
 - ✅ Testing completo (70%+ cobertura)
 - ✅ Monitoring con Sentry
-- ✅ Integración MercadoPago
+- ✅ Integración de pagos
 - ✅ Pagos automáticos
 - ✅ Performance optimizado
 - ✅ Documentación completa
@@ -166,7 +166,7 @@ Base de datos se llena → App deja de funcionar
 
 ### 🟡 IMPORTANTE (No bloquea, pero limita)
 ```
-[ ] Integración MercadoPago
+[ ] Integración de pagos
 [ ] Paginación en admin
 [ ] CDN para imágenes
 [ ] Documentación API
@@ -278,7 +278,7 @@ SEMANA 5: MONITORING (12h)
 
 SEMANA 6: PAGOS (24h)
 │
-├─ Integración MercadoPago
+├─ Integración de pagos
 ├─ Webhooks
 ├─ Auto-actualización planes
 └─ Testing de pagos

@@ -51,11 +51,12 @@ export function generateBreadcrumbSchema(items: { name: string; url: string }[])
 }
 
 export function generateOrganizationSchema() {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Jahatelo',
-    url: 'https://jahatelo.vercel.app',
-    logo: 'https://jahatelo.vercel.app/logo-icon.png',
+    url: baseUrl,
+    logo: `${baseUrl}/logo-icon.png`,
   };
 }

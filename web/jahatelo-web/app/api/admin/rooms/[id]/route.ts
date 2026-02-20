@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { touchMotel } from '@/lib/touchMotel';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
 import { IdSchema, UpdateRoomAdminSchema } from '@/lib/validations/schemas';
@@ -77,6 +78,8 @@ export async function PATCH(
       },
     });
 
+    await touchMotel(room.motelId);
+
     await logAuditEvent({
       userId: access.user?.id,
       action: 'UPDATE',
@@ -124,6 +127,8 @@ export async function DELETE(
     }
 
     await prisma.roomType.delete({ where: { id: idResult.data } });
+
+    await touchMotel(room.motelId);
 
     await logAuditEvent({
       userId: access.user?.id,

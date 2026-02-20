@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { touchMotel } from '@/lib/touchMotel';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
 import { RoomPhotoSchema } from '@/lib/validations/schemas';
@@ -54,6 +55,8 @@ export async function POST(request: Request) {
         order: validated.order ?? 0,
       },
     });
+
+    await touchMotel(roomType.motelId);
 
     await logAuditEvent({
       userId: access.user?.id,

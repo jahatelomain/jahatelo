@@ -42,7 +42,6 @@ const resolveImageUrl = (value) => {
 const getMotelImageUrl = (motel) => {
   if (!motel) return null;
   const candidates = [
-    motel.promoImageUrl,
     motel.thumbnail,
     motel.photoUrl,
     motel.imageUrl,

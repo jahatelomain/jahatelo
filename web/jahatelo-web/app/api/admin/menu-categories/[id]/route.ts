@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { touchMotel } from '@/lib/touchMotel';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
 import { IdSchema, UpdateMenuCategorySchema } from '@/lib/validations/schemas';
@@ -47,6 +48,8 @@ export async function PATCH(
         ...(validated.sortOrder !== undefined && { sortOrder: validated.sortOrder }),
       },
     });
+
+    await touchMotel(category.motelId);
 
     await logAuditEvent({
       userId: access.user?.id,
@@ -96,6 +99,8 @@ export async function DELETE(
     }
 
     await prisma.menuCategory.delete({ where: { id: idResult.data } });
+
+    await touchMotel(category.motelId);
 
     await logAuditEvent({
       userId: access.user?.id,

@@ -1,4 +1,4 @@
-import { Motel, RoomType, Photo, Amenity, MotelAmenity, RoomAmenity, Promo, RoomPhoto } from '@prisma/client';
+import { Motel, RoomType, Photo, Amenity, RoomAmenity, Promo, RoomPhoto } from '@prisma/client';
 
 type RoomPricingInfo = Pick<
   RoomType,
@@ -12,6 +12,16 @@ type RoomPricingInfo = Pick<
   | 'priceNight'
 >;
 
+// Amenity data for list context (minimal fields)
+type RoomAmenityForList = {
+  amenity: Pick<Amenity, 'id' | 'name' | 'icon'>;
+};
+
+// Room type for list context: pricing + amenities
+type RoomForList = RoomPricingInfo & {
+  amenities?: RoomAmenityForList[];
+};
+
 // Types for detail mappers
 type RoomWithRelations = RoomType & {
   photos: Photo[];
@@ -22,14 +32,12 @@ type RoomWithRelations = RoomType & {
 // Base type for list items - accepts both pricing info and full room data
 type MotelForList = Motel & {
   photos: Photo[];
-  motelAmenities: (MotelAmenity & { amenity: Amenity })[];
-  rooms?: (RoomPricingInfo | RoomWithRelations)[];
+  rooms?: (RoomForList | RoomWithRelations)[];
   promos?: Promo[];
 };
 
 type MotelWithRelations = Motel & {
   photos: Photo[];
-  motelAmenities: (MotelAmenity & { amenity: Amenity })[];
   rooms?: RoomWithRelations[];
   promos?: Promo[];
 };
@@ -98,6 +106,18 @@ const getPreferredFeaturedPhoto = (motel: Motel) => {
 };
 
 /**
+ * Agrega un query param ?v=timestamp para cache-busting de imágenes en la app.
+ * Usar updatedAt del registro (promo o motel) para que cambie solo cuando la imagen cambia.
+ */
+function addVersionParam(url: string | null | undefined, updatedAt?: Date | null): string | null {
+  if (!url) return null;
+  const ts = updatedAt?.getTime();
+  if (!ts) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}v=${ts}`;
+}
+
+/**
  * Verifica si hay promos activas
  */
 export function hasActivePromos(promos?: Promo[]): boolean {
@@ -156,15 +176,26 @@ export function mapMotelToListItem(motel: MotelForList) {
     hasPromo: hasPromotions,
     tienePromo: hasPromotions,
     startingPrice: getStartingPrice(motel.rooms),
-    amenities: motel.motelAmenities.map((ma) => ({
-      name: ma.amenity.name,
-      icon: ma.amenity.icon,
-    })),
+    amenities: (() => {
+      // Aggregate unique amenities from all active room amenities
+      const map = new Map<string, { name: string; icon: string | null }>();
+      for (const room of motel.rooms || []) {
+        if (!room.isActive) continue;
+        const roomAmenities = (room as RoomForList).amenities ?? (room as RoomWithRelations).amenities;
+        for (const ra of roomAmenities ?? []) {
+          if (!map.has(ra.amenity.id)) {
+            map.set(ra.amenity.id, { name: ra.amenity.name, icon: ra.amenity.icon });
+          }
+        }
+      }
+      return Array.from(map.values());
+    })(),
     thumbnail: getThumbnail(motel.photos, getPreferredFeaturedPhoto(motel)),
     photos: getListPhotos(motel.photos, getPreferredFeaturedPhoto(motel)),
     featuredPhoto: getPreferredFeaturedPhoto(motel),
     // Incluir datos de la primera promo activa para el carrusel
-    promoImageUrl: firstPromo?.imageUrl || null,
+    // ?v=updatedAt fuerza al cache nativo de React Native a recargar cuando cambia la imagen
+    promoImageUrl: addVersionParam(firstPromo?.imageUrl, firstPromo?.updatedAt),
     promoTitle: firstPromo?.title || null,
     promoDescription: firstPromo?.description || null,
     // Plan del motel para badges y ordenamiento
@@ -239,7 +270,6 @@ export function mapMotelToDetail(
   motel: MotelWithRelations & {
     schedules?: { dayOfWeek: number; openTime: string | null; closeTime: string | null; is24Hours: boolean; isClosed: boolean }[];
     menuCategories?: { id: string; name: string | null; items: { id: string; name: string; price: number; description: string | null; photoUrl: string | null }[] }[];
-    paymentMethods?: { method: string }[];
   }
 ) {
   const listItem = mapMotelToListItem(motel);
@@ -250,13 +280,7 @@ export function mapMotelToDetail(
     allPhotos: getAllPhotos(motel.photos, getPreferredFeaturedPhoto(motel)),
     promos:
       motel.promos
-        ?.filter((promo) => {
-          if (!promo.isActive) return false;
-          const now = new Date();
-          if (promo.validFrom && promo.validFrom > now) return false;
-          if (promo.validUntil && promo.validUntil < now) return false;
-          return true;
-        })
+        ?.filter((promo) => promo.isActive)
         .map((promo) => ({
           id: promo.id,
           title: promo.title,
@@ -269,8 +293,6 @@ export function mapMotelToDetail(
     contact: {
       phone: motel.phone,
       whatsapp: motel.whatsapp,
-      website: motel.website,
-      instagram: motel.instagram,
       contactEmail: motel.contactEmail,
       contactPhone: motel.contactPhone,
     },
@@ -290,7 +312,6 @@ export function mapMotelToDetail(
         })),
       })) || [],
     rooms: motel.rooms?.filter((r) => r.isActive).map(mapRoomForMobile) || [],
-    paymentMethods: motel.paymentMethods?.map((pm) => pm.method) || [],
     hasPhotos:
       motel.photos.length > 0 ||
       Boolean(motel.featuredPhotoApp || motel.featuredPhotoWeb || motel.featuredPhoto),

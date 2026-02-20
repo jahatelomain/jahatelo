@@ -330,7 +330,7 @@ tests/
 **Impacto:** No se puede cobrar a clientes
 
 **Falta:**
-- ❌ Integración con Stripe/MercadoPago/PayPal
+- ❌ Integración de pagos
 - ❌ Webhooks de pago
 - ❌ Actualización automática de plan
 - ❌ Facturación automática
@@ -338,29 +338,7 @@ tests/
 - ❌ Manejo de pagos fallidos
 - ❌ Reembolsos
 
-**Solución (MercadoPago Paraguay):**
-```typescript
-import mercadopago from 'mercadopago';
-
-mercadopago.configure({
-  access_token: process.env.MERCADOPAGO_ACCESS_TOKEN
-});
-
-export async function POST(req: Request) {
-  const { motelId, planId, amount } = await req.json();
-
-  const preference = await mercadopago.preferences.create({
-    items: [{
-      title: `Plan ${planId}`,
-      unit_price: amount,
-      quantity: 1,
-    }],
-    notification_url: `${process.env.APP_URL}/api/webhooks/mercadopago`,
-    external_reference: motelId,
-  });
-
-  return { paymentUrl: preference.body.init_point };
-}
+**Nota:** La integración de pagos está pendiente de definición.
 ```
 
 **Tiempo:** 24 horas
@@ -552,7 +530,7 @@ export async function POST(req: Request) {
 ### **FASE 5: Integración de Pagos (Semana 6) - ALTA**
 **Total: 24 horas**
 
-- [ ] Integrar MercadoPago (12h)
+- [ ] Definir e integrar plataforma de pagos
 - [ ] Implementar webhooks (6h)
 - [ ] Actualización automática de planes (4h)
 - [ ] Testing de flujo de pago (2h)
@@ -597,7 +575,7 @@ export async function POST(req: Request) {
 | Hosting (Vercel Pro) | $20 |
 | Base de datos (PostgreSQL) | $15-30 |
 | CDN/Storage (Cloudinary) | $0-30 |
-| MercadoPago (comisión) | Variable |
+| Plataforma de pagos (comisión) | Variable |
 | **TOTAL** | **$61-106/mes** |
 
 ### Inversión Inicial One-Time

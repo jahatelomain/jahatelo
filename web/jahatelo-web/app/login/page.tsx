@@ -4,12 +4,13 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import GoogleLoginButton from '@/components/GoogleLoginButton';
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
-  const { login, refreshUser } = useAuth();
+  const { login, loginWithGoogle, refreshUser } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -391,6 +392,28 @@ function LoginForm() {
               )}
             </form>
           )}
+
+          {/* Google Login */}
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-3 text-slate-400">o continuá con</span>
+              </div>
+            </div>
+            <div className="mt-4">
+              <GoogleLoginButton
+                onSuccess={(user) => {
+                  const target = redirect || '/';
+                  router.push(target);
+                  router.refresh();
+                }}
+                onError={(msg) => setError(msg)}
+              />
+            </div>
+          </div>
 
           {/* Footer */}
           <div className="mt-8 space-y-4 text-center">

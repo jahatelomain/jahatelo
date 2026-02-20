@@ -4,20 +4,21 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
   StatusBar,
   Platform,
   Animated,
 } from 'react-native';
+import LoadingScreen from '../components/LoadingScreen';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { useNavigation } from '@react-navigation/native';
+import { getApiRoot } from '../services/apiBaseUrl';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = getApiRoot();
 const IS_ANDROID = Platform.OS === 'android';
 const debugLog = (...args) => {
   if (__DEV__) console.log(...args);
@@ -352,15 +353,7 @@ export default function MapScreen() {
   }, [navigation]);
 
   if (loading) {
-    return (
-      <>
-        <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Cargando mapa...</Text>
-        </View>
-      </>
-    );
+    return <LoadingScreen message="Cargando mapa..." />;
   }
 
   if (error) {
