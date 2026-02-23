@@ -25,11 +25,11 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center justify-center">
+          <Link href="/" className="flex items-center justify-center hover:opacity-80 transition-opacity">
             <img
               src="/logo-icon.png"
               alt="Jahatelo"
-              className="h-10 w-auto object-contain"
+              className="h-20 w-auto object-contain"
             />
           </Link>
 
