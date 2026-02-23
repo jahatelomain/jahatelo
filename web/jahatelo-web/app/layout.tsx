@@ -20,14 +20,14 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "Jahatelo - Encuentra tu motel ideal",
-  description: "Descubre los mejores moteles cerca de ti. Promociones, ubicaciones y toda la información que necesitas.",
+  description: "Encontrá tu mejor lugar para disfrutar!",
   keywords: ["moteles", "alojamiento", "hospedaje", "promociones", "jahatelo"],
   authors: [{ name: "Jahatelo" }],
   creator: "Jahatelo",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com'),
   openGraph: {
     title: "Jahatelo - Encuentra tu motel ideal",
-    description: "Descubre los mejores moteles cerca de ti",
+    description: "Encontrá tu mejor lugar para disfrutar!",
     url: process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com',
     siteName: 'Jahatelo',
     images: [
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Jahatelo - Encuentra tu motel ideal',
-    description: 'Descubre los mejores moteles cerca de ti',
+    description: 'Encontrá tu mejor lugar para disfrutar!',
     images: ['/og-image.png'],
   },
   icons: {
