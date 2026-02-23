@@ -24,6 +24,7 @@ import RoomsTab from './motelDetail/RoomsTab';
 import MenuTab from './motelDetail/MenuTab';
 import ReviewsTab from './motelDetail/ReviewsTab';
 import { trackMotelView, trackPhoneClick, trackWhatsAppClick } from '../services/analyticsService';
+import { shareMotel } from '../utils/share';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -117,6 +118,12 @@ export default function MotelDetailScreen({ route, navigation }) {
         }
       })
       .catch((err) => console.error('Error al abrir WhatsApp:', err));
+  };
+
+  // Handler para compartir con haptic
+  const handleShare = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    shareMotel(motel);
   };
 
   // Handler para favorito con animación
@@ -306,6 +313,17 @@ export default function MotelDetailScreen({ route, navigation }) {
               name="logo-whatsapp"
               size={16}
               color={motel.contact?.whatsapp ? '#25D366' : COLORS.muted}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.contactButton}
+            onPress={handleShare}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="share-social-outline"
+              size={16}
+              color={COLORS.primary}
             />
           </TouchableOpacity>
         </View>

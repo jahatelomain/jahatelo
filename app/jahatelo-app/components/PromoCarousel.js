@@ -2,6 +2,8 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import { sharePromo } from '../utils/share';
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
@@ -64,6 +66,12 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
   const imageSource = resolvedImageUrl ? { uri: resolvedImageUrl } : fallbackPattern;
   const isPlaceholder = !resolvedImageUrl;
 
+  const handleShare = (e) => {
+    e?.stopPropagation();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    sharePromo(motel);
+  };
+
   const inputRange = [
     (index - 1) * (CARD_WIDTH + SPACING),
     index * (CARD_WIDTH + SPACING),
@@ -105,6 +113,15 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
             <Ionicons name={badgeIconName} size={14} color={COLORS.white} />
             <Text style={styles.promoBadgeText}>{badgeLabel}</Text>
           </View>
+
+          {/* Botón Compartir */}
+          <TouchableOpacity
+            style={styles.shareButton}
+            onPress={handleShare}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="share-social-outline" size={18} color={COLORS.white} />
+          </TouchableOpacity>
 
           {/* Gradiente overlay */}
           <LinearGradient
@@ -428,5 +445,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     opacity: 0.95,
+  },
+  shareButton: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
 });
