@@ -25,6 +25,9 @@ export const metadata: Metadata = {
   authors: [{ name: "Jahatelo" }],
   creator: "Jahatelo",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com'),
+  alternates: {
+    canonical: process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com',
+  },
   openGraph: {
     title: "Jahatelo - Encuentra tu motel ideal",
     description: "Encontrá tu mejor lugar para disfrutar!",

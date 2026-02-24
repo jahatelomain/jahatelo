@@ -2,6 +2,16 @@ import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import NearbyMotels from '@/components/public/NearbyMotels';
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
+
+export const metadata = {
+  title: 'Moteles Cerca Mío - Jahatelo',
+  description: 'Encuentra los moteles más cercanos a tu ubicación actual',
+  alternates: {
+    canonical: `${BASE_URL}/nearby`,
+  },
+};
+
 export default function NearbyPage() {
   return (
     <>

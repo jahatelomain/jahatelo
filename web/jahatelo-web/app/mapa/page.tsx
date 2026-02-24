@@ -2,9 +2,14 @@ import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import MapView from '@/components/public/MapView';
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
+
 export const metadata = {
   title: 'Mapa de Moteles - Jahatelo',
   description: 'Encuentra moteles cerca de ti en el mapa interactivo',
+  alternates: {
+    canonical: `${BASE_URL}/mapa`,
+  },
 };
 
 export default function MapaPage() {
