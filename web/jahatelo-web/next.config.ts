@@ -31,6 +31,23 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // Redirects (301 permanentes para SEO)
+  async redirects() {
+    return [
+      // Migración de /ciudades a /ciudad (mejor SEO y soporte de barrios)
+      {
+        source: '/ciudades',
+        destination: '/search',
+        permanent: true,
+      },
+      {
+        source: '/ciudades/:city',
+        destination: '/ciudad/:city',
+        permanent: true,
+      },
+    ];
+  },
+
   // Security Headers
   async headers() {
     return [

@@ -24,7 +24,7 @@ export default function CityListWithAds({ cities }: { cities: CityItem[] }) {
         return (
           <Fragment key={city.name}>
             <Link
-              href={`/ciudades/${encodeURIComponent(city.name)}`}
+              href={`/ciudad/${city.name.toLowerCase().replace(/\s+/g, '-')}`}
               className="block bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
             >
               <p className="text-xs uppercase tracking-wide text-slate-400">Ciudad</p>

@@ -166,7 +166,7 @@ export default async function HomePage() {
   }));
 
   const categories = [
-    { id: 'cities', label: 'Moteles por ciudad', href: '/ciudades', iconName: 'location-outline' },
+    { id: 'cities', label: 'Moteles por ciudad', href: '/search', iconName: 'location-outline' },
     { id: 'map', label: 'Ver mapa', href: '/mapa', iconName: 'map-outline' },
     { id: 'promos', label: 'Promos', href: '/search?promos=1', iconName: 'pricetag' },
   ];
@@ -213,7 +213,7 @@ export default async function HomePage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Moteles por ciudad</h2>
-                <Link href="/ciudades" className="text-sm font-semibold text-purple-600 hover:text-purple-700">
+                <Link href="/search" className="text-sm font-semibold text-purple-600 hover:text-purple-700">
                   Ver todos
                 </Link>
               </div>
