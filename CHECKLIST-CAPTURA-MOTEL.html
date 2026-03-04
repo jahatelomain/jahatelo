@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist de Captura - Motel | Jahatelo</title>
+    <style>
+        @media print {
+            @page { 
+                margin: 1cm; 
+                size: A4;
+            }
+            body { margin: 0; }
+            .no-print { display: none; }
+            .page-break { page-break-before: always; }
+            input[type="text"], input[type="number"], textarea {
+                border-bottom: 1px solid #333 !important;
+                background: transparent !important;
+            }
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.4;
+            color: #1e293b;
+            background: #f8fafc;
+            padding: 1rem;
+        }
+        
+        .container {
+            max-width: 21cm;
+            margin: 0 auto;
+            background: white;
+            padding: 1.5cm;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #8E2DE2;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .header h1 {
+            color: #8E2DE2;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header .meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.75rem;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+        
+        .header .meta input {
+            border: none;
+            border-bottom: 1px solid #cbd5e1;
+            width: 200px;
+            padding: 0.25rem;
+            font-size: 0.9rem;
+        }
+        
+        h2 {
+            background: #8E2DE2;
+            color: white;
+            padding: 0.5rem 0.75rem;
+            font-size: 1.1rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        h3 {
+            color: #475569;
+            font-size: 1rem;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            padding-left: 0.5rem;
+            border-left: 3px solid #8E2DE2;
+        }
+        
+        .field {
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .field label {
+            display: inline-block;
+            width: 200px;
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.9rem;
+        }
+        
+        .field input[type="text"],
+        .field input[type="number"] {
+            flex: 1;
+            border: none;
+            border-bottom: 1px solid #cbd5e1;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .field-wide {
+            margin-bottom: 0.75rem;
+        }
+        
+        .field-wide label {
+            display: block;
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .field-wide input,
+        .field-wide textarea {
+            width: 100%;
+            border: none;
+            border-bottom: 1px solid #cbd5e1;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .field-wide textarea {
+            min-height: 60px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 0.5rem;
+            width: 16px;
+            height: 16px;
+        }
+        
+        .room-section {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        
+        .plan-option {
+            border: 2px solid #cbd5e1;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .plan-option:hover {
+            border-color: #8E2DE2;
+            background: #f8fafc;
+        }
+        
+        .plan-option input[type="radio"] {
+            margin-right: 0.75rem;
+            width: 18px;
+            height: 18px;
+        }
+        
+        .plan-option .plan-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #1e293b;
+        }
+        
+        .plan-option .plan-price {
+            color: #8E2DE2;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-left: 1rem;
+        }
+        
+        .plan-option .plan-features {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+            margin-left: 2rem;
+        }
+        
+        .plan-recommended {
+            border-color: #f59e0b;
+            background: #fffbeb;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: #f59e0b;
+            color: white;
+            padding: 0.15rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+        
+        .signature-box {
+            border: 1px solid #cbd5e1;
+            padding: 1rem;
+            margin-top: 1rem;
+            min-height: 100px;
+            position: relative;
+        }
+        
+        .signature-box::after {
+            content: 'Firma: _______________________';
+            position: absolute;
+            bottom: 0.5rem;
+            left: 1rem;
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        
+        .btn-print {
+            background: #8E2DE2;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: block;
+            margin: 1.5rem auto;
+            transition: background 0.3s;
+        }
+        
+        .btn-print:hover {
+            background: #7c1fd6;
+        }
+        
+        .summary-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .summary-box .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .summary-box .summary-total {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #8E2DE2;
+            border-top: 2px solid #f59e0b;
+            padding-top: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .info-note {
+            background: #eff6ff;
+            border-left: 3px solid #3b82f6;
+            padding: 0.75rem;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+            color: #1e40af;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+        }
+        
+        table th,
+        table td {
+            border: 1px solid #cbd5e1;
+            padding: 0.5rem;
+            text-align: left;
+        }
+        
+        table th {
+            background: #f1f5f9;
+            font-weight: 600;
+            color: #475569;
+        }
+    </style>
+</head>
+<body>
+    <button class="btn-print no-print" onclick="window.print()">🖨️ Imprimir Checklist</button>
+    
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>CHECKLIST DE CAPTURA - MOTEL</h1>
+            <p style="color: #8E2DE2; font-weight: 600;">Jahatelo - Plataforma Digital para Moteles</p>
+            <div class="meta">
+                <div>
+                    <strong>Fecha:</strong>
+                    <input type="text" placeholder="___/___/2026">
+                </div>
+                <div>
+                    <strong>Vendedor:</strong>
+                    <input type="text" placeholder="Nombre del vendedor">
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. DATOS BÁSICOS -->
+        <h2>1. DATOS BÁSICOS DEL MOTEL</h2>
+        <div class="field">
+            <label>Nombre comercial:</label>
+            <input type="text">
+        </div>
+        <div class="field">
+            <label>Nombre del contacto:</label>
+            <input type="text">
+        </div>
+        <div class="field">
+            <label>Cargo:</label>
+            <input type="text">
+        </div>
+
+        <!-- 2. INFORMACIÓN DE CONTACTO -->
+        <h2>2. INFORMACIÓN DE CONTACTO</h2>
+        <div class="field">
+            <label>Teléfono fijo:</label>
+            <input type="text">
+        </div>
+        <div class="field">
+            <label>WhatsApp:</label>
+            <input type="text">
+        </div>
+        <div class="field">
+            <label>Instagram:</label>
+            <input type="text" placeholder="@usuario">
+        </div>
+        <div class="field">
+            <label>Facebook:</label>
+            <input type="text">
+        </div>
+        <div class="field">
+            <label>Email:</label>
+            <input type="text">
+        </div>
+
+        <!-- 3. UBICACIÓN -->
+        <h2>3. UBICACIÓN</h2>
+        <div class="field-wide">
+            <label>Dirección completa:</label>
+            <input type="text">
+        </div>
+        <div class="field">
+            <label>Ciudad:</label>
+            <input type="text">
+        </div>
+        <div class="field">
+            <label>Barrio/Zona:</label>
+            <input type="text">
+        </div>
+        <div class="field-wide">
+            <label>Referencia:</label>
+            <input type="text">
+        </div>
+        <div class="field-wide">
+            <label>Link Google Maps:</label>
+            <input type="text" placeholder="https://maps.google.com/... o https://goo.gl/maps/...">
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-top: 0.5rem; margin-left: 0.5rem;">
+            <em>Las coordenadas se extraerán automáticamente del link de Google Maps</em>
+        </p>
+
+        <!-- 4. OPERACIÓN -->
+        <h2>4. OPERACIÓN</h2>
+        
+        <h3>Horario de atención:</h3>
+        <div class="field">
+            <label>Lunes a Viernes:</label>
+            <input type="text" placeholder="Ej: 10:00 - 22:00">
+        </div>
+        <div class="field">
+            <label>Sábados:</label>
+            <input type="text">
+        </div>
+        <div class="field">
+            <label>Domingos/Feriados:</label>
+            <input type="text">
+        </div>
+
+        <div class="checkbox-item" style="margin: 1rem 0;">
+            <input type="checkbox" id="open247">
+            <label for="open247" style="font-weight: 600;">¿Atienden 24/7?</label>
+        </div>
+
+        <h3>Servicios especiales:</h3>
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="checkbox" id="garage">
+                <label for="garage">Garage privado</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="roomservice">
+                <label for="roomservice">Room service</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="delivery">
+                <label for="delivery">Delivery</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="card">
+                <label for="card">Pago con tarjeta</label>
+            </div>
+        </div>
+        <div class="field">
+            <label>Otro servicio:</label>
+            <input type="text">
+        </div>
+
+        <!-- 5. DESCRIPCIÓN -->
+        <h2>5. DESCRIPCIÓN DEL MOTEL</h2>
+        <div class="field-wide">
+            <label>Descripción breve (2-3 líneas para la web):</label>
+            <textarea rows="3"></textarea>
+        </div>
+
+        <!-- 6. FOTOS GENERALES -->
+        <h2>6. FOTOS DEL MOTEL (Generales)</h2>
+        <div class="info-note">
+            <strong>Límite:</strong> 10 fotos generales del motel (fachada, áreas comunes, estacionamiento, etc.)
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Tipo de Foto</th>
+                    <th>Cantidad</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Fachada exterior</td>
+                    <td><input type="number" style="width: 60px; text-align: center;" min="0" max="10" value="0"></td>
+                    <td>
+                        <input type="checkbox" id="fachada"> <label for="fachada">Tomadas</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Entrada/Recepción</td>
+                    <td><input type="number" style="width: 60px; text-align: center;" min="0" max="10" value="0"></td>
+                    <td>
+                        <input type="checkbox" id="entrada"> <label for="entrada">Tomadas</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Áreas comunes</td>
+                    <td><input type="number" style="width: 60px; text-align: center;" min="0" max="10" value="0"></td>
+                    <td>
+                        <input type="checkbox" id="areas"> <label for="areas">Tomadas</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Estacionamiento</td>
+                    <td><input type="number" style="width: 60px; text-align: center;" min="0" max="10" value="0"></td>
+                    <td>
+                        <input type="checkbox" id="parking"> <label for="parking">Tomadas</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Otras</td>
+                    <td><input type="number" style="width: 60px; text-align: center;" min="0" max="10" value="0"></td>
+                    <td>
+                        <input type="checkbox" id="otras"> <label for="otras">Tomadas</label>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="checkbox" id="fotos-ok">
+                <label for="fotos-ok">Fotos adjuntas</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="fotos-pend">
+                <label for="fotos-pend">Pendiente (agendar sesión)</label>
+            </div>
+        </div>
+
+        <div class="page-break"></div>
+
+        <!-- 7. HABITACIONES -->
+        <h2>7. HABITACIONES</h2>
+
+        <!-- Habitación 1 -->
+        <div class="room-section">
+            <h3>Habitación 1:</h3>
+            
+            <div class="field">
+                <label>Nombre/Tipo:</label>
+                <input type="text" placeholder="Ej: Suite Ejecutiva">
+            </div>
+            <div class="field">
+                <label>Precio por hora/turno:</label>
+                <input type="text" placeholder="Gs.">
+            </div>
+            <div class="field">
+                <label>Precio adicional:</label>
+                <input type="text" placeholder="Gs. (si aplica)">
+            </div>
+            <div class="field-wide">
+                <label>Descripción breve:</label>
+                <textarea rows="2"></textarea>
+            </div>
+
+            <strong style="display: block; margin: 0.75rem 0 0.5rem;">Amenities/Servicios:</strong>
+            <div class="checkbox-group">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h1-tv">
+                    <label for="h1-tv">TV por cable</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h1-ac">
+                    <label for="h1-ac">Aire acondicionado</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h1-heat">
+                    <label for="h1-heat">Calefacción</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h1-jacuzzi">
+                    <label for="h1-jacuzzi">Jacuzzi/Hidromasaje</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h1-wifi">
+                    <label for="h1-wifi">WiFi</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h1-fridge">
+                    <label for="h1-fridge">Frigobar</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h1-bed">
+                    <label for="h1-bed">Cama king/queen</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h1-shower">
+                    <label for="h1-shower">Ducha escocesa</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h1-mirror">
+                    <label for="h1-mirror">Espejo</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h1-led">
+                    <label for="h1-led">Luces LED</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h1-garage">
+                    <label for="h1-garage">Garage privado</label>
+                </div>
+            </div>
+            <div class="field">
+                <label>Otro:</label>
+                <input type="text">
+            </div>
+
+            <div class="field" style="margin-top: 0.75rem;">
+                <label>Fotos tomadas:</label>
+                <input type="number" style="width: 80px;" min="0" placeholder="0"> fotos
+            </div>
+        </div>
+
+        <!-- Habitación 2 -->
+        <div class="room-section">
+            <h3>Habitación 2:</h3>
+            
+            <div class="field">
+                <label>Nombre/Tipo:</label>
+                <input type="text">
+            </div>
+            <div class="field">
+                <label>Precio por hora/turno:</label>
+                <input type="text" placeholder="Gs.">
+            </div>
+            <div class="field">
+                <label>Precio adicional:</label>
+                <input type="text" placeholder="Gs. (si aplica)">
+            </div>
+            <div class="field-wide">
+                <label>Descripción breve:</label>
+                <textarea rows="2"></textarea>
+            </div>
+
+            <strong style="display: block; margin: 0.75rem 0 0.5rem;">Amenities/Servicios:</strong>
+            <div class="checkbox-group">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h2-tv">
+                    <label for="h2-tv">TV por cable</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h2-ac">
+                    <label for="h2-ac">Aire acondicionado</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h2-heat">
+                    <label for="h2-heat">Calefacción</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h2-jacuzzi">
+                    <label for="h2-jacuzzi">Jacuzzi/Hidromasaje</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h2-wifi">
+                    <label for="h2-wifi">WiFi</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h2-fridge">
+                    <label for="h2-fridge">Frigobar</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h2-bed">
+                    <label for="h2-bed">Cama king/queen</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h2-shower">
+                    <label for="h2-shower">Ducha escocesa</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h2-mirror">
+                    <label for="h2-mirror">Espejo</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h2-led">
+                    <label for="h2-led">Luces LED</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h2-garage">
+                    <label for="h2-garage">Garage privado</label>
+                </div>
+            </div>
+            <div class="field">
+                <label>Otro:</label>
+                <input type="text">
+            </div>
+
+            <div class="field" style="margin-top: 0.75rem;">
+                <label>Fotos tomadas:</label>
+                <input type="number" style="width: 80px;" min="0" placeholder="0"> fotos
+            </div>
+        </div>
+
+        <!-- Habitación 3 -->
+        <div class="room-section">
+            <h3>Habitación 3:</h3>
+            
+            <div class="field">
+                <label>Nombre/Tipo:</label>
+                <input type="text">
+            </div>
+            <div class="field">
+                <label>Precio por hora/turno:</label>
+                <input type="text" placeholder="Gs.">
+            </div>
+            <div class="field">
+                <label>Precio adicional:</label>
+                <input type="text" placeholder="Gs. (si aplica)">
+            </div>
+            <div class="field-wide">
+                <label>Descripción breve:</label>
+                <textarea rows="2"></textarea>
+            </div>
+
+            <strong style="display: block; margin: 0.75rem 0 0.5rem;">Amenities/Servicios:</strong>
+            <div class="checkbox-group">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h3-tv">
+                    <label for="h3-tv">TV por cable</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h3-ac">
+                    <label for="h3-ac">Aire acondicionado</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h3-heat">
+                    <label for="h3-heat">Calefacción</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h3-jacuzzi">
+                    <label for="h3-jacuzzi">Jacuzzi/Hidromasaje</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h3-wifi">
+                    <label for="h3-wifi">WiFi</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h3-fridge">
+                    <label for="h3-fridge">Frigobar</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h3-bed">
+                    <label for="h3-bed">Cama king/queen</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h3-shower">
+                    <label for="h3-shower">Ducha escocesa</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h3-mirror">
+                    <label for="h3-mirror">Espejo</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h3-led">
+                    <label for="h3-led">Luces LED</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="h3-garage">
+                    <label for="h3-garage">Garage privado</label>
+                </div>
+            </div>
+            <div class="field">
+                <label>Otro:</label>
+                <input type="text">
+            </div>
+
+            <div class="field" style="margin-top: 0.75rem;">
+                <label>Fotos tomadas:</label>
+                <input type="number" style="width: 80px;" min="0" placeholder="0"> fotos
+            </div>
+        </div>
+
+        <div class="checkbox-item" style="margin: 1rem 0;">
+            <input type="checkbox" id="more-rooms">
+            <label for="more-rooms" style="font-weight: 600;">¿Hay más habitaciones? (agregar hojas adicionales)</label>
+        </div>
+
+        <div class="page-break"></div>
+
+        <!-- 8. PROMOCIONES -->
+        <h2>8. PROMOCIONES ACTUALES</h2>
+
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 1rem; margin-bottom: 1rem;">
+            <h3>Promoción 1:</h3>
+            <div class="field">
+                <label>Título:</label>
+                <input type="text" placeholder="Ej: 2x1 en habitaciones">
+            </div>
+            <div class="field-wide">
+                <label>Descripción:</label>
+                <textarea rows="2"></textarea>
+            </div>
+            <div class="field">
+                <label>Descuento:</label>
+                <input type="text" style="width: 100px;" placeholder="%">
+            </div>
+            <div class="field">
+                <label>Válida hasta:</label>
+                <input type="text" style="width: 150px;" placeholder="___/___/2026">
+            </div>
+            <div class="field-wide">
+                <label>Días aplicables:</label>
+                <input type="text" placeholder="Ej: Lunes a Jueves">
+            </div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 1rem; margin-bottom: 1rem;">
+            <h3>Promoción 2:</h3>
+            <div class="field">
+                <label>Título:</label>
+                <input type="text">
+            </div>
+            <div class="field-wide">
+                <label>Descripción:</label>
+                <textarea rows="2"></textarea>
+            </div>
+            <div class="field">
+                <label>Descuento:</label>
+                <input type="text" style="width: 100px;" placeholder="%">
+            </div>
+            <div class="field">
+                <label>Válida hasta:</label>
+                <input type="text" style="width: 150px;" placeholder="___/___/2026">
+            </div>
+            <div class="field-wide">
+                <label>Días aplicables:</label>
+                <input type="text">
+            </div>
+        </div>
+
+        <!-- 9. PLAN ELEGIDO -->
+        <h2>9. PLAN ELEGIDO</h2>
+
+        <div class="plan-option">
+            <input type="radio" name="plan" id="plan-basic" value="basic">
+            <label for="plan-basic">
+                <span class="plan-name">BÁSICO</span>
+                <span class="plan-price">Gs. 330.000/mes</span>
+                <div class="plan-features">
+                    1 foto por habitación • 1 promoción activa • Sin badge destacado
+                </div>
+            </label>
+        </div>
+
+        <div class="plan-option plan-recommended">
+            <input type="radio" name="plan" id="plan-gold" value="gold">
+            <label for="plan-gold">
+                <span class="plan-name">GOLD ⭐</span>
+                <span class="plan-price">Gs. 660.000/mes</span>
+                <span class="badge">RECOMENDADO</span>
+                <div class="plan-features">
+                    3 fotos por habitación • 5 promociones activas • Badge estrella dorada • +15% visibilidad en mapas
+                </div>
+            </label>
+        </div>
+
+        <div class="plan-option">
+            <input type="radio" name="plan" id="plan-diamond" value="diamond">
+            <label for="plan-diamond">
+                <span class="plan-name">DIAMOND 💎</span>
+                <span class="plan-price">Gs. 1.100.000/mes</span>
+                <div class="plan-features">
+                    Fotos ilimitadas • Promociones ilimitadas • Badge diamante cyan • +30% visibilidad • Soporte 24/7
+                </div>
+            </label>
+        </div>
+
+        <div class="info-note" style="margin-top: 1rem;">
+            <strong>Nota:</strong> Todos los precios incluyen 10% de impuestos. Primer mes con 50% de descuento para nuevos clientes.
+        </div>
+
+        <!-- 10. FORMA DE PAGO -->
+        <h2>10. FORMA DE PAGO</h2>
+
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="checkbox" id="pay-transfer">
+                <label for="pay-transfer" style="font-weight: 600;">Transferencia bancaria</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="pay-card">
+                <label for="pay-card" style="font-weight: 600;">Tarjeta de débito/crédito</label>
+            </div>
+        </div>
+
+        <h3>Frecuencia de pago:</h3>
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="radio" name="frequency" id="freq-monthly">
+                <label for="freq-monthly">Mensual adelantado</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="radio" name="frequency" id="freq-quarterly">
+                <label for="freq-quarterly">Trimestral (con descuento)</label>
+            </div>
+        </div>
+
+        <!-- 11. RESUMEN DE PAGO -->
+        <h2>11. PAGO PRIMER MES</h2>
+
+        <div class="summary-box">
+            <div class="summary-row">
+                <span>Plan elegido:</span>
+                <input type="text" style="width: 200px; border: none; border-bottom: 1px solid #f59e0b;">
+            </div>
+            <div class="summary-row">
+                <span>Precio normal (con impuestos):</span>
+                <strong>Gs. <input type="text" style="width: 120px; border: none; border-bottom: 1px solid #f59e0b;"></strong>
+            </div>
+            <div class="summary-row">
+                <span>Descuento 50% primer mes:</span>
+                <strong style="color: #dc2626;">- Gs. <input type="text" style="width: 120px; border: none; border-bottom: 1px solid #f59e0b;"></strong>
+            </div>
+            <div class="summary-row summary-total">
+                <span>TOTAL A PAGAR:</span>
+                <span>Gs. <input type="text" style="width: 120px; border: none; border-bottom: 2px solid #8E2DE2; font-size: 1.2rem;"></span>
+            </div>
+        </div>
+
+        <h3>Estado de pago:</h3>
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="checkbox" id="paid-transfer">
+                <label for="paid-transfer">Pagado (transferencia - adjuntar comprobante)</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="paid-card">
+                <label for="paid-card">Pagado (tarjeta)</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="pending">
+                <label for="pending">Pendiente</label>
+            </div>
+        </div>
+
+        <div class="field" style="margin-top: 1rem;">
+            <label>Fecha límite pago (si pendiente):</label>
+            <input type="text" style="width: 150px;" placeholder="___/___/2026">
+        </div>
+
+        <div class="field">
+            <label>Recibo N°:</label>
+            <input type="text" style="width: 150px;">
+        </div>
+
+        <div class="page-break"></div>
+
+        <!-- 12. DATOS DE FACTURACIÓN -->
+        <h2>12. DATOS DE FACTURACIÓN</h2>
+        <div class="field">
+            <label>RUC/CI:</label>
+            <input type="text">
+        </div>
+        <div class="field-wide">
+            <label>Razón social:</label>
+            <input type="text">
+        </div>
+        <div class="field-wide">
+            <label>Dirección fiscal:</label>
+            <input type="text">
+        </div>
+
+        <!-- 13. CREDENCIALES -->
+        <h2>13. CREDENCIALES DE ACCESO</h2>
+        <div class="info-note">
+            El cliente recibirá estas credenciales por email y WhatsApp para acceder al panel de administración en <strong>jahatelo.com/admin</strong>
+        </div>
+        <div class="field">
+            <label>Email para admin panel:</label>
+            <input type="text">
+        </div>
+        <div class="field">
+            <label>Contraseña temporal:</label>
+            <input type="text">
+        </div>
+
+        <!-- 14. COMPROMISOS -->
+        <h2>14. COMPROMISOS</h2>
+
+        <h3>Por parte de Jahatelo:</h3>
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="checkbox" id="commit1">
+                <label for="commit1">Motel en línea en 24-48 horas</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="commit2">
+                <label for="commit2">Envío de credenciales por email/WhatsApp</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="commit3">
+                <label for="commit3">Tutorial de uso del panel admin</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="commit4">
+                <label for="commit4">Soporte técnico disponible</label>
+            </div>
+        </div>
+
+        <h3>Por parte del Motel:</h3>
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="checkbox" id="motel1">
+                <label for="motel1">Verificar información antes de publicación</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="motel2">
+                <label for="motel2">Proporcionar fotos de calidad</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="motel3">
+                <label for="motel3">Actualizar precios/promociones regularmente</label>
+            </div>
+        </div>
+
+        <!-- 15. NOTAS -->
+        <h2>15. NOTAS ADICIONALES</h2>
+        <div class="field-wide">
+            <textarea rows="5" style="width: 100%; border: 1px solid #cbd5e1; padding: 0.5rem;"></textarea>
+        </div>
+
+        <!-- 16. FIRMAS -->
+        <h2>16. FIRMAS</h2>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1.5rem;">
+            <div>
+                <strong>Firma del Cliente:</strong>
+                <div class="signature-box"></div>
+                <div class="field" style="margin-top: 0.5rem;">
+                    <label>Nombre:</label>
+                    <input type="text">
+                </div>
+                <div class="field">
+                    <label>Fecha:</label>
+                    <input type="text" style="width: 120px;" placeholder="___/___/2026">
+                </div>
+            </div>
+            <div>
+                <strong>Firma Jahatelo:</strong>
+                <div class="signature-box"></div>
+                <div class="field" style="margin-top: 0.5rem;">
+                    <label>Nombre:</label>
+                    <input type="text">
+                </div>
+                <div class="field">
+                    <label>Fecha:</label>
+                    <input type="text" style="width: 120px;" placeholder="___/___/2026">
+                </div>
+            </div>
+        </div>
+
+        <!-- 17. CHECKLIST POST-REUNIÓN -->
+        <h2>17. CHECKLIST POST-REUNIÓN</h2>
+        <div class="info-note">
+            <strong>Para uso interno:</strong> Tareas a completar después de la reunión con el cliente.
+        </div>
+
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="checkbox" id="post1">
+                <label for="post1">Fotos subidas a carpeta del motel</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="post2">
+                <label for="post2">Datos cargados en admin panel</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="post3">
+                <label for="post3">Motel activado en plataforma</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="post4">
+                <label for="post4">Credenciales enviadas</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="post5">
+                <label for="post5">Recibo/factura entregado</label>
+            </div>
+        </div>
+
+        <div class="field" style="margin-top: 1rem;">
+            <label>Follow-up agendado para:</label>
+            <input type="text" style="width: 150px;" placeholder="___/___/2026">
+        </div>
+
+        <h3>Estado final:</h3>
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="radio" name="status" id="status-complete">
+                <label for="status-complete" style="font-weight: 600; color: #16a34a;">✓ Completo</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="radio" name="status" id="status-pending">
+                <label for="status-pending" style="font-weight: 600; color: #f59e0b;">⏳ Pendiente</label>
+            </div>
+        </div>
+
+        <div class="field-wide" style="margin-top: 1rem;">
+            <label>Próximos pasos:</label>
+            <textarea rows="3" style="width: 100%; border: 1px solid #cbd5e1; padding: 0.5rem;"></textarea>
+        </div>
+
+        <div style="text-align: center; margin-top: 3rem; padding: 1.5rem; background: #f8fafc; border-radius: 8px;">
+            <p style="color: #8E2DE2; font-weight: 600; font-size: 1.1rem;">Jahatelo - Conectando moteles con clientes</p>
+            <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">www.jahatelo.com | info@jahatelo.com</p>
+        </div>
+    </div>
+
+    <button class="btn-print no-print" onclick="window.print()" style="margin-top: 2rem;">🖨️ Imprimir Checklist</button>
+</body>
+</html>

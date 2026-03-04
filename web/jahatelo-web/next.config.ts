@@ -24,6 +24,11 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'maps.gstatic.com',
       },
+      // Unsplash (imágenes de demo/placeholder)
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
       // Dev: permitir cualquier origen HTTP (solo en desarrollo)
       ...(process.env.NODE_ENV !== 'production'
         ? [{ protocol: 'http' as const, hostname: '**' }]
