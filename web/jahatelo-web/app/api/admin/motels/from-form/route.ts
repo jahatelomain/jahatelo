@@ -1,105 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { extractCoordinatesFromGoogleMapsUrl } from '@/lib/utils/coordinates';
 import { z } from 'zod';
-import { generateSlug } from '@/lib/utils';
+import { prisma } from '@/lib/prisma';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import { extractCoordinatesFromGoogleMapsUrl } from '@/lib/utils/coordinates';
 
-// Schema de validación para el formulario completo
 const RoomFormSchema = z.object({
-  name: z.string().min(1, 'Nombre requerido'),
-  pricePerHour: z.string().min(1, 'Precio requerido'),
-  additionalPrice: z.string().optional(),
+  name: z.string().min(1),
+  pricePerHour: z.string().min(1),
   description: z.string().optional(),
-  amenities: z.array(z.string()),
+  amenities: z.array(z.string()).default([]),
   otherAmenity: z.string().optional(),
 });
 
 const PromoFormSchema = z.object({
-  title: z.string().min(1, 'Título requerido'),
-  description: z.string().min(1, 'Descripción requerida'),
-  discount: z.string().optional(),
+  title: z.string().min(1),
+  description: z.string().optional(),
   validUntil: z.string().optional(),
-  applicableDays: z.string().optional(),
 });
 
 const MotelFormSchema = z.object({
-  // Datos básicos
-  name: z.string().min(1, 'Nombre del motel requerido'),
-  contactName: z.string().min(1, 'Nombre del contacto requerido'),
-  contactPosition: z.string().optional(),
-
-  // Contacto
-  phone: z.string().min(1, 'Teléfono requerido'),
+  name: z.string().min(1),
+  contactName: z.string().min(1),
+  phone: z.string().min(1),
   whatsapp: z.string().optional(),
   instagram: z.string().optional(),
-  facebook: z.string().optional(),
-  email: z.string().email('Email inválido').optional().or(z.literal('')),
-
-  // Ubicación
-  address: z.string().min(1, 'Dirección requerida'),
-  city: z.string().min(1, 'Ciudad requerida'),
+  email: z.string().email().optional().or(z.literal('')),
+  address: z.string().min(1),
+  city: z.string().min(1),
   neighborhood: z.string().optional(),
-  reference: z.string().optional(),
-  googleMapsUrl: z.string().url('URL de Google Maps inválida'),
-
-  // Operación
-  scheduleWeekdays: z.string().optional(),
-  scheduleSaturday: z.string().optional(),
-  scheduleSunday: z.string().optional(),
-  is24Hours: z.boolean().optional(),
-
-  // Descripción
-  description: z.string().min(10, 'Descripción muy corta (mínimo 10 caracteres)'),
-
-  // Habitaciones
-  rooms: z.array(RoomFormSchema).min(1, 'Debe haber al menos 1 habitación'),
-
-  // Promociones
+  googleMapsUrl: z.string().url(),
+  description: z.string().min(10),
+  rooms: z.array(RoomFormSchema).min(1),
   promos: z.array(PromoFormSchema).optional(),
-
-  // Plan
   plan: z.enum(['BASIC', 'GOLD', 'DIAMOND']),
-
-  // Pago
-  paymentMethod: z.enum(['transfer', 'card']),
-  paymentFrequency: z.enum(['monthly', 'quarterly']),
+  paymentMethod: z.enum(['transfer', 'card']).optional(),
   ruc: z.string().optional(),
   businessName: z.string().optional(),
-  fiscalAddress: z.string().optional(),
 });
 
-/**
- * POST /api/admin/motels/from-form
- * Crea un motel completo desde el formulario de captura
- */
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
+
+function parseMoney(raw: string): number | null {
+  const parsed = Number(raw.replace(/[^\d]/g, ''));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // 1. Verificar autenticación
-    const session = await getServerSession(authOptions);
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
+    if (access.error) return access.error;
 
-    if (!session?.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    // Verificar que sea admin
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email! },
-      select: { role: true },
-    });
-
-    if (!user || (user.role !== 'MOTEL_ADMIN' && user.role !== 'SUPERADMIN')) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    }
-
-    // 2. Parsear y validar datos
     const body = await request.json();
     const validated = MotelFormSchema.parse(body);
 
-    // 3. Extraer coordenadas del Google Maps URL
     const coordinates = extractCoordinatesFromGoogleMapsUrl(validated.googleMapsUrl);
-
     if (!coordinates) {
       return NextResponse.json(
         { error: 'No se pudieron extraer coordenadas del link de Google Maps' },
@@ -107,26 +69,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Generar slug único
     const baseSlug = generateSlug(validated.name);
     let slug = baseSlug;
     let counter = 1;
-
     while (await prisma.motel.findUnique({ where: { slug } })) {
       slug = `${baseSlug}-${counter}`;
       counter++;
     }
 
-    // 5. Construir horarios
-    const schedule = [
-      validated.scheduleWeekdays ? `Lunes a Viernes: ${validated.scheduleWeekdays}` : null,
-      validated.scheduleSaturday ? `Sábados: ${validated.scheduleSaturday}` : null,
-      validated.scheduleSunday ? `Domingos: ${validated.scheduleSunday}` : null,
-    ]
-      .filter(Boolean)
-      .join(' | ');
-
-    // 6. Crear motel en la DB
     const motel = await prisma.motel.create({
       data: {
         name: validated.name,
@@ -134,47 +84,63 @@ export async function POST(request: NextRequest) {
         description: validated.description,
         address: validated.address,
         city: validated.city,
-        neighborhood: validated.neighborhood || null,
+        neighborhood: validated.neighborhood || 'Sin barrio',
+        mapUrl: validated.googleMapsUrl,
         latitude: coordinates.lat,
         longitude: coordinates.lng,
         phone: validated.phone,
         whatsapp: validated.whatsapp || null,
         instagram: validated.instagram || null,
-        facebook: validated.facebook || null,
-        email: validated.email || null,
-        schedule: schedule || '24 horas',
-        plan: validated.plan as 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND',
-        status: 'PENDING', // Por defecto PENDING hasta que sea aprobado
+        contactName: validated.contactName,
+        contactEmail: validated.email || null,
+        contactPhone: validated.phone,
+        plan: validated.plan,
+        status: 'PENDING',
+        isActive: false,
         isFeatured: validated.plan === 'GOLD' || validated.plan === 'DIAMOND',
-        amenities: [],
+        paymentType: validated.paymentMethod === 'transfer' ? 'TRANSFER' : validated.paymentMethod === 'card' ? 'DIRECT_DEBIT' : null,
+        billingCompanyName: validated.businessName || null,
+        billingTaxId: validated.ruc || null,
       },
     });
 
-    // 7. Crear habitaciones
     for (const room of validated.rooms) {
+      const amenityNames = [...room.amenities, room.otherAmenity].filter(Boolean) as string[];
+      const amenityIds: string[] = [];
+
+      for (const amenityName of amenityNames) {
+        const amenity = await prisma.amenity.upsert({
+          where: { name: amenityName.trim() },
+          update: {},
+          create: { name: amenityName.trim(), type: 'ROOM' },
+          select: { id: true },
+        });
+        amenityIds.push(amenity.id);
+      }
+
       await prisma.roomType.create({
         data: {
           motelId: motel.id,
           name: room.name,
           description: room.description || null,
-          pricePerHour: parseFloat(room.pricePerHour.replace(/[^\d.]/g, '')),
-          amenities: [
-            ...room.amenities,
-            room.otherAmenity,
-          ].filter(Boolean) as string[],
+          price1h: parseMoney(room.pricePerHour),
+          isActive: true,
+          amenities: amenityIds.length
+            ? {
+                create: amenityIds.map((amenityId) => ({ amenityId })),
+              }
+            : undefined,
         },
       });
     }
 
-    // 8. Crear promociones (si hay)
-    if (validated.promos && validated.promos.length > 0) {
+    if (validated.promos?.length) {
       for (const promo of validated.promos) {
         await prisma.promo.create({
           data: {
             motelId: motel.id,
             title: promo.title,
-            description: promo.description,
-            discountPercentage: promo.discount ? parseInt(promo.discount) : null,
+            description: promo.description || null,
             validUntil: promo.validUntil ? new Date(promo.validUntil) : null,
             isActive: true,
           },
@@ -182,36 +148,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 9. Registrar información de pago (en metadata o tabla separada si existe)
-    // Por ahora lo guardamos en un campo JSON o tabla relacionada
-    // Esto depende de tu schema actual
-
-    // 10. Retornar motel creado
     return NextResponse.json({
       success: true,
-      motel: {
-        id: motel.id,
-        slug: motel.slug,
-        name: motel.name,
-      },
-      message: 'Motel creado exitosamente. Ahora puedes agregar fotos desde el perfil del motel.',
+      motel: { id: motel.id, slug: motel.slug, name: motel.name },
+      message: 'Motel creado exitosamente.',
     });
   } catch (error) {
-    console.error('Error creating motel from form:', error);
-
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        {
-          error: 'Datos inválidos',
-          details: error.errors,
-        },
+        { error: 'Datos inválidos', details: error.issues },
         { status: 400 }
       );
     }
 
-    return NextResponse.json(
-      { error: 'Error al crear motel' },
-      { status: 500 }
-    );
+    console.error('Error creating motel from form:', error);
+    return NextResponse.json({ error: 'Error al crear motel' }, { status: 500 });
   }
 }
