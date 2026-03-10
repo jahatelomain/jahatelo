@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -14,7 +14,11 @@ import Animated, {
 import { searchAndFilterMotels } from '../services/motelsApi';
 import MotelCard from '../components/MotelCard';
 import MotelCardSkeleton from '../components/MotelCardSkeleton';
+import AdListItem from '../components/AdListItem';
+import AdDetailModal from '../components/AdDetailModal';
 import { prefetchMotelDetails, prefetchThumbnails } from '../services/prefetchService';
+import { useAdvertisements } from '../hooks/useAdvertisements';
+import { mixAdvertisements } from '../utils/mixAdvertisements';
 
 // Filtros rápidos por amenities comunes
 const QUICK_FILTERS = [
@@ -33,8 +37,13 @@ export default function SearchScreen({ route }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedAd, setSelectedAd] = useState(null);
+  const [showAdDetailModal, setShowAdDetailModal] = useState(false);
 
   const debounceTimerRef = useRef(null);
+
+  // Cargar anuncios de lista
+  const { ads: listAds, trackAdEvent } = useAdvertisements('LIST_INLINE');
 
   // Valores animados para SearchBar
   const searchBarScale = useSharedValue(1);
@@ -116,11 +125,28 @@ export default function SearchScreen({ route }) {
     };
   }, [searchQuery, selectedAmenity]);
 
+  // Mezclar resultados con anuncios
+  const mixedItems = useMemo(() => {
+    return mixAdvertisements(results, listAds);
+  }, [results, listAds]);
+
   const handleMotelPress = (motel) => {
     navigation.navigate('MotelDetail', {
       motelSlug: motel.slug,
       motelId: motel.id, // Mantener compatibilidad
     });
+  };
+
+  const handleAdClick = (ad) => {
+    if (!ad) return;
+    trackAdEvent(ad.id, 'CLICK');
+    setSelectedAd(ad);
+    setShowAdDetailModal(true);
+  };
+
+  const handleAdView = (ad) => {
+    if (!ad) return;
+    trackAdEvent(ad.id, 'VIEW');
   };
 
   const handleAmenityPress = (amenity) => {
@@ -190,12 +216,24 @@ export default function SearchScreen({ route }) {
     }
   }).current;
 
-  const renderMotelCard = ({ item }) => (
-    <MotelCard
-      motel={item}
-      onPress={() => handleMotelPress(item)}
-    />
-  );
+  const renderItem = ({ item }) => {
+    if (item.type === 'ad') {
+      return (
+        <AdListItem
+          ad={item.data}
+          onAdClick={handleAdClick}
+          onAdView={handleAdView}
+        />
+      );
+    }
+
+    return (
+      <MotelCard
+        motel={item.data}
+        onPress={() => handleMotelPress(item.data)}
+      />
+    );
+  };
 
   const hasActiveFilters = searchQuery.trim() !== '' || selectedAmenity !== '';
 
@@ -286,9 +324,9 @@ export default function SearchScreen({ route }) {
           </View>
         ) : (
           <FlatList
-            data={results}
-            renderItem={renderMotelCard}
-            keyExtractor={item => item.slug || item.id}
+            data={mixedItems}
+            renderItem={renderItem}
+            keyExtractor={(item, index) => `${item.type}-${item.data.id || item.data.slug || index}`}
             maxToRenderPerBatch={10}
             initialNumToRender={10}
             contentContainerStyle={styles.listContent}
@@ -309,6 +347,17 @@ export default function SearchScreen({ route }) {
           />
         )}
       </View>
+
+      {/* Modal de detalle de anuncio */}
+      <AdDetailModal
+        visible={showAdDetailModal}
+        ad={selectedAd}
+        onClose={() => {
+          setShowAdDetailModal(false);
+          setSelectedAd(null);
+        }}
+        onTrackClick={(adId) => trackAdEvent(adId, 'CLICK')}
+      />
     </SafeAreaView>
   );
 }

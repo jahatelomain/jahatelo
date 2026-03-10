@@ -1,20 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApiRoot } from './apiBaseUrl';
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
 
 const API_URL = getApiRoot();
 
 const TOKEN_KEY = '@jahatelo_auth_token';
 const USER_KEY = '@jahatelo_user';
-
-async function safeJson(response) {
-  const text = await response.text();
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return { error: text };
-  }
-}
 
 /**
  * Guarda el token y usuario en AsyncStorage
@@ -69,11 +60,8 @@ export async function clearAuthData() {
  */
 export async function register({ email, password, name, phone }) {
   try {
-    const response = await fetch(`${API_URL}/api/mobile/auth/register`, {
+    const data = await fetchWithTimeout(`${API_URL}/api/mobile/auth/register`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         email,
         password,
@@ -82,12 +70,6 @@ export async function register({ email, password, name, phone }) {
         provider: 'email',
       }),
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Error al registrar usuario');
-    }
 
     if (data.success && data.token && data.user) {
       await saveAuthData(data.token, data.user);
@@ -105,11 +87,8 @@ export async function register({ email, password, name, phone }) {
  */
 export async function login({ email, password, pushToken, deviceInfo }) {
   try {
-    const response = await fetch(`${API_URL}/api/mobile/auth/login`, {
+    const data = await fetchWithTimeout(`${API_URL}/api/mobile/auth/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         email,
         password,
@@ -117,12 +96,6 @@ export async function login({ email, password, pushToken, deviceInfo }) {
         deviceInfo,
       }),
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Error al iniciar sesión');
-    }
 
     if (data.success && data.token && data.user) {
       await saveAuthData(data.token, data.user);
@@ -140,11 +113,8 @@ export async function login({ email, password, pushToken, deviceInfo }) {
  */
 export async function loginWithOAuth({ provider, providerId, email, name, pushToken, deviceInfo }) {
   try {
-    const response = await fetch(`${API_URL}/api/mobile/auth/login`, {
+    const data = await fetchWithTimeout(`${API_URL}/api/mobile/auth/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         provider,
         providerId,
@@ -154,12 +124,6 @@ export async function loginWithOAuth({ provider, providerId, email, name, pushTo
         deviceInfo,
       }),
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Error al iniciar sesión con OAuth');
-    }
 
     if (data.success && data.token && data.user) {
       await saveAuthData(data.token, data.user);
@@ -177,19 +141,10 @@ export async function loginWithOAuth({ provider, providerId, email, name, pushTo
  */
 export async function requestSmsOtp({ phone }) {
   try {
-    const response = await fetch(`${API_URL}/api/mobile/auth/whatsapp/request-otp`, {
+    const data = await fetchWithTimeout(`${API_URL}/api/mobile/auth/whatsapp/request-otp`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ phone }),
     });
-
-    const data = await safeJson(response);
-
-    if (!response.ok) {
-      throw new Error(data?.error || 'No se pudo enviar el código');
-    }
 
     return data;
   } catch (error) {
@@ -203,19 +158,10 @@ export async function requestSmsOtp({ phone }) {
  */
 export async function verifySmsOtp({ phone, code, name }) {
   try {
-    const response = await fetch(`${API_URL}/api/mobile/auth/whatsapp/verify-otp`, {
+    const data = await fetchWithTimeout(`${API_URL}/api/mobile/auth/whatsapp/verify-otp`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ phone, code, name }),
     });
-
-    const data = await safeJson(response);
-
-    if (!response.ok) {
-      throw new Error(data?.error || 'Código inválido');
-    }
 
     if (data.success && data.token && data.user) {
       await saveAuthData(data.token, data.user);
@@ -238,23 +184,12 @@ export async function getProfile() {
       throw new Error('No token found');
     }
 
-    const response = await fetch(`${API_URL}/api/mobile/auth/me`, {
+    const data = await fetchWithTimeout(`${API_URL}/api/mobile/auth/me`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
       },
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      // Si el token es inválido, limpiar datos
-      if (response.status === 401) {
-        await clearAuthData();
-      }
-      throw new Error(data.error || 'Error al obtener perfil');
-    }
 
     if (data.success && data.user) {
       // Actualizar usuario guardado
@@ -263,6 +198,10 @@ export async function getProfile() {
 
     return data;
   } catch (error) {
+    // Si el token es inválido, limpiar datos
+    if (error.message?.includes('401')) {
+      await clearAuthData();
+    }
     console.error('Error in getProfile:', error);
     throw error;
   }
@@ -278,11 +217,10 @@ export async function updateProfile({ name, phone, profilePhoto, pushToken, devi
       throw new Error('No token found');
     }
 
-    const response = await fetch(`${API_URL}/api/mobile/auth/me`, {
+    const data = await fetchWithTimeout(`${API_URL}/api/mobile/auth/me`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         name,
@@ -292,12 +230,6 @@ export async function updateProfile({ name, phone, profilePhoto, pushToken, devi
         deviceInfo,
       }),
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Error al actualizar perfil');
-    }
 
     if (data.success && data.user) {
       // Actualizar usuario guardado

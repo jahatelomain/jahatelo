@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { getApiBase } from '../services/apiBaseUrl';
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
 
 /**
  * Obtiene la URL base del API
@@ -34,19 +35,12 @@ export function useAdvertisements(placement) {
         // _t=timestamp evita que el stack HTTP nativo (iOS/Android) sirva una respuesta cacheada
         const url = `${baseUrl}/advertisements?placement=${placement}&status=ACTIVE&_t=${Date.now()}`;
 
-        const response = await fetch(url, {
+        const data = await fetchWithTimeout(url, {
           headers: {
-            'Content-Type': 'application/json',
             'Cache-Control': 'no-cache',
             'Pragma': 'no-cache',
           },
         });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
 
         if (mounted) {
           // Filtrar solo anuncios activos y ordenar por prioridad
@@ -91,6 +85,7 @@ export function useAdvertisements(placement) {
       const url = `${baseUrl}/advertisements/track`;
 
       // Enviar tracking (no esperar respuesta para no bloquear UI)
+      // Usar fetch nativo sin timeout ya que no nos importa la respuesta
       fetch(url, {
         method: 'POST',
         headers: {
