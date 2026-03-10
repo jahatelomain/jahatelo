@@ -48,11 +48,17 @@ export async function POST(request: Request) {
       }
     }
 
+    const nextOrder =
+      validated.order ??
+      (await prisma.roomPhoto.count({
+        where: { roomTypeId: validated.roomTypeId },
+      }));
+
     const roomPhoto = await prisma.roomPhoto.create({
       data: {
         roomTypeId: validated.roomTypeId,
         url: validated.url,
-        order: validated.order ?? 0,
+        order: nextOrder,
       },
     });
 

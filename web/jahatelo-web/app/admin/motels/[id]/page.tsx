@@ -1014,7 +1014,6 @@ export default function MotelDetailPage() {
         body: JSON.stringify({
           roomTypeId: roomId,
           url: url.trim(),
-          order: 0,
         }),
       });
 
