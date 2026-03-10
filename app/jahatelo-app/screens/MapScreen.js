@@ -19,6 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import { getApiRoot } from '../services/apiBaseUrl';
 
 const API_URL = getApiRoot();
+const MAP_REQUEST_TIMEOUT_MS = 10000;
 const IS_ANDROID = Platform.OS === 'android';
 const debugLog = (...args) => {
   if (__DEV__) console.log(...args);
@@ -256,7 +257,16 @@ export default function MapScreen() {
       }
 
       debugLog('📍 Cargando datos del mapa desde API...');
-      const response = await fetch(`${API_URL}/api/mobile/motels/map`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), MAP_REQUEST_TIMEOUT_MS);
+      let response;
+      try {
+        response = await fetch(`${API_URL}/api/mobile/motels/map`, {
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       // Verificar si la respuesta es JSON antes de parsear
       const contentType = response.headers.get('content-type');
@@ -296,7 +306,11 @@ export default function MapScreen() {
       }
     } catch (err) {
       debugLog('Error fetching map data:', err);
-      setError('Error al cargar el mapa');
+      if (err?.name === 'AbortError') {
+        setError('Tiempo de espera agotado al cargar el mapa');
+      } else {
+        setError('Error al cargar el mapa');
+      }
     } finally {
       setLoading(false);
     }

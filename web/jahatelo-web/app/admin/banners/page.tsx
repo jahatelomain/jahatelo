@@ -185,6 +185,7 @@ export default function AdvertisementsAdminPage() {
           <table className="w-full">
             <thead className="bg-slate-50">
               <tr>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Activo</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Anuncio</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Ubicación</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Estado</th>
@@ -197,13 +198,26 @@ export default function AdvertisementsAdminPage() {
             <tbody>
               {ads.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-6 text-center text-slate-500" colSpan={7}>
+                  <td className="px-4 py-6 text-center text-slate-500" colSpan={8}>
                     No hay anuncios cargados.
                   </td>
                 </tr>
               ) : (
                 ads.map((ad) => (
                   <tr key={ad.id} className="border-t border-slate-100">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={ad.status === 'ACTIVE'}
+                            onChange={() => handleToggleStatus(ad)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                        </label>
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="font-semibold text-slate-900">{ad.title}</div>
                       <div className="text-sm text-slate-500">{ad.advertiser}</div>
@@ -246,14 +260,8 @@ export default function AdvertisementsAdminPage() {
                               href={`/admin/banners/${ad.id}/analytics`}
                               className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                             >
-                              Analytics
+                              Ver Analytics
                             </Link>
-                            <button
-                              onClick={() => handleToggleStatus(ad)}
-                              className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                            >
-                              {ad.status === 'ACTIVE' ? 'Pausar' : 'Activar'}
-                            </button>
                             <button
                               onClick={() => handleDelete(ad.id)}
                               className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"

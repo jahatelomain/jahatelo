@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import * as authApi from '../services/authApi';
-import { setSentryUser } from '../services/sentryService';
 
 const debugLog = (...args) => {
   if (__DEV__) console.log(...args);
@@ -92,7 +91,6 @@ export const AuthProvider = ({ children }) => {
       if (data.success && data.token && data.user) {
         setToken(data.token);
         setUser(data.user);
-        setSentryUser(data.user);
         return { success: true, user: data.user };
       }
 
@@ -117,7 +115,6 @@ export const AuthProvider = ({ children }) => {
       if (data.success && data.token && data.user) {
         setToken(data.token);
         setUser(data.user);
-        setSentryUser(data.user);
         return { success: true, user: data.user };
       }
 
@@ -135,7 +132,6 @@ export const AuthProvider = ({ children }) => {
       await authApi.logout();
       setToken(null);
       setUser(null);
-      setSentryUser(null);
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };

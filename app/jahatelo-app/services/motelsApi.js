@@ -21,28 +21,68 @@ const debugLog = (...args) => {
   if (__DEV__) console.log(...args);
 };
 
+// Timeout balanceado: staging puede tener latencia pero no debería pasar de 15s
+// Peor caso: 15s + 16s = 31s (aceptable vs 93s anterior)
+const REQUEST_TIMEOUT_MS = 15000; // 15 segundos
+const MAX_RETRIES = 1; // 2 intentos totales (original + 1 retry)
+
 /**
- * Utilidad para hacer fetch con manejo de errores
+ * Utilidad para hacer fetch con manejo de errores y retry logic
  */
-const fetchJson = async (url, options = {}) => {
+const fetchJson = async (url, options = {}, retryCount = 0) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
   try {
+    debugLog(`🌐 [API] Fetch: ${url} (intento ${retryCount + 1}/${MAX_RETRIES + 1})`);
+
     const response = await fetch(url, {
       ...options,
+      signal: options.signal || controller.signal,
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
       },
     });
 
+    debugLog(`📥 [API] Response: ${response.status} ${response.statusText}`);
+
     if (!response.ok) {
+      // Si es 401 (Unauthorized), probablemente falta Basic Auth en staging
+      if (response.status === 401) {
+        throw new Error('Error de autenticación (401). Verifica credenciales de staging.');
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
+    debugLog(`✅ [API] Datos recibidos exitosamente`);
     return data;
   } catch (error) {
-    debugLog('Fetch error:', error);
+    debugLog(`❌ [API] Error en fetch:`, error);
+
+    if (error?.name === 'AbortError') {
+      // Timeout - reintentar si quedan intentos
+      if (retryCount < MAX_RETRIES) {
+        debugLog(`🔄 [API] Timeout - reintentando (${retryCount + 1}/${MAX_RETRIES})...`);
+        clearTimeout(timeoutId);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Backoff exponencial
+        return fetchJson(url, options, retryCount + 1);
+      }
+      throw new Error('Tiempo de espera agotado después de varios intentos. Verifica tu conexión.');
+    }
+
+    // Otros errores de red - reintentar si quedan intentos
+    if (retryCount < MAX_RETRIES && !error.message.includes('401')) {
+      debugLog(`🔄 [API] Error de red - reintentando (${retryCount + 1}/${MAX_RETRIES})...`);
+      clearTimeout(timeoutId);
+      await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+      return fetchJson(url, options, retryCount + 1);
+    }
+
     throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
 };
 

@@ -2,15 +2,18 @@ import { useNavigation } from '@react-navigation/native';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Platform,
   RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { fetchMotels, fetchFeaturedMotels } from '../services/motelsApi';
+import { clearStoredStagingCredentials, isStagingEnvironment } from '../services/stagingAuthService';
 
 import HomeCategoriesGrid from '../components/HomeCategoriesGrid';
 import HomeHeader from '../components/HomeHeader';
@@ -40,16 +43,45 @@ export default function HomeScreen() {
     try {
       if (!isRefreshing) setLoading(true);
       setError(null);
-      // Cargar en paralelo: lista general (para búsqueda/ciudades/promos) y destacados (para carrusel)
-      const [data, featured] = await Promise.all([
+      // Cargar en paralelo y tolerar fallo parcial de destacados.
+      const [motelsResult, featuredResult] = await Promise.allSettled([
         fetchMotels(),
         fetchFeaturedMotels(),
       ]);
-      setMotels(data || []);
-      setFeaturedMotels(featured || []);
+
+      if (motelsResult.status !== 'fulfilled') {
+        throw motelsResult.reason || new Error('Error al cargar moteles');
+      }
+
+      const data = motelsResult.value || [];
+      const featured =
+        featuredResult.status === 'fulfilled'
+          ? (featuredResult.value || [])
+          : [];
+
+      setMotels(data);
+      setFeaturedMotels(featured);
     } catch (err) {
       console.error('Error al cargar moteles:', err);
-      setError(err.message || 'Error al cargar moteles');
+      const errorMessage = err.message || 'Error al cargar moteles';
+      setError(errorMessage);
+
+      // Si es error 401 en staging, limpiar credenciales y mostrar alerta
+      if (isStagingEnvironment() && errorMessage.includes('401')) {
+        console.warn('⚠️ [HomeScreen] Error 401 - Limpiando credenciales inválidas');
+        await clearStoredStagingCredentials();
+
+        Alert.alert(
+          'Credenciales inválidas',
+          'Las credenciales de staging no son válidas. Por favor, reinicia la app e ingresa nuevamente.',
+          [
+            {
+              text: 'Entendido',
+              style: 'default'
+            }
+          ]
+        );
+      }
     } finally {
       setLoading(false);
       if (isRefreshing) setRefreshing(false);
@@ -142,9 +174,57 @@ export default function HomeScreen() {
           translucent={Platform.OS === 'android'}
         />
         <View style={[styles.screen, { backgroundColor: colors.background }]}>
-          <View style={[styles.centerContainer, { backgroundColor: colors.primary }]}>
-            <Text style={[styles.centerText, { color: colors.white }]}>⚠️ {error}</Text>
-            <Text style={[styles.centerText, { opacity: 0.8, color: colors.white }]}>Verifica tu conexión a internet</Text>
+          <View style={[styles.centerContainer, { backgroundColor: colors.primary, padding: 24 }]}>
+            <Text style={[styles.errorIcon, { color: colors.white }]}>⚠️</Text>
+            <Text style={[styles.errorTitle, { color: colors.white }]}>Error de conexión</Text>
+            <Text style={[styles.errorMessage, { color: colors.white, opacity: 0.9 }]}>{error}</Text>
+            <Text style={[styles.errorHint, { color: colors.white, opacity: 0.7 }]}>
+              Verifica tu conexión a internet o las credenciales de staging
+            </Text>
+            <TouchableOpacity
+              style={[styles.retryButton, { backgroundColor: colors.white }]}
+              onPress={() => loadMotels(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.retryButtonText, { color: colors.primary }]}>🔄 Reintentar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </>
+    );
+  }
+
+  // Empty state: API funcionó pero no hay moteles
+  if (!loading && !error && motels.length === 0) {
+    return (
+      <>
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor={colors.primary}
+          translucent={Platform.OS === 'android'}
+        />
+        <View style={[styles.screen, { backgroundColor: colors.background }]}>
+          <View style={[styles.headerWrapper, { backgroundColor: colors.primary }]}>
+            <HomeHeader
+              motels={motels}
+              onMotelPress={handleMotelPress}
+              onSearch={handleSearch}
+              navigation={navigation}
+            />
+          </View>
+          <View style={[styles.emptyContainer, { backgroundColor: colors.background }]}>
+            <Text style={[styles.emptyIcon]}>🏨</Text>
+            <Text style={[styles.emptyTitle, { color: colors.primary }]}>No hay moteles disponibles</Text>
+            <Text style={[styles.emptyMessage, { color: colors.text }]}>
+              Próximamente agregaremos establecimientos en tu zona
+            </Text>
+            <TouchableOpacity
+              style={[styles.emptyButton, { backgroundColor: colors.primary }]}
+              onPress={() => loadMotels(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.emptyButtonText, { color: colors.white }]}>🔄 Actualizar</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </>
@@ -248,5 +328,68 @@ const styles = StyleSheet.create({
   },
   centerText: {
     marginTop: 12,
+  },
+  errorIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    fontSize: 15,
+    marginBottom: 8,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  errorHint: {
+    fontSize: 13,
+    marginBottom: 24,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    marginTop: 8,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  emptyMessage: {
+    fontSize: 16,
+    marginBottom: 28,
+    textAlign: 'center',
+    opacity: 0.7,
+  },
+  emptyButton: {
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 28,
+  },
+  emptyButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
