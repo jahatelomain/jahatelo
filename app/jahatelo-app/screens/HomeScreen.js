@@ -212,20 +212,71 @@ export default function HomeScreen() {
               navigation={navigation}
             />
           </View>
-          <View style={[styles.emptyContainer, { backgroundColor: colors.background }]}>
-            <Text style={[styles.emptyIcon]}>🏨</Text>
-            <Text style={[styles.emptyTitle, { color: colors.primary }]}>No hay moteles disponibles</Text>
-            <Text style={[styles.emptyMessage, { color: colors.text }]}>
-              Próximamente agregaremos establecimientos en tu zona
-            </Text>
-            <TouchableOpacity
-              style={[styles.emptyButton, { backgroundColor: colors.primary }]}
-              onPress={() => loadMotels(false)}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.emptyButtonText, { color: colors.white }]}>🔄 Actualizar</Text>
-            </TouchableOpacity>
-          </View>
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[styles.content, { backgroundColor: colors.background }]}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={colors.primary}
+                colors={[colors.primary]}
+              />
+            }
+          >
+            {/* Mostrar carrusel de publicidades aunque no haya moteles */}
+            {bannerAds.length > 0 && (
+              <PromoCarousel
+                promos={[]}
+                ads={bannerAds}
+                onPromoPress={handleMotelPress}
+                onAdClick={handleAdClick}
+                onAdView={trackBannerEvent}
+                title="Anuncios"
+                badgeLabel=""
+                badgeIconName=""
+              />
+            )}
+
+            {/* Mensaje de empty state */}
+            <View style={[styles.emptyContainer, { backgroundColor: colors.background }]}>
+              <Text style={[styles.emptyIcon]}>🏨</Text>
+              <Text style={[styles.emptyTitle, { color: colors.primary }]}>No hay moteles disponibles</Text>
+              <Text style={[styles.emptyMessage, { color: colors.text }]}>
+                Próximamente agregaremos establecimientos en tu zona
+              </Text>
+              <TouchableOpacity
+                style={[styles.emptyButton, { backgroundColor: colors.primary }]}
+                onPress={() => loadMotels(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.emptyButtonText, { color: colors.white }]}>🔄 Actualizar</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+
+          {/* Popup publicitario */}
+          {popupAds.length > 0 && (
+            <AdPopup
+              ad={popupAds[0]}
+              visible={showAdPopup}
+              onClose={() => setShowAdPopup(false)}
+              onTrackView={trackPopupEvent}
+              onTrackClick={trackPopupEvent}
+            />
+          )}
+
+          {/* Modal de detalle de anuncio del carrusel */}
+          <AdDetailModal
+            visible={showAdDetailModal}
+            ad={selectedAd}
+            onClose={() => {
+              setShowAdDetailModal(false);
+              setSelectedAd(null);
+            }}
+            onTrackClick={trackBannerEvent}
+          />
         </View>
       </>
     );
@@ -362,10 +413,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   emptyContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
+    paddingVertical: 60,
+    minHeight: 400,
   },
   emptyIcon: {
     fontSize: 64,
