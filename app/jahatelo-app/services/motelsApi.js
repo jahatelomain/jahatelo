@@ -9,6 +9,7 @@ import {
   updateLastSync,
 } from './cacheService';
 import { getMobileApiBase } from './apiBaseUrl';
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
 
 /**
  * Obtiene la URL base del API desde las variables de entorno
@@ -22,29 +23,9 @@ const debugLog = (...args) => {
 };
 
 /**
- * Utilidad para hacer fetch con manejo de errores
+ * Alias para mantener compatibilidad con código existente
  */
-const fetchJson = async (url, options = {}) => {
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    debugLog('Fetch error:', error);
-    throw error;
-  }
-};
+const fetchJson = fetchWithTimeout;
 
 /**
  * Normaliza una lista de fotos provenientes del backend para que siempre sean strings (URLs)

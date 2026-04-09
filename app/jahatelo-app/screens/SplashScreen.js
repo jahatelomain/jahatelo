@@ -6,6 +6,7 @@ import AnimatedSplash from '../components/AnimatedSplash';
 import { getApiRoot } from '../services/apiBaseUrl';
 
 const API_URL = getApiRoot();
+const SETTINGS_TIMEOUT_MS = 4000;
 
 export default function SplashScreen({ navigation }) {
   const didNavigate = useRef(false);
@@ -18,13 +19,18 @@ export default function SplashScreen({ navigation }) {
   }, []);
 
   const checkAgeGateAndNavigate = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), SETTINGS_TIMEOUT_MS);
+
     try {
       const apiRoot = getApiRoot();
       if (__DEV__) {
         console.log('🌐 API root (Splash):', apiRoot);
       }
       // Consultar si el age gate está habilitado
-      const response = await fetch(`${apiRoot}/api/settings/public`);
+      const response = await fetch(`${apiRoot}/api/settings/public`, {
+        signal: controller.signal,
+      });
       const data = await response.json();
 
       // Si el age gate está habilitado, navegar a AgeGate
@@ -35,9 +41,16 @@ export default function SplashScreen({ navigation }) {
         navigation.replace('Main');
       }
     } catch (error) {
-      console.error('Error fetching age gate settings:', error);
+      const isAbort = error?.name === 'AbortError';
+      if (!isAbort) {
+        console.error('Error fetching age gate settings:', error);
+      } else if (__DEV__) {
+        console.log('Age gate request timeout, continuing to Main');
+      }
       // En caso de error, ir directo a Main
       navigation.replace('Main');
+    } finally {
+      clearTimeout(timeoutId);
     }
   };
 

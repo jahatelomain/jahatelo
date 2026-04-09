@@ -85,3 +85,237 @@ body {
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
 }
+
+/* Hero animations */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-up-delay-1 {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+.animate-fade-up-delay-2 {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both;
+}
+
+.animate-fade-up-delay-3 {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.42s both;
+}
+
+.animate-fade-up-delay-4 {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.56s both;
+}
+
+/* Glow float effect */
+@keyframes glow-float {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0px) scale(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateX(-50%) translateY(-20px) scale(1.08);
+    opacity: 0.3;
+  }
+}
+
+.animate-glow-float {
+  animation: glow-float 6s ease-in-out infinite;
+}
+
+/* Card stagger fade-in */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-card-in-1 {
+  animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both;
+}
+
+.animate-card-in-2 {
+  animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.72s both;
+}
+
+.animate-card-in-3 {
+  animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.84s both;
+}
+
+/* Card shimmer sweep on hover */
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(250%) skewX(-15deg); }
+}
+
+.card-shimmer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.card-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  transform: translateX(-100%) skewX(-15deg);
+}
+
+.group:hover .card-shimmer::after {
+  animation: shimmer-sweep 0.6s ease forwards;
+}
+
+/* Partículas flotantes en hero */
+@keyframes particle-float {
+  0%, 100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.5; }
+  33% { transform: translateY(-18px) translateX(8px) scale(1.1); opacity: 0.85; }
+  66% { transform: translateY(-8px) translateX(-6px) scale(0.95); opacity: 0.65; }
+}
+
+.hero-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(168, 85, 247, 0.6);
+  pointer-events: none;
+  animation: particle-float linear infinite;
+}
+
+/* Fondo idéntico al hero — lila con glow flotante y partículas CSS */
+.section-bg {
+  position: relative;
+  background: linear-gradient(135deg, #1e0a3c 0%, #2a0f52 45%, #3d1878 100%);
+  overflow: hidden;
+}
+
+/* Glow orb central animado — igual al hero */
+.section-bg::before {
+  content: '';
+  position: absolute;
+  top: -10%;
+  left: 50%;
+  width: 600px;
+  height: 600px;
+  margin-left: -300px;
+  background: rgba(130, 45, 226, 0.20);
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  animation: glow-float 6s ease-in-out infinite;
+}
+
+/* Glow rosa esquina inferior derecha — igual al hero */
+.section-bg::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 300px;
+  height: 300px;
+  background: rgba(236, 72, 153, 0.10);
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+/* Partículas flotantes via pseudo + keyframes en cada sección */
+@keyframes p1 {
+  0%,100%{transform:translate(0,0) scale(1);opacity:.55}
+  33%{transform:translate(8px,-18px) scale(1.1);opacity:.85}
+  66%{transform:translate(-6px,-8px) scale(.95);opacity:.65}
+}
+@keyframes p2 {
+  0%,100%{transform:translate(0,0) scale(1);opacity:.45}
+  40%{transform:translate(-10px,-14px) scale(1.05);opacity:.75}
+  70%{transform:translate(6px,-6px) scale(.9);opacity:.55}
+}
+@keyframes p3 {
+  0%,100%{transform:translate(0,0) scale(1);opacity:.5}
+  50%{transform:translate(10px,-20px) scale(1.12);opacity:.8}
+}
+
+.section-particles span {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.section-particles span:nth-child(1){width:8px;height:8px;top:12%;left:8%;background:rgba(168,85,247,.6);animation:p1 7s linear infinite}
+.section-particles span:nth-child(2){width:6px;height:6px;top:28%;left:18%;background:rgba(245,101,101,.45);animation:p2 9s linear infinite 1.5s}
+.section-particles span:nth-child(3){width:10px;height:10px;top:18%;right:12%;background:rgba(168,85,247,.55);animation:p3 8s linear infinite .8s}
+.section-particles span:nth-child(4){width:6px;height:6px;top:55%;right:8%;background:rgba(213,63,140,.45);animation:p1 6s linear infinite 2s}
+.section-particles span:nth-child(5){width:8px;height:8px;top:72%;left:12%;background:rgba(168,85,247,.5);animation:p2 10s linear infinite .3s}
+.section-particles span:nth-child(6){width:4px;height:4px;top:42%;left:32%;background:rgba(245,101,101,.35);animation:p3 8.5s linear infinite 3s}
+.section-particles span:nth-child(7){width:12px;height:12px;top:8%;right:28%;background:rgba(168,85,247,.35);animation:p1 11s linear infinite 1s}
+
+/* Pulse ring en buscador */
+@keyframes search-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(168, 85, 247, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+}
+
+.search-pulse:focus {
+  animation: search-pulse 1.5s ease-out infinite;
+}
+
+/* Navbar gradient border bottom */
+@keyframes border-shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+.navbar-gradient-border {
+  background: linear-gradient(90deg, #822DE2, #F56565, #D53F8C, #822DE2);
+  background-size: 200% auto;
+  animation: border-shimmer 3s linear infinite;
+}
+
+/* ── Inputs globales sobre fondo oscuro (section-bg) ── */
+.section-bg input,
+.section-bg textarea,
+.section-bg select {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(139, 92, 246, 0.5);
+  border-radius: 0.75rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.section-bg input::placeholder,
+.section-bg textarea::placeholder {
+  color: rgba(196, 181, 253, 0.55);
+}
+
+.section-bg input:focus,
+.section-bg textarea:focus,
+.section-bg select:focus {
+  border-color: rgba(167, 139, 250, 0.8);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+}
+
+.section-bg input:disabled,
+.section-bg textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

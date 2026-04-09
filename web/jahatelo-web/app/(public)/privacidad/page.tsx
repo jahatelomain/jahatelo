@@ -1,12 +1,17 @@
+import Navbar from '@/components/public/Navbar';
+import Footer from '@/components/public/Footer';
+
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-slate-50 py-12">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="bg-white rounded-xl shadow-sm p-8 md:p-12">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Política de Privacidad</h1>
-          <p className="text-sm text-slate-600 mb-8">Última actualización: {new Date().toLocaleDateString('es-PY')}</p>
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-slate-50 py-12">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="bg-white rounded-xl shadow-sm p-8 md:p-12">
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">Política de Privacidad</h1>
+            <p className="text-sm text-slate-600 mb-8">Última actualización: {new Date().toLocaleDateString('es-PY')}</p>
 
-          <div className="prose prose-slate max-w-none space-y-6">
+            <div className="prose prose-slate max-w-none space-y-6">
             <section>
               <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">1. Introducción</h2>
               <p className="text-slate-700 leading-relaxed">
@@ -107,7 +112,7 @@ export default function PrivacyPage() {
               </ul>
 
               <p className="text-slate-700 leading-relaxed mt-4">
-                Para ejercer estos derechos, contáctenos en: <strong>privacidad@jahatelo.com</strong>
+                Para ejercer estos derechos, contáctenos en: <strong>info@jahatelo.com</strong>
               </p>
             </section>
 
@@ -202,10 +207,10 @@ export default function PrivacyPage() {
                 Para preguntas sobre esta política o ejercer sus derechos:
               </p>
               <ul className="list-none pl-0 text-slate-700 space-y-2">
-                <li><strong>Email de Privacidad:</strong> privacidad@jahatelo.com</li>
-                <li><strong>Email General:</strong> contacto@jahatelo.com</li>
-                <li><strong>Teléfono:</strong> +595 XXX XXX XXX</li>
-                <li><strong>Dirección:</strong> [Dirección física en Paraguay]</li>
+                <li><strong>Email de Privacidad:</strong> info@jahatelo.com</li>
+                <li><strong>Email General:</strong> info@jahatelo.com</li>
+                <li><strong>Teléfono:</strong> 0992 284 941</li>
+                <li><strong>Dirección:</strong> Del Maestro 2850</li>
               </ul>
             </section>
 
@@ -222,9 +227,11 @@ export default function PrivacyPage() {
                 Al usar Jahatelo, usted reconoce que ha leído y entendido esta Política de Privacidad.
               </p>
             </section>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 }

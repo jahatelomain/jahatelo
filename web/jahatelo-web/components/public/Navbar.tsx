@@ -21,20 +21,22 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-white/90 backdrop-blur-md sticky top-0 z-50">
+      {/* Borde inferior animado con gradiente de marca */}
+      <div className="navbar-gradient-border h-[2px] w-full absolute bottom-0 left-0" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex items-center h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center justify-center">
+          <Link href="/" className="flex items-center justify-center hover:opacity-80 transition-opacity shrink-0">
             <img
               src="/logo-icon.png"
               alt="Jahatelo"
-              className="h-10 w-auto object-contain"
+              className="h-20 md:h-24 w-auto object-contain"
             />
           </Link>
 
-          {/* Navigation Links */}
-          <div className="hidden md:flex items-center gap-6">
+          {/* Navigation Links - centrados */}
+          <div className="hidden md:flex flex-1 items-center justify-center gap-14">
             <Link
               href="/"
               className={`font-medium transition-colors ${
@@ -88,7 +90,7 @@ export default function Navbar() {
 
             {/* Auth Section */}
             {isAuthenticated ? (
-              <div className="relative ml-3">
+              <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center gap-2 text-gray-700 hover:text-purple-600 transition-colors"
@@ -137,7 +139,7 @@ export default function Navbar() {
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-3 ml-3">
+              <div className="flex items-center gap-3 shrink-0">
                 <Link
                   href="/login"
                   className="font-medium text-gray-600 hover:text-purple-600 transition-colors"

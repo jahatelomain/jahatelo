@@ -19,6 +19,7 @@ import { prefetchMotelDetails } from '../services/prefetchService';
 import { getAmenityIconConfig } from '../constants/amenityIcons';
 import { COLORS } from '../constants/theme';
 import { trackFavoriteAdd, trackFavoriteRemove } from '../services/analyticsService';
+import { shareMotel } from '../utils/share';
 
 function MotelCardComponent({ motel, onPress }) {
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -148,6 +149,14 @@ function MotelCardComponent({ motel, onPress }) {
     }
   };
 
+  const handleSharePress = (e) => {
+    // Prevenir que se dispare el onPress de la card
+    e.stopPropagation();
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    shareMotel(motel);
+  };
+
   const handlePress = () => {
     // No permitir navegación si es plan FREE
     if (motel.plan === 'FREE') {
@@ -200,19 +209,32 @@ function MotelCardComponent({ motel, onPress }) {
             <Ionicons name="location-outline" size={12} color="#888" /> {motel.ciudad || motel.barrio || 'Sin ciudad'}
           </Text>
         </View>
-        <TouchableOpacity
-          onPress={handleFavoritePress}
-          style={styles.favoriteButton}
-          activeOpacity={0.7}
-        >
-          <Animated.View style={animatedHeartStyle}>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={handleSharePress}
+            style={styles.actionButton}
+            activeOpacity={0.7}
+          >
             <Ionicons
-              name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
-              size={20}
+              name="share-social-outline"
+              size={19}
               color={COLORS.primary}
             />
-          </Animated.View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleFavoritePress}
+            style={styles.actionButton}
+            activeOpacity={0.7}
+          >
+            <Animated.View style={animatedHeartStyle}>
+              <Ionicons
+                name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
+                size={20}
+                color={COLORS.primary}
+              />
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Fila inferior: precio, badges/amenities */}
@@ -397,7 +419,12 @@ const styles = StyleSheet.create({
     color: '#888',
     lineHeight: 16,
   },
-  favoriteButton: {
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  actionButton: {
     padding: 2,
   },
   bottomRow: {

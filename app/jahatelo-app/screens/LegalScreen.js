@@ -36,7 +36,7 @@ export default function LegalScreen({ route, navigation }) {
         <View style={styles.footer}>
           <Ionicons name="mail-outline" size={16} color="#999" />
           <Text style={styles.footerText}>
-            Para consultas: contacto@jahatelo.app
+            Para consultas: info@jahatelo.com
           </Text>
         </View>
       </ScrollView>

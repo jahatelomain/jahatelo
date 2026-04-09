@@ -1,11 +1,13 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { formatPrice } from '../../services/motelsApi';
 import { getAmenityIconConfig } from '../../constants/amenityIcons';
 import { COLORS } from '../../constants/theme';
+import * as Haptics from 'expo-haptics';
+import { shareRoom } from '../../utils/share';
 
-function RoomCard({ room }) {
+function RoomCard({ room, motel }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const tooltipTimer = useRef(null);
 
@@ -14,6 +16,11 @@ function RoomCard({ room }) {
     setShowTooltip(true);
     tooltipTimer.current = setTimeout(() => setShowTooltip(false), 3000);
   }, []);
+
+  const handleShare = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    shareRoom(motel, room);
+  }, [motel, room]);
 
   const amenities = room.amenities || [];
 
@@ -33,7 +40,16 @@ function RoomCard({ room }) {
 
   return (
     <View style={styles.roomCard}>
-      <Text style={styles.roomName}>{room.name}</Text>
+      <View style={styles.roomHeader}>
+        <Text style={styles.roomName}>{room.name}</Text>
+        <TouchableOpacity
+          style={styles.shareButton}
+          onPress={handleShare}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="share-social-outline" size={20} color={COLORS.primary} />
+        </TouchableOpacity>
+      </View>
 
       {room.description && (
         <Text style={styles.roomDescription}>{room.description}</Text>
@@ -117,7 +133,7 @@ export default function RoomsTab({ route }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {motel.rooms.map((room) => (
-        <RoomCard key={room.id} room={room} />
+        <RoomCard key={room.id} room={room} motel={motel} />
       ))}
     </ScrollView>
   );
@@ -139,11 +155,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
+  roomHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   roomName: {
+    flex: 1,
     fontSize: 18,
     fontWeight: 'bold',
     color: '#2A0038',
-    marginBottom: 4,
+  },
+  shareButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
   roomDescription: {
     fontSize: 14,
