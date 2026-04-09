@@ -34,9 +34,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-b from-[#0f0520] to-[#080110]">
+      <div className="min-h-screen section-bg">
         {/* Hero Search Section */}
-        <div className="relative bg-gradient-to-br from-[#0f0520] via-[#1a0a3c] to-[#2d1060] overflow-hidden">
+        <div className="relative bg-gradient-to-br from-[#1e0a3c] via-[#2a0f52] to-[#3d1878] overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] bg-purple-600/15 rounded-full blur-3xl pointer-events-none animate-glow-float" />
           <div className="navbar-gradient-border h-[2px] w-full absolute bottom-0 left-0" />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 text-center">

@@ -177,7 +177,7 @@ export default async function HomePage() {
       <Navbar />
       <main data-testid="homepage-main">
         {/* Hero */}
-        <section className="relative bg-gradient-to-br from-[#0f0520] via-[#1a0a3c] to-[#2d1060] overflow-hidden">
+        <section className="relative bg-gradient-to-br from-[#1e0a3c] via-[#2a0f52] to-[#3d1878] overflow-hidden">
           {/* Glow decorativo flotante */}
           <div className="absolute top-0 left-1/2 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-3xl pointer-events-none animate-glow-float" />
           <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-pink-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -236,7 +236,7 @@ export default async function HomePage() {
 
         {featuredMotels.length > 0 && <FeaturedMotels motels={featuredMotels} />}
         {cities.length > 0 && (
-          <section className="py-14 bg-gradient-to-b from-[#130828] to-[#0f0520]">
+          <section className="section-bg py-14">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center gap-4 mb-8">
                 <div>
@@ -253,7 +253,7 @@ export default async function HomePage() {
           </section>
         )}
         {promosMotels.length > 0 && (
-          <section className="py-14 bg-gradient-to-b from-[#0f0520] to-[#1a0535]">
+          <section className="section-bg py-14">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center gap-4 mb-8">
                 <div>
@@ -272,7 +272,7 @@ export default async function HomePage() {
         {recentMotels.length > 0 && <RecentMotels motels={recentMotels} />}
 
         {featuredMotels.length === 0 && promosMotels.length === 0 && recentMotels.length === 0 && (
-          <section className="py-20 bg-gradient-to-b from-[#0f0520] to-[#080110]">
+          <section className="section-bg py-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-purple-900/40 border border-purple-700/40 rounded-full mb-6">
                 <svg className="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

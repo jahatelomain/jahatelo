@@ -4,7 +4,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="relative bg-gradient-to-b from-[#0f0520] to-[#080110] overflow-hidden">
+    <footer className="section-bg relative overflow-hidden">
       {/* Glow decorativo */}
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-[200px] bg-purple-700/15 rounded-full blur-3xl pointer-events-none" />
 

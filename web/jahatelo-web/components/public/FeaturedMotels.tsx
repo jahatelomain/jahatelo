@@ -4,7 +4,7 @@ export default function FeaturedMotels({ motels, title }: { motels: any[]; title
   if (!motels || motels.length === 0) return null;
 
   return (
-    <section className="py-14 bg-gradient-to-b from-[#0f0520] to-[#130828]">
+    <section className="section-bg py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4 mb-8">
           <div>
