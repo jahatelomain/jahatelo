@@ -34,14 +34,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-b from-[#0f0520] to-[#080110]">
         {/* Hero Search Section */}
-        <div className="bg-white border-b-4 border-purple-600">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 text-center">
+        <div className="relative bg-gradient-to-br from-[#0f0520] via-[#1a0a3c] to-[#2d1060] overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] bg-purple-600/15 rounded-full blur-3xl pointer-events-none animate-glow-float" />
+          <div className="navbar-gradient-border h-[2px] w-full absolute bottom-0 left-0" />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 text-center">
+            <span className="inline-block mb-4 text-xs font-semibold uppercase tracking-widest text-purple-300 bg-purple-900/40 border border-purple-700/50 px-4 py-1.5 rounded-full animate-fade-up">
+              Encontrá lo que buscás
+            </span>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 animate-fade-up-delay-1">
               Buscar Moteles
             </h1>
-            <p className="text-lg text-gray-600 mb-8 text-center">
+            <p className="text-lg text-purple-200/70 animate-fade-up-delay-2">
               Buscá por nombre, ciudad, barrio o características
             </p>
           </div>

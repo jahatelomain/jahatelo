@@ -16,15 +16,19 @@ export default function MapaPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#0f0520]">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+        <div className="relative bg-gradient-to-br from-[#0f0520] via-[#1a0a3c] to-[#2d1060] overflow-hidden">
+          <div className="navbar-gradient-border h-[2px] w-full absolute bottom-0 left-0" />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <span className="inline-block mb-3 text-xs font-semibold uppercase tracking-widest text-purple-300 bg-purple-900/40 border border-purple-700/50 px-4 py-1.5 rounded-full">
+              Mapa interactivo
+            </span>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">
               Mapa de Moteles
             </h1>
-            <p className="text-gray-600">
-              Explora todos los moteles disponibles en el mapa
+            <p className="text-purple-200/70">
+              Explorá todos los moteles disponibles en el mapa
             </p>
           </div>
         </div>

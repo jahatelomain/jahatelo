@@ -236,12 +236,16 @@ export default async function HomePage() {
 
         {featuredMotels.length > 0 && <FeaturedMotels motels={featuredMotels} />}
         {cities.length > 0 && (
-          <section className="py-12 bg-white">
+          <section className="py-14 bg-gradient-to-b from-[#130828] to-[#0f0520]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Moteles por ciudad</h2>
-                <Link href="/search" className="text-sm font-semibold text-purple-600 hover:text-purple-700">
-                  Ver todos
+              <div className="flex items-center gap-4 mb-8">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-purple-400 mb-1">Explorá por zona</p>
+                  <h2 className="text-2xl font-bold text-white">Moteles por ciudad</h2>
+                </div>
+                <div className="h-px flex-1 bg-gradient-to-r from-purple-700/60 to-transparent" />
+                <Link href="/search" className="text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors shrink-0">
+                  Ver todos →
                 </Link>
               </div>
               <CityListWithAds cities={cities} />
@@ -249,12 +253,16 @@ export default async function HomePage() {
           </section>
         )}
         {promosMotels.length > 0 && (
-          <section className="py-12 bg-slate-50">
+          <section className="py-14 bg-gradient-to-b from-[#0f0520] to-[#1a0535]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Promos activas</h2>
-                <Link href="/search?promos=1" className="text-sm font-semibold text-purple-600 hover:text-purple-700">
-                  Ver todas
+              <div className="flex items-center gap-4 mb-8">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-pink-400 mb-1">Ofertas exclusivas</p>
+                  <h2 className="text-2xl font-bold text-white">Promos activas</h2>
+                </div>
+                <div className="h-px flex-1 bg-gradient-to-r from-pink-700/60 to-transparent" />
+                <Link href="/search?promos=1" className="text-sm font-semibold text-pink-400 hover:text-pink-300 transition-colors shrink-0">
+                  Ver todas →
                 </Link>
               </div>
               <PromoListWithAds motels={promosMotels} />
@@ -264,18 +272,18 @@ export default async function HomePage() {
         {recentMotels.length > 0 && <RecentMotels motels={recentMotels} />}
 
         {featuredMotels.length === 0 && promosMotels.length === 0 && recentMotels.length === 0 && (
-          <section className="py-16 bg-white">
+          <section className="py-20 bg-gradient-to-b from-[#0f0520] to-[#080110]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-purple-900/40 border border-purple-700/40 rounded-full mb-6">
+                <svg className="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Todavía no hay moteles publicados</h3>
-              <p className="text-gray-600">Estamos trabajando para traerte los mejores moteles pronto.</p>
+              <h3 className="text-xl font-semibold text-white mb-2">Todavía no hay moteles publicados</h3>
+              <p className="text-purple-300/70">Estamos trabajando para traerte los mejores moteles pronto.</p>
               <Link
                 href="/registrar-motel"
-                className="inline-block mt-6 border-2 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white font-semibold px-8 py-3 rounded-lg transition-colors"
+                className="inline-block mt-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold px-8 py-3 rounded-xl transition-all shadow-lg hover:shadow-purple-900/40"
               >
                 Registrar mi motel
               </Link>
