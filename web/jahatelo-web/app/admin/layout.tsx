@@ -100,9 +100,14 @@ export default function AdminLayout({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [menuOpen]);
 
+  const exactActivePaths = new Set(['/admin/analytics']);
+
   const isActive = (path: string) => {
     if (path === '/admin') {
       return pathname === '/admin';
+    }
+    if (exactActivePaths.has(path)) {
+      return pathname === path;
     }
     // Exact match primero, luego startsWith solo si el siguiente char es '/' o fin
     if (pathname === path) return true;

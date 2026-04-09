@@ -1,61 +1,65 @@
 # Codex resumen (estado actual)
 
-## Ultimo estado
-### Guardrails staging -> produccion
-- Build de Vercel ahora bloquea deploy de `production` si no viene de la rama permitida (`ALLOWED_PRODUCTION_BRANCH`, por defecto `main`).
-- Script de control: `web/jahatelo-web/scripts/enforce-production-branch.js` (se ejecuta desde `web/jahatelo-web/vercel.json`).
-- Override de emergencia (solo si falta `VERCEL_GIT_COMMIT_REF`): `ALLOW_PROD_DEPLOY_WITHOUT_REF=1`.
-- Workflow agregado: `.github/workflows/enforce-main-from-staging.yml` para aceptar PR a `main` solo desde `staging`.
+## Estado general (staging)
+- Rama actual sincronizada: `staging` = `origin/staging`.
+- Ultimo commit en staging: `16ca4c3`.
+- Working tree limpio al cerrar este resumen.
 
-### Web
-- Staging activo en Vercel; prod y staging usan la misma DB y bucket (por ahora).
-- Uploads en staging/prod usan S3; en dev hay fallback local si faltan creds o `UPLOADS_USE_LOCAL=1`.
-- Se corrigio el truncado de URLs S3 en admin de moteles (no se fuerza `/uploads/...` si ya es URL https).
-- Cache-busting de imagenes: anuncios y promos agregan `?v=updatedAt`; API mobile agrega `Cache-Control: no-store`.
-- `touchMotel()` se ejecuta al crear/editar/borrar rooms, room-photos, menu-categories, menu-items y promos.
-- Admin: scroll al formulario al editar habitacion (para evitar “queda abajo”).
-- Publico: link del FeaturedCarousel ya es clickeable en toda la tarjeta (overlays no bloquean clicks).
-- Logos publicos/registro/login: estaban duplicados por symlinks en `public/`; se reemplazaron por archivos reales.
-- Amenities en web ahora se derivan de habitaciones activas (se elimina `motelAmenities` de queries y UI).
+## Guardrails de release (staging -> main -> produccion)
+- Deploy de produccion en Vercel bloqueado si no viene de rama permitida (`main`) via `web/jahatelo-web/scripts/enforce-production-branch.js`.
+- Workflow activo: `.github/workflows/enforce-main-from-staging.yml` para permitir PR a `main` solo desde `staging`.
+- Branch protection en `main` ya se uso con check requerido `enforce-source-branch`.
 
-### App
-- Expo usa API dinamica basada en `hostUri` (sin IP fija); se puede forzar con `EXPO_PUBLIC_API_URL`.
-- Cache invalidation de promos/ads: URLs con `?v=updatedAt` + fetch con `?_t=Date.now()` para evitar cache HTTP.
-- Carrusel de destacados consulta `isFeatured=true&limit=50` (igual a web).
-- Splash: `hideAsync()` se llama cuando el Lottie ya esta montado (sin flash blanco).
-- RoomsTab: amenities con iconos en circulos + tooltip con long press.
-- Google auth en Expo Go usa `AuthSession.makeRedirectUri({ useProxy: true })` y client IDs nativos.
+## Web (jahatelo-web) - cambios relevantes vigentes
+- SEO ampliado:
+  - rutas por ciudad/barrio, canonical, sitemap extendido y schemas JSON-LD.
+  - meta principal ajustable para SERP.
+- Login Google incorporado en flujo web y CSP ajustado para dominios de Google.
+- Middleware de staging con gate de acceso activo (Basic Auth custom via middleware).
+- Admin banners:
+  - toggle rapido Activo/Pausado en tabla (sin depender del menu de acciones).
+  - backend ya filtra solo `status: ACTIVE` en API publica de anuncios.
+- Analytics:
+  - se hicieron ajustes para evitar contaminar metricas con rutas de admin (pendiente seguir refinando segmentacion por entorno si se requiere total separacion historica).
 
-## Fixes recientes (ya pusheados a staging)
-- Migraciones pendientes aplicadas a DB local (columnas de ads y whatsapp OTP).
-- Validaciones Zod aceptan `/uploads/...` y strings vacios en campos opcionales (ads/promos/room-photos/menu items/profilePhoto).
-- Fallback local de uploads en dev + S3 en prod.
-- Admin banners/promos: fechas opcionales aceptan YYYY-MM-DD y URLs relativas.
-- Normalizacion de URLs en APIs para anuncios y mobile.
-- Favoritos mobile devuelve datos frescos desde DB (incluye habitaciones/amenities/promos).
-- `touchMotel()` propagado a entidades hijas (rooms, room-photos, menu, promos).
-- Amenidades mobile: ahora vienen de habitaciones activas (no solo `motelAmenities`).
+## App mobile (jahatelo-app) - cambios recientes vigentes
+- Se estabilizo acceso a staging en app:
+  - popup de credenciales staging,
+  - interceptor para header `Authorization` en requests a staging,
+  - manejo de timeout/retry unificado.
+- Sentry desactivado temporalmente en la app para evitar friccion de build local.
+- Home en caso de 0 moteles:
+  - ya no queda spinner infinito,
+  - muestra estado vacio,
+  - mantiene publicidades (carrusel/popup) y boton de reintento.
+- Search:
+  - ahora mezcla anuncios inline con resultados.
+- Branding app:
+  - iconos/splash actualizados en assets y `app.json`.
 
-## Configuracion de DB por entorno (web)
+## Orden/prioridad de contenido (estado actual)
+- Fotos de habitaciones:
+  - ya tienen drag & drop y persistencia de `order`.
+  - fix reciente: al agregar foto nueva entra al final, y al borrar se reindexa el orden para evitar huecos/desorden.
+- Habitaciones (como entidades):
+  - aun no tienen un campo `order` dedicado para definir prioridad de aparicion entre habitaciones.
+- Fotos generales del motel:
+  - el modelo `Photo` tiene `order`, pero falta confirmar UI/admin drag-and-drop completo para ese bloque si se quiere mismo nivel que room photos.
 
-| Entorno | Archivo | DATABASE_URL |
-|---------|---------|-------------|
-| Dev local | `.env.local` | `postgresql://postgres:postgres@localhost:5433/jahatelo_local` |
-| Produccion / Vercel | `.env` | Supabase pooler (`aws-0-us-west-2.pooler.supabase.com:6543`) |
-| CLI Prisma (migrate, studio) | `.env` via `dotenv/config` | Supabase (DIRECT_URL) |
+## Commits recientes (contexto inmediato)
+- `16ca4c3` chore(app): add remaining local simulator and asset files
+- `fa04af9` fix(admin-room-photos): preserve drag order on add and delete
+- `3b77c81` chore(app): refresh iOS branding icons and splash asset
+- `809398d` feat(app): unify fetch timeout and inject inline ads in search
+- `3257d47` fix(app-home): show ads and popup when motel list is empty
+- `1047c37` fix(staging): stabilize mobile auth/loading and remove sentry from app
 
-**Regla**: Next.js dev carga `.env.local` con prioridad sobre `.env`. El CLI de Prisma usa `.env` salvo que se pase `DATABASE_URL=...` inline.
+## Comandos operativos base (cortos)
+- Push normal: `git push origin staging`
+- Web typecheck manual: `cd web/jahatelo-web && npx tsc --noEmit`
+- App dev client: `cd app/jahatelo-app && npx expo start --dev-client --clear`
 
-**Comandos para aplicar migraciones en DB local** (cuando hay pendientes):
-```
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/jahatelo_local" DIRECT_URL="postgresql://postgres:postgres@localhost:5433/jahatelo_local" npx prisma migrate deploy
-```
-
-## Git
-- Ultimo commit en staging: `f95d4f3` (amenities desde habitaciones + google auth Expo + logos publicos reales + README actualizado).
-
-## Tests
-- No se corrieron tests recientes.
-
-## Notas
-- Si se quiere amenities a nivel motel (no solo habitaciones), hay que agregar UI y mapeo separado.
+## Pendiente recomendado (proximo bloque)
+1. Implementar orden de habitaciones (campo + drag/drop en admin + orderBy en APIs publicas).
+2. Revisar orden drag/drop para fotos generales de motel en admin (si no esta expuesto aun).
+3. Opcional: separar completamente analytics por entorno (staging vs produccion) en almacenamiento/reportes.

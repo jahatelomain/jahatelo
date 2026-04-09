@@ -24,12 +24,12 @@ export default function CityListWithAds({ cities }: { cities: CityItem[] }) {
         return (
           <Fragment key={city.name}>
             <Link
-              href={`/ciudades/${encodeURIComponent(city.name)}`}
-              className="block bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
+              href={`/ciudad/${city.name.toLowerCase().replace(/\s+/g, '-')}`}
+              className="block bg-white/5 border border-purple-800/40 rounded-2xl p-5 hover:bg-white/10 hover:border-purple-600/60 hover:-translate-y-0.5 transition-all duration-300 group"
             >
-              <p className="text-xs uppercase tracking-wide text-slate-400">Ciudad</p>
-              <h3 className="text-lg font-semibold text-slate-900">{city.name}</h3>
-              <p className="text-sm text-slate-500">
+              <p className="text-xs uppercase tracking-wide text-purple-400 mb-1">Ciudad</p>
+              <h3 className="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors">{city.name}</h3>
+              <p className="text-sm text-purple-300/60 mt-1">
                 {city.total} {city.total === 1 ? 'motel' : 'moteles'}
               </p>
             </Link>

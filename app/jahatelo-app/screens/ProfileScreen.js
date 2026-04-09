@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Image, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -51,6 +51,15 @@ export default function ProfileScreen() {
 
   const handleLegalPress = (title, content) => {
     navigation.navigate('Legal', { title, content });
+  };
+
+  const handleOpenExternalLink = async (url) => {
+    try {
+      await Linking.openURL(url);
+    } catch (error) {
+      console.error('Error opening external URL:', error);
+      Alert.alert('Error', 'No se pudo abrir el enlace');
+    }
   };
 
   const handleClearCache = () => {
@@ -305,10 +314,7 @@ export default function ProfileScreen() {
             <OptionRow
               icon="document-text-outline"
               title="Bases y condiciones"
-              onPress={() => handleLegalPress(
-                'Bases y condiciones',
-                'Aquí irán las bases y condiciones de uso de Jahatelo.\n\nPróximamente estarán disponibles los términos completos de servicio.'
-              )}
+              onPress={() => handleOpenExternalLink('https://www.jahatelo.com/terminos')}
             />
           </View>
         </View>
@@ -319,10 +325,7 @@ export default function ProfileScreen() {
             <OptionRow
               icon="shield-checkmark-outline"
               title="Política de privacidad"
-              onPress={() => handleLegalPress(
-                'Política de privacidad',
-                'Aquí irá la política de privacidad de Jahatelo.\n\nPróximamente estará disponible el detalle completo sobre cómo manejamos tus datos.'
-              )}
+              onPress={() => handleOpenExternalLink('https://www.jahatelo.com/privacidad')}
             />
           </View>
         </View>

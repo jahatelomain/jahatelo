@@ -35,6 +35,22 @@ export async function DELETE(
 
     await prisma.roomPhoto.delete({ where: { id: idResult.data } });
 
+    // Keep ordering contiguous after delete so drag/drop and numbering stay consistent.
+    const remainingPhotos = await prisma.roomPhoto.findMany({
+      where: { roomTypeId: roomPhoto.roomTypeId },
+      orderBy: { order: 'asc' },
+      select: { id: true },
+    });
+
+    await Promise.all(
+      remainingPhotos.map((photo, index) =>
+        prisma.roomPhoto.update({
+          where: { id: photo.id },
+          data: { order: index },
+        })
+      )
+    );
+
     if (roomPhoto.roomType?.motelId) await touchMotel(roomPhoto.roomType.motelId);
 
     await logAuditEvent({

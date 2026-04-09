@@ -34,6 +34,12 @@ const PLATFORM_COLORS: Record<string, string> = {
   android: 'bg-green-100 text-green-700',
 };
 
+const formatPathLabel = (path: string | null) => {
+  if (!path) return '(sin ruta)';
+  if (path === '/') return '/home';
+  return path;
+};
+
 export default function VisitorAnalyticsPage() {
   const [stats, setStats] = useState<VisitorStats | null>(null);
   const [range, setRange] = useState('30');
@@ -184,7 +190,7 @@ export default function VisitorAnalyticsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-center mb-0.5">
                           <span className="text-sm text-gray-700 truncate font-mono">
-                            {p.path ?? '(sin ruta)'}
+                            {formatPathLabel(p.path)}
                           </span>
                           <span className="text-sm font-semibold text-gray-900 ml-2 shrink-0">
                             {p.views.toLocaleString()}
