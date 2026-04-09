@@ -57,7 +57,7 @@ function LoginForm() {
               <img
                 src="/logo-icon.png"
                 alt="Jahatelo"
-                className="h-14 w-auto object-contain"
+                className="h-20 md:h-24 w-auto object-contain"
               />
             </div>
             <h2 className="text-xl font-semibold text-slate-900 mb-2">
