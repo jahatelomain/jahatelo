@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import SectionWrapper from '@/components/public/SectionWrapper';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import FeaturedCarousel from '@/components/public/FeaturedCarousel';
@@ -236,7 +237,7 @@ export default async function HomePage() {
 
         {featuredMotels.length > 0 && <FeaturedMotels motels={featuredMotels} />}
         {cities.length > 0 && (
-          <section className="section-bg py-14">
+          <SectionWrapper className="py-14">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center gap-4 mb-8">
                 <div>
@@ -250,10 +251,10 @@ export default async function HomePage() {
               </div>
               <CityListWithAds cities={cities} />
             </div>
-          </section>
+          </SectionWrapper>
         )}
         {promosMotels.length > 0 && (
-          <section className="section-bg py-14">
+          <SectionWrapper className="py-14">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center gap-4 mb-8">
                 <div>
@@ -267,12 +268,12 @@ export default async function HomePage() {
               </div>
               <PromoListWithAds motels={promosMotels} />
             </div>
-          </section>
+          </SectionWrapper>
         )}
         {recentMotels.length > 0 && <RecentMotels motels={recentMotels} />}
 
         {featuredMotels.length === 0 && promosMotels.length === 0 && recentMotels.length === 0 && (
-          <section className="section-bg py-20">
+          <SectionWrapper className="py-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-purple-900/40 border border-purple-700/40 rounded-full mb-6">
                 <svg className="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -288,7 +289,7 @@ export default async function HomePage() {
                 Registrar mi motel
               </Link>
             </div>
-          </section>
+          </SectionWrapper>
         )}
       </main>
       <Footer />

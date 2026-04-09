@@ -1,6 +1,7 @@
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import NearbyMotels from '@/components/public/NearbyMotels';
+import SectionWrapper from '@/components/public/SectionWrapper';
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
 
@@ -16,7 +17,7 @@ export default function NearbyPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen section-bg">
+      <SectionWrapper className="min-h-screen">
         {/* Hero Section */}
         <div className="relative bg-gradient-to-br from-[#1e0a3c] via-[#2a0f52] to-[#3d1878] overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] bg-purple-600/15 rounded-full blur-3xl pointer-events-none animate-glow-float" />
@@ -39,7 +40,7 @@ export default function NearbyPage() {
 
         {/* Nearby Motels Component */}
         <NearbyMotels />
-      </div>
+      </SectionWrapper>
       <Footer />
     </>
   );

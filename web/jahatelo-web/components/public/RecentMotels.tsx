@@ -1,10 +1,11 @@
 import MotelCard from '@/components/public/MotelCard';
+import SectionWrapper from '@/components/public/SectionWrapper';
 
 export default function RecentMotels({ motels }: { motels: any[] }) {
   if (!motels || motels.length === 0) return null;
 
   return (
-    <section className="section-bg py-14">
+    <SectionWrapper className="py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4 mb-8">
           <div>
@@ -19,6 +20,6 @@ export default function RecentMotels({ motels }: { motels: any[] }) {
           ))}
         </div>
       </div>
-    </section>
+    </SectionWrapper>
   );
 }

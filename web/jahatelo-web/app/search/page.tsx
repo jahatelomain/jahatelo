@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import SearchResults from '@/components/public/SearchResults';
+import SectionWrapper from '@/components/public/SectionWrapper';
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
 
@@ -34,7 +35,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen section-bg">
+      <SectionWrapper className="min-h-screen">
         {/* Hero Search Section */}
         <div className="relative bg-gradient-to-br from-[#1e0a3c] via-[#2a0f52] to-[#3d1878] overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] bg-purple-600/15 rounded-full blur-3xl pointer-events-none animate-glow-float" />
@@ -54,7 +55,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
         {/* Search Results Component */}
         <SearchResults initialParams={params} />
-      </div>
+      </SectionWrapper>
       <Footer />
     </>
   );

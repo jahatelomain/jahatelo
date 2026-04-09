@@ -201,36 +201,71 @@ body {
   animation: particle-float linear infinite;
 }
 
-/* Fondo de sección unificado — mismo lila del hero, con partículas CSS */
+/* Fondo idéntico al hero — lila con glow flotante y partículas CSS */
 .section-bg {
   position: relative;
-  background: linear-gradient(160deg, #1e0a3c 0%, #2a0f52 40%, #1a0840 70%, #1e0a3c 100%);
+  background: linear-gradient(135deg, #1e0a3c 0%, #2a0f52 45%, #3d1878 100%);
   overflow: hidden;
 }
 
+/* Glow orb central animado — igual al hero */
 .section-bg::before {
   content: '';
   position: absolute;
-  top: -20%;
+  top: -10%;
   left: 50%;
-  transform: translateX(-50%);
-  width: 60%;
-  height: 60%;
-  background: radial-gradient(ellipse, rgba(130, 45, 226, 0.18) 0%, transparent 70%);
+  width: 600px;
+  height: 600px;
+  margin-left: -300px;
+  background: rgba(130, 45, 226, 0.20);
+  border-radius: 50%;
+  filter: blur(80px);
   pointer-events: none;
-  animation: glow-float 8s ease-in-out infinite;
+  animation: glow-float 6s ease-in-out infinite;
 }
 
+/* Glow rosa esquina inferior derecha — igual al hero */
 .section-bg::after {
   content: '';
   position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(circle at 15% 25%, rgba(168,85,247,0.12) 0%, transparent 40%),
-    radial-gradient(circle at 85% 70%, rgba(213,63,140,0.08) 0%, transparent 40%),
-    radial-gradient(circle at 50% 90%, rgba(130,45,226,0.10) 0%, transparent 50%);
+  bottom: 0;
+  right: 0;
+  width: 300px;
+  height: 300px;
+  background: rgba(236, 72, 153, 0.10);
+  border-radius: 50%;
+  filter: blur(60px);
   pointer-events: none;
 }
+
+/* Partículas flotantes via pseudo + keyframes en cada sección */
+@keyframes p1 {
+  0%,100%{transform:translate(0,0) scale(1);opacity:.55}
+  33%{transform:translate(8px,-18px) scale(1.1);opacity:.85}
+  66%{transform:translate(-6px,-8px) scale(.95);opacity:.65}
+}
+@keyframes p2 {
+  0%,100%{transform:translate(0,0) scale(1);opacity:.45}
+  40%{transform:translate(-10px,-14px) scale(1.05);opacity:.75}
+  70%{transform:translate(6px,-6px) scale(.9);opacity:.55}
+}
+@keyframes p3 {
+  0%,100%{transform:translate(0,0) scale(1);opacity:.5}
+  50%{transform:translate(10px,-20px) scale(1.12);opacity:.8}
+}
+
+.section-particles span {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.section-particles span:nth-child(1){width:8px;height:8px;top:12%;left:8%;background:rgba(168,85,247,.6);animation:p1 7s linear infinite}
+.section-particles span:nth-child(2){width:6px;height:6px;top:28%;left:18%;background:rgba(245,101,101,.45);animation:p2 9s linear infinite 1.5s}
+.section-particles span:nth-child(3){width:10px;height:10px;top:18%;right:12%;background:rgba(168,85,247,.55);animation:p3 8s linear infinite .8s}
+.section-particles span:nth-child(4){width:6px;height:6px;top:55%;right:8%;background:rgba(213,63,140,.45);animation:p1 6s linear infinite 2s}
+.section-particles span:nth-child(5){width:8px;height:8px;top:72%;left:12%;background:rgba(168,85,247,.5);animation:p2 10s linear infinite .3s}
+.section-particles span:nth-child(6){width:4px;height:4px;top:42%;left:32%;background:rgba(245,101,101,.35);animation:p3 8.5s linear infinite 3s}
+.section-particles span:nth-child(7){width:12px;height:12px;top:8%;right:28%;background:rgba(168,85,247,.35);animation:p1 11s linear infinite 1s}
 
 /* Pulse ring en buscador */
 @keyframes search-pulse {

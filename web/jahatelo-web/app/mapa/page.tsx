@@ -1,6 +1,7 @@
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import MapView from '@/components/public/MapView';
+import SectionWrapper from '@/components/public/SectionWrapper';
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
 
@@ -16,7 +17,7 @@ export default function MapaPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen section-bg">
+      <SectionWrapper className="min-h-screen">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-[#1e0a3c] via-[#2a0f52] to-[#3d1878] overflow-hidden">
           <div className="navbar-gradient-border h-[2px] w-full absolute bottom-0 left-0" />
@@ -37,7 +38,7 @@ export default function MapaPage() {
         <div className="h-[calc(100vh-200px)]">
           <MapView />
         </div>
-      </div>
+      </SectionWrapper>
       <Footer />
     </>
   );

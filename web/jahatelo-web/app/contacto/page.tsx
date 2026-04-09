@@ -4,6 +4,7 @@ import { useState, FormEvent } from 'react';
 import { useToast } from '@/contexts/ToastContext';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
+import SectionWrapper from '@/components/public/SectionWrapper';
 
 export default function ContactoPage() {
   const [name, setName] = useState('');
@@ -75,7 +76,7 @@ export default function ContactoPage() {
   return (
     <>
       <Navbar />
-      <div className="section-bg min-h-screen py-14 px-4 sm:px-6 lg:px-8">
+      <SectionWrapper className="min-h-screen py-14 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12 animate-fade-up">
@@ -102,7 +103,7 @@ export default function ContactoPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Tu nombre completo"
-                className="w-full px-4 py-3 text-white bg-white/10 border border-purple-700/50 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all placeholder:text-purple-400/50"
+                className="w-full px-4 py-3 text-white bg-white/10 border border-purple-600/60 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all placeholder:text-purple-300/60 outline-none"
                 required
                 minLength={2}
                 maxLength={100}
@@ -122,7 +123,7 @@ export default function ContactoPage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+595 xxx xxx xxx"
-                className="w-full px-4 py-3 text-white bg-white/10 border border-purple-700/50 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all placeholder:text-purple-400/50"
+                className="w-full px-4 py-3 text-white bg-white/10 border border-purple-600/60 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all placeholder:text-purple-300/60 outline-none"
                 maxLength={50}
                 disabled={loading}
               />
@@ -139,7 +140,7 @@ export default function ContactoPage() {
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Escribí tu mensaje aquí..."
                 rows={6}
-                className="w-full px-4 py-3 text-white bg-white/10 border border-purple-700/50 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none placeholder:text-purple-400/50"
+                className="w-full px-4 py-3 text-white bg-white/10 border border-purple-600/60 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all resize-none placeholder:text-purple-300/60 outline-none"
                 required
                 minLength={10}
                 maxLength={1000}
@@ -209,7 +210,7 @@ export default function ContactoPage() {
           </p>
         </div>
       </div>
-    </div>
+    </SectionWrapper>
     <Footer />
     </>
   );
