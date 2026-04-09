@@ -289,3 +289,33 @@ body {
   background-size: 200% auto;
   animation: border-shimmer 3s linear infinite;
 }
+
+/* ── Inputs globales sobre fondo oscuro (section-bg) ── */
+.section-bg input,
+.section-bg textarea,
+.section-bg select {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(139, 92, 246, 0.5);
+  border-radius: 0.75rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.section-bg input::placeholder,
+.section-bg textarea::placeholder {
+  color: rgba(196, 181, 253, 0.55);
+}
+
+.section-bg input:focus,
+.section-bg textarea:focus,
+.section-bg select:focus {
+  border-color: rgba(167, 139, 250, 0.8);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+}
+
+.section-bg input:disabled,
+.section-bg textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
