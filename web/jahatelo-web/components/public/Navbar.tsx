@@ -21,7 +21,9 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-white/90 backdrop-blur-md sticky top-0 z-50">
+      {/* Borde inferior animado con gradiente de marca */}
+      <div className="navbar-gradient-border h-[2px] w-full absolute bottom-0 left-0" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center h-20">
           {/* Logo */}

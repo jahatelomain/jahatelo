@@ -159,16 +159,18 @@ export default function CategoriesGrid({ categories }: CategoriesGridProps) {
       {mapCategory && (
         <Link
           href={mapCategory.href}
-          className={`animate-card-in-1 flex items-center gap-4 px-6 rounded-2xl h-20 shadow-lg hover:shadow-purple-900/40 transition-all duration-300 group ${cardStyles['map-outline'].bg} ${cardStyles['map-outline'].border}`}
+          className={`animate-card-in-1 relative flex items-center justify-center gap-4 px-6 rounded-2xl h-20 shadow-lg hover:shadow-purple-900/50 hover:-translate-y-0.5 transition-all duration-300 group overflow-hidden ${cardStyles['map-outline'].bg} ${cardStyles['map-outline'].border}`}
         >
-          <div className={`w-12 h-12 ${cardStyles['map-outline'].iconBg} rounded-xl flex items-center justify-center ${cardStyles['map-outline'].iconColor} shrink-0`}>
+          {/* shimmer sweep */}
+          <div className="card-shimmer" />
+          <div className={`w-12 h-12 ${cardStyles['map-outline'].iconBg} rounded-xl flex items-center justify-center ${cardStyles['map-outline'].iconColor} shrink-0 group-hover:scale-110 transition-transform duration-300`}>
             {icons[mapCategory.iconName] || icons['map-outline']}
           </div>
-          <div>
+          <div className="text-center">
             <h3 className="text-lg font-bold text-white">{mapCategory.label}</h3>
             <p className="text-purple-200 text-sm">Explorá moteles en el mapa interactivo</p>
           </div>
-          <svg className="w-5 h-5 text-white/60 ml-auto group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-white/60 absolute right-6 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </Link>
@@ -187,9 +189,11 @@ export default function CategoriesGrid({ categories }: CategoriesGridProps) {
             <Link
               key={category.id}
               href={category.href}
-              className={`${animClass} flex items-center gap-4 px-6 rounded-2xl h-24 shadow-lg hover:shadow-purple-900/40 transition-all duration-300 group ${style.bg} ${style.border}`}
+              className={`${animClass} relative flex items-center gap-4 px-6 rounded-2xl h-24 shadow-lg hover:shadow-purple-900/50 hover:-translate-y-0.5 transition-all duration-300 group overflow-hidden ${style.bg} ${style.border}`}
             >
-              <div className={`w-12 h-12 ${style.iconBg} rounded-xl flex items-center justify-center ${style.iconColor} shrink-0`}>
+              {/* shimmer sweep */}
+              <div className="card-shimmer" />
+              <div className={`w-12 h-12 ${style.iconBg} rounded-xl flex items-center justify-center ${style.iconColor} shrink-0 group-hover:scale-110 transition-transform duration-300`}>
                 {icons[category.iconName] || icons['location-outline']}
               </div>
               <div>

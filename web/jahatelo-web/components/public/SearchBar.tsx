@@ -111,7 +111,7 @@ export default function SearchBar() {
         }}
         onKeyDown={handleKeyDown}
         placeholder="Busca moteles, ciudades o barrios"
-        className="w-full rounded-2xl border-0 bg-white/95 backdrop-blur-sm pl-12 pr-4 py-4 text-gray-900 caret-purple-600 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-xl text-base"
+        className="search-pulse w-full rounded-2xl border-0 bg-white/95 backdrop-blur-sm pl-12 pr-4 py-4 text-gray-900 caret-purple-600 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-xl text-base"
       />
 
       {open && suggestions.length > 0 && (

@@ -182,6 +182,15 @@ export default async function HomePage() {
           <div className="absolute top-0 left-1/2 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-3xl pointer-events-none animate-glow-float" />
           <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-pink-600/10 rounded-full blur-3xl pointer-events-none" />
 
+          {/* Partículas flotantes */}
+          <div className="hero-particle w-2 h-2 top-[15%] left-[10%]" style={{animationDuration:'7s', animationDelay:'0s'}} />
+          <div className="hero-particle w-1.5 h-1.5 top-[30%] left-[20%]" style={{animationDuration:'9s', animationDelay:'1.5s', background:'rgba(245,101,101,0.45)'}} />
+          <div className="hero-particle w-2.5 h-2.5 top-[20%] right-[15%]" style={{animationDuration:'8s', animationDelay:'0.8s'}} />
+          <div className="hero-particle w-1.5 h-1.5 top-[55%] right-[10%]" style={{animationDuration:'6s', animationDelay:'2s', background:'rgba(213,63,140,0.4)'}} />
+          <div className="hero-particle w-2 h-2 top-[70%] left-[15%]" style={{animationDuration:'10s', animationDelay:'0.3s'}} />
+          <div className="hero-particle w-1 h-1 top-[45%] left-[35%]" style={{animationDuration:'8.5s', animationDelay:'3s', background:'rgba(245,101,101,0.35)'}} />
+          <div className="hero-particle w-3 h-3 top-[10%] right-[30%]" style={{animationDuration:'11s', animationDelay:'1s', background:'rgba(168,85,247,0.3)'}} />
+
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
             {/* Título */}
             <div className="text-center max-w-3xl mx-auto mb-10">
