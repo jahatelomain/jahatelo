@@ -85,3 +85,75 @@ body {
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
 }
+
+/* Hero animations */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-up-delay-1 {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+.animate-fade-up-delay-2 {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both;
+}
+
+.animate-fade-up-delay-3 {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.42s both;
+}
+
+.animate-fade-up-delay-4 {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.56s both;
+}
+
+/* Glow float effect */
+@keyframes glow-float {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0px) scale(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateX(-50%) translateY(-20px) scale(1.08);
+    opacity: 0.3;
+  }
+}
+
+.animate-glow-float {
+  animation: glow-float 6s ease-in-out infinite;
+}
+
+/* Card stagger fade-in */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-card-in-1 {
+  animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both;
+}
+
+.animate-card-in-2 {
+  animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.72s both;
+}
+
+.animate-card-in-3 {
+  animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.84s both;
+}

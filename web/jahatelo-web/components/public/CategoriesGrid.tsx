@@ -159,7 +159,7 @@ export default function CategoriesGrid({ categories }: CategoriesGridProps) {
       {mapCategory && (
         <Link
           href={mapCategory.href}
-          className={`flex items-center gap-4 px-6 rounded-2xl h-20 shadow-lg hover:shadow-purple-900/40 transition-all duration-300 group ${cardStyles['map-outline'].bg} ${cardStyles['map-outline'].border}`}
+          className={`animate-card-in-1 flex items-center gap-4 px-6 rounded-2xl h-20 shadow-lg hover:shadow-purple-900/40 transition-all duration-300 group ${cardStyles['map-outline'].bg} ${cardStyles['map-outline'].border}`}
         >
           <div className={`w-12 h-12 ${cardStyles['map-outline'].iconBg} rounded-xl flex items-center justify-center ${cardStyles['map-outline'].iconColor} shrink-0`}>
             {icons[mapCategory.iconName] || icons['map-outline']}
@@ -176,17 +176,18 @@ export default function CategoriesGrid({ categories }: CategoriesGridProps) {
 
       {/* Grid de otros botones */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {otherCategories.map((category) => {
+        {otherCategories.map((category, i) => {
           const style = cardStyles[category.iconName] || cardStyles['location-outline'];
           const descriptions: Record<string, string> = {
             'location-outline': 'Buscá por ciudad o zona',
             pricetag: 'Descuentos y ofertas exclusivas',
           };
+          const animClass = i === 0 ? 'animate-card-in-2' : 'animate-card-in-3';
           return (
             <Link
               key={category.id}
               href={category.href}
-              className={`flex items-center gap-4 px-6 rounded-2xl h-24 shadow-lg hover:shadow-purple-900/40 transition-all duration-300 group ${style.bg} ${style.border}`}
+              className={`${animClass} flex items-center gap-4 px-6 rounded-2xl h-24 shadow-lg hover:shadow-purple-900/40 transition-all duration-300 group ${style.bg} ${style.border}`}
             >
               <div className={`w-12 h-12 ${style.iconBg} rounded-xl flex items-center justify-center ${style.iconColor} shrink-0`}>
                 {icons[category.iconName] || icons['location-outline']}
