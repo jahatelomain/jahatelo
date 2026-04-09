@@ -167,6 +167,7 @@ export default function App() {
   const [stagingAuthReady, setStagingAuthReady] = useState(!isStagingEnvironment());
   const [stagingUser, setStagingUser] = useState('');
   const [stagingPass, setStagingPass] = useState('');
+  const [showStagingPass, setShowStagingPass] = useState(false);
   const [stagingLoading, setStagingLoading] = useState(false);
   const [stagingError, setStagingError] = useState('');
 
@@ -252,22 +253,40 @@ export default function App() {
             <TextInput
               autoCapitalize="none"
               autoCorrect={false}
+              contextMenuHidden={false}
+              selectTextOnFocus
               placeholder="Usuario"
               placeholderTextColor="#9CA3AF"
               style={stylesStaging.input}
               value={stagingUser}
               onChangeText={setStagingUser}
             />
-            <TextInput
-              autoCapitalize="none"
-              autoCorrect={false}
-              secureTextEntry
-              placeholder="Contraseña"
-              placeholderTextColor="#9CA3AF"
-              style={stylesStaging.input}
-              value={stagingPass}
-              onChangeText={setStagingPass}
-            />
+            <View style={stylesStaging.passwordRow}>
+              <TextInput
+                autoCapitalize="none"
+                autoCorrect={false}
+                contextMenuHidden={false}
+                selectTextOnFocus
+                secureTextEntry={!showStagingPass}
+                placeholder="Contraseña"
+                placeholderTextColor="#9CA3AF"
+                style={stylesStaging.passwordInput}
+                value={stagingPass}
+                onChangeText={setStagingPass}
+                textContentType="password"
+                importantForAutofill="yes"
+                enablesReturnKeyAutomatically={false}
+              />
+              <TouchableOpacity
+                accessibilityRole="button"
+                style={stylesStaging.passwordToggle}
+                onPress={() => setShowStagingPass((prev) => !prev)}
+              >
+                <Text style={stylesStaging.passwordToggleText}>
+                  {showStagingPass ? 'Ocultar' : 'Mostrar'}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             {!!stagingError && <Text style={stylesStaging.error}>{stagingError}</Text>}
 
@@ -332,6 +351,32 @@ const stylesStaging = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
     color: '#111827',
+  },
+  passwordRow: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 12,
+    overflow: 'hidden',
+  },
+  passwordInput: {
+    flex: 1,
+    paddingVertical: 12,
+    color: '#111827',
+  },
+  passwordToggle: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: '#F9FAFB',
+    borderLeftWidth: 1,
+    borderLeftColor: '#E5E7EB',
+  },
+  passwordToggleText: {
+    color: '#374151',
+    fontSize: 13,
+    fontWeight: '600',
   },
   button: {
     marginTop: 6,

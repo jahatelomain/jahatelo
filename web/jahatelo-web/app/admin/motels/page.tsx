@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import MotelCard from '../components/MotelCard';
+import ConfirmModal from '@/components/admin/ConfirmModal';
+import { useToast } from '@/contexts/ToastContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
@@ -47,8 +49,17 @@ export default function MotelsAdminPage() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [selectedMotels, setSelectedMotels] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    danger?: boolean;
+    onConfirm: () => void;
+  } | null>(null);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [endReached, setEndReached] = useState(false);
   const [summary, setSummary] = useState<{
     statusCounts: Record<string, number>;
     activeCounts: Record<string, number>;
@@ -56,7 +67,8 @@ export default function MotelsAdminPage() {
   const pageSize = 20;
   const filtersKeyRef = useRef('');
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
-  const hasMore = motels.length < totalItems;
+  const hasMore = !endReached && motels.length < totalItems;
+  const toast = useToast();
 
   useEffect(() => {
     let mounted = true;
@@ -110,14 +122,37 @@ export default function MotelsAdminPage() {
         : [];
       const meta = Array.isArray(data) ? undefined : data?.meta;
 
-      setMotels((prev) => (isLoadingMore ? [...prev, ...motelsData] : motelsData));
-      setTotalItems(meta?.total ?? motelsData.length);
+      if (isLoadingMore) {
+        const existingIds = new Set(motels.map((m) => m.id));
+        const uniqueNew = motelsData.filter((m: Motel) => !existingIds.has(m.id));
+        const uniqueAdded = uniqueNew.length;
+        const merged = [...motels, ...uniqueNew];
+        const mergedLength = merged.length;
+        setMotels(merged);
+
+        const reportedTotal = typeof meta?.total === 'number' ? meta.total : totalItems;
+        setTotalItems(reportedTotal);
+
+        // Cortar infinite loop al final: página vacía, parcial o sin IDs nuevos.
+        if (motelsData.length === 0 || motelsData.length < pageSize || uniqueAdded === 0 || mergedLength >= reportedTotal) {
+          setEndReached(true);
+        }
+      } else {
+        setMotels(motelsData);
+        const reportedTotal = typeof meta?.total === 'number' ? meta.total : motelsData.length;
+        setTotalItems(reportedTotal);
+        setEndReached(motelsData.length === 0 || motelsData.length < pageSize || motelsData.length >= reportedTotal);
+      }
+
       setSummary(meta?.summary ?? { statusCounts: {}, activeCounts: {} });
     } catch (error) {
       // Error de red, timeout o parsing - asignar array vacío sin loguear
-      if (!isLoadingMore) {
+      if (isLoadingMore) {
+        setEndReached(true);
+      } else {
         setMotels([]);
         setTotalItems(0);
+        setEndReached(true);
       }
     } finally {
       window.clearTimeout(timeoutId);
@@ -135,6 +170,7 @@ export default function MotelsAdminPage() {
       filtersKeyRef.current = nextKey;
       setMotels([]);
       setPage(1);
+      setEndReached(false);
       setLoading(true);
       fetchMotels(false);
     } else {
@@ -200,119 +236,151 @@ export default function MotelsAdminPage() {
     setSelectedMotels(newSelected);
   };
 
-  const handleBulkApprove = async () => {
-    if (!confirm(`¿Aprobar ${selectedMotels.size} motel(es)?`)) return;
+  const handleBulkApprove = () => {
+    setConfirmAction({
+      title: 'Aprobar moteles',
+      message: `Se aprobarán ${selectedMotels.size} motel(es) seleccionados.`,
+      confirmText: 'Aprobar',
+      onConfirm: async () => {
+        setBulkLoading(true);
+        try {
+          const res = await fetch('/api/admin/motels/bulk-approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: Array.from(selectedMotels) }),
+          });
 
-    setBulkLoading(true);
-    try {
-      const res = await fetch('/api/admin/motels/bulk-approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: Array.from(selectedMotels) }),
-      });
+          if (!res.ok) throw new Error('No se pudieron aprobar los moteles seleccionados.');
 
-      if (!res.ok) throw new Error('Error al aprobar moteles');
-
-      await fetchMotels();
-      setSelectedMotels(new Set());
-      alert('Moteles aprobados exitosamente');
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error al aprobar moteles');
-    } finally {
-      setBulkLoading(false);
-    }
+          await fetchMotels();
+          setSelectedMotels(new Set());
+          toast.success('Moteles aprobados correctamente');
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : 'Error al aprobar moteles');
+        } finally {
+          setBulkLoading(false);
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
-  const handleBulkReject = async () => {
-    if (!confirm(`¿RECHAZAR ${selectedMotels.size} motel(es)? Esta acción no se puede deshacer.`)) return;
+  const handleBulkReject = () => {
+    setConfirmAction({
+      title: 'Rechazar moteles',
+      message: `Se rechazarán ${selectedMotels.size} motel(es). Esta acción no se puede deshacer.`,
+      confirmText: 'Rechazar',
+      danger: true,
+      onConfirm: async () => {
+        setBulkLoading(true);
+        try {
+          const res = await fetch('/api/admin/motels/bulk-reject', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: Array.from(selectedMotels) }),
+          });
 
-    setBulkLoading(true);
-    try {
-      const res = await fetch('/api/admin/motels/bulk-reject', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: Array.from(selectedMotels) }),
-      });
+          if (!res.ok) throw new Error('No se pudieron rechazar los moteles seleccionados.');
 
-      if (!res.ok) throw new Error('Error al rechazar moteles');
-
-      await fetchMotels();
-      setSelectedMotels(new Set());
-      alert('Moteles rechazados');
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error al rechazar moteles');
-    } finally {
-      setBulkLoading(false);
-    }
+          await fetchMotels();
+          setSelectedMotels(new Set());
+          toast.success('Moteles rechazados');
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : 'Error al rechazar moteles');
+        } finally {
+          setBulkLoading(false);
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
-  const handleBulkActivate = async () => {
-    if (!confirm(`¿Activar ${selectedMotels.size} motel(es)?`)) return;
+  const handleBulkActivate = () => {
+    setConfirmAction({
+      title: 'Activar moteles',
+      message: `Se habilitarán ${selectedMotels.size} motel(es) para que queden visibles.`,
+      confirmText: 'Activar',
+      onConfirm: async () => {
+        setBulkLoading(true);
+        try {
+          const res = await fetch('/api/admin/motels/bulk-activate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: Array.from(selectedMotels), isActive: true }),
+          });
 
-    setBulkLoading(true);
-    try {
-      const res = await fetch('/api/admin/motels/bulk-activate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: Array.from(selectedMotels), isActive: true }),
-      });
+          if (!res.ok) throw new Error('No se pudieron activar los moteles seleccionados.');
 
-      if (!res.ok) throw new Error('Error al activar moteles');
-
-      await fetchMotels();
-      setSelectedMotels(new Set());
-      alert('Moteles activados exitosamente');
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error al activar moteles');
-    } finally {
-      setBulkLoading(false);
-    }
+          await fetchMotels();
+          setSelectedMotels(new Set());
+          toast.success('Moteles activados correctamente');
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : 'Error al activar moteles');
+        } finally {
+          setBulkLoading(false);
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
-  const handleBulkDeactivate = async () => {
-    if (!confirm(`¿Desactivar ${selectedMotels.size} motel(es)?`)) return;
+  const handleBulkDeactivate = () => {
+    setConfirmAction({
+      title: 'Desactivar moteles',
+      message: `Se deshabilitarán ${selectedMotels.size} motel(es). Podrás reactivarlos cuando quieras.`,
+      confirmText: 'Desactivar',
+      onConfirm: async () => {
+        setBulkLoading(true);
+        try {
+          const res = await fetch('/api/admin/motels/bulk-activate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: Array.from(selectedMotels), isActive: false }),
+          });
 
-    setBulkLoading(true);
-    try {
-      const res = await fetch('/api/admin/motels/bulk-activate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: Array.from(selectedMotels), isActive: false }),
-      });
+          if (!res.ok) throw new Error('No se pudieron desactivar los moteles seleccionados.');
 
-      if (!res.ok) throw new Error('Error al desactivar moteles');
-
-      await fetchMotels();
-      setSelectedMotels(new Set());
-      alert('Moteles desactivados exitosamente');
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error al desactivar moteles');
-    } finally {
-      setBulkLoading(false);
-    }
+          await fetchMotels();
+          setSelectedMotels(new Set());
+          toast.success('Moteles desactivados correctamente');
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : 'Error al desactivar moteles');
+        } finally {
+          setBulkLoading(false);
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
-  const handleBulkDelete = async () => {
-    if (!confirm(`¿ELIMINAR ${selectedMotels.size} motel(es)? Esta acción no se puede deshacer.`)) return;
+  const handleBulkDelete = () => {
+    setConfirmAction({
+      title: 'Eliminar moteles',
+      message: `Vas a eliminar ${selectedMotels.size} motel(es). Esta acción es irreversible.`,
+      confirmText: 'Eliminar',
+      danger: true,
+      onConfirm: async () => {
+        setBulkLoading(true);
+        try {
+          const res = await fetch('/api/admin/motels/bulk-delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: Array.from(selectedMotels) }),
+          });
 
-    setBulkLoading(true);
-    try {
-      const res = await fetch('/api/admin/motels/bulk-delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: Array.from(selectedMotels) }),
-      });
+          if (!res.ok) throw new Error('No se pudieron eliminar los moteles seleccionados.');
 
-      if (!res.ok) throw new Error('Error al eliminar moteles');
-
-      await fetchMotels();
-      setSelectedMotels(new Set());
-      alert('Moteles eliminados');
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error al eliminar moteles');
-    } finally {
-      setBulkLoading(false);
-    }
+          await fetchMotels();
+          setSelectedMotels(new Set());
+          toast.success('Moteles eliminados correctamente');
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : 'Error al eliminar moteles');
+        } finally {
+          setBulkLoading(false);
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
   if (!roleChecked || isMotelAdmin || loading) {
@@ -802,6 +870,17 @@ export default function MotelsAdminPage() {
           )}
         </>
       )}
+
+      <ConfirmModal
+        open={!!confirmAction}
+        title={confirmAction?.title || ''}
+        message={confirmAction?.message || ''}
+        confirmText={confirmAction?.confirmText || 'Confirmar'}
+        cancelText={confirmAction?.cancelText || 'Cancelar'}
+        danger={confirmAction?.danger}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => confirmAction?.onConfirm()}
+      />
     </div>
   );
 }

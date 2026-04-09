@@ -1,12 +1,17 @@
+import Navbar from '@/components/public/Navbar';
+import Footer from '@/components/public/Footer';
+
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-slate-50 py-12">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="bg-white rounded-xl shadow-sm p-8 md:p-12">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Términos y Condiciones</h1>
-          <p className="text-sm text-slate-600 mb-8">Última actualización: {new Date().toLocaleDateString('es-PY')}</p>
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-slate-50 py-12">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="bg-white rounded-xl shadow-sm p-8 md:p-12">
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">Términos y Condiciones</h1>
+            <p className="text-sm text-slate-600 mb-8">Última actualización: {new Date().toLocaleDateString('es-PY')}</p>
 
-          <div className="prose prose-slate max-w-none space-y-6">
+            <div className="prose prose-slate max-w-none space-y-6">
             <section>
               <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">1. Aceptación de los Términos</h2>
               <p className="text-slate-700 leading-relaxed">
@@ -189,9 +194,11 @@ export default function TermsPage() {
                 Términos y Condiciones.
               </p>
             </section>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 }
