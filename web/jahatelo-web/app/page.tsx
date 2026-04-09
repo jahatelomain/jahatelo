@@ -176,34 +176,52 @@ export default async function HomePage() {
       <AdPopup />
       <Navbar />
       <main data-testid="homepage-main">
-        <section className="bg-white border-b-4 border-purple-600">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-            <div className="text-center max-w-3xl mx-auto mb-8">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-gray-900">
-                Encontrá tu motel ideal
+        {/* Hero */}
+        <section className="relative bg-gradient-to-br from-[#0f0520] via-[#1a0a3c] to-[#2d1060] overflow-hidden">
+          {/* Glow decorativo */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-pink-600/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+            {/* Título */}
+            <div className="text-center max-w-3xl mx-auto mb-10">
+              <span className="inline-block mb-4 text-xs font-semibold uppercase tracking-widest text-purple-300 bg-purple-900/40 border border-purple-700/50 px-4 py-1.5 rounded-full">
+                La plataforma de moteles de Paraguay
+              </span>
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 text-white leading-tight">
+                Encontrá tu{' '}
+                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  motel ideal
+                </span>
               </h1>
-              <p className="text-lg md:text-xl text-gray-600">
-                La plataforma más completa para descubrir y comparar moteles
+              <p className="text-lg md:text-xl text-purple-200/80">
+                Buscá, comparás y reservás en los mejores moteles del país
               </p>
             </div>
 
-            <div className="max-w-2xl mx-auto mb-8">
+            {/* Buscador */}
+            <div className="max-w-2xl mx-auto mb-12">
               <SearchBar />
             </div>
 
+            {/* Carousel destacados */}
             {featuredMotels.length > 0 && (
-              <div className="max-w-4xl mx-auto">
+              <div className="max-w-5xl mx-auto mb-12">
                 <FeaturedCarousel featuredMotels={featuredMotels} />
               </div>
             )}
 
-            <div className="max-w-4xl mx-auto mt-8">
+            {/* Cards de categorías */}
+            <div className="max-w-5xl mx-auto">
               <CategoriesGrid categories={categories} />
             </div>
+          </div>
+        </section>
 
-            <div className="max-w-4xl mx-auto mt-6">
-              <SocialLinks />
-            </div>
+        {/* Redes sociales */}
+        <section className="bg-white border-b border-gray-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <SocialLinks />
           </div>
         </section>
 

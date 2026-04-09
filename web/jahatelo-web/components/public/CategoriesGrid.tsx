@@ -128,55 +128,79 @@ const icons: Record<string, ReactElement> = {
   ),
 };
 
+const cardStyles: Record<string, { bg: string; iconBg: string; iconColor: string; border: string }> = {
+  'map-outline': {
+    bg: 'bg-gradient-to-r from-purple-600/90 to-indigo-600/90 hover:from-purple-500 hover:to-indigo-500',
+    iconBg: 'bg-white/20',
+    iconColor: 'text-white',
+    border: 'border border-purple-400/30',
+  },
+  'location-outline': {
+    bg: 'bg-gradient-to-br from-purple-700/80 to-purple-900/80 hover:from-purple-600 hover:to-purple-800',
+    iconBg: 'bg-white/20',
+    iconColor: 'text-white',
+    border: 'border border-purple-500/30',
+  },
+  pricetag: {
+    bg: 'bg-gradient-to-br from-pink-600/80 to-purple-700/80 hover:from-pink-500 hover:to-purple-600',
+    iconBg: 'bg-white/20',
+    iconColor: 'text-white',
+    border: 'border border-pink-400/30',
+  },
+};
+
 export default function CategoriesGrid({ categories }: CategoriesGridProps) {
   const mapCategory = categories.find((cat) => cat.id === 'map');
   const otherCategories = categories.filter((cat) => cat.id !== 'map');
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Botón de mapa horizontal */}
       {mapCategory && (
         <Link
           href={mapCategory.href}
-          className="relative block rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group h-20"
+          className={`flex items-center gap-4 px-6 rounded-2xl h-20 shadow-lg hover:shadow-purple-900/40 transition-all duration-300 group ${cardStyles['map-outline'].bg} ${cardStyles['map-outline'].border}`}
         >
-          {/* Patrón de fondo */}
-          {patterns[mapCategory.iconName]}
-
-          {/* Contenido */}
-          <div className="relative flex items-center justify-center h-full px-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/25 rounded-xl flex items-center justify-center text-white border-2 border-white/40">
-                {icons[mapCategory.iconName] || icons['map-outline']}
-              </div>
-              <h3 className="text-lg font-bold text-white drop-shadow-md">{mapCategory.label}</h3>
-            </div>
+          <div className={`w-12 h-12 ${cardStyles['map-outline'].iconBg} rounded-xl flex items-center justify-center ${cardStyles['map-outline'].iconColor} shrink-0`}>
+            {icons[mapCategory.iconName] || icons['map-outline']}
           </div>
+          <div>
+            <h3 className="text-lg font-bold text-white">{mapCategory.label}</h3>
+            <p className="text-purple-200 text-sm">Explorá moteles en el mapa interactivo</p>
+          </div>
+          <svg className="w-5 h-5 text-white/60 ml-auto group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
         </Link>
       )}
 
       {/* Grid de otros botones */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {otherCategories.map((category) => (
-          <Link
-            key={category.id}
-            href={category.href}
-            className="relative block rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group h-40"
-          >
-            {/* Patrón de fondo */}
-            {patterns[category.iconName]}
-
-            {/* Contenido */}
-            <div className="relative flex flex-col items-center justify-center h-full px-6 py-8">
-              <div className="w-14 h-14 bg-white/25 rounded-xl flex items-center justify-center text-white border-2 border-white/40 mb-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {otherCategories.map((category) => {
+          const style = cardStyles[category.iconName] || cardStyles['location-outline'];
+          const descriptions: Record<string, string> = {
+            'location-outline': 'Buscá por ciudad o zona',
+            pricetag: 'Descuentos y ofertas exclusivas',
+          };
+          return (
+            <Link
+              key={category.id}
+              href={category.href}
+              className={`flex items-center gap-4 px-6 rounded-2xl h-24 shadow-lg hover:shadow-purple-900/40 transition-all duration-300 group ${style.bg} ${style.border}`}
+            >
+              <div className={`w-12 h-12 ${style.iconBg} rounded-xl flex items-center justify-center ${style.iconColor} shrink-0`}>
                 {icons[category.iconName] || icons['location-outline']}
               </div>
-              <h3 className="text-base font-bold text-white text-center drop-shadow-md">
-                {category.label}
-              </h3>
-            </div>
-          </Link>
-        ))}
+              <div>
+                <h3 className="text-base font-bold text-white">{category.label}</h3>
+                <p className="text-purple-200 text-sm">{descriptions[category.iconName] || ''}</p>
+              </div>
+              <svg className="w-5 h-5 text-white/60 ml-auto group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

@@ -47,18 +47,22 @@ const socialLinks: SocialLink[] = [
 
 export default function SocialLinks() {
   return (
-    <div className="text-center py-8">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">¡Encontranos!</h3>
-      <div className="flex items-center justify-center gap-3">
+    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+      <div>
+        <h3 className="text-xl font-bold text-gray-900">Seguinos en redes</h3>
+        <p className="text-gray-500 text-sm mt-1">Novedades, promos y más en nuestras redes</p>
+      </div>
+      <div className="flex items-center gap-4">
         {socialLinks.map((social) => {
           if (!social.enabled) {
             return (
               <div
                 key={social.name}
-                className="w-11 h-11 rounded-full bg-gray-200 flex items-center justify-center opacity-40 cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 opacity-40 cursor-not-allowed"
                 title={`${social.name} (próximamente)`}
               >
                 <div className="text-gray-400">{social.icon}</div>
+                <span className="text-sm text-gray-400 font-medium">{social.name}</span>
               </div>
             );
           }
@@ -70,10 +74,11 @@ export default function SocialLinks() {
                 href={social.url!}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`w-11 h-11 rounded-full bg-gradient-to-br ${social.gradient.join(' ')} flex items-center justify-center text-white hover:scale-110 transition-transform shadow-md hover:shadow-lg`}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-br ${social.gradient.join(' ')} text-white font-medium text-sm hover:scale-105 transition-transform shadow-md hover:shadow-lg`}
                 title={social.name}
               >
                 {social.icon}
+                <span>{social.name}</span>
               </a>
             );
           }
@@ -84,10 +89,11 @@ export default function SocialLinks() {
               href={social.url!}
               target="_blank"
               rel="noopener noreferrer"
-              className={`w-11 h-11 rounded-full ${social.bgColor} flex items-center justify-center text-white hover:scale-110 transition-transform shadow-md hover:shadow-lg`}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full ${social.bgColor} text-white font-medium text-sm hover:scale-105 transition-transform shadow-md hover:shadow-lg`}
               title={social.name}
             >
               {social.icon}
+              <span>{social.name}</span>
             </a>
           );
         })}
