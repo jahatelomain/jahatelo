@@ -29,12 +29,12 @@ export default function Navbar() {
             <img
               src="/logo-icon.png"
               alt="Jahatelo"
-              className="h-14 md:h-16 w-auto object-contain"
+              className="h-16 md:h-20 w-auto object-contain"
             />
           </Link>
 
           {/* Navigation Links - centrados */}
-          <div className="hidden md:flex flex-1 items-center justify-center gap-6">
+          <div className="hidden md:flex flex-1 items-center justify-center gap-10">
             <Link
               href="/"
               className={`font-medium transition-colors ${
