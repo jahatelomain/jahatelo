@@ -178,7 +178,7 @@ export default async function HomePage() {
       <Navbar />
       <main data-testid="homepage-main">
         {/* Hero */}
-        <section className="relative bg-gradient-to-br from-[#1e0a3c] via-[#2a0f52] to-[#3d1878] overflow-hidden">
+        <section className="relative bg-gradient-to-br from-[#0f0f1a] via-[#161624] to-[#1a1530] overflow-hidden">
           {/* Glow decorativo flotante */}
           <div className="absolute top-0 left-1/2 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-3xl pointer-events-none animate-glow-float" />
           <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-pink-600/10 rounded-full blur-3xl pointer-events-none" />

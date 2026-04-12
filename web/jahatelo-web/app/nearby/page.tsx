@@ -19,7 +19,7 @@ export default function NearbyPage() {
       <Navbar />
       <SectionWrapper className="min-h-screen">
         {/* Hero Section */}
-        <div className="relative bg-gradient-to-br from-[#1e0a3c] via-[#2a0f52] to-[#3d1878] overflow-hidden">
+        <div className="relative bg-gradient-to-br from-[#0f0f1a] via-[#161624] to-[#1a1530] overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] bg-purple-600/15 rounded-full blur-3xl pointer-events-none animate-glow-float" />
           <div className="navbar-gradient-border h-[2px] w-full absolute bottom-0 left-0" />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 text-center">

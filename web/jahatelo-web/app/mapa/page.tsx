@@ -19,7 +19,7 @@ export default function MapaPage() {
       <Navbar />
       <SectionWrapper className="min-h-screen">
         {/* Header */}
-        <div className="relative bg-gradient-to-br from-[#1e0a3c] via-[#2a0f52] to-[#3d1878] overflow-hidden">
+        <div className="relative bg-gradient-to-br from-[#0f0f1a] via-[#161624] to-[#1a1530] overflow-hidden">
           <div className="navbar-gradient-border h-[2px] w-full absolute bottom-0 left-0" />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <span className="inline-block mb-3 text-xs font-semibold uppercase tracking-widest text-purple-300 bg-purple-900/40 border border-purple-700/50 px-4 py-1.5 rounded-full">
