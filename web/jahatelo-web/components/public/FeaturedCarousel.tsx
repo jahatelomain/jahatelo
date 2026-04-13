@@ -104,8 +104,9 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
               <div
                 key={`ad-${ad.id}`}
                 className={`absolute inset-0 transition-opacity duration-500 ${
-                  isActive ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                  isActive ? 'opacity-100' : 'opacity-0'
                 }`}
+                style={{ pointerEvents: isActive ? 'auto' : 'none' }}
               >
                 <button
                   type="button"
@@ -157,8 +158,9 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
             <div
               key={motel.id}
               className={`absolute inset-0 transition-opacity duration-500 ${
-                isActive ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                isActive ? 'opacity-100' : 'opacity-0'
               }`}
+              style={{ pointerEvents: isActive ? 'auto' : 'none' }}
             >
               {isPlaceholder ? (
                 <div className="absolute inset-0" style={MOTEL_PATTERN_STYLE} />
