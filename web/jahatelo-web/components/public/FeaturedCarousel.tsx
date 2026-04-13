@@ -22,9 +22,6 @@ interface FeaturedCarouselProps {
   featuredMotels: Motel[];
 }
 
-// Solo inyectar un ad si hay al menos 5 moteles — evita que el ad
-// quede como único slide junto a 1 motel y confunda al usuario.
-const MIN_MOTELS_FOR_AD = 5;
 
 export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -36,8 +33,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
   const adPlaceholder = '/motel-placeholder.png';
 
   const mixedItems = useMemo(() => {
-    // No hay suficientes moteles para intercalar ads sin confundir
-    if (!ads.length || featuredMotels.length < MIN_MOTELS_FOR_AD) {
+    if (!ads.length) {
       return featuredMotels.map((motel) => ({ type: 'motel' as const, data: motel }));
     }
 
@@ -51,6 +47,12 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
         result.push({ type: 'ad', data: ads[adIndex] });
       }
     });
+
+    // Siempre agregar al menos un ad si hay moteles, sin importar cuántos haya
+    if (featuredMotels.length % itemsPerAd !== 0 && ads.length > 0) {
+      const adIndex = Math.floor(featuredMotels.length / itemsPerAd) % ads.length;
+      result.push({ type: 'ad', data: ads[adIndex] });
+    }
 
     return result;
   }, [featuredMotels, ads]);
