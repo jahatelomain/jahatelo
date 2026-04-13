@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useAdvertisements, trackAdEvent } from '@/hooks/useAdvertisements';
+import type { Advertisement } from '@/hooks/useAdvertisements';
 import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
 import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
 
@@ -20,31 +22,131 @@ interface FeaturedCarouselProps {
   featuredMotels: Motel[];
 }
 
+// Solo inyectar un ad si hay al menos 5 moteles — evita que el ad
+// quede como único slide junto a 1 motel y confunda al usuario.
+const MIN_MOTELS_FOR_AD = 5;
+
 export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+  const { ads } = useAdvertisements('CAROUSEL');
+  const [selectedAd, setSelectedAd] = useState<Advertisement | null>(null);
+  const [showAdModal, setShowAdModal] = useState(false);
+  const trackedAdViews = useRef<Set<string>>(new Set());
+  const adPlaceholder = '/motel-placeholder.png';
+
+  const mixedItems = useMemo(() => {
+    // No hay suficientes moteles para intercalar ads sin confundir
+    if (!ads.length || featuredMotels.length < MIN_MOTELS_FOR_AD) {
+      return featuredMotels.map((motel) => ({ type: 'motel' as const, data: motel }));
+    }
+
+    const result: Array<{ type: 'motel' | 'ad'; data: Motel | Advertisement }> = [];
+    const itemsPerAd = 5;
+
+    featuredMotels.forEach((motel, index) => {
+      result.push({ type: 'motel', data: motel });
+      if ((index + 1) % itemsPerAd === 0) {
+        const adIndex = Math.floor(index / itemsPerAd) % ads.length;
+        result.push({ type: 'ad', data: ads[adIndex] });
+      }
+    });
+
+    return result;
+  }, [featuredMotels, ads]);
 
   useEffect(() => {
-    if (featuredMotels.length <= 1) return;
+    // No rota si hay menos de 4 ítems en total (moteles + ads)
+    if (mixedItems.length < 4) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % featuredMotels.length);
+      setCurrentIndex((prev) => (prev + 1) % mixedItems.length);
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [featuredMotels.length]);
+  }, [mixedItems.length]);
 
-  if (featuredMotels.length === 0) return null;
+  useEffect(() => {
+    const currentItem = mixedItems[currentIndex];
+    if (currentItem?.type === 'ad') {
+      const ad = currentItem.data as Advertisement;
+      if (!trackedAdViews.current.has(ad.id)) {
+        trackedAdViews.current.add(ad.id);
+        trackAdEvent({ advertisementId: ad.id, eventType: 'VIEW', source: 'CAROUSEL' });
+      }
+    }
+  }, [currentIndex, mixedItems]);
 
-  const handleDotClick = (index: number) => {
-    setCurrentIndex(index);
+  if (mixedItems.length === 0) return null;
+
+  const handleDotClick = (index: number) => setCurrentIndex(index);
+
+  const handleAdClick = (ad: Advertisement) => {
+    setSelectedAd(ad);
+    setShowAdModal(true);
+    trackAdEvent({ advertisementId: ad.id, eventType: 'CLICK', source: 'CAROUSEL' });
   };
 
   return (
     <div className="w-full mb-8">
       <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-xl">
-        {featuredMotels.map((motel, index) => {
+        {mixedItems.map((item, index) => {
           const isActive = index === currentIndex;
+
+          /* ── SLIDE DE PUBLICIDAD ── */
+          if (item.type === 'ad') {
+            const ad = item.data as Advertisement;
+            const photoUrl = ad.imageUrl || adPlaceholder;
+
+            return (
+              <div
+                key={`ad-${ad.id}`}
+                className={`absolute inset-0 transition-opacity duration-500 ${
+                  isActive ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => handleAdClick(ad)}
+                  className="absolute inset-0"
+                >
+                  <Image
+                    src={photoUrl}
+                    alt={ad.title}
+                    fill
+                    quality={85}
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 800px"
+                    loading="lazy"
+                    placeholder="blur"
+                    blurDataURL={BLUR_DATA_URL}
+                  />
+                </button>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none" />
+
+                {/* Badge PUBLICIDAD — claramente distinguible del badge DESTACADO */}
+                <div className="absolute top-4 right-4 bg-amber-500 text-white px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 shadow-lg pointer-events-none">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 2a6 6 0 00-4.472 10.03l-.788 4.734a.75.75 0 001.095.79L10 15.65l4.165 1.904a.75.75 0 001.095-.79l-.788-4.734A6 6 0 0010 2z" />
+                  </svg>
+                  PUBLICIDAD
+                </div>
+
+                {/* Info del ad — botón, no Link de motel */}
+                <button
+                  type="button"
+                  onClick={() => handleAdClick(ad)}
+                  className="absolute bottom-0 left-0 right-0 p-6 text-white text-left"
+                >
+                  <h3 className="text-2xl md:text-3xl font-bold mb-2">{ad.title}</h3>
+                  <p className="text-sm md:text-base text-amber-200">Ver más →</p>
+                </button>
+              </div>
+            );
+          }
+
+          /* ── SLIDE DE MOTEL ── */
+          const motel = item.data as Motel;
           const realPhotoUrl = motel.featuredPhotoWeb || motel.featuredPhoto || motel.photos?.[0]?.url || null;
           const photoUrl = failedImages[motel.id] ? null : realPhotoUrl;
           const isPlaceholder = !photoUrl;
@@ -53,7 +155,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
             <div
               key={motel.id}
               className={`absolute inset-0 transition-opacity duration-500 ${
-                isActive ? 'opacity-100' : 'opacity-0'
+                isActive ? 'opacity-100' : 'opacity-0 pointer-events-none'
               }`}
             >
               {isPlaceholder ? (
@@ -75,7 +177,6 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                   />
                 </Link>
               )}
-
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none" />
 
               {/* Badge DESTACADO */}
@@ -86,7 +187,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                 DESTACADO
               </div>
 
-              {/* Info del motel */}
+              {/* Info del motel — Link real al perfil */}
               <Link
                 href={`/motels/${motel.slug}`}
                 className="absolute bottom-0 left-0 right-0 p-6 text-white"
@@ -100,20 +201,65 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
       </div>
 
       {/* Dots Navigation */}
-      {featuredMotels.length > 1 && (
+      {mixedItems.length > 1 && (
         <div className="flex justify-center gap-2 mt-4">
-          {featuredMotels.map((_, index) => (
+          {mixedItems.map((item, index) => (
             <button
               key={index}
               onClick={() => handleDotClick(index)}
               className={`h-2 rounded-full transition-all duration-300 ${
                 index === currentIndex
-                  ? 'w-8 bg-purple-600'
+                  ? `w-8 ${item.type === 'ad' ? 'bg-amber-500' : 'bg-purple-600'}`
                   : 'w-2 bg-gray-300 hover:bg-gray-400'
               }`}
-              aria-label={`Ir a destacado ${index + 1}`}
+              aria-label={`Ir a ${item.type === 'ad' ? 'publicidad' : 'destacado'} ${index + 1}`}
             />
           ))}
+        </div>
+      )}
+
+      {/* Modal de publicidad */}
+      {showAdModal && selectedAd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
+            <div className="relative h-64 bg-slate-100">
+              <Image
+                src={selectedAd.largeImageUrl || adPlaceholder}
+                alt={selectedAd.title}
+                fill
+                quality={85}
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 560px"
+              />
+              <button
+                onClick={() => setShowAdModal(false)}
+                className="absolute top-3 right-3 bg-white/90 text-slate-700 rounded-full w-9 h-9 flex items-center justify-center hover:bg-white"
+                aria-label="Cerrar anuncio"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-5 space-y-3">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Publicidad</p>
+                <h3 className="text-lg font-semibold text-slate-900">{selectedAd.title}</h3>
+                <p className="text-sm text-slate-500">{selectedAd.advertiser}</p>
+              </div>
+              {selectedAd.description && (
+                <p className="text-sm text-slate-600">{selectedAd.description}</p>
+              )}
+              {selectedAd.linkUrl && (
+                <a
+                  href={selectedAd.linkUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center w-full bg-amber-500 text-white rounded-lg py-2 font-semibold hover:bg-amber-600 transition"
+                >
+                  Visitar sitio
+                </a>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
