@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
         contactName,
         contactEmail,
         contactPhone,
+        plan: 'BASIC',
         status: 'PENDING',
         isActive: false,
       },

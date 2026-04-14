@@ -588,25 +588,42 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           </div>
 
           {/* Address & Map Link */}
-          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-            <span>{motel.address}</span>
-            {(motel.mapUrl || (motel.latitude && motel.longitude)) && (
-              <a
-                href={
-                  motel.mapUrl ||
-                  `https://www.google.com/maps?q=${motel.latitude},${motel.longitude}`
+          {(() => {
+            let mapsHref: string | null = null;
+            if (motel.mapUrl) {
+              if (motel.mapUrl.includes('maps/embed') || motel.mapUrl.includes('maps.google.com/maps?')) {
+                const lngMatch = motel.mapUrl.match(/!2d(-?\d+\.\d+)/);
+                const latMatch = motel.mapUrl.match(/!3d(-?\d+\.\d+)/);
+                if (latMatch && lngMatch) {
+                  mapsHref = `https://www.google.com/maps?q=${latMatch[1]},${lngMatch[1]}`;
+                } else if (motel.latitude && motel.longitude) {
+                  mapsHref = `https://www.google.com/maps?q=${motel.latitude},${motel.longitude}`;
                 }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-600 font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                Ver en Google Maps
-              </a>
-            )}
-          </div>
+              } else {
+                mapsHref = motel.mapUrl;
+              }
+            } else if (motel.latitude && motel.longitude) {
+              mapsHref = `https://www.google.com/maps?q=${motel.latitude},${motel.longitude}`;
+            }
+            return (
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                <span>{motel.address}</span>
+                {mapsHref && (
+                  <a
+                    href={mapsHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-600 font-medium"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    Ver en Google Maps
+                  </a>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Tabs — id="promos" enables #promos hash navigation from promo cards */}

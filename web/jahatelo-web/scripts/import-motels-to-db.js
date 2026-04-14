@@ -90,7 +90,7 @@ async function importMotels() {
         ratingCount: motelData.totalRatings || 0,
         status: 'PENDING', // Requiere revisión manual
         isActive: false, // Desactivado hasta verificar
-        plan: 'FREE',
+        plan: 'BASIC',
       };
 
       if (existing) {
