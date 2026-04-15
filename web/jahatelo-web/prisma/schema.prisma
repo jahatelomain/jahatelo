@@ -107,6 +107,11 @@ enum PlanType {
   DIAMOND
 }
 
+enum DayGroup {
+  WEEKDAY   // Domingo a Jueves
+  WEEKEND   // Viernes y Sábado
+}
+
 // ============================================
 // MOTEL
 // ============================================
@@ -232,6 +237,29 @@ model RoomType {
   photos            Photo[]
   reviews           Review[]
   roomPhotos        RoomPhoto[]
+  dayRates          RoomDayRate[]
+}
+
+// ============================================
+// ROOM DAY RATES (precios por día de semana)
+// ============================================
+
+model RoomDayRate {
+  id         String    @id @default(cuid())
+  roomType   RoomType  @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  roomTypeId String
+  dayGroup   DayGroup
+  price1h    Int?
+  price1_5h  Int?
+  price2h    Int?
+  price3h    Int?
+  price12h   Int?
+  price24h   Int?
+  priceNight Int?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([roomTypeId, dayGroup])
 }
 
 // ============================================

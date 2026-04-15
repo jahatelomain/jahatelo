@@ -49,6 +49,16 @@ type Motel = {
   menuCategories?: MenuCategory[];
 };
 
+type DayRateForm = {
+  price1h: string;
+  price1_5h: string;
+  price2h: string;
+  price3h: string;
+  price12h: string;
+  price24h: string;
+  priceNight: string;
+};
+
 type RoomType = {
   id: string;
   name: string;
@@ -78,6 +88,16 @@ type RoomType = {
     id: string;
     url: string;
     order: number;
+  }>;
+  dayRates?: Array<{
+    dayGroup: 'WEEKDAY' | 'WEEKEND';
+    price1h: number | null;
+    price1_5h: number | null;
+    price2h: number | null;
+    price3h: number | null;
+    price12h: number | null;
+    price24h: number | null;
+    priceNight: number | null;
   }>;
 };
 
@@ -163,6 +183,11 @@ export default function MotelDetailPage() {
     featuredPhotoApp: '',
   });
 
+  const emptyDayRate = (): DayRateForm => ({
+    price1h: '', price1_5h: '', price2h: '', price3h: '',
+    price12h: '', price24h: '', priceNight: '',
+  });
+
   const [showRoomForm, setShowRoomForm] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [roomForm, setRoomForm] = useState({
@@ -183,6 +208,8 @@ export default function MotelDetailPage() {
     isFeatured: false,
     amenityIds: [] as string[],
   });
+  const [weekdayRates, setWeekdayRates] = useState<DayRateForm>(emptyDayRate());
+  const [weekendRates, setWeekendRates] = useState<DayRateForm>(emptyDayRate());
 
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [categoryForm, setCategoryForm] = useState({ title: '', sortOrder: 0 });
@@ -779,6 +806,24 @@ export default function MotelDetailPage() {
       if (normalizedForm[f] === '') normalizedForm[f] = null;
     });
 
+    // Build dayRates array
+    const normalizeDayRate = (dr: DayRateForm) => ({
+      price1h: dr.price1h !== '' ? Number(dr.price1h) : null,
+      price1_5h: dr.price1_5h !== '' ? Number(dr.price1_5h) : null,
+      price2h: dr.price2h !== '' ? Number(dr.price2h) : null,
+      price3h: dr.price3h !== '' ? Number(dr.price3h) : null,
+      price12h: dr.price12h !== '' ? Number(dr.price12h) : null,
+      price24h: dr.price24h !== '' ? Number(dr.price24h) : null,
+      priceNight: dr.priceNight !== '' ? Number(dr.priceNight) : null,
+    });
+    const dayRatesPayload = [];
+    const wdValues = normalizeDayRate(weekdayRates);
+    const weValues = normalizeDayRate(weekendRates);
+    const hasWeekdayData = Object.values(wdValues).some((v) => v !== null);
+    const hasWeekendData = Object.values(weValues).some((v) => v !== null);
+    if (hasWeekdayData) dayRatesPayload.push({ dayGroup: 'WEEKDAY', ...wdValues });
+    if (hasWeekendData) dayRatesPayload.push({ dayGroup: 'WEEKEND', ...weValues });
+
     try {
       const res = await fetch(url, {
         method,
@@ -786,6 +831,7 @@ export default function MotelDetailPage() {
         body: JSON.stringify({
           motelId: id,
           ...normalizedForm,
+          dayRates: dayRatesPayload.length > 0 ? dayRatesPayload : undefined,
         }),
       });
 
@@ -811,6 +857,8 @@ export default function MotelDetailPage() {
           isFeatured: false,
           amenityIds: []
         });
+        setWeekdayRates(emptyDayRate());
+        setWeekendRates(emptyDayRate());
         setSaveStatus('success');
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
@@ -842,6 +890,27 @@ export default function MotelDetailPage() {
       isFeatured: room.isFeatured || false,
       amenityIds: (room.amenities ?? []).map((a) => a.amenity.id),
     });
+    // Populate day rates
+    const wd = room.dayRates?.find((dr) => dr.dayGroup === 'WEEKDAY');
+    const we = room.dayRates?.find((dr) => dr.dayGroup === 'WEEKEND');
+    setWeekdayRates(wd ? {
+      price1h: wd.price1h?.toString() || '',
+      price1_5h: wd.price1_5h?.toString() || '',
+      price2h: wd.price2h?.toString() || '',
+      price3h: wd.price3h?.toString() || '',
+      price12h: wd.price12h?.toString() || '',
+      price24h: wd.price24h?.toString() || '',
+      priceNight: wd.priceNight?.toString() || '',
+    } : emptyDayRate());
+    setWeekendRates(we ? {
+      price1h: we.price1h?.toString() || '',
+      price1_5h: we.price1_5h?.toString() || '',
+      price2h: we.price2h?.toString() || '',
+      price3h: we.price3h?.toString() || '',
+      price12h: we.price12h?.toString() || '',
+      price24h: we.price24h?.toString() || '',
+      priceNight: we.priceNight?.toString() || '',
+    } : emptyDayRate());
     setShowRoomForm(true);
     setTimeout(() => {
       roomFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2465,6 +2534,8 @@ export default function MotelDetailPage() {
                       isFeatured: false,
                       amenityIds: []
                     });
+                    setWeekdayRates(emptyDayRate());
+                    setWeekendRates(emptyDayRate());
                   }}
                   className="text-slate-400 hover:text-slate-600 transition-colors"
                 >
@@ -2575,6 +2646,59 @@ export default function MotelDetailPage() {
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="Gs."
                       />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Precios por Día de Semana */}
+                <div className="border-t border-slate-200 pt-4">
+                  <h4 className="text-sm font-semibold text-slate-900 mb-1 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Precios por Día (opcional)
+                  </h4>
+                  <p className="text-xs text-slate-500 mb-3">Dejá vacío para usar los precios base. Si se llenan, sobreescriben los precios base según el día.</p>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Semana (Dom–Jue) */}
+                    <div className="border border-blue-100 rounded-lg p-3 bg-blue-50/40">
+                      <p className="text-xs font-semibold text-blue-700 mb-2 uppercase tracking-wide">Dom – Jue (Semana)</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(['price1h','price1_5h','price2h','price3h','price12h','price24h','priceNight'] as const).map((field) => (
+                          <div key={field}>
+                            <label className="block text-xs text-slate-500 mb-1">
+                              {field === 'price1h' ? '1h' : field === 'price1_5h' ? '1.5h' : field === 'price2h' ? '2h' : field === 'price3h' ? '3h' : field === 'price12h' ? '12h' : field === 'price24h' ? '24h' : 'Noche'}
+                            </label>
+                            <input
+                              type="number"
+                              value={weekdayRates[field]}
+                              onChange={(e) => setWeekdayRates({ ...weekdayRates, [field]: e.target.value })}
+                              className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                              placeholder="Gs."
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Fin de Semana (Vie–Sáb) */}
+                    <div className="border border-orange-100 rounded-lg p-3 bg-orange-50/40">
+                      <p className="text-xs font-semibold text-orange-700 mb-2 uppercase tracking-wide">Vie – Sáb (Fin de semana)</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(['price1h','price1_5h','price2h','price3h','price12h','price24h','priceNight'] as const).map((field) => (
+                          <div key={field}>
+                            <label className="block text-xs text-slate-500 mb-1">
+                              {field === 'price1h' ? '1h' : field === 'price1_5h' ? '1.5h' : field === 'price2h' ? '2h' : field === 'price3h' ? '3h' : field === 'price12h' ? '12h' : field === 'price24h' ? '24h' : 'Noche'}
+                            </label>
+                            <input
+                              type="number"
+                              value={weekendRates[field]}
+                              onChange={(e) => setWeekendRates({ ...weekendRates, [field]: e.target.value })}
+                              className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                              placeholder="Gs."
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2701,6 +2825,8 @@ export default function MotelDetailPage() {
                         isFeatured: false,
                         amenityIds: []
                       });
+                      setWeekdayRates(emptyDayRate());
+                      setWeekendRates(emptyDayRate());
                     }}
                     className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
                   >
