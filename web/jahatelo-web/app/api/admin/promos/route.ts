@@ -180,6 +180,10 @@ export async function POST(request: NextRequest) {
         validUntil: validated.validUntil ? new Date(validated.validUntil) : null,
         isActive: validated.isActive ?? true,
         isGlobal: access.user?.role === 'MOTEL_ADMIN' ? false : validated.isGlobal ?? false,
+        hasPromoCode: validated.hasPromoCode ?? false,
+        codeRepeatRule: validated.codeRepeatRule ?? null,
+        codeLimit: validated.codeLimit ?? null,
+        codeLimitPeriod: validated.codeLimitPeriod ?? null,
       },
     });
 

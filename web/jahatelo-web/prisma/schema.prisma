@@ -112,6 +112,24 @@ enum DayGroup {
   WEEKEND   // Viernes y Sábado
 }
 
+enum CodeRepeatRule {
+  DAILY
+  WEEKLY
+  MONTHLY
+  NEVER
+}
+
+enum CodeLimitPeriod {
+  WEEKLY
+  MONTHLY
+  UNLIMITED
+}
+
+enum PromoCodeStatus {
+  PENDING
+  USED
+}
+
 // ============================================
 // MOTEL
 // ============================================
@@ -594,18 +612,41 @@ model SocialLink {
 // ============================================
 
 model Promo {
-  id          String    @id @default(cuid())
-  motel       Motel     @relation(fields: [motelId], references: [id], onDelete: Cascade)
-  motelId     String
-  title       String
-  description String?
-  imageUrl    String?
-  validFrom   DateTime?
-  validUntil  DateTime?
-  isActive    Boolean   @default(true)
-  isGlobal    Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id               String           @id @default(cuid())
+  motel            Motel            @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId          String
+  title            String
+  description      String?
+  imageUrl         String?
+  validFrom        DateTime?
+  validUntil       DateTime?
+  isActive         Boolean          @default(true)
+  isGlobal         Boolean          @default(false)
+  hasPromoCode     Boolean          @default(false)
+  codeRepeatRule   CodeRepeatRule?
+  codeLimit        Int?
+  codeLimitPeriod  CodeLimitPeriod?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  promoCodes       PromoCode[]
+}
+
+model PromoCode {
+  id          String          @id @default(cuid())
+  promo       Promo           @relation(fields: [promoId], references: [id], onDelete: Cascade)
+  promoId     String
+  code        String          @unique
+  deviceId    String
+  status      PromoCodeStatus @default(PENDING)
+  redeemedAt  DateTime?
+  redeemedBy  String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([promoId, deviceId])
+  @@index([code])
+  @@index([promoId, status])
 }
 
 // ============================================

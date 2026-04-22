@@ -237,9 +237,22 @@ export const PromoSchema = z.object({
   ),
   isActive: z.boolean().optional(),
   isGlobal: z.boolean().optional(),
+  hasPromoCode: z.boolean().optional(),
+  codeRepeatRule: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'NEVER']).optional().nullable(),
+  codeLimit: z.coerce.number().int().min(1).optional().nullable(),
+  codeLimitPeriod: z.enum(['WEEKLY', 'MONTHLY', 'UNLIMITED']).optional().nullable(),
 });
 
 export const UpdatePromoSchema = PromoSchema.partial().omit({ motelId: true });
+
+export const ClaimPromoCodeSchema = z.object({
+  deviceId: z.string().min(8).max(64),
+});
+
+export const RedeemPromoCodeSchema = z.object({
+  code: z.string().min(6).max(6),
+  confirm: z.boolean().optional(),
+});
 
 export const PromoQuerySchema = z.object({
   motelId: IdSchema.optional(),

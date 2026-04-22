@@ -131,7 +131,25 @@ type Promo = {
   validUntil: string | null;
   isActive: boolean;
   isGlobal: boolean;
+  hasPromoCode: boolean;
+  codeRepeatRule: string | null;
+  codeLimit: number | null;
+  codeLimitPeriod: string | null;
 };
+
+type PromoCodeEntry = {
+  id: string;
+  code: string;
+  status: 'PENDING' | 'USED';
+  deviceId: string;
+  createdAt: string;
+  redeemedAt: string | null;
+  redeemedBy: string | null;
+};
+
+type RedeemResult =
+  | { valid: false; reason: 'INVALID_CODE' | 'WRONG_PROMO' | 'ALREADY_USED' | 'PROMO_INACTIVE'; redeemedAt?: string }
+  | { valid: true; codeId?: string; promoTitle?: string; promoDescription?: string | null; promoImageUrl?: string | null; confirmed?: boolean };
 
 export default function MotelDetailPage() {
   const countryOptions = ['Paraguay', 'Argentina', 'Peru', 'Bolivia', 'Chile', 'Brasil'];
@@ -224,12 +242,24 @@ export default function MotelDetailPage() {
     description: '',
     imageUrl: '',
     isGlobal: false,
+    hasPromoCode: false,
+    codeRepeatRule: 'NEVER' as string,
+    codeLimit: '',
+    codeLimitPeriod: 'UNLIMITED' as string,
   });
 
   const [promos, setPromos] = useState<Promo[]>([]);
   const [showPromoForm, setShowPromoForm] = useState(false);
   const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
   const [promoForm, setPromoForm] = useState(createInitialPromoForm());
+
+  // PromoCode state
+  const [promoCodesMap, setPromoCodesMap] = useState<Record<string, PromoCodeEntry[]>>({});
+  const [promoCodesSummary, setPromoCodesSummary] = useState<Record<string, { total: number; pending: number; used: number }>>({});
+  const [expandedCodes, setExpandedCodes] = useState<Record<string, boolean>>({});
+  const [redeemInput, setRedeemInput] = useState<Record<string, string>>({});
+  const [redeemResult, setRedeemResult] = useState<Record<string, RedeemResult | null>>({});
+  const [redeemLoading, setRedeemLoading] = useState<Record<string, boolean>>({});
   const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
   const [uploadingFeatured, setUploadingFeatured] = useState(false);
   const [uploadingFeaturedWeb, setUploadingFeaturedWeb] = useState(false);
@@ -567,6 +597,14 @@ export default function MotelDetailPage() {
     return null;
   };
 
+  const buildPromoPayload = (form: ReturnType<typeof createInitialPromoForm>) => ({
+    ...form,
+    hasPromoCode: form.hasPromoCode,
+    codeRepeatRule: form.hasPromoCode ? (form.codeRepeatRule || null) : null,
+    codeLimit: form.hasPromoCode && form.codeLimit !== '' ? Number(form.codeLimit) : null,
+    codeLimitPeriod: form.hasPromoCode ? (form.codeLimitPeriod || null) : null,
+  });
+
   const handleSavePromo = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -575,7 +613,7 @@ export default function MotelDetailPage() {
         const res = await fetch(`/api/admin/promos/${editingPromoId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(promoForm),
+          body: JSON.stringify(buildPromoPayload(promoForm)),
         });
         if (res.ok) {
           fetchPromos();
@@ -591,7 +629,7 @@ export default function MotelDetailPage() {
         const res = await fetch('/api/admin/promos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...promoForm, motelId: id }),
+          body: JSON.stringify({ ...buildPromoPayload(promoForm), motelId: id }),
         });
         if (res.ok) {
           fetchPromos();
@@ -637,8 +675,67 @@ export default function MotelDetailPage() {
       description: promo.description || '',
       imageUrl: promo.imageUrl || '',
       isGlobal: promo.isGlobal || false,
+      hasPromoCode: promo.hasPromoCode || false,
+      codeRepeatRule: promo.codeRepeatRule || 'NEVER',
+      codeLimit: promo.codeLimit !== null && promo.codeLimit !== undefined ? String(promo.codeLimit) : '',
+      codeLimitPeriod: promo.codeLimitPeriod || 'UNLIMITED',
     });
     setShowPromoForm(true);
+  };
+
+  const fetchPromoCodes = async (promoId: string) => {
+    try {
+      const res = await fetch(`/api/admin/promos/${promoId}/codes?limit=50`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setPromoCodesMap((prev) => ({ ...prev, [promoId]: data.data }));
+      setPromoCodesSummary((prev) => ({ ...prev, [promoId]: data.summary }));
+    } catch (error) {
+      console.error('Error fetching promo codes:', error);
+    }
+  };
+
+  const handleVerifyCode = async (promoId: string) => {
+    const code = redeemInput[promoId]?.trim().toUpperCase();
+    if (!code || code.length !== 6) return;
+    setRedeemLoading((prev) => ({ ...prev, [promoId]: true }));
+    setRedeemResult((prev) => ({ ...prev, [promoId]: null }));
+    try {
+      const res = await fetch(`/api/admin/promos/${promoId}/redeem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, confirm: false }),
+      });
+      const data = await res.json();
+      setRedeemResult((prev) => ({ ...prev, [promoId]: data }));
+    } catch (error) {
+      console.error('Error verifying code:', error);
+    } finally {
+      setRedeemLoading((prev) => ({ ...prev, [promoId]: false }));
+    }
+  };
+
+  const handleConfirmRedeem = async (promoId: string) => {
+    const code = redeemInput[promoId]?.trim().toUpperCase();
+    if (!code) return;
+    setRedeemLoading((prev) => ({ ...prev, [promoId]: true }));
+    try {
+      const res = await fetch(`/api/admin/promos/${promoId}/redeem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, confirm: true }),
+      });
+      const data = await res.json();
+      setRedeemResult((prev) => ({ ...prev, [promoId]: data }));
+      if (data.valid && data.confirmed) {
+        setRedeemInput((prev) => ({ ...prev, [promoId]: '' }));
+        fetchPromoCodes(promoId);
+      }
+    } catch (error) {
+      console.error('Error confirming redeem:', error);
+    } finally {
+      setRedeemLoading((prev) => ({ ...prev, [promoId]: false }));
+    }
   };
 
   const handlePromoFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -1758,6 +1855,74 @@ export default function MotelDetailPage() {
                     </label>
                   </div>
                 )}
+
+                {/* PromoCode section */}
+                <details className="border border-slate-200 rounded-lg">
+                  <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-slate-700 select-none flex items-center gap-2">
+                    <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                    </svg>
+                    Código Promocional
+                    {promoForm.hasPromoCode && (
+                      <span className="ml-auto text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">Activado</span>
+                    )}
+                  </summary>
+                  <div className="px-4 pb-4 pt-2 space-y-4 border-t border-slate-100">
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={promoForm.hasPromoCode}
+                        onChange={(e) => setPromoForm({ ...promoForm, hasPromoCode: e.target.checked })}
+                        className="rounded text-purple-600 focus:ring-purple-600"
+                      />
+                      <span className="text-sm text-slate-700 font-medium">Activar sistema de códigos</span>
+                    </label>
+                    {promoForm.hasPromoCode && (
+                      <div className="space-y-3 pl-2">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Repetición por usuario</label>
+                          <select
+                            value={promoForm.codeRepeatRule}
+                            onChange={(e) => setPromoForm({ ...promoForm, codeRepeatRule: e.target.value })}
+                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                          >
+                            <option value="NEVER">Nunca (un uso por persona)</option>
+                            <option value="DAILY">Diario</option>
+                            <option value="WEEKLY">Semanal</option>
+                            <option value="MONTHLY">Mensual</option>
+                          </select>
+                        </div>
+                        <div className="flex gap-3">
+                          <div className="flex-1">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Límite total de códigos</label>
+                            <input
+                              type="number"
+                              min={1}
+                              value={promoForm.codeLimit}
+                              onChange={(e) => setPromoForm({ ...promoForm, codeLimit: e.target.value })}
+                              placeholder="Sin tope"
+                              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Período del límite</label>
+                            <select
+                              value={promoForm.codeLimitPeriod}
+                              onChange={(e) => setPromoForm({ ...promoForm, codeLimitPeriod: e.target.value })}
+                              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                            >
+                              <option value="UNLIMITED">Sin tope</option>
+                              <option value="WEEKLY">Semanal</option>
+                              <option value="MONTHLY">Mensual</option>
+                            </select>
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-400">La vigencia usa la fecha hasta ya definida en la promo.</p>
+                      </div>
+                    )}
+                  </div>
+                </details>
+
                 <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   <button
                     type="button"
@@ -1806,11 +1971,18 @@ export default function MotelDetailPage() {
                   <div className="p-4">
                     <div className="flex items-start justify-between mb-2">
                       <h3 className="text-lg font-semibold text-slate-900 flex-1">{promo.title}</h3>
-                      {currentUser?.role === 'SUPERADMIN' && promo.isGlobal && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-semibold">
-                          🏠 Home
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {promo.hasPromoCode && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full font-semibold">
+                            Código
+                          </span>
+                        )}
+                        {currentUser?.role === 'SUPERADMIN' && promo.isGlobal && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-semibold">
+                            🏠 Home
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {promo.description && (
                       <p className="text-sm text-slate-600 mb-3">{promo.description}</p>
@@ -1838,6 +2010,138 @@ export default function MotelDetailPage() {
                         </div>
                       </details>
                     </div>
+
+                    {/* PromoCode validator + history */}
+                    {promo.hasPromoCode && (
+                      <div className="mt-4 border-t border-slate-100 pt-4 space-y-3">
+                        <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Validar Código</p>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            maxLength={6}
+                            value={redeemInput[promo.id] || ''}
+                            onChange={(e) => setRedeemInput((prev) => ({ ...prev, [promo.id]: e.target.value.toUpperCase() }))}
+                            placeholder="XXXXXX"
+                            className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono uppercase focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                          />
+                          <button
+                            onClick={() => handleVerifyCode(promo.id)}
+                            disabled={redeemLoading[promo.id] || (redeemInput[promo.id] || '').length !== 6}
+                            className="px-4 py-2 bg-slate-700 text-white text-sm rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors"
+                          >
+                            {redeemLoading[promo.id] ? '...' : 'Verificar'}
+                          </button>
+                        </div>
+
+                        {/* Redeem result */}
+                        {redeemResult[promo.id] && (() => {
+                          const result = redeemResult[promo.id]!;
+                          if (!result.valid) {
+                            const messages: Record<string, string> = {
+                              INVALID_CODE: 'Código no encontrado',
+                              WRONG_PROMO: 'Este código no corresponde a esta promo',
+                              ALREADY_USED: `Ya fue utilizado${result.redeemedAt ? ` el ${new Date(result.redeemedAt).toLocaleDateString('es-PY')}` : ''}`,
+                              PROMO_INACTIVE: 'Esta promo no está activa',
+                            };
+                            return (
+                              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                                {messages[result.reason] || 'Código inválido'}
+                              </div>
+                            );
+                          }
+                          if (result.confirmed) {
+                            return (
+                              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700 font-medium">
+                                ✓ Código marcado como utilizado
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="bg-white border border-green-300 rounded-lg p-3 space-y-2">
+                              {result.promoImageUrl && (
+                                <img src={result.promoImageUrl} alt={result.promoTitle} className="w-full h-24 object-cover rounded" />
+                              )}
+                              <p className="text-sm font-semibold text-slate-900">{result.promoTitle}</p>
+                              {result.promoDescription && <p className="text-xs text-slate-600">{result.promoDescription}</p>}
+                              <button
+                                onClick={() => {
+                                  setConfirmAction({
+                                    title: 'Confirmar uso del código',
+                                    message: 'Esta acción es irreversible. ¿Confirmar que el código fue utilizado?',
+                                    confirmText: 'Confirmar uso',
+                                    cancelText: 'Cancelar',
+                                    danger: true,
+                                    onConfirm: () => {
+                                      setConfirmAction(null);
+                                      handleConfirmRedeem(promo.id);
+                                    },
+                                  });
+                                }}
+                                disabled={redeemLoading[promo.id]}
+                                className="w-full py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors font-medium"
+                              >
+                                Confirmar uso (irreversible)
+                              </button>
+                            </div>
+                          );
+                        })()}
+
+                        {/* History toggle */}
+                        <button
+                          onClick={() => {
+                            const isOpen = expandedCodes[promo.id];
+                            setExpandedCodes((prev) => ({ ...prev, [promo.id]: !isOpen }));
+                            if (!isOpen) fetchPromoCodes(promo.id);
+                          }}
+                          className="text-xs text-purple-600 hover:underline"
+                        >
+                          {expandedCodes[promo.id] ? 'Ocultar historial' : 'Ver historial de códigos'}
+                          {promoCodesSummary[promo.id] && ` (${promoCodesSummary[promo.id].total} total)`}
+                        </button>
+
+                        {expandedCodes[promo.id] && (
+                          <div className="space-y-2">
+                            {promoCodesSummary[promo.id] && (
+                              <div className="flex gap-3 text-xs text-slate-500">
+                                <span>Total: <strong>{promoCodesSummary[promo.id].total}</strong></span>
+                                <span>Pendientes: <strong>{promoCodesSummary[promo.id].pending}</strong></span>
+                                <span>Usados: <strong>{promoCodesSummary[promo.id].used}</strong></span>
+                              </div>
+                            )}
+                            {(promoCodesMap[promo.id] || []).length === 0 ? (
+                              <p className="text-xs text-slate-400 italic">Sin códigos generados aún</p>
+                            ) : (
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-xs">
+                                  <thead>
+                                    <tr className="text-left text-slate-500 border-b border-slate-100">
+                                      <th className="pb-1 pr-2">Código</th>
+                                      <th className="pb-1 pr-2">Estado</th>
+                                      <th className="pb-1 pr-2">Generado</th>
+                                      <th className="pb-1 pr-2">Usado el</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {(promoCodesMap[promo.id] || []).map((c) => (
+                                      <tr key={c.id} className="border-b border-slate-50">
+                                        <td className="py-1 pr-2 font-mono font-bold">{c.code}</td>
+                                        <td className="py-1 pr-2">
+                                          <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${c.status === 'USED' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                            {c.status === 'USED' ? 'Usado' : 'Pendiente'}
+                                          </span>
+                                        </td>
+                                        <td className="py-1 pr-2 text-slate-500">{new Date(c.createdAt).toLocaleDateString('es-PY')}</td>
+                                        <td className="py-1 pr-2 text-slate-500">{c.redeemedAt ? new Date(c.redeemedAt).toLocaleDateString('es-PY') : '-'}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
