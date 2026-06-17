@@ -243,6 +243,9 @@ model RoomType {
   isFeatured        Boolean       @default(false)
   isActive          Boolean       @default(true)
 
+  // Orden de aparición entre habitaciones del motel
+  order             Int           @default(0)
+
   // Legacy (mantener compatibilidad)
   basePrice         Int?
   priceLabel        String?

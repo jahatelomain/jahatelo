@@ -63,6 +63,7 @@ type RoomType = {
   id: string;
   name: string;
   description: string | null;
+  order?: number;
   basePrice: number | null;
   priceLabel: string | null;
   price1h: number | null;
@@ -260,6 +261,7 @@ export default function MotelDetailPage() {
   const [redeemInput, setRedeemInput] = useState<Record<string, string>>({});
   const [redeemResult, setRedeemResult] = useState<Record<string, RedeemResult | null>>({});
   const [redeemLoading, setRedeemLoading] = useState<Record<string, boolean>>({});
+  const [openPromoMenuId, setOpenPromoMenuId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
   const [uploadingFeatured, setUploadingFeatured] = useState(false);
   const [uploadingFeaturedWeb, setUploadingFeaturedWeb] = useState(false);
@@ -268,6 +270,8 @@ export default function MotelDetailPage() {
   const [uploadingPromo, setUploadingPromo] = useState(false);
   const [draggedPhotoId, setDraggedPhotoId] = useState<string | null>(null);
   const [dragOverPhotoId, setDragOverPhotoId] = useState<string | null>(null);
+  const [draggedRoomId, setDraggedRoomId] = useState<string | null>(null);
+  const [dragOverRoomId, setDragOverRoomId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -1248,6 +1252,27 @@ export default function MotelDetailPage() {
     }
   };
 
+  const handleReorderRooms = async (orderedRooms: any[]) => {
+    if (!motel) return;
+    // Actualizar UI optimistamente
+    setMotel((prev) => prev ? { ...prev, rooms: orderedRooms } : prev);
+    try {
+      await fetch('/api/admin/rooms/reorder', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          motelId: motel.id,
+          roomIds: orderedRooms.map((r) => r.id),
+        }),
+      });
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus('idle'), 2500);
+    } catch (error) {
+      console.error('Error reordering rooms:', error);
+      fetchMotel();
+    }
+  };
+
   const uploadFileToS3 = async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -1857,71 +1882,73 @@ export default function MotelDetailPage() {
                 )}
 
                 {/* PromoCode section */}
-                <details className="border border-slate-200 rounded-lg">
-                  <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-slate-700 select-none flex items-center gap-2">
-                    <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                    </svg>
-                    Código Promocional
-                    {promoForm.hasPromoCode && (
-                      <span className="ml-auto text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">Activado</span>
-                    )}
-                  </summary>
-                  <div className="px-4 pb-4 pt-2 space-y-4 border-t border-slate-100">
-                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                <div className="rounded-xl border-2 border-dashed border-purple-200 bg-purple-50/40 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                      </svg>
+                      <span className="text-sm font-semibold text-slate-800">Código Promocional</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
                         checked={promoForm.hasPromoCode}
                         onChange={(e) => setPromoForm({ ...promoForm, hasPromoCode: e.target.checked })}
-                        className="rounded text-purple-600 focus:ring-purple-600"
+                        className="sr-only peer"
                       />
-                      <span className="text-sm text-slate-700 font-medium">Activar sistema de códigos</span>
+                      <div className="w-10 h-6 bg-slate-200 peer-focus:ring-2 peer-focus:ring-purple-400 rounded-full peer peer-checked:bg-purple-600 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-4" />
+                      <span className="ml-2 text-sm font-medium text-slate-700">
+                        {promoForm.hasPromoCode ? 'Activado' : 'Desactivado'}
+                      </span>
                     </label>
-                    {promoForm.hasPromoCode && (
-                      <div className="space-y-3 pl-2">
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Repetición por usuario</label>
+                  </div>
+                  {promoForm.hasPromoCode && (
+                    <div className="space-y-3 pt-2 border-t border-purple-100">
+                      <p className="text-xs text-purple-700 bg-purple-100 rounded-lg px-3 py-2">
+                        Los usuarios podrán reclamar un código desde la app y presentarlo en el motel.
+                      </p>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">¿Cada cuánto puede reclamar un usuario?</label>
+                        <select
+                          value={promoForm.codeRepeatRule}
+                          onChange={(e) => setPromoForm({ ...promoForm, codeRepeatRule: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white"
+                        >
+                          <option value="NEVER">Una sola vez por persona</option>
+                          <option value="DAILY">Una vez por día</option>
+                          <option value="WEEKLY">Una vez por semana</option>
+                          <option value="MONTHLY">Una vez por mes</option>
+                        </select>
+                      </div>
+                      <div className="flex gap-3">
+                        <div className="flex-1">
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Límite total de códigos</label>
+                          <input
+                            type="number"
+                            min={1}
+                            value={promoForm.codeLimit}
+                            onChange={(e) => setPromoForm({ ...promoForm, codeLimit: e.target.value })}
+                            placeholder="Sin tope"
+                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Período del límite</label>
                           <select
-                            value={promoForm.codeRepeatRule}
-                            onChange={(e) => setPromoForm({ ...promoForm, codeRepeatRule: e.target.value })}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                            value={promoForm.codeLimitPeriod}
+                            onChange={(e) => setPromoForm({ ...promoForm, codeLimitPeriod: e.target.value })}
+                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white"
                           >
-                            <option value="NEVER">Nunca (un uso por persona)</option>
-                            <option value="DAILY">Diario</option>
-                            <option value="WEEKLY">Semanal</option>
-                            <option value="MONTHLY">Mensual</option>
+                            <option value="UNLIMITED">Sin tope</option>
+                            <option value="WEEKLY">Por semana</option>
+                            <option value="MONTHLY">Por mes</option>
                           </select>
                         </div>
-                        <div className="flex gap-3">
-                          <div className="flex-1">
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Límite total de códigos</label>
-                            <input
-                              type="number"
-                              min={1}
-                              value={promoForm.codeLimit}
-                              onChange={(e) => setPromoForm({ ...promoForm, codeLimit: e.target.value })}
-                              placeholder="Sin tope"
-                              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Período del límite</label>
-                            <select
-                              value={promoForm.codeLimitPeriod}
-                              onChange={(e) => setPromoForm({ ...promoForm, codeLimitPeriod: e.target.value })}
-                              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                            >
-                              <option value="UNLIMITED">Sin tope</option>
-                              <option value="WEEKLY">Semanal</option>
-                              <option value="MONTHLY">Mensual</option>
-                            </select>
-                          </div>
-                        </div>
-                        <p className="text-xs text-slate-400">La vigencia usa la fecha hasta ya definida en la promo.</p>
                       </div>
-                    )}
-                  </div>
-                </details>
+                    </div>
+                  )}
+                </div>
 
                 <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   <button
@@ -1994,21 +2021,30 @@ export default function MotelDetailPage() {
                       >
                         Editar
                       </button>
-                      <details className="relative">
-                        <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setOpenPromoMenuId(openPromoMenuId === promo.id ? null : promo.id)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 transition-colors cursor-pointer"
+                        >
                           <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
                           </svg>
-                        </summary>
-                        <div className="absolute right-0 mt-2 w-32 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
-                          <button
-                            onClick={() => handleDeletePromo(promo.id)}
-                            className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </details>
+                        </button>
+                        {openPromoMenuId === promo.id && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setOpenPromoMenuId(null)} />
+                            <div className="absolute right-0 mt-2 w-32 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
+                              <button
+                                onClick={() => { handleDeletePromo(promo.id); setOpenPromoMenuId(null); }}
+                                className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50 rounded-lg"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
 
                     {/* PromoCode validator + history */}
@@ -3158,11 +3194,51 @@ export default function MotelDetailPage() {
               </div>
             ) : (
               rooms.map((room) => (
-                <div key={room.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:border-purple-200 transition-colors">
+                <div
+                  key={room.id}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = 'move';
+                    setDraggedRoomId(room.id);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (room.id !== draggedRoomId) setDragOverRoomId(room.id);
+                  }}
+                  onDragLeave={() => setDragOverRoomId(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (!draggedRoomId || draggedRoomId === room.id) return;
+                    const sorted = [...rooms].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+                    const fromIdx = sorted.findIndex((r) => r.id === draggedRoomId);
+                    const toIdx = sorted.findIndex((r) => r.id === room.id);
+                    const reordered = [...sorted];
+                    const [moved] = reordered.splice(fromIdx, 1);
+                    reordered.splice(toIdx, 0, moved);
+                    handleReorderRooms(reordered);
+                    setDraggedRoomId(null);
+                    setDragOverRoomId(null);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedRoomId(null);
+                    setDragOverRoomId(null);
+                  }}
+                  className={[
+                    'bg-white rounded-xl border shadow-sm p-6 transition-all cursor-grab active:cursor-grabbing',
+                    draggedRoomId === room.id ? 'opacity-50 scale-[0.98]' : '',
+                    dragOverRoomId === room.id && draggedRoomId !== room.id ? 'ring-2 ring-purple-400 border-purple-300' : 'border-slate-200 hover:border-purple-200',
+                  ].join(' ')}
+                >
                   {/* Parte superior: Nombre + Badges */}
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4 pb-4 border-b border-slate-200">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-slate-900 mb-2">{room.name}</h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <svg className="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                        </svg>
+                        <h3 className="text-lg font-semibold text-slate-900">{room.name}</h3>
+                      </div>
                       <div className="flex flex-wrap gap-2">
                         {room.isFeatured && (
                           <span className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-semibold">

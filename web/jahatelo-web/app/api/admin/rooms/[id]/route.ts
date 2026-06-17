@@ -46,6 +46,7 @@ export async function PATCH(
       data: {
         ...(validated.name !== undefined && { name: validated.name }),
         ...(validated.description !== undefined && { description: validated.description }),
+        ...(validated.order !== undefined && { order: validated.order }),
         ...(validated.basePrice !== undefined && { basePrice: validated.basePrice ?? null }),
         ...(validated.priceLabel !== undefined && { priceLabel: validated.priceLabel ?? null }),
         ...(validated.price1h !== undefined && { price1h: validated.price1h ?? null }),

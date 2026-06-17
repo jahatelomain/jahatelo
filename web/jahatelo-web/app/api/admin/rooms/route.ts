@@ -22,10 +22,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Asignar order como el siguiente disponible para este motel
+    const lastRoom = await prisma.roomType.findFirst({
+      where: { motelId: validated.motelId },
+      orderBy: { order: 'desc' },
+      select: { order: true },
+    });
+    const nextOrder = (lastRoom?.order ?? -1) + 1;
+
     const room = await prisma.roomType.create({
       data: {
         motelId: validated.motelId,
         name: validated.name,
+        order: nextOrder,
         description: validated.description ?? null,
         basePrice: validated.basePrice ?? null,
         priceLabel: validated.priceLabel ?? null,

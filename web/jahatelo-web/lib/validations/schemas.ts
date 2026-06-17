@@ -174,6 +174,7 @@ export const RoomAdminSchema = z.object({
   motelId: IdSchema,
   name: z.string().min(2, 'Nombre muy corto').max(100, 'Nombre muy largo'),
   description: z.string().max(1000, 'Descripción muy larga').optional().nullable(),
+  order: z.coerce.number().int().min(0).optional(),
   basePrice: z.coerce.number().int().min(0).optional().nullable(),
   priceLabel: z.string().max(50).optional().nullable(),
   price1h: z.coerce.number().int().min(0).optional().nullable(),
