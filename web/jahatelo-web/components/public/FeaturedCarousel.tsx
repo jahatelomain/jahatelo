@@ -22,6 +22,7 @@ interface FeaturedCarouselProps {
   featuredMotels: Motel[];
 }
 
+
 export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
@@ -47,15 +48,18 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
       }
     });
 
-    if (featuredMotels.length < itemsPerAd && ads.length > 0) {
-      result.push({ type: 'ad', data: ads[0] });
+    // Siempre agregar al menos un ad si hay moteles, sin importar cuántos haya
+    if (featuredMotels.length % itemsPerAd !== 0 && ads.length > 0) {
+      const adIndex = Math.floor(featuredMotels.length / itemsPerAd) % ads.length;
+      result.push({ type: 'ad', data: ads[adIndex] });
     }
 
     return result;
   }, [featuredMotels, ads]);
 
   useEffect(() => {
-    if (mixedItems.length === 0) return;
+    // No rota si hay menos de 4 ítems en total (moteles + ads)
+    if (mixedItems.length < 4) return;
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % mixedItems.length);
@@ -77,9 +81,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
 
   if (mixedItems.length === 0) return null;
 
-  const handleDotClick = (index: number) => {
-    setCurrentIndex(index);
-  };
+  const handleDotClick = (index: number) => setCurrentIndex(index);
 
   const handleAdClick = (ad: Advertisement) => {
     setSelectedAd(ad);
@@ -93,6 +95,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
         {mixedItems.map((item, index) => {
           const isActive = index === currentIndex;
 
+          /* ── SLIDE DE PUBLICIDAD ── */
           if (item.type === 'ad') {
             const ad = item.data as Advertisement;
             const photoUrl = ad.imageUrl || adPlaceholder;
@@ -103,6 +106,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                 className={`absolute inset-0 transition-opacity duration-500 ${
                   isActive ? 'opacity-100' : 'opacity-0'
                 }`}
+                style={{ pointerEvents: isActive ? 'auto' : 'none' }}
               >
                 <button
                   type="button"
@@ -116,14 +120,14 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                     quality={85}
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, 800px"
-                    loading={index === 0 ? 'eager' : 'lazy'}
-                    priority={index === 0}
+                    loading="lazy"
                     placeholder="blur"
                     blurDataURL={BLUR_DATA_URL}
                   />
                 </button>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none" />
 
+                {/* Badge PUBLICIDAD — claramente distinguible del badge DESTACADO */}
                 <div className="absolute top-4 right-4 bg-amber-500 text-white px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 shadow-lg pointer-events-none">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 2a6 6 0 00-4.472 10.03l-.788 4.734a.75.75 0 001.095.79L10 15.65l4.165 1.904a.75.75 0 001.095-.79l-.788-4.734A6 6 0 0010 2z" />
@@ -131,23 +135,24 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                   PUBLICIDAD
                 </div>
 
-                <div className="absolute bottom-0 left-0 right-0 p-6 text-white pointer-events-none">
-                  <h3 className="text-2xl md:text-3xl font-bold mb-2">
-                    {ad.title}
-                  </h3>
-                  <p className="text-sm md:text-base text-amber-200">
-                    Ver más →
-                  </p>
-                </div>
+                {/* Info del ad — botón, no Link de motel */}
+                <button
+                  type="button"
+                  onClick={() => handleAdClick(ad)}
+                  className="absolute bottom-0 left-0 right-0 p-6 text-white text-left"
+                >
+                  <h3 className="text-2xl md:text-3xl font-bold mb-2">{ad.title}</h3>
+                  <p className="text-sm md:text-base text-amber-200">Ver más →</p>
+                </button>
               </div>
             );
           }
 
+          /* ── SLIDE DE MOTEL ── */
           const motel = item.data as Motel;
           const realPhotoUrl = motel.featuredPhotoWeb || motel.featuredPhoto || motel.photos?.[0]?.url || null;
           const photoUrl = failedImages[motel.id] ? null : realPhotoUrl;
           const isPlaceholder = !photoUrl;
-          const isDisabled = motel.plan === 'FREE';
 
           return (
             <div
@@ -155,33 +160,12 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
               className={`absolute inset-0 transition-opacity duration-500 ${
                 isActive ? 'opacity-100' : 'opacity-0'
               }`}
+              style={{ pointerEvents: isActive ? 'auto' : 'none' }}
             >
               {isPlaceholder ? (
-                <div
-                  className="absolute inset-0"
-                  style={MOTEL_PATTERN_STYLE}
-                />
-              ) : isDisabled ? (
-                <div className="absolute inset-0 cursor-default">
-                  <Image
-                    src={photoUrl}
-                    alt={motel.name}
-                    fill
-                    quality={85}
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 800px"
-                    loading={index === 0 ? 'eager' : 'lazy'}
-                    priority={index === 0}
-                    placeholder="blur"
-                    blurDataURL={BLUR_DATA_URL}
-                    onError={() => setFailedImages((prev) => ({ ...prev, [motel.id]: true }))}
-                  />
-                </div>
+                <div className="absolute inset-0" style={MOTEL_PATTERN_STYLE} />
               ) : (
-                <Link
-                  href={`/motels/${motel.slug}`}
-                  className="absolute inset-0"
-                >
+                <Link href={`/motels/${motel.slug}`} className="absolute inset-0">
                   <Image
                     src={photoUrl}
                     alt={motel.name}
@@ -207,15 +191,14 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                 DESTACADO
               </div>
 
-              {/* Info del motel */}
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-white pointer-events-none">
-                <h3 className="text-2xl md:text-3xl font-bold mb-2">
-                  {motel.name}
-                </h3>
-                <p className="text-sm md:text-base text-purple-200">
-                  {isDisabled ? 'No disponible' : 'Ver detalles →'}
-                </p>
-              </div>
+              {/* Info del motel — Link real al perfil */}
+              <Link
+                href={`/motels/${motel.slug}`}
+                className="absolute bottom-0 left-0 right-0 p-6 text-white"
+              >
+                <h3 className="text-2xl md:text-3xl font-bold mb-2">{motel.name}</h3>
+                <p className="text-sm md:text-base text-purple-200">Ver detalles →</p>
+              </Link>
             </div>
           );
         })}
@@ -224,21 +207,22 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
       {/* Dots Navigation */}
       {mixedItems.length > 1 && (
         <div className="flex justify-center gap-2 mt-4">
-          {mixedItems.map((_, index) => (
+          {mixedItems.map((item, index) => (
             <button
               key={index}
               onClick={() => handleDotClick(index)}
               className={`h-2 rounded-full transition-all duration-300 ${
                 index === currentIndex
-                  ? 'w-8 bg-purple-600'
+                  ? `w-8 ${item.type === 'ad' ? 'bg-amber-500' : 'bg-purple-600'}`
                   : 'w-2 bg-gray-300 hover:bg-gray-400'
               }`}
-              aria-label={`Ir a destacado ${index + 1}`}
+              aria-label={`Ir a ${item.type === 'ad' ? 'publicidad' : 'destacado'} ${index + 1}`}
             />
           ))}
         </div>
       )}
 
+      {/* Modal de publicidad */}
       {showAdModal && selectedAd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
@@ -273,7 +257,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                   href={selectedAd.linkUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center w-full bg-purple-600 text-white rounded-lg py-2 font-semibold hover:bg-purple-700 transition"
+                  className="inline-flex items-center justify-center w-full bg-amber-500 text-white rounded-lg py-2 font-semibold hover:bg-amber-600 transition"
                 >
                   Visitar sitio
                 </a>

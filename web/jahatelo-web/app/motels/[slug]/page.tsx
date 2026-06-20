@@ -18,6 +18,7 @@ import { generateBreadcrumbSchema, generateMotelSchema } from '@/lib/seo';
 import Tabs from '@/components/public/Tabs';
 import { headers } from 'next/headers';
 import { normalizeLocalUploadPath } from '@/lib/normalizeLocalUrl';
+import { getCurrentDayGroup, getEffectivePrices } from '@/app/api/mobile/mappers';
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
 
@@ -106,6 +107,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           photos: {
             orderBy: { order: 'asc' },
           },
+          dayRates: true,
         },
         orderBy: { isFeatured: 'desc' },
       },
@@ -273,6 +275,10 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     });
   }
 
+  // Calculate current day group for prices
+  const currentDayGroup = getCurrentDayGroup();
+  const isWeekend = currentDayGroup === 'WEEKEND';
+
   // Add Rooms tab only if there are active rooms
   if (motel.rooms && motel.rooms.length > 0) {
     tabs.push({
@@ -284,14 +290,21 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
             <div className="grid grid-cols-1 gap-6">
               {motel.rooms.map((room) => {
                 const roomPhoto = room.photos[0];
+                const effectivePrices = getEffectivePrices(
+                  room as Parameters<typeof getEffectivePrices>[0],
+                  currentDayGroup
+                );
+                const hasWeekendRates = (room as typeof room & { dayRates?: Array<{ dayGroup: string }> }).dayRates?.some(
+                  (dr) => dr.dayGroup === 'WEEKEND'
+                );
                 const prices = [
-                  { label: '1h', value: room.price1h },
-                  { label: '1.5h', value: room.price1_5h },
-                  { label: '2h', value: room.price2h },
-                  { label: '3h', value: room.price3h },
-                  { label: '12h', value: room.price12h },
-                  { label: '24h', value: room.price24h },
-                  { label: 'Noche', value: room.priceNight },
+                  { label: '1h', value: effectivePrices.price1h },
+                  { label: '1.5h', value: effectivePrices.price1_5h },
+                  { label: '2h', value: effectivePrices.price2h },
+                  { label: '3h', value: effectivePrices.price3h },
+                  { label: '12h', value: effectivePrices.price12h },
+                  { label: '24h', value: effectivePrices.price24h },
+                  { label: 'Noche', value: effectivePrices.priceNight },
                 ].filter((p) => p.value !== null && p.value !== undefined);
 
                 return (
@@ -379,7 +392,14 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                         {/* Prices */}
                         {prices.length > 0 && (
                           <div className="border-t border-gray-200 pt-4">
-                            <p className="text-sm font-semibold text-gray-700 mb-2">Precios:</p>
+                            <div className="flex items-center gap-2 mb-2">
+                              <p className="text-sm font-semibold text-gray-700">Precios:</p>
+                              {hasWeekendRates && (
+                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isWeekend ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+                                  {isWeekend ? 'Fin de semana' : 'Días de semana'}
+                                </span>
+                              )}
+                            </div>
                             <PriceTable
                               prices={prices.map((price) => ({
                                 label: price.label,
@@ -588,25 +608,42 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           </div>
 
           {/* Address & Map Link */}
-          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-            <span>{motel.address}</span>
-            {(motel.mapUrl || (motel.latitude && motel.longitude)) && (
-              <a
-                href={
-                  motel.mapUrl ||
-                  `https://www.google.com/maps?q=${motel.latitude},${motel.longitude}`
+          {(() => {
+            let mapsHref: string | null = null;
+            if (motel.mapUrl) {
+              if (motel.mapUrl.includes('maps/embed') || motel.mapUrl.includes('maps.google.com/maps?')) {
+                const lngMatch = motel.mapUrl.match(/!2d(-?\d+\.\d+)/);
+                const latMatch = motel.mapUrl.match(/!3d(-?\d+\.\d+)/);
+                if (latMatch && lngMatch) {
+                  mapsHref = `https://www.google.com/maps?q=${latMatch[1]},${lngMatch[1]}`;
+                } else if (motel.latitude && motel.longitude) {
+                  mapsHref = `https://www.google.com/maps?q=${motel.latitude},${motel.longitude}`;
                 }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-600 font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                Ver en Google Maps
-              </a>
-            )}
-          </div>
+              } else {
+                mapsHref = motel.mapUrl;
+              }
+            } else if (motel.latitude && motel.longitude) {
+              mapsHref = `https://www.google.com/maps?q=${motel.latitude},${motel.longitude}`;
+            }
+            return (
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                <span>{motel.address}</span>
+                {mapsHref && (
+                  <a
+                    href={mapsHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-600 font-medium"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    Ver en Google Maps
+                  </a>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Tabs — id="promos" enables #promos hash navigation from promo cards */}

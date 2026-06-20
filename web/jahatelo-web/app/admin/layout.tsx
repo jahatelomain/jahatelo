@@ -337,10 +337,9 @@ export default function AdminLayout({
       <Toaster position="top-right" richColors closeButton />
       <div className="min-h-screen bg-slate-100 admin-theme text-slate-900">
         {/* Topbar Moderno */}
-        <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-20">
-        <div className="px-6 py-2">
-          <div className="flex items-center justify-between">
-            {/* Left: Brand + Mobile Menu Button */}
+        <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-20 h-20">
+          <div className="px-6 h-full flex items-center justify-between">
+            {/* Left: Logo + breadcrumb */}
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -354,29 +353,34 @@ export default function AdminLayout({
                   )}
                 </svg>
               </button>
-              <div className="flex items-center justify-center gap-3">
-                <img
-                  src="/logo-icon.png"
-                  alt="Jahatelo"
-                  className="h-10 w-auto object-contain"
-                />
-                <span className="text-xs text-slate-500 hidden sm:block">Admin Panel</span>
+              <img
+                src="/logo-icon.png"
+                alt="Jahatelo"
+                className="h-10 w-10 object-contain shrink-0 rounded-full"
+              />
+              <div className="hidden sm:flex flex-col">
+                <span className="text-sm font-bold text-slate-800 leading-tight">Jahatelo</span>
+                <span className="text-sm text-purple-600 font-semibold leading-tight">Admin Panel</span>
+              </div>
+              <div className="hidden md:flex items-center gap-2 ml-4 pl-4 border-l border-slate-200">
+                <span className="text-sm text-slate-400">/</span>
+                <span className="text-sm font-semibold text-slate-700">{getBreadcrumb()}</span>
               </div>
             </div>
 
-            {/* Right: Actions & Avatar */}
-            <div className="flex items-center gap-4">
-              <div className="hidden md:flex flex-col text-right">
-                <span className="text-sm font-medium text-slate-900">
+            {/* Right: User info + avatar */}
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex flex-col items-end">
+                <span className="text-sm font-semibold text-slate-900 leading-tight">
                   {user?.name || 'Administrador'}
                 </span>
-                <span className="text-xs text-slate-500">{user?.role}</span>
+                <span className="text-xs font-medium text-purple-600 leading-tight">{user?.role}</span>
               </div>
 
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen((prev) => !prev)}
-                  className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-fuchsia-500 flex items-center justify-center text-white text-sm font-semibold hover:shadow-lg transition-all cursor-pointer"
+                  className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-fuchsia-500 flex items-center justify-center text-white text-sm font-bold hover:shadow-lg hover:scale-105 transition-all cursor-pointer"
                   title="Opciones de usuario"
                 >
                   {profileInitials}
@@ -397,8 +401,7 @@ export default function AdminLayout({
               </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (

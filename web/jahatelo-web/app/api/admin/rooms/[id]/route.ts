@@ -46,6 +46,7 @@ export async function PATCH(
       data: {
         ...(validated.name !== undefined && { name: validated.name }),
         ...(validated.description !== undefined && { description: validated.description }),
+        ...(validated.order !== undefined && { order: validated.order }),
         ...(validated.basePrice !== undefined && { basePrice: validated.basePrice ?? null }),
         ...(validated.priceLabel !== undefined && { priceLabel: validated.priceLabel ?? null }),
         ...(validated.price1h !== undefined && { price1h: validated.price1h ?? null }),
@@ -75,8 +76,38 @@ export async function PATCH(
             amenity: true,
           },
         },
+        dayRates: true,
       },
     });
+
+    // Upsert dayRates if provided
+    if (validated.dayRates !== undefined && validated.dayRates !== null) {
+      for (const dr of validated.dayRates) {
+        await prisma.roomDayRate.upsert({
+          where: { roomTypeId_dayGroup: { roomTypeId: idResult.data, dayGroup: dr.dayGroup } },
+          update: {
+            price1h: dr.price1h ?? null,
+            price1_5h: dr.price1_5h ?? null,
+            price2h: dr.price2h ?? null,
+            price3h: dr.price3h ?? null,
+            price12h: dr.price12h ?? null,
+            price24h: dr.price24h ?? null,
+            priceNight: dr.priceNight ?? null,
+          },
+          create: {
+            roomTypeId: idResult.data,
+            dayGroup: dr.dayGroup,
+            price1h: dr.price1h ?? null,
+            price1_5h: dr.price1_5h ?? null,
+            price2h: dr.price2h ?? null,
+            price3h: dr.price3h ?? null,
+            price12h: dr.price12h ?? null,
+            price24h: dr.price24h ?? null,
+            priceNight: dr.priceNight ?? null,
+          },
+        });
+      }
+    }
 
     await touchMotel(room.motelId);
 

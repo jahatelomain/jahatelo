@@ -22,10 +22,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Asignar order como el siguiente disponible para este motel
+    const lastRoom = await prisma.roomType.findFirst({
+      where: { motelId: validated.motelId },
+      orderBy: { order: 'desc' },
+      select: { order: true },
+    });
+    const nextOrder = (lastRoom?.order ?? -1) + 1;
+
     const room = await prisma.roomType.create({
       data: {
         motelId: validated.motelId,
         name: validated.name,
+        order: nextOrder,
         description: validated.description ?? null,
         basePrice: validated.basePrice ?? null,
         priceLabel: validated.priceLabel ?? null,
@@ -48,6 +57,20 @@ export async function POST(request: NextRequest) {
               })),
             }
           : undefined,
+        dayRates: validated.dayRates && validated.dayRates.length > 0
+          ? {
+              create: validated.dayRates.map((dr) => ({
+                dayGroup: dr.dayGroup,
+                price1h: dr.price1h ?? null,
+                price1_5h: dr.price1_5h ?? null,
+                price2h: dr.price2h ?? null,
+                price3h: dr.price3h ?? null,
+                price12h: dr.price12h ?? null,
+                price24h: dr.price24h ?? null,
+                priceNight: dr.priceNight ?? null,
+              })),
+            }
+          : undefined,
       },
       include: {
         amenities: {
@@ -55,6 +78,7 @@ export async function POST(request: NextRequest) {
             amenity: true,
           },
         },
+        dayRates: true,
       },
     });
 

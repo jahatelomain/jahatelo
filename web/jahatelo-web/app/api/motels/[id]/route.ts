@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
+import { getCurrentDayGroup, getEffectivePrices } from '@/app/api/mobile/mappers';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -36,6 +37,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
               },
             },
             photos: true,
+            dayRates: true,
           },
         },
         menuCategories: {
@@ -76,17 +78,21 @@ export async function GET(request: NextRequest, context: RouteContext) {
       null;
     const photos = sortedPhotos.map(p => p.url);
 
-    // Calculate starting price from room prices
-    const roomPrices = motel.rooms.flatMap(room => [
-      room.price1h,
-      room.price1_5h,
-      room.price2h,
-      room.price3h,
-      room.price12h,
-      room.price24h,
-      room.priceNight,
-      room.basePrice,
-    ].filter((price): price is number => price != null && price > 0));
+    // Calculate starting price from room prices (considering day of week)
+    const dayGroup = getCurrentDayGroup();
+    const roomPrices = motel.rooms.flatMap(room => {
+      const effective = getEffectivePrices(room as Parameters<typeof getEffectivePrices>[0], dayGroup);
+      return [
+        effective.price1h,
+        effective.price1_5h,
+        effective.price2h,
+        effective.price3h,
+        effective.price12h,
+        effective.price24h,
+        effective.priceNight,
+        room.basePrice,
+      ].filter((price): price is number => price != null && price > 0);
+    });
     const startingPrice = roomPrices.length > 0 ? Math.min(...roomPrices) : 0;
 
     const transformedMotel = {
