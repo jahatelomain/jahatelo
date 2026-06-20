@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { IdSchema, MotelAnalyticsQuerySchema } from '@/lib/validations/schemas';
+import { resolveAnalyticsEnvironment } from '@/lib/analyticsEnvironment';
 import { z } from 'zod';
 
 /**
@@ -59,12 +60,18 @@ export async function GET(
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    // Obtener eventos del período
+    const analyticsEnvironment = resolveAnalyticsEnvironment(request);
+
+    // Obtener eventos del período, filtrando por entorno
     const events = await prisma.motelAnalytics.findMany({
       where: {
         motelId: idResult.data,
         timestamp: {
           gte: startDate,
+        },
+        metadata: {
+          path: ['environment'],
+          equals: analyticsEnvironment,
         },
       },
       orderBy: {
@@ -131,6 +138,7 @@ export async function GET(
         days,
         startDate,
         endDate: new Date(),
+        environment: analyticsEnvironment,
       },
       summary: {
         totalViews,

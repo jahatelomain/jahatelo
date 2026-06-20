@@ -49,10 +49,21 @@ type Motel = {
   menuCategories?: MenuCategory[];
 };
 
+type DayRateForm = {
+  price1h: string;
+  price1_5h: string;
+  price2h: string;
+  price3h: string;
+  price12h: string;
+  price24h: string;
+  priceNight: string;
+};
+
 type RoomType = {
   id: string;
   name: string;
   description: string | null;
+  order?: number;
   basePrice: number | null;
   priceLabel: string | null;
   price1h: number | null;
@@ -78,6 +89,16 @@ type RoomType = {
     id: string;
     url: string;
     order: number;
+  }>;
+  dayRates?: Array<{
+    dayGroup: 'WEEKDAY' | 'WEEKEND';
+    price1h: number | null;
+    price1_5h: number | null;
+    price2h: number | null;
+    price3h: number | null;
+    price12h: number | null;
+    price24h: number | null;
+    priceNight: number | null;
   }>;
 };
 
@@ -111,7 +132,25 @@ type Promo = {
   validUntil: string | null;
   isActive: boolean;
   isGlobal: boolean;
+  hasPromoCode: boolean;
+  codeRepeatRule: string | null;
+  codeLimit: number | null;
+  codeLimitPeriod: string | null;
 };
+
+type PromoCodeEntry = {
+  id: string;
+  code: string;
+  status: 'PENDING' | 'USED';
+  deviceId: string;
+  createdAt: string;
+  redeemedAt: string | null;
+  redeemedBy: string | null;
+};
+
+type RedeemResult =
+  | { valid: false; reason: 'INVALID_CODE' | 'WRONG_PROMO' | 'ALREADY_USED' | 'PROMO_INACTIVE'; redeemedAt?: string }
+  | { valid: true; codeId?: string; promoTitle?: string; promoDescription?: string | null; promoImageUrl?: string | null; confirmed?: boolean };
 
 export default function MotelDetailPage() {
   const countryOptions = ['Paraguay', 'Argentina', 'Peru', 'Bolivia', 'Chile', 'Brasil'];
@@ -163,6 +202,11 @@ export default function MotelDetailPage() {
     featuredPhotoApp: '',
   });
 
+  const emptyDayRate = (): DayRateForm => ({
+    price1h: '', price1_5h: '', price2h: '', price3h: '',
+    price12h: '', price24h: '', priceNight: '',
+  });
+
   const [showRoomForm, setShowRoomForm] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [roomForm, setRoomForm] = useState({
@@ -183,6 +227,8 @@ export default function MotelDetailPage() {
     isFeatured: false,
     amenityIds: [] as string[],
   });
+  const [weekdayRates, setWeekdayRates] = useState<DayRateForm>(emptyDayRate());
+  const [weekendRates, setWeekendRates] = useState<DayRateForm>(emptyDayRate());
 
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [categoryForm, setCategoryForm] = useState({ title: '', sortOrder: 0 });
@@ -197,12 +243,25 @@ export default function MotelDetailPage() {
     description: '',
     imageUrl: '',
     isGlobal: false,
+    hasPromoCode: false,
+    codeRepeatRule: 'NEVER' as string,
+    codeLimit: '',
+    codeLimitPeriod: 'UNLIMITED' as string,
   });
 
   const [promos, setPromos] = useState<Promo[]>([]);
   const [showPromoForm, setShowPromoForm] = useState(false);
   const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
   const [promoForm, setPromoForm] = useState(createInitialPromoForm());
+
+  // PromoCode state
+  const [promoCodesMap, setPromoCodesMap] = useState<Record<string, PromoCodeEntry[]>>({});
+  const [promoCodesSummary, setPromoCodesSummary] = useState<Record<string, { total: number; pending: number; used: number }>>({});
+  const [expandedCodes, setExpandedCodes] = useState<Record<string, boolean>>({});
+  const [redeemInput, setRedeemInput] = useState<Record<string, string>>({});
+  const [redeemResult, setRedeemResult] = useState<Record<string, RedeemResult | null>>({});
+  const [redeemLoading, setRedeemLoading] = useState<Record<string, boolean>>({});
+  const [openPromoMenuId, setOpenPromoMenuId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
   const [uploadingFeatured, setUploadingFeatured] = useState(false);
   const [uploadingFeaturedWeb, setUploadingFeaturedWeb] = useState(false);
@@ -211,6 +270,8 @@ export default function MotelDetailPage() {
   const [uploadingPromo, setUploadingPromo] = useState(false);
   const [draggedPhotoId, setDraggedPhotoId] = useState<string | null>(null);
   const [dragOverPhotoId, setDragOverPhotoId] = useState<string | null>(null);
+  const [draggedRoomId, setDraggedRoomId] = useState<string | null>(null);
+  const [dragOverRoomId, setDragOverRoomId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -540,6 +601,14 @@ export default function MotelDetailPage() {
     return null;
   };
 
+  const buildPromoPayload = (form: ReturnType<typeof createInitialPromoForm>) => ({
+    ...form,
+    hasPromoCode: form.hasPromoCode,
+    codeRepeatRule: form.hasPromoCode ? (form.codeRepeatRule || null) : null,
+    codeLimit: form.hasPromoCode && form.codeLimit !== '' ? Number(form.codeLimit) : null,
+    codeLimitPeriod: form.hasPromoCode ? (form.codeLimitPeriod || null) : null,
+  });
+
   const handleSavePromo = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -548,7 +617,7 @@ export default function MotelDetailPage() {
         const res = await fetch(`/api/admin/promos/${editingPromoId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(promoForm),
+          body: JSON.stringify(buildPromoPayload(promoForm)),
         });
         if (res.ok) {
           fetchPromos();
@@ -564,7 +633,7 @@ export default function MotelDetailPage() {
         const res = await fetch('/api/admin/promos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...promoForm, motelId: id }),
+          body: JSON.stringify({ ...buildPromoPayload(promoForm), motelId: id }),
         });
         if (res.ok) {
           fetchPromos();
@@ -610,8 +679,67 @@ export default function MotelDetailPage() {
       description: promo.description || '',
       imageUrl: promo.imageUrl || '',
       isGlobal: promo.isGlobal || false,
+      hasPromoCode: promo.hasPromoCode || false,
+      codeRepeatRule: promo.codeRepeatRule || 'NEVER',
+      codeLimit: promo.codeLimit !== null && promo.codeLimit !== undefined ? String(promo.codeLimit) : '',
+      codeLimitPeriod: promo.codeLimitPeriod || 'UNLIMITED',
     });
     setShowPromoForm(true);
+  };
+
+  const fetchPromoCodes = async (promoId: string) => {
+    try {
+      const res = await fetch(`/api/admin/promos/${promoId}/codes?limit=50`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setPromoCodesMap((prev) => ({ ...prev, [promoId]: data.data }));
+      setPromoCodesSummary((prev) => ({ ...prev, [promoId]: data.summary }));
+    } catch (error) {
+      console.error('Error fetching promo codes:', error);
+    }
+  };
+
+  const handleVerifyCode = async (promoId: string) => {
+    const code = redeemInput[promoId]?.trim().toUpperCase();
+    if (!code || code.length !== 6) return;
+    setRedeemLoading((prev) => ({ ...prev, [promoId]: true }));
+    setRedeemResult((prev) => ({ ...prev, [promoId]: null }));
+    try {
+      const res = await fetch(`/api/admin/promos/${promoId}/redeem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, confirm: false }),
+      });
+      const data = await res.json();
+      setRedeemResult((prev) => ({ ...prev, [promoId]: data }));
+    } catch (error) {
+      console.error('Error verifying code:', error);
+    } finally {
+      setRedeemLoading((prev) => ({ ...prev, [promoId]: false }));
+    }
+  };
+
+  const handleConfirmRedeem = async (promoId: string) => {
+    const code = redeemInput[promoId]?.trim().toUpperCase();
+    if (!code) return;
+    setRedeemLoading((prev) => ({ ...prev, [promoId]: true }));
+    try {
+      const res = await fetch(`/api/admin/promos/${promoId}/redeem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, confirm: true }),
+      });
+      const data = await res.json();
+      setRedeemResult((prev) => ({ ...prev, [promoId]: data }));
+      if (data.valid && data.confirmed) {
+        setRedeemInput((prev) => ({ ...prev, [promoId]: '' }));
+        fetchPromoCodes(promoId);
+      }
+    } catch (error) {
+      console.error('Error confirming redeem:', error);
+    } finally {
+      setRedeemLoading((prev) => ({ ...prev, [promoId]: false }));
+    }
   };
 
   const handlePromoFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -779,6 +907,24 @@ export default function MotelDetailPage() {
       if (normalizedForm[f] === '') normalizedForm[f] = null;
     });
 
+    // Build dayRates array
+    const normalizeDayRate = (dr: DayRateForm) => ({
+      price1h: dr.price1h !== '' ? Number(dr.price1h) : null,
+      price1_5h: dr.price1_5h !== '' ? Number(dr.price1_5h) : null,
+      price2h: dr.price2h !== '' ? Number(dr.price2h) : null,
+      price3h: dr.price3h !== '' ? Number(dr.price3h) : null,
+      price12h: dr.price12h !== '' ? Number(dr.price12h) : null,
+      price24h: dr.price24h !== '' ? Number(dr.price24h) : null,
+      priceNight: dr.priceNight !== '' ? Number(dr.priceNight) : null,
+    });
+    const dayRatesPayload = [];
+    const wdValues = normalizeDayRate(weekdayRates);
+    const weValues = normalizeDayRate(weekendRates);
+    const hasWeekdayData = Object.values(wdValues).some((v) => v !== null);
+    const hasWeekendData = Object.values(weValues).some((v) => v !== null);
+    if (hasWeekdayData) dayRatesPayload.push({ dayGroup: 'WEEKDAY', ...wdValues });
+    if (hasWeekendData) dayRatesPayload.push({ dayGroup: 'WEEKEND', ...weValues });
+
     try {
       const res = await fetch(url, {
         method,
@@ -786,6 +932,7 @@ export default function MotelDetailPage() {
         body: JSON.stringify({
           motelId: id,
           ...normalizedForm,
+          dayRates: dayRatesPayload.length > 0 ? dayRatesPayload : undefined,
         }),
       });
 
@@ -811,6 +958,8 @@ export default function MotelDetailPage() {
           isFeatured: false,
           amenityIds: []
         });
+        setWeekdayRates(emptyDayRate());
+        setWeekendRates(emptyDayRate());
         setSaveStatus('success');
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
@@ -842,6 +991,27 @@ export default function MotelDetailPage() {
       isFeatured: room.isFeatured || false,
       amenityIds: (room.amenities ?? []).map((a) => a.amenity.id),
     });
+    // Populate day rates
+    const wd = room.dayRates?.find((dr) => dr.dayGroup === 'WEEKDAY');
+    const we = room.dayRates?.find((dr) => dr.dayGroup === 'WEEKEND');
+    setWeekdayRates(wd ? {
+      price1h: wd.price1h?.toString() || '',
+      price1_5h: wd.price1_5h?.toString() || '',
+      price2h: wd.price2h?.toString() || '',
+      price3h: wd.price3h?.toString() || '',
+      price12h: wd.price12h?.toString() || '',
+      price24h: wd.price24h?.toString() || '',
+      priceNight: wd.priceNight?.toString() || '',
+    } : emptyDayRate());
+    setWeekendRates(we ? {
+      price1h: we.price1h?.toString() || '',
+      price1_5h: we.price1_5h?.toString() || '',
+      price2h: we.price2h?.toString() || '',
+      price3h: we.price3h?.toString() || '',
+      price12h: we.price12h?.toString() || '',
+      price24h: we.price24h?.toString() || '',
+      priceNight: we.priceNight?.toString() || '',
+    } : emptyDayRate());
     setShowRoomForm(true);
     setTimeout(() => {
       roomFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1079,6 +1249,27 @@ export default function MotelDetailPage() {
     } catch (error) {
       console.error('Error reordering room photos:', error);
       alert('Error al reordenar fotos');
+    }
+  };
+
+  const handleReorderRooms = async (orderedRooms: any[]) => {
+    if (!motel) return;
+    // Actualizar UI optimistamente
+    setMotel((prev) => prev ? { ...prev, rooms: orderedRooms } : prev);
+    try {
+      await fetch('/api/admin/rooms/reorder', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          motelId: motel.id,
+          roomIds: orderedRooms.map((r) => r.id),
+        }),
+      });
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus('idle'), 2500);
+    } catch (error) {
+      console.error('Error reordering rooms:', error);
+      fetchMotel();
     }
   };
 
@@ -1689,6 +1880,76 @@ export default function MotelDetailPage() {
                     </label>
                   </div>
                 )}
+
+                {/* PromoCode section */}
+                <div className="rounded-xl border-2 border-dashed border-purple-200 bg-purple-50/40 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                      </svg>
+                      <span className="text-sm font-semibold text-slate-800">Código Promocional</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={promoForm.hasPromoCode}
+                        onChange={(e) => setPromoForm({ ...promoForm, hasPromoCode: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-10 h-6 bg-slate-200 peer-focus:ring-2 peer-focus:ring-purple-400 rounded-full peer peer-checked:bg-purple-600 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-4" />
+                      <span className="ml-2 text-sm font-medium text-slate-700">
+                        {promoForm.hasPromoCode ? 'Activado' : 'Desactivado'}
+                      </span>
+                    </label>
+                  </div>
+                  {promoForm.hasPromoCode && (
+                    <div className="space-y-3 pt-2 border-t border-purple-100">
+                      <p className="text-xs text-purple-700 bg-purple-100 rounded-lg px-3 py-2">
+                        Los usuarios podrán reclamar un código desde la app y presentarlo en el motel.
+                      </p>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">¿Cada cuánto puede reclamar un usuario?</label>
+                        <select
+                          value={promoForm.codeRepeatRule}
+                          onChange={(e) => setPromoForm({ ...promoForm, codeRepeatRule: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white"
+                        >
+                          <option value="NEVER">Una sola vez por persona</option>
+                          <option value="DAILY">Una vez por día</option>
+                          <option value="WEEKLY">Una vez por semana</option>
+                          <option value="MONTHLY">Una vez por mes</option>
+                        </select>
+                      </div>
+                      <div className="flex gap-3">
+                        <div className="flex-1">
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Límite total de códigos</label>
+                          <input
+                            type="number"
+                            min={1}
+                            value={promoForm.codeLimit}
+                            onChange={(e) => setPromoForm({ ...promoForm, codeLimit: e.target.value })}
+                            placeholder="Sin tope"
+                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Período del límite</label>
+                          <select
+                            value={promoForm.codeLimitPeriod}
+                            onChange={(e) => setPromoForm({ ...promoForm, codeLimitPeriod: e.target.value })}
+                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white"
+                          >
+                            <option value="UNLIMITED">Sin tope</option>
+                            <option value="WEEKLY">Por semana</option>
+                            <option value="MONTHLY">Por mes</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   <button
                     type="button"
@@ -1737,11 +1998,18 @@ export default function MotelDetailPage() {
                   <div className="p-4">
                     <div className="flex items-start justify-between mb-2">
                       <h3 className="text-lg font-semibold text-slate-900 flex-1">{promo.title}</h3>
-                      {currentUser?.role === 'SUPERADMIN' && promo.isGlobal && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-semibold">
-                          🏠 Home
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {promo.hasPromoCode && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full font-semibold">
+                            Código
+                          </span>
+                        )}
+                        {currentUser?.role === 'SUPERADMIN' && promo.isGlobal && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-semibold">
+                            🏠 Home
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {promo.description && (
                       <p className="text-sm text-slate-600 mb-3">{promo.description}</p>
@@ -1753,22 +2021,163 @@ export default function MotelDetailPage() {
                       >
                         Editar
                       </button>
-                      <details className="relative">
-                        <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setOpenPromoMenuId(openPromoMenuId === promo.id ? null : promo.id)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 transition-colors cursor-pointer"
+                        >
                           <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
                           </svg>
-                        </summary>
-                        <div className="absolute right-0 mt-2 w-32 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
+                        </button>
+                        {openPromoMenuId === promo.id && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setOpenPromoMenuId(null)} />
+                            <div className="absolute right-0 mt-2 w-32 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
+                              <button
+                                onClick={() => { handleDeletePromo(promo.id); setOpenPromoMenuId(null); }}
+                                className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50 rounded-lg"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* PromoCode validator + history */}
+                    {promo.hasPromoCode && (
+                      <div className="mt-4 border-t border-slate-100 pt-4 space-y-3">
+                        <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Validar Código</p>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            maxLength={6}
+                            value={redeemInput[promo.id] || ''}
+                            onChange={(e) => setRedeemInput((prev) => ({ ...prev, [promo.id]: e.target.value.toUpperCase() }))}
+                            placeholder="XXXXXX"
+                            className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono uppercase focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                          />
                           <button
-                            onClick={() => handleDeletePromo(promo.id)}
-                            className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                            onClick={() => handleVerifyCode(promo.id)}
+                            disabled={redeemLoading[promo.id] || (redeemInput[promo.id] || '').length !== 6}
+                            className="px-4 py-2 bg-slate-700 text-white text-sm rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors"
                           >
-                            Eliminar
+                            {redeemLoading[promo.id] ? '...' : 'Verificar'}
                           </button>
                         </div>
-                      </details>
-                    </div>
+
+                        {/* Redeem result */}
+                        {redeemResult[promo.id] && (() => {
+                          const result = redeemResult[promo.id]!;
+                          if (!result.valid) {
+                            const messages: Record<string, string> = {
+                              INVALID_CODE: 'Código no encontrado',
+                              WRONG_PROMO: 'Este código no corresponde a esta promo',
+                              ALREADY_USED: `Ya fue utilizado${result.redeemedAt ? ` el ${new Date(result.redeemedAt).toLocaleDateString('es-PY')}` : ''}`,
+                              PROMO_INACTIVE: 'Esta promo no está activa',
+                            };
+                            return (
+                              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                                {messages[result.reason] || 'Código inválido'}
+                              </div>
+                            );
+                          }
+                          if (result.confirmed) {
+                            return (
+                              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700 font-medium">
+                                ✓ Código marcado como utilizado
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="bg-white border border-green-300 rounded-lg p-3 space-y-2">
+                              {result.promoImageUrl && (
+                                <img src={result.promoImageUrl} alt={result.promoTitle} className="w-full h-24 object-cover rounded" />
+                              )}
+                              <p className="text-sm font-semibold text-slate-900">{result.promoTitle}</p>
+                              {result.promoDescription && <p className="text-xs text-slate-600">{result.promoDescription}</p>}
+                              <button
+                                onClick={() => {
+                                  setConfirmAction({
+                                    title: 'Confirmar uso del código',
+                                    message: 'Esta acción es irreversible. ¿Confirmar que el código fue utilizado?',
+                                    confirmText: 'Confirmar uso',
+                                    cancelText: 'Cancelar',
+                                    danger: true,
+                                    onConfirm: () => {
+                                      setConfirmAction(null);
+                                      handleConfirmRedeem(promo.id);
+                                    },
+                                  });
+                                }}
+                                disabled={redeemLoading[promo.id]}
+                                className="w-full py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors font-medium"
+                              >
+                                Confirmar uso (irreversible)
+                              </button>
+                            </div>
+                          );
+                        })()}
+
+                        {/* History toggle */}
+                        <button
+                          onClick={() => {
+                            const isOpen = expandedCodes[promo.id];
+                            setExpandedCodes((prev) => ({ ...prev, [promo.id]: !isOpen }));
+                            if (!isOpen) fetchPromoCodes(promo.id);
+                          }}
+                          className="text-xs text-purple-600 hover:underline"
+                        >
+                          {expandedCodes[promo.id] ? 'Ocultar historial' : 'Ver historial de códigos'}
+                          {promoCodesSummary[promo.id] && ` (${promoCodesSummary[promo.id].total} total)`}
+                        </button>
+
+                        {expandedCodes[promo.id] && (
+                          <div className="space-y-2">
+                            {promoCodesSummary[promo.id] && (
+                              <div className="flex gap-3 text-xs text-slate-500">
+                                <span>Total: <strong>{promoCodesSummary[promo.id].total}</strong></span>
+                                <span>Pendientes: <strong>{promoCodesSummary[promo.id].pending}</strong></span>
+                                <span>Usados: <strong>{promoCodesSummary[promo.id].used}</strong></span>
+                              </div>
+                            )}
+                            {(promoCodesMap[promo.id] || []).length === 0 ? (
+                              <p className="text-xs text-slate-400 italic">Sin códigos generados aún</p>
+                            ) : (
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-xs">
+                                  <thead>
+                                    <tr className="text-left text-slate-500 border-b border-slate-100">
+                                      <th className="pb-1 pr-2">Código</th>
+                                      <th className="pb-1 pr-2">Estado</th>
+                                      <th className="pb-1 pr-2">Generado</th>
+                                      <th className="pb-1 pr-2">Usado el</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {(promoCodesMap[promo.id] || []).map((c) => (
+                                      <tr key={c.id} className="border-b border-slate-50">
+                                        <td className="py-1 pr-2 font-mono font-bold">{c.code}</td>
+                                        <td className="py-1 pr-2">
+                                          <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${c.status === 'USED' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                            {c.status === 'USED' ? 'Usado' : 'Pendiente'}
+                                          </span>
+                                        </td>
+                                        <td className="py-1 pr-2 text-slate-500">{new Date(c.createdAt).toLocaleDateString('es-PY')}</td>
+                                        <td className="py-1 pr-2 text-slate-500">{c.redeemedAt ? new Date(c.redeemedAt).toLocaleDateString('es-PY') : '-'}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
@@ -2465,6 +2874,8 @@ export default function MotelDetailPage() {
                       isFeatured: false,
                       amenityIds: []
                     });
+                    setWeekdayRates(emptyDayRate());
+                    setWeekendRates(emptyDayRate());
                   }}
                   className="text-slate-400 hover:text-slate-600 transition-colors"
                 >
@@ -2575,6 +2986,59 @@ export default function MotelDetailPage() {
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                         placeholder="Gs."
                       />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Precios por Día de Semana */}
+                <div className="border-t border-slate-200 pt-4">
+                  <h4 className="text-sm font-semibold text-slate-900 mb-1 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Precios por Día (opcional)
+                  </h4>
+                  <p className="text-xs text-slate-500 mb-3">Dejá vacío para usar los precios base. Si se llenan, sobreescriben los precios base según el día.</p>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Semana (Dom–Jue) */}
+                    <div className="border border-blue-100 rounded-lg p-3 bg-blue-50/40">
+                      <p className="text-xs font-semibold text-blue-700 mb-2 uppercase tracking-wide">Dom – Jue (Semana)</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(['price1h','price1_5h','price2h','price3h','price12h','price24h','priceNight'] as const).map((field) => (
+                          <div key={field}>
+                            <label className="block text-xs text-slate-500 mb-1">
+                              {field === 'price1h' ? '1h' : field === 'price1_5h' ? '1.5h' : field === 'price2h' ? '2h' : field === 'price3h' ? '3h' : field === 'price12h' ? '12h' : field === 'price24h' ? '24h' : 'Noche'}
+                            </label>
+                            <input
+                              type="number"
+                              value={weekdayRates[field]}
+                              onChange={(e) => setWeekdayRates({ ...weekdayRates, [field]: e.target.value })}
+                              className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                              placeholder="Gs."
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Fin de Semana (Vie–Sáb) */}
+                    <div className="border border-orange-100 rounded-lg p-3 bg-orange-50/40">
+                      <p className="text-xs font-semibold text-orange-700 mb-2 uppercase tracking-wide">Vie – Sáb (Fin de semana)</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(['price1h','price1_5h','price2h','price3h','price12h','price24h','priceNight'] as const).map((field) => (
+                          <div key={field}>
+                            <label className="block text-xs text-slate-500 mb-1">
+                              {field === 'price1h' ? '1h' : field === 'price1_5h' ? '1.5h' : field === 'price2h' ? '2h' : field === 'price3h' ? '3h' : field === 'price12h' ? '12h' : field === 'price24h' ? '24h' : 'Noche'}
+                            </label>
+                            <input
+                              type="number"
+                              value={weekendRates[field]}
+                              onChange={(e) => setWeekendRates({ ...weekendRates, [field]: e.target.value })}
+                              className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                              placeholder="Gs."
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2701,6 +3165,8 @@ export default function MotelDetailPage() {
                         isFeatured: false,
                         amenityIds: []
                       });
+                      setWeekdayRates(emptyDayRate());
+                      setWeekendRates(emptyDayRate());
                     }}
                     className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
                   >
@@ -2728,11 +3194,51 @@ export default function MotelDetailPage() {
               </div>
             ) : (
               rooms.map((room) => (
-                <div key={room.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:border-purple-200 transition-colors">
+                <div
+                  key={room.id}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = 'move';
+                    setDraggedRoomId(room.id);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (room.id !== draggedRoomId) setDragOverRoomId(room.id);
+                  }}
+                  onDragLeave={() => setDragOverRoomId(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (!draggedRoomId || draggedRoomId === room.id) return;
+                    const sorted = [...rooms].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+                    const fromIdx = sorted.findIndex((r) => r.id === draggedRoomId);
+                    const toIdx = sorted.findIndex((r) => r.id === room.id);
+                    const reordered = [...sorted];
+                    const [moved] = reordered.splice(fromIdx, 1);
+                    reordered.splice(toIdx, 0, moved);
+                    handleReorderRooms(reordered);
+                    setDraggedRoomId(null);
+                    setDragOverRoomId(null);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedRoomId(null);
+                    setDragOverRoomId(null);
+                  }}
+                  className={[
+                    'bg-white rounded-xl border shadow-sm p-6 transition-all cursor-grab active:cursor-grabbing',
+                    draggedRoomId === room.id ? 'opacity-50 scale-[0.98]' : '',
+                    dragOverRoomId === room.id && draggedRoomId !== room.id ? 'ring-2 ring-purple-400 border-purple-300' : 'border-slate-200 hover:border-purple-200',
+                  ].join(' ')}
+                >
                   {/* Parte superior: Nombre + Badges */}
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4 pb-4 border-b border-slate-200">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-slate-900 mb-2">{room.name}</h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <svg className="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                        </svg>
+                        <h3 className="text-lg font-semibold text-slate-900">{room.name}</h3>
+                      </div>
                       <div className="flex flex-wrap gap-2">
                         {room.isFeatured && (
                           <span className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-semibold">

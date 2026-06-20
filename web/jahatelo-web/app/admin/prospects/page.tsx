@@ -65,6 +65,7 @@ export default function ProspectsPage() {
   const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [notes, setNotes] = useState('');
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -332,7 +333,7 @@ export default function ProspectsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
@@ -415,21 +416,32 @@ export default function ProspectsPage() {
                         >
                           Notas
                         </button>
-                        <details className="relative">
-                          <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
+                        <div className="relative">
+                          <button
+                            onClick={() => setOpenMenuId(openMenuId === prospect.id ? null : prospect.id)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200"
+                          >
                             <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                               <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
                             </svg>
-                          </summary>
-                          <div className="absolute right-0 mt-2 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
-                            <button
-                              onClick={() => handleDelete(prospect.id)}
-                              className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                        </details>
+                          </button>
+                          {openMenuId === prospect.id && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-40"
+                                onClick={() => setOpenMenuId(null)}
+                              />
+                              <div className="absolute right-0 mt-2 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-50">
+                                <button
+                                  onClick={() => { handleDelete(prospect.id); setOpenMenuId(null); }}
+                                  className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50 rounded-lg"
+                                >
+                                  Eliminar
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>

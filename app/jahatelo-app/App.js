@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import { initSentry } from './services/sentryService';
 import { NavigationContainer } from '@react-navigation/native';
+
+// Inicializar Sentry antes de cualquier render (solo producción)
+initSentry();
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import {

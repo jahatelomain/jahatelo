@@ -9,6 +9,11 @@ Sentry.init({
   // Entorno
   environment: process.env.NODE_ENV,
 
+  // Identificar origen
+  initialScope: {
+    tags: { platform: 'web-edge' },
+  },
+
   // Trazas (10% de las transacciones)
   tracesSampleRate: 0.1,
 

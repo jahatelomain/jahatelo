@@ -107,6 +107,29 @@ enum PlanType {
   DIAMOND
 }
 
+enum DayGroup {
+  WEEKDAY   // Domingo a Jueves
+  WEEKEND   // Viernes y Sábado
+}
+
+enum CodeRepeatRule {
+  DAILY
+  WEEKLY
+  MONTHLY
+  NEVER
+}
+
+enum CodeLimitPeriod {
+  WEEKLY
+  MONTHLY
+  UNLIMITED
+}
+
+enum PromoCodeStatus {
+  PENDING
+  USED
+}
+
 // ============================================
 // MOTEL
 // ============================================
@@ -220,6 +243,9 @@ model RoomType {
   isFeatured        Boolean       @default(false)
   isActive          Boolean       @default(true)
 
+  // Orden de aparición entre habitaciones del motel
+  order             Int           @default(0)
+
   // Legacy (mantener compatibilidad)
   basePrice         Int?
   priceLabel        String?
@@ -232,6 +258,29 @@ model RoomType {
   photos            Photo[]
   reviews           Review[]
   roomPhotos        RoomPhoto[]
+  dayRates          RoomDayRate[]
+}
+
+// ============================================
+// ROOM DAY RATES (precios por día de semana)
+// ============================================
+
+model RoomDayRate {
+  id         String    @id @default(cuid())
+  roomType   RoomType  @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  roomTypeId String
+  dayGroup   DayGroup
+  price1h    Int?
+  price1_5h  Int?
+  price2h    Int?
+  price3h    Int?
+  price12h   Int?
+  price24h   Int?
+  priceNight Int?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([roomTypeId, dayGroup])
 }
 
 // ============================================
@@ -566,18 +615,41 @@ model SocialLink {
 // ============================================
 
 model Promo {
-  id          String    @id @default(cuid())
-  motel       Motel     @relation(fields: [motelId], references: [id], onDelete: Cascade)
-  motelId     String
-  title       String
-  description String?
-  imageUrl    String?
-  validFrom   DateTime?
-  validUntil  DateTime?
-  isActive    Boolean   @default(true)
-  isGlobal    Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id               String           @id @default(cuid())
+  motel            Motel            @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId          String
+  title            String
+  description      String?
+  imageUrl         String?
+  validFrom        DateTime?
+  validUntil       DateTime?
+  isActive         Boolean          @default(true)
+  isGlobal         Boolean          @default(false)
+  hasPromoCode     Boolean          @default(false)
+  codeRepeatRule   CodeRepeatRule?
+  codeLimit        Int?
+  codeLimitPeriod  CodeLimitPeriod?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  promoCodes       PromoCode[]
+}
+
+model PromoCode {
+  id          String          @id @default(cuid())
+  promo       Promo           @relation(fields: [promoId], references: [id], onDelete: Cascade)
+  promoId     String
+  code        String          @unique
+  deviceId    String
+  status      PromoCodeStatus @default(PENDING)
+  redeemedAt  DateTime?
+  redeemedBy  String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([promoId, deviceId])
+  @@index([code])
+  @@index([promoId, status])
 }
 
 // ============================================

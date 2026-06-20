@@ -159,10 +159,22 @@ export const RoomSchema = z.object({
 
 export const UpdateRoomSchema = RoomSchema.partial().omit({ motelId: true });
 
+export const RoomDayRateSchema = z.object({
+  dayGroup: z.enum(['WEEKDAY', 'WEEKEND']),
+  price1h: z.coerce.number().int().min(0).optional().nullable(),
+  price1_5h: z.coerce.number().int().min(0).optional().nullable(),
+  price2h: z.coerce.number().int().min(0).optional().nullable(),
+  price3h: z.coerce.number().int().min(0).optional().nullable(),
+  price12h: z.coerce.number().int().min(0).optional().nullable(),
+  price24h: z.coerce.number().int().min(0).optional().nullable(),
+  priceNight: z.coerce.number().int().min(0).optional().nullable(),
+});
+
 export const RoomAdminSchema = z.object({
   motelId: IdSchema,
   name: z.string().min(2, 'Nombre muy corto').max(100, 'Nombre muy largo'),
   description: z.string().max(1000, 'Descripción muy larga').optional().nullable(),
+  order: z.coerce.number().int().min(0).optional(),
   basePrice: z.coerce.number().int().min(0).optional().nullable(),
   priceLabel: z.string().max(50).optional().nullable(),
   price1h: z.coerce.number().int().min(0).optional().nullable(),
@@ -178,6 +190,7 @@ export const RoomAdminSchema = z.object({
   isFeatured: z.boolean().optional(),
   isActive: z.boolean().optional(),
   amenityIds: z.array(IdSchema).optional().nullable(),
+  dayRates: z.array(RoomDayRateSchema).optional().nullable(),
 });
 
 export const UpdateRoomAdminSchema = RoomAdminSchema.partial().omit({ motelId: true });
@@ -225,9 +238,22 @@ export const PromoSchema = z.object({
   ),
   isActive: z.boolean().optional(),
   isGlobal: z.boolean().optional(),
+  hasPromoCode: z.boolean().optional(),
+  codeRepeatRule: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'NEVER']).optional().nullable(),
+  codeLimit: z.coerce.number().int().min(1).optional().nullable(),
+  codeLimitPeriod: z.enum(['WEEKLY', 'MONTHLY', 'UNLIMITED']).optional().nullable(),
 });
 
 export const UpdatePromoSchema = PromoSchema.partial().omit({ motelId: true });
+
+export const ClaimPromoCodeSchema = z.object({
+  deviceId: z.string().min(8).max(64),
+});
+
+export const RedeemPromoCodeSchema = z.object({
+  code: z.string().min(6).max(6),
+  confirm: z.boolean().optional(),
+});
 
 export const PromoQuerySchema = z.object({
   motelId: IdSchema.optional(),

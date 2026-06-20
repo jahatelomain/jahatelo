@@ -144,6 +144,7 @@ export async function GET(request: NextRequest) {
           amenities: {
             select: { amenity: { select: { id: true, name: true, icon: true } } },
           },
+          dayRates: true,
         },
       },
       promos: {

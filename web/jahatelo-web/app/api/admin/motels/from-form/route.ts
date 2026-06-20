@@ -32,7 +32,7 @@ const MotelFormSchema = z.object({
   description: z.string().min(10),
   rooms: z.array(RoomFormSchema).min(1),
   promos: z.array(PromoFormSchema).optional(),
-  plan: z.enum(['BASIC', 'GOLD', 'DIAMOND']),
+  plan: z.enum(['BASIC', 'GOLD', 'DIAMOND']).optional().default('BASIC'),
   paymentMethod: z.enum(['transfer', 'card']).optional(),
   ruc: z.string().optional(),
   businessName: z.string().optional(),

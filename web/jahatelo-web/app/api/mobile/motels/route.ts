@@ -231,6 +231,7 @@ export async function GET(request: NextRequest) {
                     },
                   },
                 },
+                dayRates: true,
               },
             },
             promos: {
@@ -285,6 +286,7 @@ export async function GET(request: NextRequest) {
                     },
                   },
                 },
+                dayRates: true,
               },
             },
             promos: {

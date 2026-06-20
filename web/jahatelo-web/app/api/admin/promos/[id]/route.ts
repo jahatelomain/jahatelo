@@ -49,6 +49,10 @@ export async function PATCH(
         ...(validated.validUntil !== undefined && { validUntil: validated.validUntil ? new Date(validated.validUntil) : null }),
         ...(validated.isActive !== undefined && { isActive: validated.isActive }),
         ...(validated.isGlobal !== undefined && { isGlobal: validated.isGlobal }),
+        ...(validated.hasPromoCode !== undefined && { hasPromoCode: validated.hasPromoCode }),
+        ...(validated.codeRepeatRule !== undefined && { codeRepeatRule: validated.codeRepeatRule }),
+        ...(validated.codeLimit !== undefined && { codeLimit: validated.codeLimit }),
+        ...(validated.codeLimitPeriod !== undefined && { codeLimitPeriod: validated.codeLimitPeriod }),
       },
     });
 
