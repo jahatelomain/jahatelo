@@ -200,7 +200,7 @@ export default async function HomePage() {
               </span>
               <h1 className="animate-fade-up-delay-1 text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 text-white leading-tight">
                 Encontrá tu{' '}
-                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                <span className="animated-gradient-text">
                   motel ideal
                 </span>
               </h1>
