@@ -204,9 +204,6 @@ export default async function HomePage() {
                   motel ideal
                 </span>
               </h1>
-              <p className="animate-fade-up-delay-2 text-lg md:text-xl text-purple-200/80">
-                Buscá, comparás y reservás en los mejores moteles del país
-              </p>
             </div>
 
             {/* Buscador */}
