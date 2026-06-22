@@ -356,7 +356,7 @@ export default function AdminLayout({
               <img
                 src="/logo-icon.png"
                 alt="Jahatelo"
-                className="h-14 w-14 object-contain shrink-0 rounded-full"
+                className="h-10 w-10 object-cover shrink-0 rounded-full"
               />
               <div className="hidden sm:flex flex-col">
                 <span className="text-sm font-bold text-slate-800 leading-tight">Jahatelo</span>
