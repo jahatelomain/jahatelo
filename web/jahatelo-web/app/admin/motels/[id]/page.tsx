@@ -47,6 +47,7 @@ type Motel = {
   updatedAt?: string;
   rooms?: RoomType[];
   menuCategories?: MenuCategory[];
+  photos?: Array<{ id: string; url: string; order: number }>;
 };
 
 type DayRateForm = {
@@ -270,6 +271,9 @@ export default function MotelDetailPage() {
   const [uploadingPromo, setUploadingPromo] = useState(false);
   const [draggedPhotoId, setDraggedPhotoId] = useState<string | null>(null);
   const [dragOverPhotoId, setDragOverPhotoId] = useState<string | null>(null);
+  const [draggedMotelPhotoId, setDraggedMotelPhotoId] = useState<string | null>(null);
+  const [dragOverMotelPhotoId, setDragOverMotelPhotoId] = useState<string | null>(null);
+  const [uploadingMotelPhoto, setUploadingMotelPhoto] = useState(false);
   const [draggedRoomId, setDraggedRoomId] = useState<string | null>(null);
   const [dragOverRoomId, setDragOverRoomId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
@@ -1249,6 +1253,52 @@ export default function MotelDetailPage() {
     } catch (error) {
       console.error('Error reordering room photos:', error);
       alert('Error al reordenar fotos');
+    }
+  };
+
+  const handleAddMotelPhoto = async (url: string) => {
+    if (!motel) return;
+    try {
+      const res = await fetch('/api/admin/motel-photos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motelId: motel.id, url }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      await fetchMotel();
+    } catch (error) {
+      console.error('Error adding motel photo:', error);
+      alert('Error al agregar foto');
+    }
+  };
+
+  const handleDeleteMotelPhoto = async (photoId: string) => {
+    if (!confirm('¿Eliminar esta foto?')) return;
+    try {
+      const res = await fetch(`/api/admin/motel-photos/${photoId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed');
+      setMotel((prev) => prev ? { ...prev, photos: (prev.photos ?? []).filter((p) => p.id !== photoId) } : prev);
+    } catch (error) {
+      console.error('Error deleting motel photo:', error);
+      alert('Error al eliminar foto');
+    }
+  };
+
+  const handleReorderMotelPhotos = async (photos: Array<{ id: string; url: string; order: number }>) => {
+    if (!motel) return;
+    setMotel((prev) => prev ? { ...prev, photos } : prev);
+    try {
+      await Promise.all(
+        photos.map((photo, index) =>
+          fetch(`/api/admin/motel-photos/${photo.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: index }),
+          })
+        )
+      );
+    } catch (error) {
+      console.error('Error reordering motel photos:', error);
     }
   };
 
@@ -2307,6 +2357,78 @@ export default function MotelDetailPage() {
                     </div>
                   </div>
                 </dl>
+              </div>
+
+              {/* Card: Galería de fotos del motel */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
+                  Galería de fotos
+                </h3>
+                {(motel.photos ?? []).length > 0 && (
+                  <p className="text-xs text-slate-400 mb-4">Arrastrá para reordenar</p>
+                )}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                  {(motel.photos ?? []).sort((a, b) => a.order - b.order).map((photo) => (
+                    <div
+                      key={photo.id}
+                      draggable
+                      onDragStart={() => setDraggedMotelPhotoId(photo.id)}
+                      onDragOver={(e) => { e.preventDefault(); setDragOverMotelPhotoId(photo.id); }}
+                      onDragEnd={() => { setDraggedMotelPhotoId(null); setDragOverMotelPhotoId(null); }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (!draggedMotelPhotoId || draggedMotelPhotoId === photo.id) return;
+                        const photos = [...(motel.photos ?? [])].sort((a, b) => a.order - b.order);
+                        const fromIdx = photos.findIndex((p) => p.id === draggedMotelPhotoId);
+                        const toIdx = photos.findIndex((p) => p.id === photo.id);
+                        const [item] = photos.splice(fromIdx, 1);
+                        photos.splice(toIdx, 0, item);
+                        handleReorderMotelPhotos(photos);
+                      }}
+                      className={`relative group rounded-xl overflow-hidden border-2 cursor-grab transition-all ${
+                        dragOverMotelPhotoId === photo.id && draggedMotelPhotoId !== photo.id
+                          ? 'border-purple-500 scale-105'
+                          : 'border-transparent'
+                      } ${draggedMotelPhotoId === photo.id ? 'opacity-40' : ''}`}
+                    >
+                      <img src={photo.url} alt="" className="w-full aspect-square object-cover" draggable={false} />
+                      <button
+                        onClick={() => handleDeleteMotelPhoto(photo.id)}
+                        className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <label className={`flex items-center gap-2 cursor-pointer w-fit px-4 py-2.5 rounded-xl border border-dashed border-slate-300 text-sm text-slate-600 hover:border-purple-400 hover:text-purple-600 transition-colors ${uploadingMotelPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  {uploadingMotelPhoto ? 'Subiendo...' : 'Agregar foto'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={uploadingMotelPhoto}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingMotelPhoto(true);
+                      try {
+                        const url = await uploadFileToS3(file);
+                        await handleAddMotelPhoto(url);
+                      } catch {
+                        alert('Error al subir la foto');
+                      } finally {
+                        setUploadingMotelPhoto(false);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                </label>
               </div>
 
               <div className="flex justify-start">
