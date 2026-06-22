@@ -1984,12 +1984,12 @@ export default function MotelDetailPage() {
               </div>
             ) : (
               promos.map((promo) => (
-                <div key={promo.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:border-purple-200 transition-colors">
+                <div key={promo.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:border-purple-200 transition-colors">
                   {promo.imageUrl && (
                     <img
                       src={promo.imageUrl}
                       alt={promo.title}
-                      className="w-full h-48 object-cover"
+                      className="w-full h-48 object-cover rounded-t-xl"
                       onError={(e) => {
                         e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f1f5f9" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
                       }}
