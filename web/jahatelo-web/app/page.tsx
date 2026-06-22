@@ -198,10 +198,9 @@ export default async function HomePage() {
               <span className="animate-fade-up inline-block mb-4 text-xs font-semibold uppercase tracking-widest text-purple-300 bg-purple-900/40 border border-purple-700/50 px-4 py-1.5 rounded-full">
                 La plataforma de moteles de Paraguay
               </span>
-              <h1 className="animate-fade-up-delay-1 text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 text-white leading-tight">
-                Encontrá tu{' '}
+              <h1 className="animate-fade-up-delay-1 text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 leading-tight">
                 <span className="animated-gradient-text">
-                  motel ideal
+                  Encontrá tu motel ideal
                 </span>
               </h1>
             </div>

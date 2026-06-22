@@ -328,8 +328,8 @@ body {
 }
 
 .animated-gradient-text {
-  background: linear-gradient(90deg, #c084fc, #f472b6, #818cf8, #c084fc);
-  background-size: 300% 300%;
+  background: linear-gradient(90deg, #c084fc, #ffffff, #f472b6, #ffffff, #818cf8, #c084fc);
+  background-size: 400% 400%;
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
