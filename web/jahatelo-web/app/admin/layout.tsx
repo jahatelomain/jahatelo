@@ -353,13 +353,11 @@ export default function AdminLayout({
                   )}
                 </svg>
               </button>
-              <div className="w-10 h-10 shrink-0 rounded-full overflow-hidden bg-white border border-slate-200 flex items-center justify-center">
-                <img
-                  src="/logo-icon.png"
-                  alt="Jahatelo"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <img
+                src="/logo-icon.png"
+                alt="Jahatelo"
+                className="h-20 w-auto object-contain shrink-0"
+              />
               <div className="hidden sm:flex flex-col">
                 <span className="text-sm font-bold text-slate-800 leading-tight">Jahatelo</span>
                 <span className="text-sm text-purple-600 font-semibold leading-tight">Admin Panel</span>
