@@ -198,15 +198,11 @@ export default async function HomePage() {
               <span className="animate-fade-up inline-block mb-4 text-xs font-semibold uppercase tracking-widest text-purple-300 bg-purple-900/40 border border-purple-700/50 px-4 py-1.5 rounded-full">
                 La plataforma de moteles de Paraguay
               </span>
-              <h1 className="animate-fade-up-delay-1 text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 text-white leading-tight">
-                Encontrá tu{' '}
-                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  motel ideal
+              <h1 className="animate-fade-up-delay-1 text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 leading-tight">
+                <span className="animated-gradient-text">
+                  Encontrá tu motel ideal
                 </span>
               </h1>
-              <p className="animate-fade-up-delay-2 text-lg md:text-xl text-purple-200/80">
-                Buscá, comparás y reservás en los mejores moteles del país
-              </p>
             </div>
 
             {/* Buscador */}
