@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { useNavigation } from '@react-navigation/native';
 import { getApiRoot } from '../services/apiBaseUrl';
+import { useOnlineRetry } from '../hooks/useOnlineRetry';
 
 const API_URL = getApiRoot();
 const MAP_REQUEST_TIMEOUT_MS = 10000;
@@ -328,6 +329,11 @@ export default function MapScreen() {
   useEffect(() => {
     fetchMapData();
   }, []);
+
+  // Retry automático al reconectar a internet
+  const { isOnline } = useOnlineRetry(useCallback(() => {
+    if (error) fetchMapData();
+  }, [error]));
 
   const fetchMapData = async () => {
     try {
