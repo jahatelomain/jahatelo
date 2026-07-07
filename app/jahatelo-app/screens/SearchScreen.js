@@ -12,6 +12,7 @@ import Animated, {
   withSequence,
 } from 'react-native-reanimated';
 import { searchAndFilterMotels } from '../services/motelsApi';
+import { getApiRoot } from '../services/apiBaseUrl';
 import MotelCard from '../components/MotelCard';
 import MotelCardSkeleton from '../components/MotelCardSkeleton';
 import AdListItem from '../components/AdListItem';
@@ -39,8 +40,12 @@ export default function SearchScreen({ route }) {
   const [error, setError] = useState(null);
   const [selectedAd, setSelectedAd] = useState(null);
   const [showAdDetailModal, setShowAdDetailModal] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const debounceTimerRef = useRef(null);
+  const suggestionsTimerRef = useRef(null);
 
   // Cargar anuncios de lista
   const { ads: listAds, trackAdEvent } = useAdvertisements('LIST_INLINE');
@@ -105,6 +110,30 @@ export default function SearchScreen({ route }) {
     }
   }, [route?.params?.initialQuery]);
 
+  // Fetch de sugerencias con debounce de 300ms
+  useEffect(() => {
+    if (suggestionsTimerRef.current) clearTimeout(suggestionsTimerRef.current);
+    if (!isFocused || searchQuery.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    suggestionsTimerRef.current = setTimeout(async () => {
+      try {
+        const base = getApiRoot().replace('/api/mobile', '');
+        const res = await fetch(`${base}/api/search/suggestions?q=${encodeURIComponent(searchQuery.trim())}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSuggestions(data.suggestions || []);
+          setShowSuggestions((data.suggestions || []).length > 0);
+        }
+      } catch {
+        // ignorar errores de suggestions
+      }
+    }, 300);
+    return () => { if (suggestionsTimerRef.current) clearTimeout(suggestionsTimerRef.current); };
+  }, [searchQuery, isFocused]);
+
   // Effect con debounce para búsqueda
   useEffect(() => {
     // Cancelar timer anterior si existe
@@ -163,14 +192,28 @@ export default function SearchScreen({ route }) {
     setSelectedAmenity('');
   };
 
+  const handleSuggestionPress = useCallback((suggestion) => {
+    setShowSuggestions(false);
+    setSuggestions([]);
+    if (suggestion.type === 'motel' && suggestion.slug) {
+      navigation.navigate('MotelDetail', { motelSlug: suggestion.slug });
+    } else {
+      setSearchQuery(suggestion.label);
+    }
+  }, [navigation]);
+
   // Handlers de focus/blur para animación
   const handleSearchFocus = () => {
+    setIsFocused(true);
     searchBarScale.value = withSpring(1.02, { damping: 15 });
     searchBarBorderWidth.value = withTiming(2, { duration: 250 });
     searchBarShadowRadius.value = withTiming(8, { duration: 250 });
   };
 
   const handleSearchBlur = () => {
+    setIsFocused(false);
+    // Pequeño delay para permitir el press en sugerencias antes de cerrar
+    setTimeout(() => setShowSuggestions(false), 150);
     searchBarScale.value = withSpring(1, { damping: 15 });
     searchBarBorderWidth.value = withTiming(1, { duration: 250 });
     searchBarShadowRadius.value = withTiming(4, { duration: 250 });
@@ -253,11 +296,36 @@ export default function SearchScreen({ route }) {
             placeholderTextColor="#999"
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <TouchableOpacity onPress={() => { setSearchQuery(''); setSuggestions([]); setShowSuggestions(false); }}>
               <Ionicons name="close-circle" size={20} color="#666" />
             </TouchableOpacity>
           )}
         </Animated.View>
+
+        {/* Dropdown de sugerencias */}
+        {showSuggestions && suggestions.length > 0 && (
+          <View style={styles.suggestionsContainer}>
+            {suggestions.map((s, index) => (
+              <TouchableOpacity
+                key={`${s.type}-${s.label}-${index}`}
+                style={[styles.suggestionItem, index < suggestions.length - 1 && styles.suggestionItemBorder]}
+                onPress={() => handleSuggestionPress(s)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={s.type === 'motel' ? 'business-outline' : s.type === 'city' ? 'location-outline' : 'map-outline'}
+                  size={16}
+                  color="#888"
+                  style={{ marginRight: 10 }}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.suggestionLabel}>{s.label}</Text>
+                  {s.subtitle ? <Text style={styles.suggestionSubtitle}>{s.subtitle}</Text> : null}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Filtros rápidos por amenity */}
@@ -373,6 +441,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
+    zIndex: 10,
   },
   searchBar: {
     flexDirection: 'row',
@@ -481,5 +550,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     textAlign: 'center',
+  },
+  suggestionsContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginTop: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 100,
+    overflow: 'hidden',
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  suggestionItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  suggestionLabel: {
+    fontSize: 14,
+    color: '#2A0038',
+    fontWeight: '500',
+  },
+  suggestionSubtitle: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 1,
   },
 });

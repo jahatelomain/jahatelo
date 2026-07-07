@@ -16,6 +16,7 @@ import NearbyMotelsScreen from '../screens/NearbyMotelsScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import NotificationPreferencesScreen from '../screens/NotificationPreferencesScreen';
+import PromoHistoryScreen from '../screens/PromoHistoryScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -31,6 +32,7 @@ export default function RootNavigation() {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="NotificationPreferences" component={NotificationPreferencesScreen} />
+      <Stack.Screen name="PromoHistory" component={PromoHistoryScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen name="MotelList" component={MotelListScreen} />
       <Stack.Screen name="MotelDetail" component={MotelDetailScreen} />

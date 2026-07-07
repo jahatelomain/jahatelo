@@ -103,6 +103,10 @@ export async function login({ email, password, pushToken, deviceInfo }) {
 
     return data;
   } catch (error) {
+    // Email no verificado: el backend devuelve 403 con needsVerification: true
+    if (error.status === 403 && error.body?.needsVerification) {
+      return { success: false, error: error.body.error || 'Email no verificado', needsVerification: true };
+    }
     console.error('Error in login:', error);
     throw error;
   }

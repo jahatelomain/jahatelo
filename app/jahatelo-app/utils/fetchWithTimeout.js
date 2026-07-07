@@ -41,7 +41,18 @@ export async function fetchWithTimeout(url, options = {}, retryCount = 0) {
       if (response.status === 401) {
         throw new Error('Error de autenticación (401). Verifica credenciales de staging.');
       }
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // Para errores de negocio (4xx), intentar devolver el body JSON para
+      // que el caller pueda leer campos como needsVerification, error, etc.
+      try {
+        const errBody = await response.json();
+        const err = new Error(errBody.error || `HTTP error! status: ${response.status}`);
+        err.status = response.status;
+        err.body = errBody;
+        throw err;
+      } catch (jsonErr) {
+        if (jsonErr.status) throw jsonErr; // ya es nuestro error enriquecido
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
     }
 
     const data = await response.json();

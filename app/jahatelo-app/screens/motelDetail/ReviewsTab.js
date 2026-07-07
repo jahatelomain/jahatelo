@@ -120,6 +120,38 @@ export default function ReviewsTab({ route, navigation }) {
     }
   };
 
+  const handleDeleteReview = useCallback(async (reviewId) => {
+    Alert.alert(
+      'Eliminar reseña',
+      '¿Estás seguro de que querés eliminar tu reseña?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await fetch(`${API_URL}/api/mobile/reviews?id=${reviewId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` },
+              });
+              if (response.ok) {
+                setReviews(prev => prev.filter(r => r.id !== reviewId));
+                setTotal(prev => Math.max(0, prev - 1));
+                await checkUserCanReview();
+              } else {
+                const data = await response.json();
+                Alert.alert('Error', data.error || 'No se pudo eliminar la reseña');
+              }
+            } catch {
+              Alert.alert('Error', 'Error de conexión');
+            }
+          },
+        },
+      ]
+    );
+  }, [token]);
+
   const handleSubmitReview = async () => {
     if (!isAuthenticated) {
       Alert.alert(
@@ -366,33 +398,47 @@ export default function ReviewsTab({ route, navigation }) {
             <Text style={styles.reviewsListTitle}>
               Reseñas ({reviews.length}{hasMore ? ` de ${total}` : ''})
             </Text>
-            {reviews.map((review) => (
-              <View key={review.id} style={styles.reviewItem}>
-                <View style={styles.reviewHeader}>
-                  <View style={styles.reviewAuthor}>
-                    <View style={styles.avatarContainer}>
-                      <Ionicons name="person" size={20} color={COLORS.white} />
-                    </View>
-                    <View style={styles.authorInfo}>
-                      <View style={styles.authorNameRow}>
-                        <Text style={styles.authorName}>
-                          {review.isAnonymous ? 'Anónimo' : review.user?.name || 'Usuario'}
-                        </Text>
-                        {review.isVerified && (
-                          <View style={styles.verifiedBadge}>
-                            <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-                            <Text style={styles.verifiedText}>Verificado</Text>
-                          </View>
-                        )}
+            {reviews.map((review) => {
+              const isOwn = user?.id && review.user?.id === user.id;
+              return (
+                <View key={review.id} style={styles.reviewItem}>
+                  <View style={styles.reviewHeader}>
+                    <View style={styles.reviewAuthor}>
+                      <View style={styles.avatarContainer}>
+                        <Ionicons name="person" size={20} color={COLORS.white} />
                       </View>
-                      <Text style={styles.reviewDate}>{formatDate(review.createdAt)}</Text>
+                      <View style={styles.authorInfo}>
+                        <View style={styles.authorNameRow}>
+                          <Text style={styles.authorName}>
+                            {review.isAnonymous ? 'Anónimo' : review.user?.name || 'Usuario'}
+                          </Text>
+                          {review.isVerified && (
+                            <View style={styles.verifiedBadge}>
+                              <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                              <Text style={styles.verifiedText}>Verificado</Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text style={styles.reviewDate}>{formatDate(review.createdAt)}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.reviewHeaderRight}>
+                      {renderStars(review.score, null, 16)}
+                      {isOwn && (
+                        <TouchableOpacity
+                          onPress={() => handleDeleteReview(review.id)}
+                          style={styles.deleteButton}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="trash-outline" size={16} color="#dc2626" />
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </View>
-                  {renderStars(review.score, null, 16)}
+                  <Text style={styles.reviewComment}>{review.comment}</Text>
                 </View>
-                <Text style={styles.reviewComment}>{review.comment}</Text>
-              </View>
-            ))}
+              );
+            })}
 
             {/* Botón cargar más */}
             {hasMore && (
@@ -685,6 +731,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textLight,
     marginTop: 2,
+  },
+  reviewHeaderRight: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  deleteButton: {
+    padding: 4,
   },
   reviewComment: {
     fontSize: 14,
