@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,12 +15,15 @@ import { COLORS } from '../../constants/theme';
 import { getApiRoot } from '../../services/apiBaseUrl';
 
 const API_URL = getApiRoot();
+const PAGE_SIZE = 10;
 
 export default function ReviewsTab({ route, navigation }) {
   const { motel } = route.params || {};
   const { isAuthenticated, token, user } = useAuth();
   const [reviews, setReviews] = useState([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [rating, setRating] = useState(0);
@@ -31,31 +34,35 @@ export default function ReviewsTab({ route, navigation }) {
 
   useEffect(() => {
     if (motel?.id) {
-      loadReviews();
+      loadReviews(0, true);
       checkUserCanReview();
     }
   }, [motel?.id, isAuthenticated]);
 
-  const loadReviews = async () => {
+  const loadReviews = useCallback(async (offset = 0, replace = false) => {
     try {
-      setLoading(true);
-      const response = await fetch(`${API_URL}/api/mobile/reviews?motelId=${motel.id}`);
+      if (offset === 0) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
 
-      // Verificar si la respuesta es JSON antes de parsear
+      const response = await fetch(
+        `${API_URL}/api/mobile/reviews?motelId=${motel.id}&limit=${PAGE_SIZE}&offset=${offset}`
+      );
+
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        console.error('Error: respuesta no es JSON', {
-          status: response.status,
-          contentType,
-          url: response.url,
-        });
+        console.error('Error: respuesta no es JSON', { status: response.status, contentType });
         return;
       }
 
       const data = await response.json();
 
       if (response.ok) {
-        setReviews(data.reviews || []);
+        const incoming = data.reviews || [];
+        setReviews(prev => replace ? incoming : [...prev, ...incoming]);
+        setTotal(data.meta?.total ?? 0);
       } else {
         console.error('Error al cargar reseñas:', data.error || 'Error desconocido');
       }
@@ -63,7 +70,13 @@ export default function ReviewsTab({ route, navigation }) {
       console.error('Error al cargar reseñas:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  }, [motel?.id]);
+
+  const handleLoadMore = () => {
+    if (loadingMore || reviews.length >= total) return;
+    loadReviews(reviews.length, false);
   };
 
   const checkUserCanReview = async () => {
@@ -82,13 +95,9 @@ export default function ReviewsTab({ route, navigation }) {
         }
       );
 
-      // Verificar si la respuesta es JSON antes de parsear
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        console.error('Error: respuesta no es JSON en can-review', {
-          status: response.status,
-          contentType,
-        });
+        console.error('Error: respuesta no es JSON en can-review', { status: response.status, contentType });
         setUserCanReview(false);
         return;
       }
@@ -150,13 +159,9 @@ export default function ReviewsTab({ route, navigation }) {
         }),
       });
 
-      // Verificar si la respuesta es JSON antes de parsear
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        console.error('Error: respuesta no es JSON al enviar reseña', {
-          status: response.status,
-          contentType,
-        });
+        console.error('Error: respuesta no es JSON al enviar reseña', { status: response.status, contentType });
         Alert.alert('Error', 'Hubo un problema al enviar tu reseña. Por favor intenta de nuevo.');
         return;
       }
@@ -171,7 +176,7 @@ export default function ReviewsTab({ route, navigation }) {
         setRating(0);
         setComment('');
         setIsAnonymous(false);
-        await loadReviews();
+        await loadReviews(0, true);
         await checkUserCanReview();
       } else {
         Alert.alert('Error', data.error || 'No se pudo publicar la reseña');
@@ -232,6 +237,8 @@ export default function ReviewsTab({ route, navigation }) {
     );
   }
 
+  const hasMore = reviews.length < total;
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -245,7 +252,7 @@ export default function ReviewsTab({ route, navigation }) {
               <Text style={styles.ratingNumber}>{motel.ratingAvg.toFixed(1)}</Text>
               {renderStars(Math.round(motel.ratingAvg), null, 20)}
               <Text style={styles.reviewCount}>
-                {motel.ratingCount} {motel.ratingCount === 1 ? 'reseña' : 'reseñas'}
+                {total || motel.ratingCount} {(total || motel.ratingCount) === 1 ? 'reseña' : 'reseñas'}
               </Text>
             </View>
           </View>
@@ -288,13 +295,11 @@ export default function ReviewsTab({ route, navigation }) {
           <View style={styles.reviewForm}>
             <Text style={styles.formTitle}>Tu reseña</Text>
 
-            {/* Rating Stars */}
             <View style={styles.formSection}>
               <Text style={styles.formLabel}>Calificación *</Text>
               {renderStars(rating, setRating, 32)}
             </View>
 
-            {/* Comment Input */}
             <View style={styles.formSection}>
               <Text style={styles.formLabel}>Comentario *</Text>
               <TextInput
@@ -310,7 +315,6 @@ export default function ReviewsTab({ route, navigation }) {
               <Text style={styles.characterCount}>{comment.length}/500</Text>
             </View>
 
-            {/* Anonymous Toggle */}
             <TouchableOpacity
               style={styles.anonymousToggle}
               onPress={() => setIsAnonymous(!isAnonymous)}
@@ -327,7 +331,6 @@ export default function ReviewsTab({ route, navigation }) {
               <Ionicons name="help-circle-outline" size={20} color={COLORS.textLight} />
             </TouchableOpacity>
 
-            {/* Action Buttons */}
             <View style={styles.formActions}>
               <TouchableOpacity
                 style={styles.cancelButton}
@@ -360,7 +363,9 @@ export default function ReviewsTab({ route, navigation }) {
         {/* Lista de reseñas */}
         {reviews.length > 0 ? (
           <View style={styles.reviewsList}>
-            <Text style={styles.reviewsListTitle}>Todas las reseñas</Text>
+            <Text style={styles.reviewsListTitle}>
+              Reseñas ({reviews.length}{hasMore ? ` de ${total}` : ''})
+            </Text>
             {reviews.map((review) => (
               <View key={review.id} style={styles.reviewItem}>
                 <View style={styles.reviewHeader}>
@@ -388,6 +393,27 @@ export default function ReviewsTab({ route, navigation }) {
                 <Text style={styles.reviewComment}>{review.comment}</Text>
               </View>
             ))}
+
+            {/* Botón cargar más */}
+            {hasMore && (
+              <TouchableOpacity
+                style={styles.loadMoreButton}
+                onPress={handleLoadMore}
+                disabled={loadingMore}
+                activeOpacity={0.7}
+              >
+                {loadingMore ? (
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                ) : (
+                  <>
+                    <Ionicons name="chevron-down" size={18} color={COLORS.primary} />
+                    <Text style={styles.loadMoreText}>
+                      Cargar más ({total - reviews.length} restantes)
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
           <View style={styles.emptyContainer}>
@@ -664,6 +690,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.text,
     lineHeight: 20,
+  },
+  loadMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    marginTop: 4,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    gap: 6,
+  },
+  loadMoreText: {
+    color: COLORS.primary,
+    fontWeight: '600',
+    fontSize: 14,
   },
   emptyContainer: {
     alignItems: 'center',

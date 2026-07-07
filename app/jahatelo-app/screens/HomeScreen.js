@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useOnlineRetry } from '../hooks/useOnlineRetry';
 import {
   ActivityIndicator,
   Alert,
@@ -91,6 +92,12 @@ export default function HomeScreen() {
   useEffect(() => {
     loadMotels();
   }, []);
+
+  // Retry automático al reconectar a internet
+  const handleReconnect = useCallback(() => {
+    if (error) loadMotels();
+  }, [error]);
+  useOnlineRetry(handleReconnect);
 
   // Mostrar popup de anuncio si hay disponibles (después de 1 segundo)
   useEffect(() => {

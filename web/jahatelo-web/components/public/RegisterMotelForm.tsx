@@ -5,6 +5,7 @@ import { useState } from 'react';
 export default function RegisterMotelForm() {
   const [contactName, setContactName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [motelName, setMotelName] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -46,6 +47,7 @@ export default function RegisterMotelForm() {
         body: JSON.stringify({
           contactName: contactName.trim(),
           phone: phone.trim(),
+          email: email.trim() || undefined,
           motelName: motelName.trim(),
           channel: 'WEB',
         }),
@@ -57,6 +59,7 @@ export default function RegisterMotelForm() {
         // Limpiar formulario
         setContactName('');
         setPhone('');
+        setEmail('');
         setMotelName('');
         // Mostrar modal de éxito
         setShowSuccessModal(true);
@@ -116,6 +119,25 @@ export default function RegisterMotelForm() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="Ej: 0981 123 456"
+              disabled={loading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors text-gray-900"
+            />
+          </div>
+
+          {/* Email (opcional) */}
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-semibold text-gray-700 mb-2"
+            >
+              Email <span className="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Ej: contacto@mimotel.com"
               disabled={loading}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors text-gray-900"
             />
