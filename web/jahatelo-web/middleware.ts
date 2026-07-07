@@ -215,6 +215,36 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // 3. Rate Limiting estricto para escrituras móviles (reviews, favorites)
+  if (
+    request.method === 'POST' &&
+    (
+      pathname.startsWith('/api/mobile/reviews') ||
+      pathname.startsWith('/api/mobile/favorites')
+    )
+  ) {
+    if (process.env.E2E_MODE !== '1') {
+      const { success, remaining } = await applyRateLimit('mobile-write', ip, 10, 60 * 1000); // 10 POST/min
+      if (!success) {
+        return NextResponse.json(
+          { error: 'Demasiadas solicitudes. Intenta nuevamente en 1 minuto.' },
+          {
+            status: 429,
+            headers: {
+              'Retry-After': '60',
+              'X-RateLimit-Limit': '10',
+              'X-RateLimit-Remaining': '0',
+            },
+          }
+        );
+      }
+      const response = NextResponse.next();
+      response.headers.set('X-RateLimit-Limit', '10');
+      response.headers.set('X-RateLimit-Remaining', remaining.toString());
+      return response;
+    }
+  }
+
   // 3. Rate Limiting para autenticación (login, register y OTP WhatsApp)
   if (
     pathname.startsWith('/api/auth/login') ||
