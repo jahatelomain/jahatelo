@@ -470,6 +470,7 @@ export const UpdateProspectSchema = ProspectSchema.partial();
 export const PublicProspectSchema = z.object({
   contactName: z.string().min(2).max(100),
   phone: z.string().max(50),
+  email: z.string().email().optional().or(z.literal('')),
   motelName: z.string().min(2).max(100),
   channel: z.enum(['WEB', 'APP', 'MANUAL']).optional(),
 }).refine(

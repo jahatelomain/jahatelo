@@ -55,14 +55,104 @@ const getPlanZIndex = (plan) => {
   }
 };
 
-// Marker con etiquetas en iOS y tooltip en Android
+// ===== CLUSTERING =====
+// Agrupa moteles cercanos según el nivel de zoom actual del mapa.
+// El radio de clustering escala con latitudeDelta para ser proporcional al zoom.
+function clusterMotels(motels, latitudeDelta) {
+  // Radio proporcional al zoom: más alejado = clusters más grandes
+  const clusterRadius = latitudeDelta * 0.12;
+
+  const visited = new Set();
+  const clusters = [];
+
+  for (let i = 0; i < motels.length; i++) {
+    if (visited.has(i)) continue;
+
+    const group = [motels[i]];
+    visited.add(i);
+
+    for (let j = i + 1; j < motels.length; j++) {
+      if (visited.has(j)) continue;
+
+      const dLat = Math.abs(motels[i].latitude - motels[j].latitude);
+      const dLng = Math.abs(motels[i].longitude - motels[j].longitude);
+
+      if (dLat < clusterRadius && dLng < clusterRadius) {
+        group.add ? group.add(motels[j]) : group.push(motels[j]);
+        visited.add(j);
+      }
+    }
+
+    if (group.length > 1) {
+      // Calcular centroide del cluster
+      const avgLat = group.reduce((s, m) => s + m.latitude, 0) / group.length;
+      const avgLng = group.reduce((s, m) => s + m.longitude, 0) / group.length;
+
+      // El plan más alto del grupo determina el color del cluster
+      const bestPlan = group.reduce((best, m) => {
+        return getPlanOrder(m.plan) > getPlanOrder(best) ? m.plan : best;
+      }, 'FREE');
+
+      clusters.push({
+        type: 'cluster',
+        id: `cluster_${i}`,
+        latitude: avgLat,
+        longitude: avgLng,
+        count: group.length,
+        motels: group,
+        bestPlan,
+      });
+    } else {
+      clusters.push({ type: 'single', ...motels[i] });
+    }
+  }
+
+  return clusters;
+}
+
+// ===== CLUSTER MARKER =====
+const ClusterMarker = React.memo(({ cluster, onPress }) => {
+  const { bestPlan, count, latitude, longitude } = cluster;
+  const isDiamond = bestPlan === 'DIAMOND';
+  const isGold = bestPlan === 'GOLD';
+
+  const bgColor = isDiamond ? '#7DD3FC' : isGold ? '#F59E0B' : COLORS.primary;
+
+  return (
+    <Marker
+      coordinate={{ latitude, longitude }}
+      anchor={{ x: 0.5, y: 0.5 }}
+      zIndex={500}
+      tracksViewChanges={false}
+      onPress={IS_ANDROID ? undefined : onPress}
+    >
+      <View style={[styles.clusterOuter, { borderColor: bgColor }]}>
+        <View style={[styles.clusterInner, { backgroundColor: bgColor }]}>
+          <Text style={styles.clusterText}>{count}</Text>
+        </View>
+      </View>
+
+      {IS_ANDROID && (
+        <Callout tooltip onPress={onPress}>
+          <View style={[styles.calloutContainer, { backgroundColor: bgColor, padding: 12 }]}>
+            <Text style={styles.calloutTitle}>{count} moteles</Text>
+            <Text style={styles.calloutSubtitle}>Tap para acercar</Text>
+          </View>
+        </Callout>
+      )}
+    </Marker>
+  );
+});
+
+ClusterMarker.displayName = 'ClusterMarker';
+
+// ===== CUSTOM MARKER (individual) =====
 const CustomMarker = React.memo(({ motel, onPress }) => {
   const isDisabled = motel.plan === 'FREE';
   const [tracksChanges, setTracksChanges] = useState(IS_ANDROID);
   const plan = motel.plan || 'BASIC';
   const planZIndex = getPlanZIndex(plan);
 
-  // Configuración según plan
   const isGold = plan === 'GOLD';
   const isDiamond = plan === 'DIAMOND';
   const sizeMultiplier = isDiamond ? 1.3 : isGold ? 1.15 : 1;
@@ -163,7 +253,6 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
           </Animated.View>
         )}
 
-        {/* Pin del marker */}
         <Animated.View style={[bounceStyle, pinStyle]}>
           <View style={styles.markerInner}>
             <Ionicons
@@ -172,7 +261,6 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
               color={COLORS.white}
             />
           </View>
-
         </Animated.View>
       </View>
 
@@ -192,7 +280,6 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
           </View>
         </Callout>
       )}
-
     </Marker>
   );
 }, (prevProps, nextProps) => {
@@ -214,6 +301,7 @@ export default function MapScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+  const [currentLatitudeDelta, setCurrentLatitudeDelta] = useState(0.5);
   const [initialRegion, setInitialRegion] = useState({
     latitude: -25.2637,
     longitude: -57.5759,
@@ -221,6 +309,7 @@ export default function MapScreen() {
     longitudeDelta: 0.5,
   });
   const mapRef = React.useRef(null);
+
   const sortedMotels = useMemo(() => {
     return [...motels].sort((a, b) => {
       const planDiff = getPlanOrder(a.plan) - getPlanOrder(b.plan);
@@ -228,6 +317,13 @@ export default function MapScreen() {
       return (a.name || '').localeCompare(b.name || '');
     });
   }, [motels]);
+
+  // Aplica clustering según el zoom actual
+  const clusteredItems = useMemo(() => {
+    // Con zoom muy cercano (delta < 0.05) no agrupar — mostrar todos
+    if (currentLatitudeDelta < 0.05) return sortedMotels.map(m => ({ type: 'single', ...m }));
+    return clusterMotels(sortedMotels, currentLatitudeDelta);
+  }, [sortedMotels, currentLatitudeDelta]);
 
   useEffect(() => {
     fetchMapData();
@@ -237,7 +333,6 @@ export default function MapScreen() {
     try {
       setLoading(true);
 
-      // Usar cache si está disponible y es reciente
       const now = Date.now();
       if (cachedMapData && (now - cacheTimestamp) < CACHE_DURATION) {
         debugLog('📍 Usando datos del mapa cacheados');
@@ -268,7 +363,6 @@ export default function MapScreen() {
         clearTimeout(timeoutId);
       }
 
-      // Verificar si la respuesta es JSON antes de parsear
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         debugLog('❌ Error: respuesta no es JSON', {
@@ -284,7 +378,6 @@ export default function MapScreen() {
       const data = await response.json();
 
       if (data.success && data.motels.length > 0) {
-        // Guardar en cache
         cachedMapData = data;
         cacheTimestamp = now;
 
@@ -355,16 +448,27 @@ export default function MapScreen() {
   };
 
   const handleMarkerPress = useCallback((motel) => {
-    // No permitir navegación si es plan FREE
-    if (motel.plan === 'FREE') {
-      return;
-    }
-
+    if (motel.plan === 'FREE') return;
     navigation.navigate('MotelDetail', {
       motelSlug: motel.slug,
       motelId: motel.id,
     });
   }, [navigation]);
+
+  // Al tocar un cluster: acercar el zoom al centroide del grupo
+  const handleClusterPress = useCallback((cluster) => {
+    const newDelta = Math.max(currentLatitudeDelta * 0.4, 0.01);
+    mapRef.current?.animateToRegion({
+      latitude: cluster.latitude,
+      longitude: cluster.longitude,
+      latitudeDelta: newDelta,
+      longitudeDelta: newDelta,
+    }, 400);
+  }, [currentLatitudeDelta]);
+
+  const handleRegionChangeComplete = useCallback((region) => {
+    setCurrentLatitudeDelta(region.latitudeDelta);
+  }, []);
 
   if (loading) {
     return <LoadingScreen message="Cargando mapa..." />;
@@ -417,14 +521,26 @@ export default function MapScreen() {
         initialRegion={initialRegion}
         showsUserLocation={!!userLocation}
         showsMyLocationButton={false}
+        onRegionChangeComplete={handleRegionChangeComplete}
       >
-        {sortedMotels.map((motel) => (
-          <CustomMarker
-            key={motel.id}
-            motel={motel}
-            onPress={() => handleMarkerPress(motel)}
-          />
-        ))}
+        {clusteredItems.map((item) => {
+          if (item.type === 'cluster') {
+            return (
+              <ClusterMarker
+                key={item.id}
+                cluster={item}
+                onPress={() => handleClusterPress(item)}
+              />
+            );
+          }
+          return (
+            <CustomMarker
+              key={item.id}
+              motel={item}
+              onPress={() => handleMarkerPress(item)}
+            />
+          );
+        })}
 
         {userLocation && (
           <Marker
@@ -488,6 +604,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  // ===== CLUSTER STYLES =====
+  clusterOuter: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 3,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clusterInner: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clusterText: {
+    color: COLORS.white,
+    fontWeight: '700',
+    fontSize: 14,
+  },
+
   // ===== MARKER STYLES =====
   markerPin: {
     backgroundColor: COLORS.primary,
@@ -498,7 +637,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 3,
     borderColor: COLORS.white,
-    // Sin sombra para iOS - fondo transparente
     ...(Platform.OS === 'android' && {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
