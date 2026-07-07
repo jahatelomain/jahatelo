@@ -37,6 +37,9 @@ export default async function AdminDashboard() {
   }
 
   const e2eMode = process.env.E2E_MODE === '1';
+  const thisMonthStartEarly = new Date();
+  thisMonthStartEarly.setDate(1);
+  thisMonthStartEarly.setHours(0, 0, 0, 0);
   let totalViews = 0;
   let pendingMotels = 0;
   let activeMotels = 0;
@@ -101,7 +104,12 @@ export default async function AdminDashboard() {
       recentMotelsRaw,
       pendingMotelsDetails,
     ] = await Promise.all([
-      Promise.resolve(0), // Placeholder para vistas - implementar más adelante
+      prisma.motelAnalytics.count({
+        where: {
+          eventType: 'VIEW',
+          timestamp: { gte: thisMonthStartEarly },
+        },
+      }),
       prisma.motel.count({ where: { status: MotelStatus.PENDING } }),
       prisma.motel.count({ where: { isActive: true } }),
       prisma.promo.count({
@@ -326,6 +334,27 @@ export default async function AdminDashboard() {
     percentage: totalActivePlans > 0 ? Math.round((item._count / totalActivePlans) * 100) : 0,
   }));
 
+  // 7. Métricas adicionales
+  const [unreadInbox, newProspects, recentReviews] = await Promise.all([
+    prisma.contactMessage.count({ where: { isRead: false } }),
+    prisma.motelProspect.count({
+      where: { createdAt: { gte: thisMonthStartEarly } },
+    }),
+    prisma.review.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        score: true,
+        comment: true,
+        isAnonymous: true,
+        createdAt: true,
+        motel: { select: { id: true, name: true } },
+        user: { select: { name: true } },
+      },
+    }),
+  ]);
+
   const analyticsData = {
     conversionRate,
     conversionTrend,
@@ -341,8 +370,8 @@ export default async function AdminDashboard() {
 
   const kpis = [
     {
-      title: 'Cantidad de Vistas',
-      value: totalViews,
+      title: 'Vistas este mes',
+      value: totalViews.toLocaleString('es-PY'),
       icon: '👁️',
       color: 'purple',
       change: null,
@@ -352,7 +381,8 @@ export default async function AdminDashboard() {
       value: pendingMotels,
       icon: '⏳',
       color: 'yellow',
-      change: null,
+      change: pendingMotels > 0 ? 'Requieren atención' : null,
+      href: '/admin/motels?status=PENDING',
     },
     {
       title: 'Moteles Activos',
@@ -362,11 +392,12 @@ export default async function AdminDashboard() {
       change: null,
     },
     {
-      title: 'Promociones Activas',
-      value: activePromotions,
-      icon: '🎁',
-      color: 'blue',
-      change: null,
+      title: 'Inbox sin leer',
+      value: unreadInbox,
+      icon: '📬',
+      color: unreadInbox > 0 ? 'yellow' : 'blue',
+      change: unreadInbox > 0 ? 'Mensajes nuevos' : null,
+      href: '/admin/inbox',
     },
   ];
 
@@ -452,11 +483,8 @@ export default async function AdminDashboard() {
 
       {/* KPIs Grid Mejorado */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {kpis.map((kpi, index) => (
-          <div
-            key={index}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-purple-200 transition-all"
-          >
+        {kpis.map((kpi, index) => {
+          const card = (
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-3">
@@ -467,14 +495,28 @@ export default async function AdminDashboard() {
                 <p className="text-sm font-medium text-slate-600 mb-1">{kpi.title}</p>
                 <p className="text-3xl font-bold text-slate-900">{kpi.value}</p>
                 {kpi.change && (
-                  <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
-                    <span>↗</span> {kpi.change}
-                  </p>
+                  <p className="text-xs text-amber-600 mt-2 font-medium">{kpi.change}</p>
                 )}
               </div>
             </div>
-          </div>
-        ))}
+          );
+          return 'href' in kpi && kpi.href ? (
+            <Link
+              key={index}
+              href={kpi.href}
+              className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-purple-200 transition-all block"
+            >
+              {card}
+            </Link>
+          ) : (
+            <div
+              key={index}
+              className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-purple-200 transition-all"
+            >
+              {card}
+            </div>
+          );
+        })}
       </div>
 
       {/* Resumen y actividad reciente */}
@@ -507,6 +549,60 @@ export default async function AdminDashboard() {
 
         {/* Widget de Acciones Rápidas */}
         <QuickActions initialMotels={pendingMotelsDetails} />
+      </div>
+
+      {/* Fila: Prospects del mes + Reseñas recientes */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Prospects nuevos este mes */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">Prospects este mes</h3>
+              <p className="text-xs text-slate-500 mt-0.5">{newProspects} nuevos registros</p>
+            </div>
+            <Link href="/admin/prospects" className="text-xs text-purple-600 hover:text-purple-700 font-medium">Ver todos →</Link>
+          </div>
+          {newProspects === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-6">Sin prospects nuevos este mes</p>
+          ) : (
+            <div className="flex items-center gap-4 p-4 bg-purple-50 rounded-xl">
+              <span className="text-4xl font-extrabold text-purple-700">{newProspects}</span>
+              <div>
+                <p className="text-sm font-medium text-purple-700">moteles registrados</p>
+                <p className="text-xs text-purple-500">en lo que va del mes</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Reseñas recientes */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-slate-900">Reseñas recientes</h3>
+          </div>
+          {recentReviews.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-6">Sin reseñas todavía</p>
+          ) : (
+            <div className="space-y-3">
+              {recentReviews.map((review) => (
+                <div key={review.id} className="flex items-start gap-3">
+                  <span className="text-yellow-400 text-sm shrink-0 mt-0.5">{'★'.repeat(review.score)}{'☆'.repeat(5 - review.score)}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-slate-700 truncate">
+                      {review.motel?.name ?? '—'}
+                    </p>
+                    {review.comment && (
+                      <p className="text-xs text-slate-500 truncate">{review.comment}</p>
+                    )}
+                    <p className="text-xs text-slate-400">
+                      {review.isAnonymous ? 'Anónimo' : (review.user?.name ?? 'Usuario')} · {new Date(review.createdAt).toLocaleDateString('es-PY', { day: '2-digit', month: 'short' })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Tabla de moteles recientes */}
