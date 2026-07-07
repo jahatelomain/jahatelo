@@ -167,7 +167,7 @@ export default function MotelDetailPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [geocoding, setGeocoding] = useState(false);
-  const [activeTab, setActiveTab] = useState<'promos' | 'details' | 'rooms' | 'menu' | 'commercial'>('details');
+  const [activeTab, setActiveTab] = useState<'promos' | 'details' | 'rooms' | 'menu' | 'commercial' | 'reviews'>('details');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
 
   const [editingMotel, setEditingMotel] = useState(false);
@@ -274,6 +274,8 @@ export default function MotelDetailPage() {
   const [draggedMotelPhotoId, setDraggedMotelPhotoId] = useState<string | null>(null);
   const [dragOverMotelPhotoId, setDragOverMotelPhotoId] = useState<string | null>(null);
   const [uploadingMotelPhoto, setUploadingMotelPhoto] = useState(false);
+  const [reviews, setReviews] = useState<Array<{ id: string; score: number; comment: string | null; isVerified: boolean; isAnonymous: boolean; createdAt: string; user: { id: string; name: string | null; email: string | null } | null }>>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [draggedRoomId, setDraggedRoomId] = useState<string | null>(null);
   const [dragOverRoomId, setDragOverRoomId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
@@ -309,6 +311,9 @@ export default function MotelDetailPage() {
   }, [id]);
 
   useEffect(() => {
+    if (activeTab === 'reviews' && reviews.length === 0) {
+      fetchReviews();
+    }
     if (activeTab !== 'details' && editingMotel) {
       setEditingMotel(false);
     }
@@ -1302,6 +1307,36 @@ export default function MotelDetailPage() {
     }
   };
 
+  const fetchReviews = async () => {
+    if (!id) return;
+    setReviewsLoading(true);
+    try {
+      const res = await fetch(`/api/admin/reviews?motelId=${id}`);
+      const data = await res.json();
+      if (res.ok) setReviews(data.reviews || []);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm('¿Eliminar esta reseña? Esta acción no se puede deshacer.')) return;
+    try {
+      const res = await fetch(`/api/admin/reviews/${reviewId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed');
+      setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+      setMotel((prev) => prev ? {
+        ...prev,
+        ratingCount: (prev.ratingCount ?? 1) - 1,
+      } : prev);
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      alert('Error al eliminar la reseña');
+    }
+  };
+
   const handleReorderRooms = async (orderedRooms: any[]) => {
     if (!motel) return;
     // Actualizar UI optimistamente
@@ -1783,6 +1818,16 @@ export default function MotelDetailPage() {
           }`}
         >
           Menú <span className="ml-1 opacity-70">({menuCategories.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('reviews')}
+          className={`px-5 py-3 font-medium text-sm transition-colors ${
+            activeTab === 'reviews'
+              ? 'border-b-2 border-purple-600 text-purple-700 -mb-[2px]'
+              : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Reseñas <span className="ml-1 opacity-70">({motel.ratingCount ?? 0})</span>
         </button>
         <Link
           href={`/admin/motels/${id}/analytics`}
@@ -3875,6 +3920,72 @@ export default function MotelDetailPage() {
           </div>
         </div>
       )}
+      {activeTab === 'reviews' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Reseñas</h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Promedio: {motel.ratingAvg?.toFixed(1) ?? '—'} ⭐ · {motel.ratingCount ?? 0} reseñas
+              </p>
+            </div>
+            <button
+              onClick={fetchReviews}
+              className="text-xs text-slate-500 hover:text-purple-600 transition-colors"
+            >
+              Actualizar
+            </button>
+          </div>
+
+          {reviewsLoading ? (
+            <div className="text-center py-12 text-slate-400">Cargando reseñas...</div>
+          ) : reviews.length === 0 ? (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
+              <span className="text-4xl text-slate-300">⭐</span>
+              <p className="mt-3 text-slate-500 font-medium">Sin reseñas todavía</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {reviews.map((review) => (
+                <div key={review.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-yellow-400 text-sm">{'★'.repeat(review.score)}{'☆'.repeat(5 - review.score)}</span>
+                        <span className="text-xs font-semibold text-slate-700">{review.score}/5</span>
+                        {review.isVerified && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">Verificada</span>
+                        )}
+                        {review.isAnonymous && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-600 font-medium">Anónima</span>
+                        )}
+                      </div>
+                      {review.comment && (
+                        <p className="text-sm text-slate-700 mt-1">{review.comment}</p>
+                      )}
+                      <p className="text-xs text-slate-400 mt-2">
+                        {review.isAnonymous ? 'Usuario anónimo' : (review.user?.name || review.user?.email || 'Usuario')}
+                        {' · '}
+                        {new Date(review.createdAt).toLocaleDateString('es-PY', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteReview(review.id)}
+                      className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                      title="Eliminar reseña"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <ConfirmModal
         open={Boolean(confirmAction)}
         title={confirmAction?.title || ''}
