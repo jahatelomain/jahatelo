@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { requestSmsOtp, verifySmsOtp } from '../services/authApi';
+import { getApiRoot } from '../services/apiBaseUrl';
 import { COLORS } from '../constants/theme';
 import { useGoogleAuth, getGoogleUserInfo, isGoogleConfigured } from '../services/googleAuthService';
 
@@ -33,6 +34,8 @@ export default function LoginScreen({ navigation }) {
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpVerifyLoading, setOtpVerifyLoading] = useState(false);
   const [resendSeconds, setResendSeconds] = useState(0);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resendVerifLoading, setResendVerifLoading] = useState(false);
   const isAppleAvailable = Platform.OS === 'ios';
 
   // Google Sign-In
@@ -93,14 +96,16 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     if (!validateForm()) return;
+    setNeedsVerification(false);
 
     try {
       setIsLoading(true);
       const result = await login({ email: email.trim(), password });
 
       if (result.success) {
-        // La navegación se manejará automáticamente por el estado de autenticación
         navigation.goBack();
+      } else if (result.needsVerification) {
+        setNeedsVerification(true);
       } else {
         Alert.alert('Error', result.error || 'Error al iniciar sesión');
       }
@@ -108,6 +113,29 @@ export default function LoginScreen({ navigation }) {
       Alert.alert('Error', error.message || 'Error al iniciar sesión');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email.trim()) return;
+    try {
+      setResendVerifLoading(true);
+      const apiBase = getApiRoot().replace('/api/mobile', '');
+      const res = await fetch(`${apiBase}/api/auth/email/request-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (res.ok) {
+        Alert.alert('Enviado', 'Revisá tu bandeja de entrada y hacé clic en el enlace de verificación.');
+      } else {
+        const data = await res.json();
+        Alert.alert('Error', data.error || 'No se pudo enviar el correo');
+      }
+    } catch {
+      Alert.alert('Error', 'Error de conexión');
+    } finally {
+      setResendVerifLoading(false);
     }
   };
 
@@ -305,6 +333,25 @@ export default function LoginScreen({ navigation }) {
                   </View>
                   {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
                 </View>
+
+                {/* Banner de email no verificado */}
+                {needsVerification && (
+                  <View style={styles.verificationBanner}>
+                    <Ionicons name="mail-outline" size={18} color="#B45309" />
+                    <Text style={styles.verificationBannerText}>
+                      Tu email no está verificado. Revisá tu bandeja de entrada.
+                    </Text>
+                    <TouchableOpacity
+                      onPress={handleResendVerification}
+                      disabled={resendVerifLoading}
+                      style={styles.resendVerifButton}
+                    >
+                      <Text style={styles.resendVerifText}>
+                        {resendVerifLoading ? 'Enviando...' : 'Reenviar'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
 
                 {/* Botón de Login */}
                 <TouchableOpacity
@@ -580,6 +627,35 @@ const styles = StyleSheet.create({
   resendText: {
     color: COLORS.primary,
     fontWeight: '600',
+  },
+  verificationBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+    padding: 12,
+    marginBottom: 12,
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  verificationBannerText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#92400E',
+    lineHeight: 18,
+  },
+  resendVerifButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: '#B45309',
+    borderRadius: 6,
+  },
+  resendVerifText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
   },
   divider: {
     flexDirection: 'row',

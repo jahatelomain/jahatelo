@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,31 @@ import {
   Clipboard,
   Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../../constants/theme';
 import { getApiRoot } from '../../services/apiBaseUrl';
 import { getOrCreateDeviceId } from '../../services/analyticsService';
+
+const CLAIMED_CODES_KEY = 'jahatelo_claimed_promo_codes';
+
+async function loadClaimedCodes() {
+  try {
+    const raw = await AsyncStorage.getItem(CLAIMED_CODES_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+async function saveClaimedCode(promoId, codeData) {
+  try {
+    const existing = await loadClaimedCodes();
+    existing[promoId] = codeData;
+    await AsyncStorage.setItem(CLAIMED_CODES_KEY, JSON.stringify(existing));
+  } catch {
+    // ignorar errores de storage
+  }
+}
 
 export default function PromosTab({ route }) {
   const { motel } = route.params || {};
@@ -22,8 +44,20 @@ export default function PromosTab({ route }) {
   const [claimLoading, setClaimLoading] = useState(null); // promoId | null
   const [codeModal, setCodeModal] = useState(null); // { code, title, description, imageUrl } | null
   const [claimError, setClaimError] = useState({}); // { [promoId]: string }
+  // Mapa de códigos ya reclamados: { [promoId]: { code, title, description, imageUrl } }
+  const [claimedCodes, setClaimedCodes] = useState({});
 
-  const handleClaim = async (promo) => {
+  useEffect(() => {
+    loadClaimedCodes().then(setClaimedCodes);
+  }, []);
+
+  const handleClaim = useCallback(async (promo) => {
+    // Si ya tenemos el código localmente, mostrar directo
+    if (claimedCodes[promo.id]) {
+      setCodeModal(claimedCodes[promo.id]);
+      return;
+    }
+
     setClaimLoading(promo.id);
     setClaimError((prev) => ({ ...prev, [promo.id]: null }));
     try {
@@ -38,18 +72,22 @@ export default function PromosTab({ route }) {
         setClaimError((prev) => ({ ...prev, [promo.id]: data.error || 'Error al obtener código' }));
         return;
       }
-      setCodeModal({
+      const codeData = {
         code: data.code,
         title: data.promoTitle || promo.title,
         description: data.promoDescription || promo.description,
         imageUrl: data.promoImageUrl || promo.imageUrl,
-      });
+      };
+      // Persistir localmente
+      await saveClaimedCode(promo.id, codeData);
+      setClaimedCodes((prev) => ({ ...prev, [promo.id]: codeData }));
+      setCodeModal(codeData);
     } catch {
       setClaimError((prev) => ({ ...prev, [promo.id]: 'Error de conexión' }));
     } finally {
       setClaimLoading(null);
     }
-  };
+  }, [claimedCodes]);
 
   const handleCopy = () => {
     if (codeModal?.code) {
@@ -72,58 +110,67 @@ export default function PromosTab({ route }) {
   return (
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {promos.map((promo) => (
-          <View key={promo.id} style={styles.card}>
-            {promo.imageUrl ? (
-              <Image source={{ uri: promo.imageUrl }} style={styles.image} />
-            ) : (
-              <View style={[styles.image, styles.imagePlaceholder]}>
-                <Text style={styles.imagePlaceholderText}>Promo</Text>
-              </View>
-            )}
-            <View style={styles.cardBody}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{promo.title}</Text>
-                {promo.isGlobal && (
-                  <View style={styles.globalBadge}>
-                    <Text style={styles.globalBadgeText}>Home</Text>
+        {promos.map((promo) => {
+          const alreadyClaimed = !!claimedCodes[promo.id];
+          return (
+            <View key={promo.id} style={styles.card}>
+              {promo.imageUrl ? (
+                <Image source={{ uri: promo.imageUrl }} style={styles.image} />
+              ) : (
+                <View style={[styles.image, styles.imagePlaceholder]}>
+                  <Text style={styles.imagePlaceholderText}>Promo</Text>
+                </View>
+              )}
+              <View style={styles.cardBody}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardTitle}>{promo.title}</Text>
+                  {promo.isGlobal && (
+                    <View style={styles.globalBadge}>
+                      <Text style={styles.globalBadgeText}>Home</Text>
+                    </View>
+                  )}
+                </View>
+                {promo.description ? (
+                  <Text style={styles.description}>{promo.description}</Text>
+                ) : (
+                  <Text style={styles.descriptionMuted}>Sin descripción</Text>
+                )}
+                {(promo.validFrom || promo.validUntil) && (
+                  <Text style={styles.validity}>
+                    Vigente {promo.validFrom ? `desde ${new Date(promo.validFrom).toLocaleDateString('es-PY')}` : ''}
+                    {promo.validUntil ? ` hasta ${new Date(promo.validUntil).toLocaleDateString('es-PY')}` : ''}
+                  </Text>
+                )}
+
+                {promo.hasPromoCode && (
+                  <View style={styles.claimSection}>
+                    {claimError[promo.id] ? (
+                      <Text style={styles.claimError}>{claimError[promo.id]}</Text>
+                    ) : null}
+                    <TouchableOpacity
+                      style={[
+                        styles.claimBtn,
+                        alreadyClaimed && styles.claimBtnSecondary,
+                        claimLoading === promo.id && styles.claimBtnDisabled,
+                      ]}
+                      onPress={() => handleClaim(promo)}
+                      disabled={claimLoading === promo.id}
+                      activeOpacity={0.8}
+                    >
+                      {claimLoading === promo.id ? (
+                        <ActivityIndicator color="#fff" size="small" />
+                      ) : (
+                        <Text style={[styles.claimBtnText, alreadyClaimed && styles.claimBtnTextSecondary]}>
+                          {alreadyClaimed ? 'Ver mi código' : 'Obtener código'}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
                   </View>
                 )}
               </View>
-              {promo.description ? (
-                <Text style={styles.description}>{promo.description}</Text>
-              ) : (
-                <Text style={styles.descriptionMuted}>Sin descripción</Text>
-              )}
-              {(promo.validFrom || promo.validUntil) && (
-                <Text style={styles.validity}>
-                  Vigente {promo.validFrom ? `desde ${new Date(promo.validFrom).toLocaleDateString('es-PY')}` : ''}
-                  {promo.validUntil ? ` hasta ${new Date(promo.validUntil).toLocaleDateString('es-PY')}` : ''}
-                </Text>
-              )}
-
-              {promo.hasPromoCode && (
-                <View style={styles.claimSection}>
-                  {claimError[promo.id] ? (
-                    <Text style={styles.claimError}>{claimError[promo.id]}</Text>
-                  ) : null}
-                  <TouchableOpacity
-                    style={[styles.claimBtn, claimLoading === promo.id && styles.claimBtnDisabled]}
-                    onPress={() => handleClaim(promo)}
-                    disabled={claimLoading === promo.id}
-                    activeOpacity={0.8}
-                  >
-                    {claimLoading === promo.id ? (
-                      <ActivityIndicator color="#fff" size="small" />
-                    ) : (
-                      <Text style={styles.claimBtnText}>Obtener código</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              )}
             </View>
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
 
       {/* Modal de código */}
@@ -263,6 +310,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
   },
+  claimBtnSecondary: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  },
   claimBtnDisabled: {
     opacity: 0.6,
   },
@@ -270,6 +322,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: 15,
+  },
+  claimBtnTextSecondary: {
+    color: COLORS.primary,
   },
   // Modal
   modalOverlay: {

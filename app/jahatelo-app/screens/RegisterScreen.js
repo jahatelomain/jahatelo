@@ -163,7 +163,7 @@ export default function RegisterScreen({ navigation }) {
       if (result.success) {
         Alert.alert(
           '¡Cuenta creada!',
-          'Tu cuenta ha sido creada exitosamente.',
+          'Te enviamos un correo de verificación. Revisá tu bandeja y hacé clic en el enlace antes de iniciar sesión.',
           [
             {
               text: 'OK',
