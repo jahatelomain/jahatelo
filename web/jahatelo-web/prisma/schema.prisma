@@ -840,6 +840,21 @@ model ScheduledNotification {
 }
 
 // ============================================
+// AUTO NOTIFICATION CONFIG (configuración de notificaciones automáticas)
+// ============================================
+
+model AutoNotificationConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique  // ej: "contact_message", "promo_favorites", "new_prospect"
+  enabled     Boolean  @default(false)
+  label       String
+  description String
+  category    String   // "advertising" | "security" | "maintenance"
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?  // userId del SUPERADMIN que lo cambió
+}
+
+// ============================================
 // SETTINGS (configuraciones globales del sistema)
 // ============================================
 

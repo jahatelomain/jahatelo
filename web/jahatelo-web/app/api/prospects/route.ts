@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { PublicProspectSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { sendEmail } from '@/lib/email';
+import { sendSms } from '@/lib/sms';
 import { z } from 'zod';
 
 export async function POST(request: NextRequest) {
@@ -116,6 +117,13 @@ export async function POST(request: NextRequest) {
 
       // Ejecutar en background
       Promise.all(emailPromises).catch(() => {});
+    }
+
+    // SMS de alerta interna al admin
+    const adminSmsPhone = process.env.ADMIN_SMS_PHONE;
+    if (adminSmsPhone) {
+      const smsMessage = `Nuevo prospect en Jahatelo: ${motelName} | Contacto: ${contactName} | Tel: ${phone}`;
+      sendSms(adminSmsPhone, smsMessage).catch(() => {});
     }
 
     return NextResponse.json(

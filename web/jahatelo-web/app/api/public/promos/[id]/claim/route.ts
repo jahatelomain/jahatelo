@@ -123,7 +123,7 @@ export async function POST(
 
     // Generate unique code with retry
     let code = '';
-    for (let attempt = 0; attempt < 5; attempt++) {
+    for (let attempt = 0; attempt < 10; attempt++) {
       const candidate = generateCode();
       const collision = await prisma.promoCode.findUnique({ where: { code: candidate } });
       if (!collision) {
