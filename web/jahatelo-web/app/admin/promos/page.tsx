@@ -26,7 +26,27 @@ type Promo = {
   validUntil: string | null;
   isActive: boolean;
   isGlobal: boolean;
+  hasPromoCode: boolean;
+  codeRepeatRule: string | null;
+  codeLimit: number | null;
+  codeLimitPeriod: string | null;
   createdAt: string;
+};
+
+type PromoCode = {
+  id: string;
+  code: string;
+  status: 'PENDING' | 'USED';
+  deviceId: string;
+  createdAt: string;
+  redeemedAt: string | null;
+  redeemedBy: string | null;
+};
+
+type PromoCodeSummary = {
+  total: number;
+  pending: number;
+  used: number;
 };
 
 type CurrentUser = {
@@ -69,6 +89,27 @@ export default function PromosAdminPage() {
   const filtersKeyRef = useRef('');
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
+  // Codes panel state
+  const [expandedCodesPromoId, setExpandedCodesPromoId] = useState<string | null>(null);
+  const [codes, setCodes] = useState<PromoCode[]>([]);
+  const [codesSummary, setCodesSummary] = useState<PromoCodeSummary | null>(null);
+  const [loadingCodes, setLoadingCodes] = useState(false);
+  const [codesPage, setCodesPage] = useState(1);
+  const [codesTotalPages, setCodesTotalPages] = useState(1);
+
+  // Redeem state
+  const [redeemPromoId, setRedeemPromoId] = useState<string | null>(null);
+  const [redeemCode, setRedeemCode] = useState('');
+  const [redeemLoading, setRedeemLoading] = useState(false);
+  const [redeemResult, setRedeemResult] = useState<{
+    valid: boolean;
+    confirmed?: boolean;
+    reason?: string;
+    promoTitle?: string;
+    promoDescription?: string | null;
+    redeemedAt?: string;
+  } | null>(null);
+
   const toast = useToast();
 
   const normalizePlan = (plan?: string | null) => (plan || 'BASIC').toUpperCase();
@@ -87,6 +128,25 @@ export default function PromosAdminPage() {
   };
   const formatLimit = (limit: number) => (Number.isFinite(limit) ? `${limit}` : 'Ilimitadas');
 
+  const getRepeatRuleLabel = (rule: string | null) => {
+    switch (rule) {
+      case 'DAILY': return 'Diario';
+      case 'WEEKLY': return 'Semanal';
+      case 'MONTHLY': return 'Mensual';
+      case 'NEVER': return 'Una vez';
+      default: return '—';
+    }
+  };
+
+  const getLimitPeriodLabel = (period: string | null) => {
+    switch (period) {
+      case 'WEEKLY': return 'por semana';
+      case 'MONTHLY': return 'por mes';
+      case 'UNLIMITED': return 'total';
+      default: return '';
+    }
+  };
+
   const [formData, setFormData] = useState({
     motelId: '',
     title: '',
@@ -96,6 +156,10 @@ export default function PromosAdminPage() {
     validUntil: '',
     isActive: true,
     isGlobal: false,
+    hasPromoCode: false,
+    codeRepeatRule: '',
+    codeLimit: '',
+    codeLimitPeriod: '',
   });
 
   useEffect(() => {
@@ -162,6 +226,106 @@ export default function PromosAdminPage() {
     }
   };
 
+  const fetchCodes = async (promoId: string, pg = 1) => {
+    setLoadingCodes(true);
+    try {
+      const res = await fetch(`/api/admin/promos/${promoId}/codes?page=${pg}&limit=20`);
+      if (!res.ok) throw new Error('Error al cargar códigos');
+      const data = await res.json();
+      setCodes(pg === 1 ? data.data : (prev) => [...prev, ...data.data]);
+      setCodesSummary(data.summary);
+      setCodesTotalPages(data.meta?.totalPages ?? 1);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Error al cargar códigos');
+    } finally {
+      setLoadingCodes(false);
+    }
+  };
+
+  const handleToggleCodes = (promoId: string) => {
+    if (expandedCodesPromoId === promoId) {
+      setExpandedCodesPromoId(null);
+      setCodes([]);
+      setCodesSummary(null);
+      setCodesPage(1);
+    } else {
+      setExpandedCodesPromoId(promoId);
+      setCodes([]);
+      setCodesPage(1);
+      fetchCodes(promoId, 1);
+    }
+  };
+
+  const handleLoadMoreCodes = () => {
+    if (!expandedCodesPromoId) return;
+    const next = codesPage + 1;
+    setCodesPage(next);
+    fetchCodes(expandedCodesPromoId, next);
+  };
+
+  // Redeem handlers
+  const handleOpenRedeem = (promoId: string) => {
+    setRedeemPromoId(promoId);
+    setRedeemCode('');
+    setRedeemResult(null);
+  };
+
+  const handleCloseRedeem = () => {
+    setRedeemPromoId(null);
+    setRedeemCode('');
+    setRedeemResult(null);
+    setRedeemLoading(false);
+  };
+
+  const handleValidateCode = async () => {
+    if (!redeemPromoId || !redeemCode.trim()) return;
+    setRedeemLoading(true);
+    setRedeemResult(null);
+    try {
+      const res = await fetch(`/api/admin/promos/${redeemPromoId}/redeem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: redeemCode.trim().toUpperCase(), confirm: false }),
+      });
+      const data = await res.json();
+      setRedeemResult(data);
+    } catch {
+      toast.error('Error al validar código');
+    } finally {
+      setRedeemLoading(false);
+    }
+  };
+
+  const handleConfirmRedeem = async () => {
+    if (!redeemPromoId || !redeemCode.trim()) return;
+    setRedeemLoading(true);
+    try {
+      const res = await fetch(`/api/admin/promos/${redeemPromoId}/redeem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: redeemCode.trim().toUpperCase(), confirm: true }),
+      });
+      const data = await res.json();
+      if (data.confirmed) {
+        toast.success('Código canjeado correctamente');
+        handleCloseRedeem();
+        // Refresh codes panel if open
+        if (expandedCodesPromoId === redeemPromoId) {
+          setCodes([]);
+          setCodesPage(1);
+          fetchCodes(redeemPromoId, 1);
+        }
+      } else {
+        setRedeemResult(data);
+      }
+    } catch {
+      toast.error('Error al canjear código');
+    } finally {
+      setRedeemLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -170,14 +334,41 @@ export default function PromosAdminPage() {
       return;
     }
 
+    if (formData.hasPromoCode && !formData.codeRepeatRule) {
+      toast.warning('Seleccioná la regla de repetición del código');
+      return;
+    }
+
     try {
       const url = editingId ? `/api/admin/promos/${editingId}` : '/api/admin/promos';
       const method = editingId ? 'PATCH' : 'POST';
 
+      const payload: any = {
+        motelId: formData.motelId,
+        title: formData.title,
+        description: formData.description || null,
+        imageUrl: formData.imageUrl || null,
+        validFrom: formData.validFrom || null,
+        validUntil: formData.validUntil || null,
+        isActive: formData.isActive,
+        isGlobal: formData.isGlobal,
+        hasPromoCode: formData.hasPromoCode,
+      };
+
+      if (formData.hasPromoCode) {
+        payload.codeRepeatRule = formData.codeRepeatRule || null;
+        payload.codeLimit = formData.codeLimit ? Number(formData.codeLimit) : null;
+        payload.codeLimitPeriod = formData.codeLimitPeriod || null;
+      } else {
+        payload.codeRepeatRule = null;
+        payload.codeLimit = null;
+        payload.codeLimitPeriod = null;
+      }
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -203,6 +394,10 @@ export default function PromosAdminPage() {
       validUntil: promo.validUntil ? new Date(promo.validUntil).toISOString().split('T')[0] : '',
       isActive: promo.isActive,
       isGlobal: promo.isGlobal,
+      hasPromoCode: promo.hasPromoCode,
+      codeRepeatRule: promo.codeRepeatRule || '',
+      codeLimit: promo.codeLimit !== null && promo.codeLimit !== undefined ? String(promo.codeLimit) : '',
+      codeLimitPeriod: promo.codeLimitPeriod || '',
     };
     setEditingId(promo.id);
     setFormData(nextForm);
@@ -226,6 +421,10 @@ export default function PromosAdminPage() {
           const res = await fetch(`/api/admin/promos/${id}`, { method: 'DELETE' });
           if (!res.ok) throw new Error('Error al eliminar');
           toast.success('Promoción eliminada');
+          if (expandedCodesPromoId === id) {
+            setExpandedCodesPromoId(null);
+            setCodes([]);
+          }
           fetchPromos();
         } catch (error: any) {
           toast.error(error.message || 'Error al eliminar promoción');
@@ -264,6 +463,10 @@ export default function PromosAdminPage() {
       validUntil: '',
       isActive: true,
       isGlobal: false,
+      hasPromoCode: false,
+      codeRepeatRule: '',
+      codeLimit: '',
+      codeLimitPeriod: '',
     };
     setFormData(nextForm);
     formSnapshotRef.current = JSON.stringify(nextForm);
@@ -281,6 +484,10 @@ export default function PromosAdminPage() {
       validUntil: '',
       isActive: true,
       isGlobal: false,
+      hasPromoCode: false,
+      codeRepeatRule: '',
+      codeLimit: '',
+      codeLimitPeriod: '',
     };
     setFormData(nextForm);
     setShowForm(true);
@@ -310,13 +517,13 @@ export default function PromosAdminPage() {
     setUploadingImage(true);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', 'promos');
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+      formDataUpload.append('folder', 'promos');
 
       const res = await fetch('/api/upload', {
         method: 'POST',
-        body: formData,
+        body: formDataUpload,
       });
 
       if (!res.ok) throw new Error('Error al subir imagen');
@@ -372,6 +579,16 @@ export default function PromosAdminPage() {
     threshold: 200,
   });
 
+  const getRedeemReasonLabel = (reason?: string) => {
+    switch (reason) {
+      case 'INVALID_CODE': return 'Código inválido o no existe';
+      case 'WRONG_PROMO': return 'El código no pertenece a esta promoción';
+      case 'ALREADY_USED': return 'El código ya fue canjeado';
+      case 'PROMO_INACTIVE': return 'La promoción está inactiva o vencida';
+      default: return reason ?? 'Error desconocido';
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -388,7 +605,7 @@ export default function PromosAdminPage() {
             <div className="h-24 bg-slate-50 rounded animate-pulse" />
           </div>
         </div>
-        <TableSkeleton rows={6} columns={5} />
+        <TableSkeleton rows={6} columns={6} />
       </div>
     );
   }
@@ -419,7 +636,6 @@ export default function PromosAdminPage() {
       {/* Búsqueda y Filtros */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Búsqueda */}
           <div className="md:col-span-2">
             <div className="relative">
               <input
@@ -429,23 +645,11 @@ export default function PromosAdminPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full border border-slate-300 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               />
-              <svg
-                className="w-5 h-5 text-slate-400 absolute left-3 top-2.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
+              <svg className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
           </div>
-
-          {/* Filtro Estado */}
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as any)}
@@ -455,8 +659,6 @@ export default function PromosAdminPage() {
             <option value="ACTIVE">Activas</option>
             <option value="INACTIVE">Inactivas</option>
           </select>
-
-          {/* Filtro Tipo */}
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as any)}
@@ -467,8 +669,6 @@ export default function PromosAdminPage() {
             <option value="SPECIFIC">Específicas</option>
           </select>
         </div>
-
-        {/* Contadores */}
         <div className="flex flex-wrap gap-3 mt-4 text-sm">
           <span className="text-slate-600">
             Total: <span className="font-semibold text-slate-900">{totalItems}</span>
@@ -489,10 +689,7 @@ export default function PromosAdminPage() {
             <h3 className="text-lg font-semibold text-slate-900">
               {editingId ? 'Editar Promoción' : 'Nueva Promoción'}
             </h3>
-            <button
-              onClick={handleCancel}
-              className="text-slate-400 hover:text-slate-600 transition-colors"
-            >
+            <button onClick={handleCancel} className="text-slate-400 hover:text-slate-600 transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -504,9 +701,7 @@ export default function PromosAdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Motel */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Motel *
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Motel *</label>
                 <select
                   value={formData.motelId}
                   onChange={(e) => setFormData({ ...formData, motelId: e.target.value })}
@@ -526,20 +721,15 @@ export default function PromosAdminPage() {
                 )}
                 {formData.motelId && (
                   <p className="text-xs text-slate-500 mt-2">
-                    Límite por plan ({getPlanLabel(selectedPlan)}): Básico 1 activa · Gold 5 activas · Diamond ilimitadas.
-                    <span className="ml-2">Límite actual: {formatLimit(selectedPromoLimit)}.</span>
-                    {!selectedMotel?.plan && (
-                      <span className="ml-2">Plan no disponible en listado; se validará al guardar.</span>
-                    )}
+                    Plan {getPlanLabel(selectedPlan)}: límite {formatLimit(selectedPromoLimit)} promos activas.
+                    {!selectedMotel?.plan && ' Plan no disponible; se validará al guardar.'}
                   </p>
                 )}
               </div>
 
               {/* Título */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Título *
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Título *</label>
                 <input
                   type="text"
                   value={formData.title}
@@ -587,18 +777,13 @@ export default function PromosAdminPage() {
                 >
                   {uploadingImage ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600" />
                       Subiendo...
                     </>
                   ) : (
                     <>
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       Subir imagen
                     </>
@@ -606,11 +791,7 @@ export default function PromosAdminPage() {
                 </label>
                 {formData.imageUrl && (
                   <div className="relative w-20 h-20">
-                    <img
-                      src={formData.imageUrl}
-                      alt="Preview"
-                      className="w-full h-full object-cover rounded-lg border border-slate-200"
-                    />
+                    <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover rounded-lg border border-slate-200" />
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, imageUrl: '' })}
@@ -651,7 +832,7 @@ export default function PromosAdminPage() {
               </div>
             </div>
 
-            {/* Checkboxes */}
+            {/* Checkboxes básicos */}
             <div className="flex flex-wrap gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -669,10 +850,87 @@ export default function PromosAdminPage() {
                   onChange={(e) => setFormData({ ...formData, isGlobal: e.target.checked })}
                   className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-600"
                 />
-                <span className="text-sm font-medium text-slate-700">
-                  Global (mostrar en todos lados)
-                </span>
+                <span className="text-sm font-medium text-slate-700">Global (mostrar en todos lados)</span>
               </label>
+            </div>
+
+            {/* ── Sección Cupones de Código ── */}
+            <div className="border border-slate-200 rounded-xl p-4 space-y-4">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.hasPromoCode}
+                  onChange={(e) => setFormData({ ...formData, hasPromoCode: e.target.checked })}
+                  className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-600"
+                />
+                <div>
+                  <span className="text-sm font-semibold text-slate-800">Habilitar cupones de código</span>
+                  <p className="text-xs text-slate-500 mt-0.5">Los usuarios podrán obtener un código único para canjear en recepción</p>
+                </div>
+              </label>
+
+              {formData.hasPromoCode && (
+                <div className="space-y-4 pl-7">
+                  {/* Regla de repetición */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      ¿Con qué frecuencia puede un usuario reclamar? *
+                    </label>
+                    <select
+                      value={formData.codeRepeatRule}
+                      onChange={(e) => setFormData({ ...formData, codeRepeatRule: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      required={formData.hasPromoCode}
+                    >
+                      <option value="">Seleccionar regla</option>
+                      <option value="NEVER">Una sola vez (nunca puede repetir)</option>
+                      <option value="DAILY">Una vez por día</option>
+                      <option value="WEEKLY">Una vez por semana</option>
+                      <option value="MONTHLY">Una vez por mes</option>
+                    </select>
+                  </div>
+
+                  {/* Límite global */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Límite total de cupones <span className="text-slate-400">(opcional)</span>
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={formData.codeLimit}
+                        onChange={(e) => setFormData({ ...formData, codeLimit: e.target.value })}
+                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        placeholder="Ej: 100"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">Dejar vacío para cupones ilimitados</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Período del límite
+                      </label>
+                      <select
+                        value={formData.codeLimitPeriod}
+                        onChange={(e) => setFormData({ ...formData, codeLimitPeriod: e.target.value })}
+                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        disabled={!formData.codeLimit}
+                      >
+                        <option value="">Sin período (total acumulado)</option>
+                        <option value="WEEKLY">Por semana</option>
+                        <option value="MONTHLY">Por mes</option>
+                        <option value="UNLIMITED">Total sin reinicio</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <p className="text-xs text-amber-800">
+                      <strong>Ejemplo:</strong> Regla "Una vez por semana" + límite "50 por mes" significa que cada usuario puede reclamar un código por semana, y la promo acepta máximo 50 cupones por mes en total.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Botones */}
@@ -695,33 +953,99 @@ export default function PromosAdminPage() {
         </div>
       )}
 
+      {/* Modal de canje */}
+      {redeemPromoId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Canjear cupón</h3>
+              <button onClick={handleCloseRedeem} className="text-slate-400 hover:text-slate-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Código del cupón</label>
+              <input
+                type="text"
+                value={redeemCode}
+                onChange={(e) => {
+                  setRedeemCode(e.target.value.toUpperCase());
+                  setRedeemResult(null);
+                }}
+                maxLength={6}
+                placeholder="Ej: A3KP2X"
+                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 font-mono text-lg tracking-widest text-center focus:ring-2 focus:ring-purple-600 focus:border-transparent uppercase"
+              />
+            </div>
+
+            {/* Resultado de validación */}
+            {redeemResult && (
+              <div className={`rounded-lg p-4 ${redeemResult.valid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                {redeemResult.valid ? (
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-green-800">Código válido</p>
+                    <p className="text-sm text-green-700">{redeemResult.promoTitle}</p>
+                    {redeemResult.promoDescription && (
+                      <p className="text-xs text-green-600">{redeemResult.promoDescription}</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm font-medium text-red-800">{getRedeemReasonLabel(redeemResult.reason)}</p>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              {(!redeemResult || !redeemResult.valid) && (
+                <button
+                  onClick={handleValidateCode}
+                  disabled={redeemLoading || redeemCode.length !== 6}
+                  className="flex-1 px-4 py-2.5 bg-slate-700 text-white rounded-lg hover:bg-slate-800 font-medium transition-colors disabled:opacity-50"
+                >
+                  {redeemLoading ? 'Validando...' : 'Validar código'}
+                </button>
+              )}
+              {redeemResult?.valid && (
+                <button
+                  onClick={handleConfirmRedeem}
+                  disabled={redeemLoading}
+                  className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors disabled:opacity-50"
+                >
+                  {redeemLoading ? 'Canjeando...' : 'Confirmar canje'}
+                </button>
+              )}
+              <button
+                onClick={handleCloseRedeem}
+                className="px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tabla */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Promoción
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Motel
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Vigencia
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Acciones
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Promoción</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Motel</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Vigencia</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Estado</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Cupones</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
               {promos.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center">
+                  <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <span className="text-4xl text-slate-300">🎁</span>
                       <p className="text-slate-500 font-medium">
@@ -737,103 +1061,213 @@ export default function PromosAdminPage() {
                 </tr>
               ) : (
                 promos.map((promo) => (
-                  <tr key={promo.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        {promo.imageUrl && (
-                          <img
-                            src={promo.imageUrl}
-                            alt={promo.title}
-                            className="w-12 h-12 object-cover rounded-lg"
-                          />
-                        )}
-                        <div>
-                          <p className="font-medium text-slate-900">{promo.title}</p>
-                          {promo.description && (
-                            <p className="text-sm text-slate-500 line-clamp-1">{promo.description}</p>
+                  <>
+                    <tr key={promo.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          {promo.imageUrl && (
+                            <img src={promo.imageUrl} alt={promo.title} className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
                           )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <p className="text-sm font-medium text-slate-900">{promo.motel.name}</p>
-                      <p className="text-xs text-slate-500">{promo.motel.city}</p>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                      {promo.validFrom || promo.validUntil ? (
-                        <div className="text-xs space-y-0.5">
-                          {promo.validFrom && (
-                            <p>
-                              Desde: {new Date(promo.validFrom).toLocaleDateString('es-AR')}
-                            </p>
-                          )}
-                          {promo.validUntil && (
-                            <p>
-                              Hasta: {new Date(promo.validUntil).toLocaleDateString('es-AR')}
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-slate-400">Sin límite</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-1">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            promo.isActive
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          {promo.isActive ? 'Activa' : 'Inactiva'}
-                        </span>
-                        {promo.isGlobal && (
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-700">
-                            Global
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleEdit(promo)}
-                          className="inline-flex items-center gap-1 rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
-                        >
-                          Editar
-                        </button>
-                        <details className="relative">
-                          <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
-                            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
-                            </svg>
-                          </summary>
-                          <div className="absolute right-0 mt-2 w-44 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
-                            <button
-                              onClick={() => handleToggleActive(promo)}
-                              className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                            >
-                              {promo.isActive ? 'Desactivar' : 'Activar'}
-                            </button>
-                            <button
-                              onClick={() => handleDelete(promo.id)}
-                              className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
-                            >
-                              Eliminar
-                            </button>
+                          <div>
+                            <p className="font-medium text-slate-900">{promo.title}</p>
+                            {promo.description && (
+                              <p className="text-sm text-slate-500 line-clamp-1">{promo.description}</p>
+                            )}
                           </div>
-                        </details>
-                      </div>
-                    </td>
-                  </tr>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <p className="text-sm font-medium text-slate-900">{promo.motel.name}</p>
+                        <p className="text-xs text-slate-500">{promo.motel.city}</p>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                        {promo.validFrom || promo.validUntil ? (
+                          <div className="text-xs space-y-0.5">
+                            {promo.validFrom && <p>Desde: {new Date(promo.validFrom).toLocaleDateString('es-AR')}</p>}
+                            {promo.validUntil && <p>Hasta: {new Date(promo.validUntil).toLocaleDateString('es-AR')}</p>}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">Sin límite</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${promo.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                            {promo.isActive ? 'Activa' : 'Inactiva'}
+                          </span>
+                          {promo.isGlobal && (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-700">
+                              Global
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {promo.hasPromoCode ? (
+                          <div className="space-y-1">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">
+                              Con cupones
+                            </span>
+                            <p className="text-xs text-slate-500">{getRepeatRuleLabel(promo.codeRepeatRule)}</p>
+                            {promo.codeLimit && (
+                              <p className="text-xs text-slate-400">Límite: {promo.codeLimit} {getLimitPeriodLabel(promo.codeLimitPeriod)}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400">Sin cupones</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEdit(promo)}
+                            className="inline-flex items-center gap-1 rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
+                          >
+                            Editar
+                          </button>
+                          {promo.hasPromoCode && (
+                            <button
+                              onClick={() => handleToggleCodes(promo.id)}
+                              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                expandedCodesPromoId === promo.id
+                                  ? 'bg-amber-100 border-amber-300 text-amber-800'
+                                  : 'border-slate-200 bg-white text-slate-600 hover:border-amber-300 hover:text-amber-700'
+                              }`}
+                            >
+                              Códigos
+                            </button>
+                          )}
+                          {promo.hasPromoCode && (
+                            <button
+                              onClick={() => handleOpenRedeem(promo.id)}
+                              className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-white px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-50 transition-colors"
+                            >
+                              Canjear
+                            </button>
+                          )}
+                          <details className="relative">
+                            <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
+                              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
+                              </svg>
+                            </summary>
+                            <div className="absolute right-0 mt-2 w-44 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
+                              <button
+                                onClick={() => handleToggleActive(promo)}
+                                className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                              >
+                                {promo.isActive ? 'Desactivar' : 'Activar'}
+                              </button>
+                              <button
+                                onClick={() => handleDelete(promo.id)}
+                                className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </details>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Panel de códigos expandible */}
+                    {expandedCodesPromoId === promo.id && (
+                      <tr key={`${promo.id}-codes`}>
+                        <td colSpan={6} className="px-6 pb-4 bg-amber-50">
+                          <div className="border border-amber-200 rounded-xl overflow-hidden mt-2">
+                            {/* Header panel */}
+                            <div className="bg-amber-100 px-4 py-3 flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <span className="text-sm font-semibold text-amber-900">Cupones de {promo.title}</span>
+                                {codesSummary && (
+                                  <div className="flex gap-3 text-xs text-amber-800">
+                                    <span>Total: <strong>{codesSummary.total}</strong></span>
+                                    <span>Pendientes: <strong>{codesSummary.pending}</strong></span>
+                                    <span>Usados: <strong>{codesSummary.used}</strong></span>
+                                  </div>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => handleToggleCodes(promo.id)}
+                                className="text-amber-700 hover:text-amber-900"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+
+                            {/* Tabla de códigos */}
+                            <div className="overflow-x-auto">
+                              <table className="min-w-full divide-y divide-amber-200">
+                                <thead className="bg-amber-50">
+                                  <tr>
+                                    <th className="px-4 py-2 text-left text-xs font-semibold text-amber-800 uppercase">Código</th>
+                                    <th className="px-4 py-2 text-left text-xs font-semibold text-amber-800 uppercase">Estado</th>
+                                    <th className="px-4 py-2 text-left text-xs font-semibold text-amber-800 uppercase">Dispositivo</th>
+                                    <th className="px-4 py-2 text-left text-xs font-semibold text-amber-800 uppercase">Reclamado</th>
+                                    <th className="px-4 py-2 text-left text-xs font-semibold text-amber-800 uppercase">Canjeado</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-amber-100">
+                                  {loadingCodes && codes.length === 0 ? (
+                                    <tr>
+                                      <td colSpan={5} className="px-4 py-6 text-center text-sm text-slate-500">
+                                        Cargando códigos...
+                                      </td>
+                                    </tr>
+                                  ) : codes.length === 0 ? (
+                                    <tr>
+                                      <td colSpan={5} className="px-4 py-6 text-center text-sm text-slate-500">
+                                        No hay cupones generados todavía
+                                      </td>
+                                    </tr>
+                                  ) : (
+                                    codes.map((c) => (
+                                      <tr key={c.id} className="hover:bg-amber-50">
+                                        <td className="px-4 py-2 font-mono font-bold text-sm text-slate-900 tracking-widest">{c.code}</td>
+                                        <td className="px-4 py-2">
+                                          <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${c.status === 'USED' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                            {c.status === 'USED' ? 'Usado' : 'Pendiente'}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-2 text-xs text-slate-500 font-mono">{c.deviceId}</td>
+                                        <td className="px-4 py-2 text-xs text-slate-500">
+                                          {new Date(c.createdAt).toLocaleDateString('es-AR')}
+                                        </td>
+                                        <td className="px-4 py-2 text-xs text-slate-500">
+                                          {c.redeemedAt ? new Date(c.redeemedAt).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                                        </td>
+                                      </tr>
+                                    ))
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+
+                            {/* Cargar más */}
+                            {codesPage < codesTotalPages && (
+                              <div className="px-4 py-3 bg-amber-50 text-center">
+                                <button
+                                  onClick={handleLoadMoreCodes}
+                                  disabled={loadingCodes}
+                                  className="text-sm text-amber-700 font-medium hover:text-amber-900 disabled:opacity-50"
+                                >
+                                  {loadingCodes ? 'Cargando...' : 'Cargar más'}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))
               )}
             </tbody>
           </table>
         </div>
 
-        {/* Infinite scroll sentinel y loader */}
         {promos.length > 0 && (
           <div ref={sentinelRef} className="px-6 pb-6">
             {loadingMore && (
@@ -852,6 +1286,7 @@ export default function PromosAdminPage() {
           </div>
         )}
       </div>
+
       <ConfirmModal
         open={Boolean(confirmAction)}
         title={confirmAction?.title || ''}

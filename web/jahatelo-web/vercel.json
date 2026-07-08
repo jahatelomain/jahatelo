@@ -9,6 +9,10 @@
     {
       "path": "/api/cron/cleanup-data",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-promo-codes",
+      "schedule": "0 5 * * *"
     }
   ]
 }

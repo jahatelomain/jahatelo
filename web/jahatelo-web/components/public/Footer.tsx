@@ -49,12 +49,12 @@ export default function Footer() {
             <p className="text-purple-200/60 text-sm">
               ¿Tenés un motel y querés aparecer en Jahatelo?
             </p>
-            <a
-              href="mailto:contacto@jahatelo.com"
+            <Link
+              href="/contacto"
               className="inline-block mt-3 text-sm font-medium text-purple-400 hover:text-pink-400 transition-colors"
             >
-              contacto@jahatelo.com
-            </a>
+              Registrá tu motel →
+            </Link>
           </div>
         </div>
 
