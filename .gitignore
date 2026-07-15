@@ -36,3 +36,9 @@ dist/
 build/
 .vercel
 .env*.local
+
+# Media local / contenido subido: guardar fuera del repo o en storage
+Fotos/
+Moteles/
+web/jahatelo-web/public/uploads/**
+!web/jahatelo-web/public/uploads/.gitkeep
