@@ -5,7 +5,7 @@
 Para que el sistema funcione correctamente, instala la siguiente dependencia:
 
 ```bash
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app
 npx expo install @react-native-community/netinfo
 ```
 

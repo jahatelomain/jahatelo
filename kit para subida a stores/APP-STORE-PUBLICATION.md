@@ -70,7 +70,7 @@ Antes de comenzar, asegúrate de tener:
 4. Paga la tarifa única de **$25 USD**
    - Métodos aceptados: Tarjeta de crédito/débito
 5. Completa los datos de tu cuenta:
-   - **Nombre del desarrollador** (será público): "Jahatelo" o "MBARETECH"
+   - **Nombre del desarrollador** (será público): "Jahatelo" o "AKAHATA STUDIO"
    - **Correo de contacto**: soporte@jahatelo.com
    - **Sitio web**: https://jahatelo.com
    - **Dirección** (puede ser requerida)

@@ -1579,7 +1579,7 @@ export default function MotelDetailPage() {
 
   const getPromoLimit = (plan: string | null | undefined) => {
     const normalized = normalizePlan(plan);
-    if (normalized === 'GOLD') return 5;
+    if (normalized === 'GOLD') return 3;
     if (normalized === 'DIAMOND') return Number.POSITIVE_INFINITY;
     return 1;
   };

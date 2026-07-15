@@ -31,7 +31,7 @@
 ### 1. Hacer Nuevo Build
 
 ```bash
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app
 
 # Development build con el nuevo ícono
 eas build --profile development --platform android
@@ -81,7 +81,7 @@ El ícono actual funciona, pero Android recomienda usar un **ícono monocromáti
 brew install imagemagick
 
 # Generar ícono monocromático
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app
 ./scripts/generate-notification-icon.sh
 
 # Hacer nuevo build

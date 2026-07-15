@@ -72,7 +72,7 @@ app.jahatelo.mobile
 
 ### **Para Android (Expo Go):**
 ```bash
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app
 npm start
 ```
 Escanea el QR con Expo Go → Login → Google → ✅ Funciona
@@ -175,5 +175,5 @@ npx eas-cli build --platform ios --profile production
 
 ---
 
-**Creado por:** Claude Code (MBARETECH)
+**Creado por:** Claude Code (AKAHATA STUDIO)
 **Última actualización:** 20 Enero 2025

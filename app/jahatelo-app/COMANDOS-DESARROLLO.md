@@ -8,7 +8,7 @@ Este proyecto usa **Expo Dev Client**, NO React Native CLI puro. Usa siempre com
 
 ### Iniciar Metro Bundler
 ```bash
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app
 npx expo start
 ```
 

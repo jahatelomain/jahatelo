@@ -9,7 +9,7 @@ import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
 
 const getPromoLimit = (plan?: string | null) => {
-  if (plan === 'GOLD') return 5;
+  if (plan === 'GOLD') return 3;
   if (plan === 'DIAMOND') return null;
   return 1;
 };
