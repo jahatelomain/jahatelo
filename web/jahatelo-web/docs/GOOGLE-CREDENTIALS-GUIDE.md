@@ -127,7 +127,7 @@ Ahora sí, vamos a crear las credenciales para Android, iOS y Web/Expo.
 **Opción 1: Desarrollo con Expo (más fácil)**
 
 ```bash
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app
 npx expo fetch:android:hashes
 ```
 
@@ -383,4 +383,4 @@ Si llegaste hasta aquí, ya tienes Google Sign-In funcionando en Jahatelo.
 ---
 
 **Última actualización:** Enero 2025
-**Creado por:** Claude Code (MBARETECH)
+**Creado por:** Claude Code (AKAHATA STUDIO)

@@ -30,7 +30,7 @@ sudo apt-get install imagemagick
 
 ```bash
 # Convertir logo-icon.png a monocromático blanco sobre transparente
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app/assets
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app/assets
 
 # Crear ícono monocromático de 192x192
 convert logo-icon.png \
@@ -96,7 +96,7 @@ ls -lh notification-icon.png
 Si necesitas probar rápidamente sin crear el ícono monocromático:
 
 ```bash
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app/assets
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app/assets
 
 # Copiar el favicon como temporal (no es ideal pero funciona)
 cp favicon.png notification-icon.png
@@ -119,7 +119,7 @@ iOS usa el ícono principal de la app (`icon` en `app.json`) y no requiere un í
 ### 1. Verificar que el archivo existe
 
 ```bash
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app
 ls -lh assets/notification-icon.png
 ```
 

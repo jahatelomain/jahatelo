@@ -44,3 +44,7 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+
+# Media local / contenido subido: guardar fuera del repo o en storage
+/public/uploads/**
+!/public/uploads/.gitkeep

@@ -16,7 +16,7 @@ Para probar push notifications necesitas crear un **Development Build**.
 
 ```bash
 # En el directorio de la app móvil
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app
 
 # Instalar EAS CLI
 npm install -g eas-cli
@@ -141,7 +141,7 @@ eas build --profile development --platform ios --local
 
 ```bash
 # En el directorio web
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/web/jahatelo-web
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/web/jahatelo-web
 npm run dev
 ```
 

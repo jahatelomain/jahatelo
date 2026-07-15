@@ -31,7 +31,7 @@ SHA-1: AA:BB:CC:DD:EE:FF:11:22:33:44:55:66:77:88:99:00:AA:BB:CC:DD
 Abre tu **terminal normal** (no Claude Code) y ejecuta:
 
 ```bash
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app
 npx eas-cli credentials
 ```
 

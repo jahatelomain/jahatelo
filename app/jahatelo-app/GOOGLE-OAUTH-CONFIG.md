@@ -128,7 +128,7 @@ Una vez tengas los 3 Client IDs, actualiza el `app.json`:
 Después de actualizar el `app.json`:
 
 ```bash
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app
 npm start
 ```
 
