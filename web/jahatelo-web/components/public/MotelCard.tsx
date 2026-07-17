@@ -62,14 +62,16 @@ export default function MotelCard({ motel }: MotelCardProps) {
   const amenityMap = new Map<string, { name: string; icon?: string | null }>();
   for (const room of motel.rooms ?? []) {
     for (const ra of room.amenities ?? []) {
-      if (!amenityMap.has(ra.amenity.name)) {
-        amenityMap.set(ra.amenity.name, ra.amenity);
+      const amenity = ra?.amenity;
+      if (amenity?.name && !amenityMap.has(amenity.name)) {
+        amenityMap.set(amenity.name, amenity);
       }
     }
   }
   const topAmenities = Array.from(amenityMap.values()).slice(0, 3);
   const isDisabled = motel.plan === 'FREE';
   const isDiamond = motel.plan === 'DIAMOND';
+  const isGold = motel.plan === 'GOLD';
 
   const cardInner = (
     <div
@@ -99,11 +101,25 @@ export default function MotelCard({ motel }: MotelCardProps) {
           <div className="absolute top-3 left-3">
             <FavoriteButtonClient motelId={motel.id} source="LIST" size="small" />
           </div>
-          {motel.isFeatured && (
-            <div className="absolute top-3 right-3 bg-purple-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
-              Destacado
-            </div>
-          )}
+          <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
+            {motel.isFeatured && (
+              <div className="bg-purple-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                Destacado
+              </div>
+            )}
+            {isDiamond && (
+              <div className="flex items-center gap-1 bg-cyan-950/80 backdrop-blur-sm border border-cyan-400/60 text-cyan-300 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-[0_0_8px_rgba(34,211,238,0.4)]">
+                <svg className="w-2.5 h-2.5 fill-cyan-300" viewBox="0 0 24 24"><path d="M12 2L2 9l10 13L22 9z"/></svg>
+                DIAMOND
+              </div>
+            )}
+            {isGold && (
+              <div className="flex items-center gap-1 bg-yellow-950/80 backdrop-blur-sm border border-yellow-400/60 text-yellow-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                <svg className="w-2.5 h-2.5 fill-yellow-300" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+                GOLD
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Content */}

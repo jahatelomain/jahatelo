@@ -101,10 +101,9 @@ export default function TermsPage() {
 
               <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">6.3 Planes y Pagos</h3>
               <ul className="list-disc pl-6 text-slate-700 space-y-2">
-                <li><strong>FREE:</strong> Listado básico con acceso limitado</li>
-                <li><strong>BASIC:</strong> Listado estándar con funcionalidades esenciales</li>
-                <li><strong>GOLD:</strong> Visibilidad mejorada con funciones adicionales</li>
-                <li><strong>DIAMOND:</strong> Máxima visibilidad y beneficios avanzados</li>
+                <li><strong>BASIC (Gs. 330.000/mes):</strong> 1 foto por habitación, 1 promoción activa, visibilidad estándar, analíticas básicas</li>
+                <li><strong>GOLD (Gs. 660.000/mes):</strong> 3 fotos por habitación, hasta 3 promociones activas, visibilidad superior, analíticas avanzadas</li>
+                <li><strong>DIAMOND (Gs. 1.320.000/mes):</strong> Fotos ilimitadas, promociones ilimitadas, máxima visibilidad, analíticas avanzadas con exportación, soporte prioritario</li>
                 <li>Los pagos son mensuales y no reembolsables</li>
                 <li>Las cancelaciones surten efecto al final del período pagado</li>
               </ul>

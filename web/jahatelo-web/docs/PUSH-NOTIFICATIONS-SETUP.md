@@ -373,7 +373,7 @@ El sistema soporta 3 categorías con diferentes políticas:
 
 ```bash
 # En el directorio de la app móvil
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app
 
 # Crear development build para Android
 eas build --profile development --platform android
@@ -392,7 +392,7 @@ Ver guía completa: `app/jahatelo-app/docs/DEVELOPMENT-BUILD.md`
 
 ```bash
 # En el directorio web
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/web/jahatelo-web
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/web/jahatelo-web
 npm run dev
 ```
 
@@ -547,7 +547,7 @@ WHERE np."enableNotifications" = true;
 
 ```bash
 # Crear development build
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/app/jahatelo-app
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app
 eas build --profile development --platform android
 
 # Ejecutar con development build
@@ -566,7 +566,7 @@ Ver guía completa: `app/jahatelo-app/docs/DEVELOPMENT-BUILD.md`
 
 1. **Verificar que el backend está corriendo:**
 ```bash
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/web/jahatelo-web
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/web/jahatelo-web
 npm run dev
 ```
 

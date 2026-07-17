@@ -122,7 +122,7 @@ export default function PromosAdminPage() {
   };
   const getPromoLimit = (plan?: string | null) => {
     const normalized = normalizePlan(plan);
-    if (normalized === 'GOLD') return 5;
+    if (normalized === 'GOLD') return 3;
     if (normalized === 'DIAMOND') return Number.POSITIVE_INFINITY;
     return 1;
   };

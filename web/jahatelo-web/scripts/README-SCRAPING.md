@@ -68,7 +68,7 @@ echo 'GOOGLE_MAPS_API_KEY=TU_API_KEY_AQUI' >> .env
 ### 2.2 Ejecutar scraping
 
 ```bash
-cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/web/jahatelo-web
+cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/web/jahatelo-web
 
 node scripts/scrape-motels-google.js
 ```

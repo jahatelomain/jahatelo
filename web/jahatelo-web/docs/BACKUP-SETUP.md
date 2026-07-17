@@ -102,7 +102,7 @@ crontab -e
 #### 2. Agregar tarea (ejemplo: cada hora)
 ```bash
 # Backup cada hora durante desarrollo
-0 * * * * cd /Users/jota/Desktop/IA/MBARETECH/projects/jahatelo/web/jahatelo-web && export DATABASE_URL="postgresql://..." && ./scripts/backup-db.sh >> ~/jahatelo-backup.log 2>&1
+0 * * * * cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/web/jahatelo-web && export DATABASE_URL="postgresql://..." && ./scripts/backup-db.sh >> ~/jahatelo-backup.log 2>&1
 ```
 
 #### 3. Listar tareas de cron
