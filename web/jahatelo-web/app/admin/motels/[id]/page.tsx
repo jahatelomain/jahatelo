@@ -884,13 +884,23 @@ export default function MotelDetailPage() {
     try {
       const res = await fetch(`/api/admin/motels/${id}/geocode`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address: motelForm.address,
+          city: motelForm.city,
+          country: motelForm.country || 'Paraguay',
+        }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
+        setMotelForm((current) => ({
+          ...current,
+          latitude: data.motel.latitude,
+          longitude: data.motel.longitude,
+        }));
         alert(`Coordenadas obtenidas exitosamente!\nLat: ${data.motel.latitude}\nLng: ${data.motel.longitude}`);
-        fetchMotel(); // Reload motel to get updated coordinates
       } else {
         alert(data.error || 'Error al geocodificar');
       }
@@ -2751,7 +2761,7 @@ export default function MotelDetailPage() {
                     </div>
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-2">URL de Mapa</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Link o iframe de Google Maps (ubicación exacta)</label>
                     <input
                       type="text"
                       value={motelForm.mapUrl}
@@ -2760,7 +2770,7 @@ export default function MotelDetailPage() {
                       placeholder="https://maps.google.com/..."
                     />
                     <p className="mt-2 text-xs text-slate-500">
-                      Pega un link de Google Maps o iframe y se guardan las coordenadas automaticamente.
+                      Al guardar, las coordenadas exactas de este enlace reemplazan las obtenidas desde la dirección.
                     </p>
                   </div>
                 </div>

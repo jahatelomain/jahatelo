@@ -11,6 +11,12 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
+const GeocodeRequestSchema = z.object({
+  address: z.string().trim().min(1).max(200),
+  city: z.string().trim().min(1).max(100),
+  country: z.string().trim().min(1).max(100).optional(),
+});
+
 /**
  * POST /api/admin/motels/[id]/geocode
  *
@@ -27,7 +33,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
-    // Get motel from database
+    const body = GeocodeRequestSchema.parse(await request.json());
+
+    // Confirm the motel exists before geocoding/updating it.
     const motel = await prisma.motel.findUnique({
       where: { id: resolvedId },
       select: {
@@ -45,18 +53,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
-    if (!motel.address || !motel.city) {
-      return NextResponse.json(
-        { error: 'Motel must have address and city to geocode' },
-        { status: 400 }
-      );
-    }
-
-    // Geocode the address
+    // Geocode the values currently entered in the admin form, not stale DB values.
     const result = await geocodeAddress(
-      motel.address,
-      motel.city,
-      motel.country || 'Paraguay'
+      body.address,
+      body.city,
+      body.country || 'Paraguay'
     );
 
     if (!result) {
@@ -70,6 +71,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const updatedMotel = await prisma.motel.update({
       where: { id: resolvedId },
       data: {
+        address: body.address,
+        city: body.city,
+        country: body.country || motel.country || 'Paraguay',
         latitude: result.lat,
         longitude: result.lng,
       },
