@@ -36,7 +36,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
                 amenity: true,
               },
             },
-            photos: true,
+            roomPhotos: {
+              orderBy: { order: 'asc' },
+            },
             dayRates: true,
           },
         },
@@ -134,11 +136,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         description: room.description,
         basePrice: room.basePrice || 0,
         priceLabel: room.priceLabel || null,
-        photos: room.photos.map(p => p.url).sort((a, b) => {
-          const aPhoto = room.photos.find(p => p.url === a);
-          const bPhoto = room.photos.find(p => p.url === b);
-          return (aPhoto?.order || 0) - (bPhoto?.order || 0);
-        }),
+        photos: room.roomPhotos.map((photo) => photo.url),
         amenities: room.amenities.map(ra => ({
           id: ra.amenity.id,
           name: ra.amenity.name,

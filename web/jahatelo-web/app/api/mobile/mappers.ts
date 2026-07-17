@@ -65,9 +65,8 @@ type RoomForList = RoomPricingInfo & {
 
 // Types for detail mappers
 type RoomWithRelations = RoomType & {
-  photos: Photo[];
   amenities: (RoomAmenity & { amenity: Amenity })[];
-  roomPhotos?: RoomPhoto[];
+  roomPhotos: RoomPhoto[];
   dayRates?: RoomDayRate[];
 };
 
@@ -278,10 +277,7 @@ export function generatePriceLabel(room: RoomType): string {
 export function mapRoomForMobile(room: RoomWithRelations) {
   const basePrice = room.basePrice || room.price1h || room.price2h || 0;
 
-  // Priorizar roomPhotos sobre photos (legacy)
-  const photoUrls = room.roomPhotos && room.roomPhotos.length > 0
-    ? room.roomPhotos.map((p) => p.url)
-    : room.photos.map((p) => p.url);
+  const photoUrls = room.roomPhotos.map((photo) => photo.url);
 
   const dayGroup = getCurrentDayGroup();
   const effectivePrices = getEffectivePrices(room, dayGroup);
