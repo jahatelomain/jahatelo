@@ -104,7 +104,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
               amenity: true,
             },
           },
-          photos: {
+          roomPhotos: {
             orderBy: { order: 'asc' },
           },
           dayRates: true,
@@ -142,7 +142,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     })),
     rooms: motel.rooms.map((room) => ({
       ...room,
-      photos: room.photos.map((photo) => ({
+      roomPhotos: room.roomPhotos.map((photo) => ({
         ...photo,
         url: normalizeLocalUploadPath(photo.url) || photo.url,
       })),
@@ -290,7 +290,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           {motel.rooms.length > 0 ? (
             <div className="grid grid-cols-1 gap-6">
               {motel.rooms.map((room) => {
-                const roomPhoto = room.photos[0];
+                const roomPhoto = room.roomPhotos[0];
                 const effectivePrices = getEffectivePrices(
                   room as Parameters<typeof getEffectivePrices>[0],
                   currentDayGroup

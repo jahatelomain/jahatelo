@@ -34,9 +34,6 @@ export async function GET(
         where: { isActive: true },
         orderBy: [{ order: 'asc' as const }, { isFeatured: 'desc' as const }, { name: 'asc' as const }],
         include: {
-          photos: {
-            orderBy: { order: 'asc' as const },
-          },
           roomPhotos: {
             orderBy: { order: 'asc' as const },
           },
