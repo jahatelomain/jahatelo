@@ -606,20 +606,18 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           {/* Address & Map Link */}
           {(() => {
             let mapsHref: string | null = null;
-            if (motel.mapUrl) {
+            if (motel.latitude != null && motel.longitude != null) {
+              mapsHref = `https://www.google.com/maps?q=${motel.latitude},${motel.longitude}`;
+            } else if (motel.mapUrl) {
               if (motel.mapUrl.includes('maps/embed') || motel.mapUrl.includes('maps.google.com/maps?')) {
                 const lngMatch = motel.mapUrl.match(/!2d(-?\d+\.\d+)/);
                 const latMatch = motel.mapUrl.match(/!3d(-?\d+\.\d+)/);
                 if (latMatch && lngMatch) {
                   mapsHref = `https://www.google.com/maps?q=${latMatch[1]},${lngMatch[1]}`;
-                } else if (motel.latitude && motel.longitude) {
-                  mapsHref = `https://www.google.com/maps?q=${motel.latitude},${motel.longitude}`;
                 }
               } else {
                 mapsHref = motel.mapUrl;
               }
-            } else if (motel.latitude && motel.longitude) {
-              mapsHref = `https://www.google.com/maps?q=${motel.latitude},${motel.longitude}`;
             }
             return (
               <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
