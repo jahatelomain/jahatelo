@@ -147,6 +147,11 @@ export async function DELETE(
 
     const amenity = await prisma.amenity.findUnique({
       where: { id: idResult.data },
+      include: {
+        _count: {
+          select: { motelAmenities: true, roomAmenities: true },
+        },
+      },
     });
 
     if (!amenity) {
@@ -156,27 +161,33 @@ export async function DELETE(
       );
     }
 
-    await prisma.motelAmenity.deleteMany({
-      where: { amenityId: idResult.data },
-    });
-
-    await prisma.roomAmenity.deleteMany({
-      where: { amenityId: idResult.data },
-    });
-
-    await prisma.amenity.delete({
-      where: { id: idResult.data },
-    });
+    // La transacción evita estados parciales: o se eliminan todas las
+    // asociaciones y el amenity, o no se elimina nada.
+    await prisma.$transaction([
+      prisma.motelAmenity.deleteMany({ where: { amenityId: idResult.data } }),
+      prisma.roomAmenity.deleteMany({ where: { amenityId: idResult.data } }),
+      prisma.amenity.delete({ where: { id: idResult.data } }),
+    ]);
 
     await logAuditEvent({
       userId: access.user?.id,
       action: 'DELETE',
       entityType: 'Amenity',
       entityId: idResult.data,
-      metadata: { name: amenity.name },
+      metadata: {
+        name: amenity.name,
+        removedMotelAssociations: amenity._count.motelAmenities,
+        removedRoomAssociations: amenity._count.roomAmenities,
+      },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      removedAssociations: {
+        motels: amenity._count.motelAmenities,
+        rooms: amenity._count.roomAmenities,
+      },
+    });
   } catch (error) {
     console.error('Error deleting amenity:', error);
     return NextResponse.json(

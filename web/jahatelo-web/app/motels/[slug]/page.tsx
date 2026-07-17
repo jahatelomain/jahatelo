@@ -178,8 +178,9 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
   const amenityAggMap = new Map<string, { id: string; name: string; icon: string | null }>();
   for (const room of motel.rooms) {
     for (const ra of room.amenities) {
-      if (!amenityAggMap.has(ra.amenity.id)) {
-        amenityAggMap.set(ra.amenity.id, { id: ra.amenity.id, name: ra.amenity.name, icon: ra.amenity.icon });
+      const amenity = ra?.amenity;
+      if (amenity?.id && amenity.name && !amenityAggMap.has(amenity.id)) {
+        amenityAggMap.set(amenity.id, { id: amenity.id, name: amenity.name, icon: amenity.icon });
       }
     }
   }
@@ -364,11 +365,11 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                         </div>
 
                         {/* Room Amenities */}
-                        {room.amenities.length > 0 && (
+                        {room.amenities.some((ra) => Boolean(ra?.amenity?.name)) && (
                           <div className="mb-4">
                             <p className="text-sm font-semibold text-gray-700 mb-2">Comodidades:</p>
                             <div className="flex flex-wrap gap-2">
-                              {room.amenities.map((ra) => (
+                              {room.amenities.filter((ra) => Boolean(ra?.amenity?.name)).map((ra) => (
                                 <span
                                   key={ra.id}
                                   title={ra.amenity.name}

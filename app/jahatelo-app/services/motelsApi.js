@@ -46,6 +46,19 @@ const normalizePhotoList = (photos = []) => {
 };
 
 /**
+ * Descarta amenities eliminados o incompletos que el API pueda devolver como null.
+ * Conserva tanto el formato string legado como los objetos con nombre.
+ */
+const normalizeAmenityList = (amenities = []) => {
+  if (!Array.isArray(amenities)) return [];
+
+  return amenities.filter((amenity) => {
+    if (typeof amenity === 'string') return amenity.trim().length > 0;
+    return Boolean(amenity && typeof amenity === 'object' && amenity.name);
+  });
+};
+
+/**
  * Garantiza que un objeto motel tenga siempre fotos/thumbnail en formato string
  */
 const normalizeMotelPhotos = (motel = {}) => {
@@ -124,7 +137,7 @@ const mapMotelSummary = (apiMotel) => {
     ciudad: apiMotel.city,
     distanciaKm: null, // El API no devuelve distancia por ahora
     precioDesde: apiMotel.startingPrice || 0,
-    amenities: apiMotel.amenities || [],
+    amenities: normalizeAmenityList(apiMotel.amenities),
     rating: apiMotel.rating?.average || 0,
     isFeatured: apiMotel.isFeatured || false,
     tienePromo: typeof apiMotel.tienePromo === 'boolean' ? apiMotel.tienePromo : (apiMotel.hasPromo || false),
@@ -158,7 +171,7 @@ const mapMotelDetail = (apiMotel) => {
     description: apiMotel.description || null,
     contact: apiMotel.contact || {},
     schedules: apiMotel.schedules || [],
-    rooms: apiMotel.rooms?.map(mapRoom) || [],
+    rooms: apiMotel.rooms?.filter(Boolean).map(mapRoom) || [],
     menu: apiMotel.menu?.map(mapMenuCategory) || [],
     allPhotos: normalizePhotoList(apiMotel.allPhotos || apiMotel.photos),
     hasPhotos: apiMotel.hasPhotos || false,
@@ -178,7 +191,7 @@ const mapRoom = (apiRoom) => {
     priceLabel: apiRoom.priceLabel || null,
     prices: apiRoom.prices || {},
     dayRates: apiRoom.dayRates || [],
-    amenities: apiRoom.amenities || [],
+    amenities: normalizeAmenityList(apiRoom.amenities),
     photos: apiRoom.photos || [],
     maxPersons: apiRoom.maxPersons,
     hasJacuzzi: apiRoom.hasJacuzzi || false,

@@ -277,7 +277,7 @@ function MotelCardComponent({ motel, onPress }) {
             {motel.amenities && motel.amenities.length > 0 && (
               motel.amenities.slice(0, 3).map((amenity, index) => {
                 const amenityData = typeof amenity === 'string' ? { name: amenity } : amenity;
-                const iconConfig = getAmenityIconConfig(amenityData.icon);
+                const iconConfig = getAmenityIconConfig(amenityData?.icon);
 
                 return iconConfig ? (
                   <View key={index} style={styles.amenityCircle}>

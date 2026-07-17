@@ -62,8 +62,9 @@ export default function MotelCard({ motel }: MotelCardProps) {
   const amenityMap = new Map<string, { name: string; icon?: string | null }>();
   for (const room of motel.rooms ?? []) {
     for (const ra of room.amenities ?? []) {
-      if (!amenityMap.has(ra.amenity.name)) {
-        amenityMap.set(ra.amenity.name, ra.amenity);
+      const amenity = ra?.amenity;
+      if (amenity?.name && !amenityMap.has(amenity.name)) {
+        amenityMap.set(amenity.name, amenity);
       }
     }
   }

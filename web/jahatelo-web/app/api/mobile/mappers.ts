@@ -229,8 +229,9 @@ export function mapMotelToListItem(motel: MotelForList) {
         if (!room.isActive) continue;
         const roomAmenities = (room as RoomForList).amenities ?? (room as RoomWithRelations).amenities;
         for (const ra of roomAmenities ?? []) {
-          if (!map.has(ra.amenity.id)) {
-            map.set(ra.amenity.id, { name: ra.amenity.name, icon: ra.amenity.icon });
+          const amenity = ra?.amenity;
+          if (amenity?.id && amenity.name && !map.has(amenity.id)) {
+            map.set(amenity.id, { name: amenity.name, icon: amenity.icon });
           }
         }
       }
@@ -302,10 +303,12 @@ export function mapRoomForMobile(room: RoomWithRelations) {
       price24h: dr.price24h,
       priceNight: dr.priceNight,
     })) || [],
-    amenities: room.amenities.map((ra) => ({
-      name: ra.amenity.name,
-      icon: ra.amenity.icon,
-    })),
+    amenities: room.amenities
+      .filter((ra) => Boolean(ra?.amenity?.name))
+      .map((ra) => ({
+        name: ra.amenity.name,
+        icon: ra.amenity.icon,
+      })),
     photos: photoUrls,
     maxPersons: room.maxPersons,
     hasJacuzzi: room.hasJacuzzi,

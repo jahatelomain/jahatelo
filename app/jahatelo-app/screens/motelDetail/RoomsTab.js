@@ -64,17 +64,17 @@ function RoomCard({ room, motel }) {
     shareRoom(motel, room);
   }, [motel, room]);
 
-  const amenities = room.amenities || [];
+  const amenities = (Array.isArray(room.amenities) ? room.amenities : []).filter(Boolean);
 
   const amenitiesWithIcon = amenities
     .map((a) => {
       const data = typeof a === 'string' ? { name: a } : a;
       return { name: data.name, iconConfig: getAmenityIconConfig(data.icon) };
     })
-    .filter((a) => a.iconConfig);
+    .filter((a) => a.name && a.iconConfig);
 
   const allNames = amenities
-    .map((a) => (typeof a === 'string' ? a : a.name))
+    .map((a) => (typeof a === 'string' ? a : a?.name))
     .filter(Boolean)
     .join(' · ');
 

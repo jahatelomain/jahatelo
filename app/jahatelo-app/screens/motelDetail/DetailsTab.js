@@ -27,9 +27,10 @@ export default function DetailsTab({ route }) {
 
   const hasLocation = motel.location && motel.location.lat && motel.location.lng;
 
-  const amenitiesList = (motel.amenities || []).map((amenity) =>
-    typeof amenity === 'string' ? { name: amenity } : amenity
-  );
+  const amenitiesList = (Array.isArray(motel.amenities) ? motel.amenities : [])
+    .filter(Boolean)
+    .map((amenity) => (typeof amenity === 'string' ? { name: amenity } : amenity))
+    .filter((amenity) => amenity?.name);
 
   const handleAmenitiesPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
