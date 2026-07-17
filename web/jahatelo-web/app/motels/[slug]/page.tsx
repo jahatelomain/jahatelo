@@ -7,6 +7,7 @@ import Footer from '@/components/public/Footer';
 import FavoriteButtonClient from '@/components/public/FavoriteButtonClient';
 import ContactButtons from '@/components/public/ContactButtons';
 import PromosTab from '@/components/public/PromosTab';
+import RoomPhotoGallery from '@/components/public/RoomPhotoGallery';
 import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
 import ShareButton from '@/components/public/ShareButton';
 import ReviewsSection from '@/components/public/ReviewsSection';
@@ -290,7 +291,10 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           {motel.rooms.length > 0 ? (
             <div className="grid grid-cols-1 gap-6">
               {motel.rooms.map((room) => {
-                const roomPhoto = room.roomPhotos[0];
+                const roomPhotos = room.roomPhotos.map((photo, index) => ({
+                  url: photo.url,
+                  alt: `${room.name}, foto ${index + 1}`,
+                }));
                 const effectivePrices = getEffectivePrices(
                   room as Parameters<typeof getEffectivePrices>[0],
                   currentDayGroup
@@ -312,21 +316,12 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                   <div key={room.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                     <div className="md:flex">
                       {/* Room Photo */}
-                      {roomPhoto && (
-                        <div className="md:w-1/3 relative h-64 md:h-auto bg-gray-200">
-                          <Image
-                            src={roomPhoto.url}
-                            alt={room.name}
-                            fill
-                            quality={85}
-                            className="object-cover"
-                            sizes="(max-width: 768px) 100vw, 33vw"
-                          />
-                        </div>
+                      {roomPhotos.length > 0 && (
+                        <RoomPhotoGallery images={roomPhotos} roomName={room.name} />
                       )}
 
                       {/* Room Info */}
-                      <div className={`p-6 ${roomPhoto ? 'md:w-2/3' : 'w-full'}`}>
+                      <div className={`p-6 ${roomPhotos.length > 0 ? 'md:w-2/3' : 'w-full'}`}>
                         <div className="flex items-start justify-between mb-3">
                           <h4 className="text-xl font-bold text-gray-900">{room.name}</h4>
                           <div className="flex gap-2">
