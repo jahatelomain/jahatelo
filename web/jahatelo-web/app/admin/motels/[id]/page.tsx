@@ -166,7 +166,6 @@ export default function MotelDetailPage() {
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [geocoding, setGeocoding] = useState(false);
   const [activeTab, setActiveTab] = useState<'promos' | 'details' | 'rooms' | 'menu' | 'commercial' | 'reviews'>('details');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
 
@@ -771,6 +770,14 @@ export default function MotelDetailPage() {
     try {
       const normalizedMapUrl = normalizeMapUrl(motelForm.mapUrl || '');
       const extractedCoords = extractLatLngFromMapUrl(normalizedMapUrl);
+      if (!extractedCoords) {
+        const saveWithoutCoordinates = window.confirm(
+          normalizedMapUrl
+            ? 'No se pudieron obtener coordenadas del link o iframe de Google Maps.\n\nAceptar: guardar igualmente sin ubicación en el mapa.\nCancelar: volver al formulario para corregirlo o reintentar.'
+            : 'No ingresaste un link o iframe de Google Maps.\n\nAceptar: guardar igualmente sin ubicación en el mapa.\nCancelar: volver al formulario para agregarlo.'
+        );
+        if (!saveWithoutCoordinates) return;
+      }
       const fallbackFeaturedPhoto =
         normalizeOptionalText(motelForm.featuredPhoto || '') ||
         normalizeOptionalText(motelForm.featuredPhotoWeb || '') ||
@@ -800,7 +807,8 @@ export default function MotelDetailPage() {
         featuredPhotoWeb: normalizeUploadUrl(motelForm.featuredPhotoWeb || ''),
         featuredPhotoApp: normalizeUploadUrl(motelForm.featuredPhotoApp || ''),
         nextBillingAt: motelForm.nextBillingAt ? motelForm.nextBillingAt : null,
-        ...(extractedCoords ? { latitude: extractedCoords.latitude, longitude: extractedCoords.longitude } : {}),
+        latitude: extractedCoords?.latitude ?? null,
+        longitude: extractedCoords?.longitude ?? null,
       };
       const res = await fetch(`/api/admin/motels/${id}`, {
         method: 'PATCH',
@@ -872,44 +880,6 @@ export default function MotelDetailPage() {
         }
       },
     });
-  };
-
-  const handleGeocode = async () => {
-    if (!motelForm.address || !motelForm.city) {
-      alert('Por favor ingresa dirección y ciudad antes de geocodificar');
-      return;
-    }
-
-    setGeocoding(true);
-    try {
-      const res = await fetch(`/api/admin/motels/${id}/geocode`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          address: motelForm.address,
-          city: motelForm.city,
-          country: motelForm.country || 'Paraguay',
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setMotelForm((current) => ({
-          ...current,
-          latitude: data.motel.latitude,
-          longitude: data.motel.longitude,
-        }));
-        alert(`Coordenadas obtenidas exitosamente!\nLat: ${data.motel.latitude}\nLng: ${data.motel.longitude}`);
-      } else {
-        alert(data.error || 'Error al geocodificar');
-      }
-    } catch (error) {
-      console.error('Error geocoding motel:', error);
-      alert('Error al geocodificar motel');
-    } finally {
-      setGeocoding(false);
-    }
   };
 
   const handleSaveRoom = async (e: React.FormEvent) => {
@@ -2742,23 +2712,12 @@ export default function MotelDetailPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Dirección</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={motelForm.address}
-                        onChange={(e) => setMotelForm({ ...motelForm, address: e.target.value })}
-                        className="flex-1 border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleGeocode}
-                        disabled={geocoding || !motelForm.address || !motelForm.city}
-                        className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
-                      >
-                        <LucideIcons.MapPin className="w-4 h-4" />
-                        {geocoding ? 'Geocodificando...' : 'Obtener coordenadas'}
-                      </button>
-                    </div>
+                    <input
+                      type="text"
+                      value={motelForm.address}
+                      onChange={(e) => setMotelForm({ ...motelForm, address: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-2">Link o iframe de Google Maps (ubicación exacta)</label>
@@ -2770,7 +2729,7 @@ export default function MotelDetailPage() {
                       placeholder="https://maps.google.com/..."
                     />
                     <p className="mt-2 text-xs text-slate-500">
-                      Al guardar, las coordenadas exactas de este enlace reemplazan las obtenidas desde la dirección.
+                      Al guardar, el sistema obtiene de aquí las coordenadas usadas por la web y las apps.
                     </p>
                   </div>
                 </div>
