@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Linking, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Linking, Dimensions, ScrollView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { TabView } from 'react-native-tab-view';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { fetchMotelBySlug } from '../services/motelsApi';
 import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../hooks/useFavorites';
@@ -26,8 +26,6 @@ import ReviewsTab from './motelDetail/ReviewsTab';
 import { trackMotelView, trackPhoneClick, trackWhatsAppClick } from '../services/analyticsService';
 import { shareMotel } from '../utils/share';
 
-const Tab = createMaterialTopTabNavigator();
-
 export default function MotelDetailScreen({ route, navigation }) {
   const { motelSlug, motelId } = route.params || {};
   const initialTab = route.params?.initialTab;
@@ -35,6 +33,7 @@ export default function MotelDetailScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [mainPhotoError, setMainPhotoError] = useState(false);
+  const [activeTab, setActiveTab] = useState(initialTab === 'Promos' ? 'Promos' : 'Detalles');
   const { isFavorite, toggleFavorite } = useFavorites();
   const insets = useSafeAreaInsets();
 
@@ -55,7 +54,9 @@ export default function MotelDetailScreen({ route, navigation }) {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchMotelBySlug(identifier);
+      // El orden de habitaciones y fotos se administra remotamente; pedir el
+      // detalle actualizado al abrir, conservando el caché solo como fallback offline.
+      const data = await fetchMotelBySlug(identifier, false);
       setMotel(data);
 
       // Track vista del motel
@@ -207,6 +208,16 @@ export default function MotelDetailScreen({ route, navigation }) {
 
   const photoHeight = 240 + insets.top;
 
+  const availableTabs = [
+    { key: 'Detalles', name: 'Detalles', component: DetailsTab },
+    ...(motel.promos?.length ? [{ key: 'Promos', name: 'Promos', component: PromosTab }] : []),
+    ...(motel.rooms?.length ? [{ key: 'Habitaciones', name: 'Habitaciones', component: RoomsTab }] : []),
+    ...(motel.menu?.length ? [{ key: 'Menú', name: 'Menú', component: MenuTab }] : []),
+    { key: 'Reseñas', name: 'Reseñas', component: ReviewsTab },
+  ];
+  const selectedTab = availableTabs.find((tab) => tab.name === activeTab) || availableTabs[0];
+  const selectedTabIndex = availableTabs.findIndex((tab) => tab.key === selectedTab.key);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Galería de fotos con indicador */}
@@ -329,86 +340,46 @@ export default function MotelDetailScreen({ route, navigation }) {
         </View>
       </Animated.View>
 
-      {/* Material Top Tab Navigator */}
-      <Tab.Navigator
-        initialRouteName={
-          initialTab === 'Promos' && motel?.promos?.length ? 'Promos' : 'Detalles'
-        }
-        screenOptions={{
-          tabBarLabelStyle: {
-            fontSize: 12,
-            fontWeight: '600',
-            textTransform: 'none',
-          },
-          tabBarItemStyle: {
-            width: 'auto',
-            paddingHorizontal: 8,
-          },
-          tabBarIndicatorStyle: {
-            backgroundColor: COLORS.primary,
-            height: 3,
-          },
-          tabBarStyle: {
-            backgroundColor: '#FFFFFF',
-            elevation: 0,
-            shadowOpacity: 0,
-            borderBottomWidth: 1,
-            borderBottomColor: '#E0E0E0',
-          },
-          tabBarActiveTintColor: COLORS.primary,
-          tabBarInactiveTintColor: '#666',
-        }}
-      >
-        {/* Construir tabs dinámicamente según contenido disponible */}
-        {(() => {
-          const availableTabs = [];
-
-          // Detalles siempre se muestra primero
-          availableTabs.push({
-            name: 'Detalles',
-            component: DetailsTab,
-          });
-
-          // Incluir Promos solo si hay promos
-          if (motel.promos && motel.promos.length > 0) {
-            availableTabs.push({
-              name: 'Promos',
-              component: PromosTab,
-            });
-          }
-
-          // Habitaciones solo si hay rooms
-          if (motel.rooms && motel.rooms.length > 0) {
-            availableTabs.push({
-              name: 'Habitaciones',
-              component: RoomsTab,
-            });
-          }
-
-          // Menú solo si hay categorías de menú
-          if (motel.menu && motel.menu.length > 0) {
-            availableTabs.push({
-              name: 'Menú',
-              component: MenuTab,
-            });
-          }
-
-          // Reseñas siempre se muestra al final
-          availableTabs.push({
-            name: 'Reseñas',
-            component: ReviewsTab,
-          });
-
-          return availableTabs.map((tab) => (
-            <Tab.Screen
-              key={tab.name}
-              name={tab.name}
-              component={tab.component}
-              initialParams={{ motel }}
-            />
-          ));
-        })()}
-      </Tab.Navigator>
+      {/* Tabs controladas: evita reinicios del pager nativo en iOS/Fabric. */}
+      <View style={styles.tabsContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.tabBar}
+          contentContainerStyle={styles.tabBarContent}
+        >
+          {availableTabs.map((tab) => {
+            const isActive = tab.name === selectedTab.name;
+            return (
+              <TouchableOpacity
+                key={tab.name}
+                style={[styles.tabButton, isActive && styles.tabButtonActive]}
+                onPress={() => setActiveTab(tab.name)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                  {tab.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+        <TabView
+          navigationState={{ index: selectedTabIndex, routes: availableTabs }}
+          onIndexChange={(index) => setActiveTab(availableTabs[index]?.name || 'Detalles')}
+          renderScene={({ route: tabRoute }) => {
+            const TabComponent = tabRoute.component;
+            return <TabComponent route={{ params: { motel } }} navigation={navigation} />;
+          }}
+          renderTabBar={() => null}
+          initialLayout={{ width: SCREEN_WIDTH }}
+          lazy
+          lazyPreloadDistance={0}
+          swipeEnabled
+          animationEnabled
+          style={styles.tabContent}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -560,6 +531,41 @@ const styles = StyleSheet.create({
   },
   contactButtonDisabled: {
     backgroundColor: '#E5E5E5',
+  },
+  tabsContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  tabBar: {
+    flexGrow: 0,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  tabBarContent: {
+    paddingHorizontal: 2,
+  },
+  tabButton: {
+    minHeight: 48,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  tabButtonActive: {
+    borderBottomColor: COLORS.primary,
+  },
+  tabLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666666',
+  },
+  tabLabelActive: {
+    color: COLORS.primary,
+  },
+  tabContent: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   errorContainer: {
     flex: 1,

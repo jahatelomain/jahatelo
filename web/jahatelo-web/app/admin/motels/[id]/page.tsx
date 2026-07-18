@@ -1220,10 +1220,21 @@ export default function MotelDetailPage() {
     });
   };
 
-  const handleReorderRoomPhotos = async (roomId: string, photos: any[]) => {
+  const handleReorderRoomPhotos = async (
+    roomId: string,
+    photos: NonNullable<RoomType['roomPhotos']>
+  ) => {
+    const orderedPhotos = photos.map((photo, index) => ({ ...photo, order: index }));
+    setMotel((prev) => prev ? {
+      ...prev,
+      rooms: (prev.rooms ?? []).map((room) =>
+        room.id === roomId ? { ...room, roomPhotos: orderedPhotos } : room
+      ),
+    } : prev);
+
     try {
       // Actualizar el orden de todas las fotos en batch
-      const updates = photos.map((photo, index) =>
+      const updates = orderedPhotos.map((photo, index) =>
         fetch(`/api/admin/room-photos/${photo.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -1231,12 +1242,15 @@ export default function MotelDetailPage() {
         })
       );
 
-      await Promise.all(updates);
-      fetchMotel();
+      const responses = await Promise.all(updates);
+      if (responses.some((response) => !response.ok)) {
+        throw new Error('No se pudo guardar el orden de todas las fotos');
+      }
       setSaveStatus('success');
       setTimeout(() => setSaveStatus('idle'), 2500);
     } catch (error) {
       console.error('Error reordering room photos:', error);
+      fetchMotel();
       alert('Error al reordenar fotos');
     }
   };
@@ -1271,10 +1285,11 @@ export default function MotelDetailPage() {
 
   const handleReorderMotelPhotos = async (photos: Array<{ id: string; url: string; order: number }>) => {
     if (!motel) return;
-    setMotel((prev) => prev ? { ...prev, photos } : prev);
+    const orderedPhotos = photos.map((photo, index) => ({ ...photo, order: index }));
+    setMotel((prev) => prev ? { ...prev, photos: orderedPhotos } : prev);
     try {
-      await Promise.all(
-        photos.map((photo, index) =>
+      const responses = await Promise.all(
+        orderedPhotos.map((photo, index) =>
           fetch(`/api/admin/motel-photos/${photo.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -1282,8 +1297,13 @@ export default function MotelDetailPage() {
           })
         )
       );
+      if (responses.some((response) => !response.ok)) {
+        throw new Error('No se pudo guardar el orden de todas las fotos');
+      }
     } catch (error) {
       console.error('Error reordering motel photos:', error);
+      fetchMotel();
+      alert('Error al reordenar las fotos del motel');
     }
   };
 
@@ -1317,12 +1337,12 @@ export default function MotelDetailPage() {
     }
   };
 
-  const handleReorderRooms = async (orderedRooms: any[]) => {
+  const handleReorderRooms = async (orderedRooms: RoomType[]) => {
     if (!motel) return;
     // Actualizar UI optimistamente
     setMotel((prev) => prev ? { ...prev, rooms: orderedRooms } : prev);
     try {
-      await fetch('/api/admin/rooms/reorder', {
+      const response = await fetch('/api/admin/rooms/reorder', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1330,6 +1350,9 @@ export default function MotelDetailPage() {
           roomIds: orderedRooms.map((r) => r.id),
         }),
       });
+      if (!response.ok) {
+        throw new Error('No se pudo guardar el orden de las habitaciones');
+      }
       setSaveStatus('success');
       setTimeout(() => setSaveStatus('idle'), 2500);
     } catch (error) {
@@ -1531,7 +1554,9 @@ export default function MotelDetailPage() {
   }
 
   // Constantes seguras para evitar errores de undefined
-  const rooms = motel.rooms ?? [];
+  const rooms = [...(motel.rooms ?? [])].sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name)
+  );
   const menuCategories = motel.menuCategories ?? [];
   const activePromosCount = promos.filter((promo) => promo.isActive).length;
 
@@ -2390,10 +2415,10 @@ export default function MotelDetailPage() {
                   Galería de fotos
                 </h3>
                 {(motel.photos ?? []).length > 0 && (
-                  <p className="text-xs text-slate-400 mb-4">Arrastrá para reordenar</p>
+                  <p className="text-xs text-slate-400 mb-4">Usá las flechas o arrastrá para reordenar</p>
                 )}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-                  {(motel.photos ?? []).sort((a, b) => a.order - b.order).map((photo) => (
+                  {[...(motel.photos ?? [])].sort((a, b) => a.order - b.order).map((photo, photoIndex, sortedPhotos) => (
                     <div
                       key={photo.id}
                       draggable
@@ -2417,14 +2442,49 @@ export default function MotelDetailPage() {
                       } ${draggedMotelPhotoId === photo.id ? 'opacity-40' : ''}`}
                     >
                       <img src={photo.url} alt="" className="w-full aspect-square object-cover" draggable={false} />
-                      <button
-                        onClick={() => handleDeleteMotelPhoto(photo.id)}
-                        className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                      <div className="absolute top-2 right-2 flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={photoIndex === 0}
+                          onClick={() => {
+                            if (photoIndex === 0) return;
+                            const reordered = [...sortedPhotos];
+                            [reordered[photoIndex - 1], reordered[photoIndex]] = [reordered[photoIndex], reordered[photoIndex - 1]];
+                            handleReorderMotelPhotos(reordered);
+                          }}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-40"
+                          title="Mover foto hacia la izquierda"
+                          aria-label="Mover foto hacia la izquierda"
+                        >
+                          ←
+                        </button>
+                        <button
+                          type="button"
+                          disabled={photoIndex === sortedPhotos.length - 1}
+                          onClick={() => {
+                            if (photoIndex === sortedPhotos.length - 1) return;
+                            const reordered = [...sortedPhotos];
+                            [reordered[photoIndex], reordered[photoIndex + 1]] = [reordered[photoIndex + 1], reordered[photoIndex]];
+                            handleReorderMotelPhotos(reordered);
+                          }}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-40"
+                          title="Mover foto hacia la derecha"
+                          aria-label="Mover foto hacia la derecha"
+                        >
+                          →
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMotelPhoto(photo.id)}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-red-500 text-white shadow hover:bg-red-600"
+                          title="Eliminar foto"
+                          aria-label="Eliminar foto"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -3329,7 +3389,7 @@ export default function MotelDetailPage() {
                 </div>
               </div>
             ) : (
-              rooms.map((room) => (
+              rooms.map((room, roomIndex) => (
                 <div
                   key={room.id}
                   draggable
@@ -3402,6 +3462,38 @@ export default function MotelDetailPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
+                      <div className="inline-flex overflow-hidden rounded-lg border border-slate-200 bg-white" aria-label={`Ordenar ${room.name}`}>
+                        <button
+                          type="button"
+                          disabled={roomIndex === 0}
+                          onClick={() => {
+                            if (roomIndex === 0) return;
+                            const reordered = [...rooms];
+                            [reordered[roomIndex - 1], reordered[roomIndex]] = [reordered[roomIndex], reordered[roomIndex - 1]];
+                            handleReorderRooms(reordered);
+                          }}
+                          className="inline-flex h-8 w-8 items-center justify-center border-r border-slate-200 text-slate-600 hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-30"
+                          title="Mover habitación hacia arriba"
+                          aria-label="Mover habitación hacia arriba"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          disabled={roomIndex === rooms.length - 1}
+                          onClick={() => {
+                            if (roomIndex === rooms.length - 1) return;
+                            const reordered = [...rooms];
+                            [reordered[roomIndex], reordered[roomIndex + 1]] = [reordered[roomIndex + 1], reordered[roomIndex]];
+                            handleReorderRooms(reordered);
+                          }}
+                          className="inline-flex h-8 w-8 items-center justify-center text-slate-600 hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-30"
+                          title="Mover habitación hacia abajo"
+                          aria-label="Mover habitación hacia abajo"
+                        >
+                          ↓
+                        </button>
+                      </div>
                       <button
                         onClick={() => handleEditRoom(room)}
                         className="inline-flex items-center rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
@@ -3571,15 +3663,49 @@ export default function MotelDetailPage() {
                               <div className="absolute top-2 left-2 bg-slate-900 bg-opacity-70 text-white px-2 py-1 rounded text-xs font-semibold">
                                 {index + 1}
                               </div>
-                              <button
-                                onClick={() => handleDeleteRoomPhoto(photo.id)}
-                                className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
-                                title="Eliminar foto"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
+                              <div className="absolute top-2 right-2 flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  disabled={index === 0}
+                                  onClick={() => {
+                                    if (index === 0) return;
+                                    const photos = [...(room.roomPhotos ?? [])].sort((a, b) => a.order - b.order);
+                                    [photos[index - 1], photos[index]] = [photos[index], photos[index - 1]];
+                                    handleReorderRoomPhotos(room.id, photos);
+                                  }}
+                                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-40"
+                                  title="Mover foto hacia la izquierda"
+                                  aria-label="Mover foto hacia la izquierda"
+                                >
+                                  ←
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={index === (room.roomPhotos?.length ?? 0) - 1}
+                                  onClick={() => {
+                                    if (index === (room.roomPhotos?.length ?? 0) - 1) return;
+                                    const photos = [...(room.roomPhotos ?? [])].sort((a, b) => a.order - b.order);
+                                    [photos[index], photos[index + 1]] = [photos[index + 1], photos[index]];
+                                    handleReorderRoomPhotos(room.id, photos);
+                                  }}
+                                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-40"
+                                  title="Mover foto hacia la derecha"
+                                  aria-label="Mover foto hacia la derecha"
+                                >
+                                  →
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteRoomPhoto(photo.id)}
+                                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white shadow transition-colors hover:bg-red-700"
+                                  title="Eliminar foto"
+                                  aria-label="Eliminar foto"
+                                >
+                                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
                               <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
                                 <div className="bg-slate-900 bg-opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-medium">
                                   Arrastrá para reordenar

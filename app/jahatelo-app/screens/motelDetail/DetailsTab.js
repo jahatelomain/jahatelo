@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Linking, Modal } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { formatPrice } from '../../services/motelsApi';
@@ -87,17 +87,20 @@ export default function DetailsTab({ route }) {
       )}
 
       {/* Botón Google Maps */}
-      <TouchableOpacity
-        style={[styles.mapsButton, !hasLocation && styles.mapsButtonDisabled]}
+      <Pressable
+        style={({ pressed }) => [
+          styles.mapsButton,
+          !hasLocation && styles.mapsButtonDisabled,
+          pressed && hasLocation && styles.mapsButtonPressed,
+        ]}
         onPress={handleOpenMaps}
         disabled={!hasLocation}
-        activeOpacity={0.7}
       >
         <Ionicons name="map-outline" size={19} color={hasLocation ? "#FFFFFF" : "#999"} />
         <Text style={[styles.mapsButtonText, !hasLocation && styles.mapsButtonTextDisabled]}>
           {hasLocation ? 'Ver ubicación en Google Maps' : 'Ubicación no disponible'}
         </Text>
-      </TouchableOpacity>
+      </Pressable>
 
       {/* Horarios */}
       {motel.schedules && motel.schedules.length > 0 && (
@@ -246,6 +249,9 @@ const styles = StyleSheet.create({
   },
   mapsButtonDisabled: {
     backgroundColor: '#E0E0E0',
+  },
+  mapsButtonPressed: {
+    opacity: 0.7,
   },
   mapsButtonText: {
     fontSize: 14,
