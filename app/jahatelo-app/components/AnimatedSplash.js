@@ -6,7 +6,8 @@ const COLORS = {
   background: '#FFFFFF',
 };
 
-export default function AnimatedSplash({ onFinish }) {
+export default function AnimatedSplash({ onFinish, onReady }) {
+  const didSignalReady = useRef(false);
   // Valores de animación
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
@@ -53,8 +54,14 @@ export default function AnimatedSplash({ onFinish }) {
     ]).start();
   }, [fadeAnim, scaleAnim, pinDropAnim, textFadeAnim]);
 
+  const handleLayout = () => {
+    if (didSignalReady.current) return;
+    didSignalReady.current = true;
+    onReady?.();
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={handleLayout}>
       {/* Logo oficial con Lottie (30% más grande) */}
       <Animated.View
         style={[

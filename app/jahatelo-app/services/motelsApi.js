@@ -242,7 +242,8 @@ export const fetchMotels = async (params = {}, useCache = true) => {
   // Si no hay filtros y useCache es true, intentar obtener del caché primero
   // En desarrollo deshabilitamos caché para ver cambios al instante.
   const hasFilters = Object.keys(params).length > 0;
-  const cacheEnabled = useCache && !__DEV__ && process.env.EXPO_PUBLIC_DISABLE_CACHE !== '1';
+  const cacheStorageEnabled = !__DEV__ && process.env.EXPO_PUBLIC_DISABLE_CACHE !== '1';
+  const cacheEnabled = useCache && cacheStorageEnabled;
 
   // Caché rápido: si no expiró el TTL, usar sin request al servidor
   if (!hasFilters && cacheEnabled) {
@@ -330,15 +331,16 @@ export const fetchMotelBySlug = async (slugOrId, useCache = true) => {
   const url = `${baseUrl}/motels/${slugOrId}`;
 
   // En desarrollo deshabilitamos caché para ver cambios al instante
-  const cacheEnabled = useCache && !__DEV__ && process.env.EXPO_PUBLIC_DISABLE_CACHE !== '1';
+  const cacheStorageEnabled = !__DEV__ && process.env.EXPO_PUBLIC_DISABLE_CACHE !== '1';
+  const cacheEnabled = useCache && cacheStorageEnabled;
 
-  let cachedItem = null;
+  // Leer el caché incluso cuando se fuerza una actualización: no se devuelve de
+  // inmediato, pero sigue disponible como respaldo si el dispositivo está offline.
+  const cachedItem = await getCachedMotelDetail(slugOrId);
   if (cacheEnabled) {
-    const cachedData = await getCachedMotelDetail(slugOrId);
-    if (cachedData) {
-      cachedItem = cachedData;
+    if (cachedItem) {
       debugLog('✅ Usando detalle del caché:', slugOrId);
-      return normalizeMotelPhotos(cachedData.motel);
+      return normalizeMotelPhotos(cachedItem.motel);
     }
   }
 
@@ -349,7 +351,7 @@ export const fetchMotelBySlug = async (slugOrId, useCache = true) => {
     // updatedAt viene del servidor en la respuesta del detalle
     const serverUpdatedAt = apiMotel.updatedAt ?? null;
 
-    if (cacheEnabled) {
+    if (cacheStorageEnabled) {
       await cacheMotelDetail(slugOrId, normalizedDetail, serverUpdatedAt);
     }
 

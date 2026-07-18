@@ -10,13 +10,13 @@ const SETTINGS_TIMEOUT_MS = 4000;
 
 export default function SplashScreen({ navigation }) {
   const didNavigate = useRef(false);
+  const didHideNativeSplash = useRef(false);
 
-  // Ocultar el splash nativo en este punto: AnimatedSplash ya está montado y listo.
-  // Al llamarlo aquí (y no en App.js) se elimina el flash blanco entre el splash
-  // nativo estático y la animación Lottie.
-  useEffect(() => {
-    ExpoSplashScreen.hideAsync();
-  }, []);
+  const hideNativeSplashWhenReady = () => {
+    if (didHideNativeSplash.current) return;
+    didHideNativeSplash.current = true;
+    ExpoSplashScreen.hideAsync().catch(() => {});
+  };
 
   const checkAgeGateAndNavigate = async () => {
     const controller = new AbortController();
@@ -70,7 +70,10 @@ export default function SplashScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <AnimatedSplash onFinish={goNext} />
+      <AnimatedSplash
+        onReady={hideNativeSplashWhenReady}
+        onFinish={goNext}
+      />
     </SafeAreaView>
   );
 }

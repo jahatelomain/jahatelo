@@ -110,7 +110,11 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           },
           dayRates: true,
         },
-        orderBy: { isFeatured: 'desc' },
+        orderBy: [
+          { order: 'asc' },
+          { isFeatured: 'desc' },
+          { name: 'asc' },
+        ],
       },
       menuCategories: {
         include: {

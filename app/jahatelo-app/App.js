@@ -207,8 +207,14 @@ export default function App() {
 
   useEffect(() => {
     if (!stagingAuthChecked) return;
-    SplashScreen.hideAsync().catch(() => {});
-  }, [stagingAuthChecked]);
+
+    // En el flujo normal, AnimatedSplash oculta la pantalla nativa recién cuando
+    // su primer frame ya está dibujado. Solo la ocultamos aquí si staging necesita
+    // mostrar el formulario de acceso antes de montar la navegación principal.
+    if (isStagingEnvironment() && !stagingAuthReady) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [stagingAuthChecked, stagingAuthReady]);
 
   const validateStagingCredentials = async () => {
     if (!stagingUser.trim() || !stagingPass.trim()) {

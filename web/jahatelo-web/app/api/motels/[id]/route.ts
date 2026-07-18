@@ -30,6 +30,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
       },
       include: {
         rooms: {
+          orderBy: [
+            { order: 'asc' },
+            { isFeatured: 'desc' },
+            { name: 'asc' },
+          ],
           include: {
             amenities: {
               include: {
@@ -52,7 +57,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
             amenity: true,
           },
         },
-        photos: true,
+        photos: {
+          orderBy: { order: 'asc' },
+        },
         promos: {
           where: {
             isActive: true,

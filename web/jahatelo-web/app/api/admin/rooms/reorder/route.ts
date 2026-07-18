@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
+import { touchMotel } from '@/lib/touchMotel';
 import { z } from 'zod';
 
 const ReorderSchema = z.object({
@@ -49,6 +50,8 @@ export async function PATCH(request: NextRequest) {
         })
       )
     );
+
+    await touchMotel(motelId);
 
     return NextResponse.json({ success: true });
   } catch (error) {
