@@ -1,7 +1,8 @@
 import MotelCard from '@/components/public/MotelCard';
 import SectionWrapper from '@/components/public/SectionWrapper';
+import type { PublicMotelListItem } from '@/lib/domain/motels/publicListItem';
 
-export default function FeaturedMotels({ motels, title }: { motels: any[]; title?: string }) {
+export default function FeaturedMotels({ motels, title }: { motels: PublicMotelListItem[]; title?: string }) {
   if (!motels || motels.length === 0) return null;
 
   return (

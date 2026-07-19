@@ -12,10 +12,10 @@ interface Motel {
   slug: string;
   ciudad?: string;
   barrio?: string;
-  mainPhoto?: string;
+  thumbnail?: string;
   precioDesde?: number;
   plan: string;
-  promos: any[];
+  tienePromo?: boolean;
 }
 
 interface Favorite {
@@ -48,13 +48,18 @@ export default function MisFavoritosPage() {
   const loadFavorites = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/favorites', {
+      const response = await fetch('/api/mobile/favorites', {
         credentials: 'include',
       });
 
       if (response.ok) {
         const data = await response.json();
-        setFavorites(data.favorites);
+        setFavorites((data.favorites || []).map((motel: Motel) => ({
+          id: motel.id,
+          motelId: motel.id,
+          createdAt: '',
+          motel,
+        })));
       } else {
         setError('Error al cargar favoritos');
       }
@@ -73,7 +78,7 @@ export default function MisFavoritosPage() {
 
     try {
       setRemovingId(motelId);
-      const response = await fetch(`/api/favorites?motelId=${motelId}`, {
+      const response = await fetch(`/api/mobile/favorites?motelId=${motelId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -201,9 +206,9 @@ export default function MisFavoritosPage() {
                   <Link href={`/motels/${motel.slug}`}>
                     {/* Image */}
                     <div className="relative h-48 bg-gray-200">
-                      {motel.mainPhoto ? (
+                      {motel.thumbnail ? (
                         <Image
-                          src={motel.mainPhoto}
+                          src={motel.thumbnail}
                           alt={motel.nombre}
                           fill
                           className="object-cover"
@@ -219,7 +224,7 @@ export default function MisFavoritosPage() {
 
                       {/* Badges */}
                       <div className="absolute top-2 left-2 flex gap-2">
-                        {motel.promos && motel.promos.length > 0 && (
+                        {motel.tienePromo && (
                           <span className="bg-yellow-400 text-purple-900 text-xs font-bold px-2 py-1 rounded">
                             PROMO
                           </span>

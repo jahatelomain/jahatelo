@@ -1,9 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Linking, Dimensions, ScrollView } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Linking, Dimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TabView } from 'react-native-tab-view';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 import { fetchMotelBySlug } from '../services/motelsApi';
 import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../hooks/useFavorites';
@@ -14,7 +11,6 @@ import Animated, {
   withTiming,
   FadeIn,
   FadeInDown,
-  SlideInUp,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../constants/theme';
@@ -25,6 +21,11 @@ import MenuTab from './motelDetail/MenuTab';
 import ReviewsTab from './motelDetail/ReviewsTab';
 import { trackMotelView, trackPhoneClick, trackWhatsAppClick } from '../services/analyticsService';
 import { shareMotel } from '../utils/share';
+import MotelHeader from '../components/motelDetail/MotelHeader';
+import MotelTabBar from '../components/motelDetail/MotelTabBar';
+import useMotelTabsGesture from '../hooks/useMotelTabsGesture';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function MotelDetailScreen({ route, navigation }) {
   const { motelSlug, motelId } = route.params || {};
@@ -44,7 +45,7 @@ export default function MotelDetailScreen({ route, navigation }) {
   // Priorizar slug, caer a ID si no hay slug
   const identifier = motelSlug || motelId;
 
-  const loadMotel = async () => {
+  const loadMotel = useCallback(async () => {
     if (!identifier) {
       setError('No se proporcionó ID o slug del motel');
       setLoading(false);
@@ -69,11 +70,11 @@ export default function MotelDetailScreen({ route, navigation }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [identifier]);
 
   useEffect(() => {
     loadMotel();
-  }, [identifier]);
+  }, [loadMotel]);
 
   // Handler para llamada telefónica con haptic
   const handleCall = (phoneNumber) => {
@@ -153,6 +154,25 @@ export default function MotelDetailScreen({ route, navigation }) {
     ],
   }));
 
+  const availableTabs = [
+    { key: 'Detalles', name: 'Detalles', component: DetailsTab },
+    ...(motel?.promos?.length ? [{ key: 'Promos', name: 'Promos', component: PromosTab }] : []),
+    ...(motel?.rooms?.length ? [{ key: 'Habitaciones', name: 'Habitaciones', component: RoomsTab }] : []),
+    ...(motel?.menu?.length ? [{ key: 'Menú', name: 'Menú', component: MenuTab }] : []),
+    { key: 'Reseñas', name: 'Reseñas', component: ReviewsTab },
+  ];
+  const selectedTab = availableTabs.find((tab) => tab.name === activeTab) || availableTabs[0];
+  const ActiveTabComponent = selectedTab.component;
+  const {
+    panHandlers: tabSwipeHandlers,
+    beginChildHorizontalGesture,
+    endChildHorizontalGesture,
+  } = useMotelTabsGesture({
+    tabs: availableTabs,
+    activeTab: selectedTab.name,
+    onTabChange: setActiveTab,
+  });
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -207,16 +227,6 @@ export default function MotelDetailScreen({ route, navigation }) {
   const isPlaceholder = !mainPhotoUrl || mainPhotoError;
 
   const photoHeight = 240 + insets.top;
-
-  const availableTabs = [
-    { key: 'Detalles', name: 'Detalles', component: DetailsTab },
-    ...(motel.promos?.length ? [{ key: 'Promos', name: 'Promos', component: PromosTab }] : []),
-    ...(motel.rooms?.length ? [{ key: 'Habitaciones', name: 'Habitaciones', component: RoomsTab }] : []),
-    ...(motel.menu?.length ? [{ key: 'Menú', name: 'Menú', component: MenuTab }] : []),
-    { key: 'Reseñas', name: 'Reseñas', component: ReviewsTab },
-  ];
-  const selectedTab = availableTabs.find((tab) => tab.name === activeTab) || availableTabs[0];
-  const selectedTabIndex = availableTabs.findIndex((tab) => tab.key === selectedTab.key);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -286,99 +296,34 @@ export default function MotelDetailScreen({ route, navigation }) {
         </View>
       </Animated.View>
 
-      {/* Header con nombre del motel */}
-      <Animated.View entering={SlideInUp.delay(100).duration(500).springify()} style={styles.header}>
-        <View style={styles.headerInfo}>
-          <Text style={styles.motelName} numberOfLines={1}>{motel.nombre}</Text>
-          <Text style={styles.motelLocation} numberOfLines={1}>
-            {motel.ciudad}
-          </Text>
-        </View>
-        {/* Botones de contacto */}
-        <View style={styles.contactButtons}>
-          <TouchableOpacity
-            style={[
-              styles.contactButton,
-              !motel.contact?.phone && styles.contactButtonDisabled,
-            ]}
-            onPress={motel.contact?.phone ? () => handleCall(motel.contact.phone) : undefined}
-            activeOpacity={0.7}
-            disabled={!motel.contact?.phone}
-          >
-            <Ionicons
-              name="call"
-              size={16}
-              color={motel.contact?.phone ? COLORS.primary : COLORS.muted}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.contactButton,
-              !motel.contact?.whatsapp && styles.contactButtonDisabled,
-            ]}
-            onPress={motel.contact?.whatsapp ? () => handleWhatsApp(motel.contact.whatsapp) : undefined}
-            activeOpacity={0.7}
-            disabled={!motel.contact?.whatsapp}
-          >
-            <Ionicons
-              name="logo-whatsapp"
-              size={16}
-              color={motel.contact?.whatsapp ? '#25D366' : COLORS.muted}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.contactButton}
-            onPress={handleShare}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="share-social-outline"
-              size={16}
-              color={COLORS.primary}
-            />
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
+      <MotelHeader
+        motel={motel}
+        onCall={handleCall}
+        onWhatsApp={handleWhatsApp}
+        onShare={handleShare}
+      />
 
       {/* Tabs controladas: evita reinicios del pager nativo en iOS/Fabric. */}
       <View style={styles.tabsContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.tabBar}
-          contentContainerStyle={styles.tabBarContent}
-        >
-          {availableTabs.map((tab) => {
-            const isActive = tab.name === selectedTab.name;
-            return (
-              <TouchableOpacity
-                key={tab.name}
-                style={[styles.tabButton, isActive && styles.tabButtonActive]}
-                onPress={() => setActiveTab(tab.name)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
-                  {tab.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-        <TabView
-          navigationState={{ index: selectedTabIndex, routes: availableTabs }}
-          onIndexChange={(index) => setActiveTab(availableTabs[index]?.name || 'Detalles')}
-          renderScene={({ route: tabRoute }) => {
-            const TabComponent = tabRoute.component;
-            return <TabComponent route={{ params: { motel } }} navigation={navigation} />;
-          }}
-          renderTabBar={() => null}
-          initialLayout={{ width: SCREEN_WIDTH }}
-          lazy
-          lazyPreloadDistance={0}
-          swipeEnabled
-          animationEnabled
-          style={styles.tabContent}
+        <MotelTabBar
+          tabs={availableTabs}
+          activeTab={selectedTab.name}
+          onTabPress={setActiveTab}
         />
+        <View style={styles.tabContent} {...tabSwipeHandlers}>
+          <Animated.View
+            key={selectedTab.key}
+            entering={FadeIn.duration(360)}
+            style={styles.animatedTabContent}
+          >
+            <ActiveTabComponent
+              route={{ params: { motel } }}
+              navigation={navigation}
+              onChildHorizontalGestureStart={beginChildHorizontalGesture}
+              onChildHorizontalGestureEnd={endChildHorizontalGesture}
+            />
+          </Animated.View>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -494,76 +439,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  headerInfo: {
-    flex: 1,
-  },
-  motelName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2A0038',
-  },
-  motelLocation: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 2,
-  },
-  contactButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  contactButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  contactButtonDisabled: {
-    backgroundColor: '#E5E5E5',
-  },
   tabsContainer: {
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  tabBar: {
-    flexGrow: 0,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  tabBarContent: {
-    paddingHorizontal: 2,
-  },
-  tabButton: {
-    minHeight: 48,
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
-  },
-  tabButtonActive: {
-    borderBottomColor: COLORS.primary,
-  },
-  tabLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#666666',
-  },
-  tabLabelActive: {
-    color: COLORS.primary,
-  },
   tabContent: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  animatedTabContent: {
     flex: 1,
     backgroundColor: '#FFFFFF',
   },

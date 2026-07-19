@@ -3,17 +3,15 @@ import SectionWrapper from '@/components/public/SectionWrapper';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import FeaturedCarousel from '@/components/public/FeaturedCarousel';
-import { normalizeLocalUploadPath } from '@/lib/normalizeLocalUrl';
 import CategoriesGrid from '@/components/public/CategoriesGrid';
 import SocialLinks from '@/components/public/SocialLinks';
 import SearchBar from '@/components/public/SearchBar';
 import FeaturedMotels from '@/components/public/FeaturedMotels';
-import RecentMotels from '@/components/public/RecentMotels';
 import AdPopup from '@/components/public/AdPopup';
 import PromoListWithAds from '@/components/public/PromoListWithAds';
 import CityListWithAds from '@/components/public/CityListWithAds';
-import { prisma } from '@/lib/prisma';
 import { headers } from 'next/headers';
+import type { PublicMotelListResponse } from '@/lib/domain/motels/publicListItem';
 
 export default async function HomePage() {
   const headersList = await headers();
@@ -21,67 +19,11 @@ export default async function HomePage() {
   const protocol = headersList.get('x-forwarded-proto') || 'http';
   const baseUrl = host ? `${protocol}://${host}` : 'http://localhost:3000';
 
-  const now = new Date();
-  const promosMotelsRaw = await prisma.motel.findMany({
-    where: {
-      status: 'APPROVED',
-      isActive: true,
-      promos: {
-        some: {
-          isActive: true,
-          isGlobal: true,
-          AND: [
-            { OR: [{ validFrom: null }, { validFrom: { lte: now } }] },
-            { OR: [{ validUntil: null }, { validUntil: { gte: now } }] },
-          ],
-        },
-      },
-    },
-    include: {
-      photos: {
-        orderBy: { order: 'asc' },
-        take: 1,
-      },
-      promos: {
-        where: {
-          isActive: true,
-          isGlobal: true,
-          AND: [
-            { OR: [{ validFrom: null }, { validFrom: { lte: now } }] },
-            { OR: [{ validUntil: null }, { validUntil: { gte: now } }] },
-          ],
-        },
-      },
-    },
-    take: 5,
-    orderBy: [{ plan: 'desc' }, { ratingAvg: 'desc' }, { createdAt: 'desc' }],
-  });
-
-  const promosMotels = promosMotelsRaw.map((motel) => ({
-    id: motel.id,
-    name: motel.name,
-    slug: motel.slug,
-    featuredPhoto: normalizeLocalUploadPath(motel.featuredPhoto),
-    featuredPhotoWeb: normalizeLocalUploadPath(motel.featuredPhotoWeb),
-    featuredPhotoApp: normalizeLocalUploadPath(motel.featuredPhotoApp),
-    photos: motel.photos.map((photo) => ({
-      url: normalizeLocalUploadPath(photo.url) || photo.url,
-      kind: photo.kind ?? 'OTHER',
-    })),
-    promos: motel.promos.map((promo) => ({
-      id: promo.id,
-      title: promo.title,
-      description: promo.description ?? null,
-      imageUrl: normalizeLocalUploadPath(promo.imageUrl),
-      isActive: promo.isActive,
-      validFrom: promo.validFrom ? promo.validFrom.toISOString() : null,
-      validUntil: promo.validUntil ? promo.validUntil.toISOString() : null,
-    })),
-  }));
-
-  const citiesResponse = await fetch(`${baseUrl}/api/mobile/cities`, {
-    next: { revalidate: 60 },
-  });
+  const [citiesResponse, featuredResponse, promosResponse] = await Promise.all([
+    fetch(`${baseUrl}/api/mobile/cities`, { next: { revalidate: 60 } }),
+    fetch(`${baseUrl}/api/mobile/motels?featured=true&limit=50`, { cache: 'no-store' }),
+    fetch(`${baseUrl}/api/mobile/motels?promos=true&limit=50`, { cache: 'no-store' }),
+  ]);
   const citiesPayload = citiesResponse.ok ? await citiesResponse.json() : { cities: [] };
   const cities = (citiesPayload.cities || [])
     .slice(0, 12)
@@ -90,81 +32,14 @@ export default async function HomePage() {
       total: item.count,
     }));
 
-  const featuredMotelsRaw = await prisma.motel.findMany({
-    where: {
-      status: 'APPROVED',
-      isActive: true,
-      isFeatured: true,
-    },
-    include: {
-      photos: {
-        orderBy: { order: 'asc' },
-        take: 1,
-      },
-      rooms: {
-        where: { isActive: true },
-        select: {
-          price1h: true,
-          price2h: true,
-          price12h: true,
-          amenities: {
-            select: { amenity: { select: { id: true, name: true, icon: true } } },
-          },
-        },
-      },
-    },
-    take: 6,
-    orderBy: [{ plan: 'desc' }, { ratingAvg: 'desc' }, { createdAt: 'desc' }],
-  });
-
-  const featuredMotels = featuredMotelsRaw.map((motel) => ({
-    ...motel,
-    featuredPhoto: normalizeLocalUploadPath(motel.featuredPhoto),
-    featuredPhotoWeb: normalizeLocalUploadPath(motel.featuredPhotoWeb),
-    featuredPhotoApp: normalizeLocalUploadPath(motel.featuredPhotoApp),
-    photos: motel.photos.map((photo) => ({
-      url: normalizeLocalUploadPath(photo.url) || photo.url,
-      kind: photo.kind ?? 'OTHER',
-    })),
-  }));
-
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-  const recentMotelsRaw = await prisma.motel.findMany({
-    where: {
-      status: 'APPROVED',
-      isActive: true,
-      createdAt: { gte: thirtyDaysAgo },
-    },
-    include: {
-      photos: { orderBy: { order: 'asc' }, take: 1 },
-      rooms: {
-        where: { isActive: true },
-        select: {
-          price1h: true,
-          price2h: true,
-          price12h: true,
-          amenities: {
-            select: { amenity: { select: { id: true, name: true, icon: true } } },
-          },
-        },
-      },
-    },
-    take: 6,
-    orderBy: [{ plan: 'desc' }, { ratingAvg: 'desc' }, { createdAt: 'desc' }],
-  });
-
-  const recentMotels = recentMotelsRaw.map((motel) => ({
-    ...motel,
-    featuredPhoto: normalizeLocalUploadPath(motel.featuredPhoto),
-    featuredPhotoWeb: normalizeLocalUploadPath(motel.featuredPhotoWeb),
-    featuredPhotoApp: normalizeLocalUploadPath(motel.featuredPhotoApp),
-    photos: motel.photos.map((photo) => ({
-      url: normalizeLocalUploadPath(photo.url) || photo.url,
-      kind: photo.kind ?? 'OTHER',
-    })),
-  }));
+  const featuredPayload: PublicMotelListResponse = featuredResponse.ok
+    ? await featuredResponse.json()
+    : { data: [], meta: { page: 1, limit: 50, total: 0, latestUpdatedAt: 0 } };
+  const promosPayload: PublicMotelListResponse = promosResponse.ok
+    ? await promosResponse.json()
+    : { data: [], meta: { page: 1, limit: 50, total: 0, latestUpdatedAt: 0 } };
+  const featuredMotels = featuredPayload.data.slice(0, 6);
+  const promosMotels = promosPayload.data;
 
   const categories = [
     { id: 'cities', label: 'Moteles por ciudad', href: '/search', iconName: 'location-outline' },
@@ -266,9 +141,7 @@ export default async function HomePage() {
             </div>
           </SectionWrapper>
         )}
-        {recentMotels.length > 0 && <RecentMotels motels={recentMotels} />}
-
-        {featuredMotels.length === 0 && promosMotels.length === 0 && recentMotels.length === 0 && (
+        {featuredMotels.length === 0 && promosMotels.length === 0 && (
           <SectionWrapper className="py-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-purple-900/40 border border-purple-700/40 rounded-full mb-6">

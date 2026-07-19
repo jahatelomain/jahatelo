@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
 import { ReviewSchema } from '@/lib/validations/schemas';
@@ -17,18 +18,20 @@ const REVIEW_COOLDOWN_DAYS = 30; // 1 review cada 30 días por motel
  */
 export async function GET(request: NextRequest) {
   try {
+    const token = await getTokenFromRequest(request);
+    const currentUser = token ? await verifyToken(token) : null;
     const { searchParams } = new URL(request.url);
     const motelId = searchParams.get('motelId');
     const userId = searchParams.get('userId');
     const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 50);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
-    const where: any = {};
+    const where: Prisma.ReviewWhereInput = {};
 
     if (motelId) where.motelId = motelId;
     if (userId) where.userId = userId;
 
-    const [reviews, total] = await Promise.all([
+    const [reviews, total, summary] = await Promise.all([
       prisma.review.findMany({
         where,
         include: {
@@ -55,6 +58,11 @@ export async function GET(request: NextRequest) {
         skip: offset,
       }),
       prisma.review.count({ where }),
+      prisma.review.aggregate({
+        where,
+        _avg: { score: true },
+        _count: { score: true },
+      }),
     ]);
 
     return NextResponse.json({
@@ -71,6 +79,7 @@ export async function GET(request: NextRequest) {
         likes: r.likes,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
+        isOwn: currentUser?.id === r.userId,
         user: r.isAnonymous ? {
           id: 'anonymous',
           name: 'Usuario Anónimo',
@@ -85,6 +94,10 @@ export async function GET(request: NextRequest) {
         total,
         limit,
         offset,
+      },
+      summary: {
+        average: summary._avg.score || 0,
+        count: summary._count.score,
       },
     });
 
@@ -248,7 +261,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Datos inválidos',
-          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message }))
+          details: error.issues.map((issue) => ({ field: issue.path.join('.'), message: issue.message }))
         },
         { status: 400 }
       );

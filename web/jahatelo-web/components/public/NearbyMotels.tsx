@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import MotelCard from './MotelCard';
+import type { PublicMotelListItem, PublicMotelListResponse } from '@/lib/domain/motels/publicListItem';
 
 const GoogleMapComponent = dynamic(() => import('./GoogleMapComponent'), {
   ssr: false,
@@ -13,30 +14,8 @@ const GoogleMapComponent = dynamic(() => import('./GoogleMapComponent'), {
   ),
 });
 
-interface Motel {
-  id: string;
-  slug: string;
-  name: string;
-  city: string;
-  neighborhood: string;
-  description: string | null;
-  featuredPhoto: string | null;
-  featuredPhotoWeb?: string | null;
-  featuredPhotoApp?: string | null;
-  latitude: number;
-  longitude: number;
-  isFeatured: boolean;
-  ratingAvg: number;
-  ratingCount: number;
+interface Motel extends PublicMotelListItem {
   distance?: number;
-  photos: Array<{ url: string; kind: string }>;
-  rooms: Array<{
-    price1h: number | null;
-    price2h: number | null;
-    price12h: number | null;
-    amenities?: Array<{ amenity: { id: string; name: string; icon: string | null } }>;
-  }>;
-  plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
 }
 
 const RADIUS_OPTIONS = [
@@ -103,16 +82,10 @@ export default function NearbyMotels() {
       const fetchMotels = async () => {
         try {
           setMotelsLoading(true);
-          const response = await fetch('/api/motels/nearby');
-          const data = await response.json();
-          const sanitized = (data.motels || []).map((motel: Motel) => ({
-            ...motel,
-            photos: (motel.photos || []).map((photo) => ({
-              url: photo.url,
-              kind: photo.kind ?? 'OTHER',
-            })),
-          }));
-          setAllMotels(sanitized);
+          const response = await fetch('/api/mobile/motels?limit=50');
+          if (!response.ok) throw new Error('No se pudieron cargar los moteles');
+          const data: PublicMotelListResponse = await response.json();
+          setAllMotels(data.data.filter((motel) => motel.location));
         } catch (error) {
           console.error('Error fetching motels:', error);
           setError('Error al cargar los moteles');
@@ -133,8 +106,8 @@ export default function NearbyMotels() {
           const distance = calculateDistance(
             userLocation.lat,
             userLocation.lng,
-            motel.latitude,
-            motel.longitude
+            motel.location!.lat,
+            motel.location!.lng
           );
           return { ...motel, distance };
         })
@@ -241,10 +214,10 @@ export default function NearbyMotels() {
             slug: motel.slug,
             city: motel.city,
             neighborhood: motel.neighborhood,
-            latitude: motel.latitude,
-            longitude: motel.longitude,
+            latitude: motel.location!.lat,
+            longitude: motel.location!.lng,
             featuredPhoto: motel.featuredPhoto,
-            hasPromo: false,
+            hasPromo: motel.hasPromo,
             plan: motel.plan ?? null,
           }))}
           showRadius={selectedRadius}
@@ -271,7 +244,7 @@ export default function NearbyMotels() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {nearbyMotels.map((motel) => (
             <div key={motel.id} className="relative">
-              <MotelCard motel={motel} />
+              <MotelCard motel={{ ...motel, distanceKm: motel.distance }} />
               {motel.distance !== undefined && (
                 <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full shadow-md">
                   <span className="text-sm font-semibold text-purple-600">

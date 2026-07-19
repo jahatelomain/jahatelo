@@ -6,6 +6,7 @@ import { logAuditEvent } from '@/lib/audit';
 import { IdSchema, UpdateMotelSchema } from '@/lib/validations/schemas';
 import { sanitizeText } from '@/lib/sanitize';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -98,24 +99,11 @@ export async function GET(
       []
     );
 
-    const motelAmenities = await safeFetch(
-      'motel amenities',
-      () =>
-        prisma.motelAmenity.findMany({
-          where: { motelId: idResult.data },
-          include: {
-            amenity: true,
-          },
-        }),
-      []
-    );
-
     return NextResponse.json({
       ...motel,
       rooms,
       menuCategories,
       photos,
-      motelAmenities,
     });
   } catch (error) {
     console.error('Error fetching motel:', error);
@@ -149,12 +137,14 @@ export async function PATCH(
     const validated = UpdateMotelSchema.parse(body);
 
     // Sanitizar campos de texto
-    const data: any = { ...validated };
-    if (data.name) data.name = sanitizeText(data.name);
-    if (data.description) data.description = sanitizeText(data.description);
-    if (data.city) data.city = sanitizeText(data.city);
-    if (data.neighborhood) data.neighborhood = sanitizeText(data.neighborhood);
-    if (data.address) data.address = sanitizeText(data.address);
+    const data: Prisma.MotelUpdateInput = {
+      ...validated,
+      ...(validated.name ? { name: sanitizeText(validated.name) } : {}),
+      ...(validated.description ? { description: sanitizeText(validated.description) } : {}),
+      ...(validated.city ? { city: sanitizeText(validated.city) } : {}),
+      ...(validated.neighborhood ? { neighborhood: sanitizeText(validated.neighborhood) } : {}),
+      ...(validated.address ? { address: sanitizeText(validated.address) } : {}),
+    };
 
     // Manejar nextBillingAt si existe
     if (body.nextBillingAt !== undefined) {
@@ -181,7 +171,7 @@ export async function PATCH(
       return NextResponse.json(
         {
           error: 'Datos inválidos',
-          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message }))
+          details: error.issues.map((issue) => ({ field: issue.path.join('.'), message: issue.message }))
         },
         { status: 400 }
       );

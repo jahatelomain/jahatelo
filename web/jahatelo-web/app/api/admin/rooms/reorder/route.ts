@@ -41,8 +41,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Algunas habitaciones no pertenecen al motel' }, { status: 400 });
     }
 
-    // Actualizar order en paralelo
-    await Promise.all(
+    // Una sola transacción evita órdenes parciales si una actualización falla.
+    await prisma.$transaction(
       roomIds.map((id, index) =>
         prisma.roomType.update({
           where: { id },

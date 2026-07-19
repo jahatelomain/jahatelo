@@ -21,12 +21,6 @@ enum MotelStatus {
   REJECTED
 }
 
-enum AmenityType {
-  MOTEL
-  ROOM
-  BOTH
-}
-
 enum PhotoKind {
   FACADE
   ROOM
@@ -184,7 +178,6 @@ model Motel {
   rooms            RoomType[]
   menuCategories   MenuCategory[]
   photos           Photo[]
-  motelAmenities   MotelAmenity[]
   reviews          Review[]
   schedules        Schedule[]
   paymentMethods   PaymentMethod[]
@@ -289,26 +282,13 @@ model RoomDayRate {
 model Amenity {
   id              String          @id @default(cuid())
   name            String          @unique
-  type            AmenityType?
   icon            String?
   description     String?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime?       @updatedAt
 
   // Relations
-  motelAmenities  MotelAmenity[]
   roomAmenities   RoomAmenity[]
-}
-
-// Motel Amenity (join table)
-model MotelAmenity {
-  id          String   @id @default(cuid())
-  motel       Motel    @relation(fields: [motelId], references: [id], onDelete: Cascade)
-  motelId     String
-  amenity     Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
-  amenityId   String
-
-  @@unique([motelId, amenityId])
 }
 
 // Room Amenity (join table)

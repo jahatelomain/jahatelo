@@ -443,7 +443,6 @@ export const NotificationPreferencesSchema = z.object({
 export const AmenitySchema = z.object({
   name: z.string().min(2).max(100),
   icon: z.string().min(1).max(50).optional().nullable(),
-  type: z.enum(['MOTEL', 'ROOM', 'BOTH']).optional().nullable(),
   description: z.string().max(255).optional().nullable(),
 });
 
@@ -675,7 +674,8 @@ export const MobileMotelsQuerySchema = z.object({
   city: z.string().max(100).optional(),
   neighborhood: z.string().max(100).optional(),
   amenity: z.string().max(100).optional(),
-  featured: z.coerce.boolean().optional(),
+  featured: z.enum(['true', 'false', '1', '0']).transform((value) => value === 'true' || value === '1').optional(),
+  promos: z.enum(['true', 'false', '1', '0']).transform((value) => value === 'true' || value === '1').optional(),
   ids: z.string().max(500).optional(),
   page: z.coerce.number().int().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(50).optional(),

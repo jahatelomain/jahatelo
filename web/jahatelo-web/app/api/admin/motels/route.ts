@@ -104,7 +104,6 @@ export async function GET(request: NextRequest) {
             select: {
               photos: true,
               rooms: true,
-              motelAmenities: true,
             },
           },
           createdAt: true,

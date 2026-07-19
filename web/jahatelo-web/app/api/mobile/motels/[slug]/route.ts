@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import prisma from '@/lib/prisma';
 import { mapMotelToDetail } from '../../mappers';
 import { normalizeLocalUrl, normalizeLocalUrls } from '@/lib/normalizeLocalUrl';
 import { MobileMotelSlugSchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
+import { getPublicMotelDetail } from '@/lib/domain/motels/getMotelDetail';
 
 export async function GET(
   request: NextRequest,
@@ -24,68 +24,11 @@ export async function GET(
     }
     const resolvedSlug = slugResult.data.slug;
 
-    // Common include for both queries
-    const commonInclude = {
-      photos: {
-        orderBy: { order: 'asc' as const },
-      },
-
-      rooms: {
-        where: { isActive: true },
-        orderBy: [{ order: 'asc' as const }, { isFeatured: 'desc' as const }, { name: 'asc' as const }],
-        include: {
-          roomPhotos: {
-            orderBy: { order: 'asc' as const },
-          },
-          amenities: {
-            include: {
-              amenity: true,
-            },
-          },
-          dayRates: true,
-        },
-      },
-      menuCategories: {
-        include: {
-          items: {
-            orderBy: { name: 'asc' as const },
-          },
-        },
-        orderBy: { order: 'asc' as const },
-      },
-      promos: {
-        where: { isActive: true },
-      },
-      schedules: {
-        orderBy: { dayOfWeek: 'asc' as const },
-      },
-    };
-
-    // Try to find by slug first, then by id
-    let motel = await prisma.motel.findUnique({
-      where: { slug: resolvedSlug },
-      include: commonInclude,
-    });
-
-    // If not found by slug, try by id
-    if (!motel) {
-      motel = await prisma.motel.findUnique({
-        where: { id: resolvedSlug },
-        include: commonInclude,
-      });
-    }
+    const motel = await getPublicMotelDetail(resolvedSlug);
 
     if (!motel) {
       return NextResponse.json(
         { error: 'Motel not found' },
-        { status: 404 }
-      );
-    }
-
-    // Check if motel is approved and active
-    if (motel.status !== 'APPROVED' || !motel.isActive || motel.plan === 'FREE') {
-      return NextResponse.json(
-        { error: 'Motel not available' },
         { status: 404 }
       );
     }

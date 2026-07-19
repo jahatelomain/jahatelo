@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Tab {
@@ -17,24 +17,12 @@ interface TabsProps {
 export default function Tabs({ tabs, defaultTab }: TabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState(defaultTab || tabs[0]?.id);
-
-  // Inicializar tab desde query params o hash en el primer render
-  useEffect(() => {
-    // Prioridad: query param > hash > default
-    const tabFromQuery = searchParams.get('tab');
-    const hash = window.location.hash.replace('#', '');
-
-    let initialTab = defaultTab || tabs[0]?.id;
-
-    if (tabFromQuery && tabs.find((tab) => tab.id === tabFromQuery)) {
-      initialTab = tabFromQuery;
-    } else if (hash && tabs.find((tab) => tab.id === hash)) {
-      initialTab = hash;
-    }
-
-    setActiveTab(initialTab);
-  }, []);
+  const tabFromQuery = searchParams.get('tab');
+  const initialTab = tabFromQuery && tabs.some((tab) => tab.id === tabFromQuery)
+    ? tabFromQuery
+    : (defaultTab || tabs[0]?.id);
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   // Escuchar cambios en hash
   useEffect(() => {
@@ -47,8 +35,12 @@ export default function Tabs({ tabs, defaultTab }: TabsProps) {
       }
     };
 
+    const frame = window.requestAnimationFrame(applyHash);
     window.addEventListener('hashchange', applyHash);
-    return () => window.removeEventListener('hashchange', applyHash);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('hashchange', applyHash);
+    };
   }, [tabs]);
 
   const handleTabChange = (tabId: string) => {
@@ -60,10 +52,28 @@ export default function Tabs({ tabs, defaultTab }: TabsProps) {
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
+  const handleTouchStart = (event: React.TouchEvent) => {
+    const touch = event.touches[0];
+    touchStart.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent) => {
+    if (!touchStart.current) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - touchStart.current.x;
+    const dy = touch.clientY - touchStart.current.y;
+    touchStart.current = null;
+    if (Math.abs(dx) < 55 || Math.abs(dx) <= Math.abs(dy) * 1.5) return;
+
+    const activeIndex = tabs.findIndex((tab) => tab.id === activeTab);
+    const nextIndex = Math.max(0, Math.min(tabs.length - 1, activeIndex + (dx < 0 ? 1 : -1)));
+    if (nextIndex !== activeIndex) handleTabChange(tabs[nextIndex].id);
+  };
+
   const activeTabContent = tabs.find((tab) => tab.id === activeTab)?.content;
 
   return (
-    <div>
+    <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {/* Tab Headers */}
       <div className="border-b border-gray-200">
         <nav className="flex gap-8 overflow-x-auto">
@@ -84,7 +94,7 @@ export default function Tabs({ tabs, defaultTab }: TabsProps) {
       </div>
 
       {/* Tab Content */}
-      <div className="py-6">
+      <div key={activeTab} className="animate-[tabFadeIn_360ms_ease-out] py-6">
         {activeTabContent}
       </div>
     </div>

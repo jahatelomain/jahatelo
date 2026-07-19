@@ -3,16 +3,17 @@ import {
   getLocalFavorites,
   addLocalFavorite,
   removeLocalFavorite,
-  isLocalFavorite,
 } from '@/lib/favoritesService';
-import { trackFavoriteAdd, trackFavoriteRemove } from '@/lib/analyticsService';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * Hook personalizado para manejar favoritos
  * Soporta persistencia local para usuarios no autenticados
  * y sincronización con backend para usuarios autenticados
  */
-export const useFavorites = (isAuthenticated: boolean = false) => {
+export const useFavorites = (authenticatedOverride?: boolean) => {
+  const auth = useAuth();
+  const isAuthenticated = authenticatedOverride ?? auth.isAuthenticated;
   const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -29,13 +30,10 @@ export const useFavorites = (isAuthenticated: boolean = false) => {
   const fetchFavoritesFromBackend = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/favorites');
+      const response = await fetch('/api/mobile/favorites', { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
-        const motelIds = data.favorites
-          .map((fav: any) => fav.motelId)
-          .filter(Boolean);
-        setFavorites(motelIds);
+        setFavorites(data.motelIds || []);
       }
     } catch (error) {
       console.error('Error fetching favorites:', error);
@@ -46,20 +44,21 @@ export const useFavorites = (isAuthenticated: boolean = false) => {
 
   // Agregar a favoritos
   const addFavorite = useCallback(
-    async (motelId: string, source: string = 'LIST') => {
+    async (motelId: string, _source: string = 'LIST') => {
+      void _source;
       if (isAuthenticated) {
         try {
-          const response = await fetch('/api/favorites', {
+          const response = await fetch('/api/mobile/favorites', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
+            credentials: 'include',
             body: JSON.stringify({ motelId }),
           });
 
           if (response.ok) {
             setFavorites((prev) => [...prev, motelId]);
-            trackFavoriteAdd(motelId, source);
             return true;
           }
           return false;
@@ -71,7 +70,6 @@ export const useFavorites = (isAuthenticated: boolean = false) => {
         // Usuario no autenticado - usar localStorage
         addLocalFavorite(motelId);
         setFavorites((prev) => [...prev, motelId]);
-        trackFavoriteAdd(motelId, source);
         return true;
       }
     },
@@ -80,16 +78,17 @@ export const useFavorites = (isAuthenticated: boolean = false) => {
 
   // Remover de favoritos
   const removeFavorite = useCallback(
-    async (motelId: string, source: string = 'LIST') => {
+    async (motelId: string, _source: string = 'LIST') => {
+      void _source;
       if (isAuthenticated) {
         try {
-          const response = await fetch(`/api/favorites?motelId=${motelId}`, {
+          const response = await fetch(`/api/mobile/favorites?motelId=${motelId}`, {
             method: 'DELETE',
+            credentials: 'include',
           });
 
           if (response.ok) {
             setFavorites((prev) => prev.filter((id) => id !== motelId));
-            trackFavoriteRemove(motelId, source);
             return true;
           }
           return false;
@@ -101,7 +100,6 @@ export const useFavorites = (isAuthenticated: boolean = false) => {
         // Usuario no autenticado - usar localStorage
         removeLocalFavorite(motelId);
         setFavorites((prev) => prev.filter((id) => id !== motelId));
-        trackFavoriteRemove(motelId, source);
         return true;
       }
     },

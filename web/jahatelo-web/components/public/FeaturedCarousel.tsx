@@ -7,16 +7,9 @@ import { useAdvertisements, trackAdEvent } from '@/hooks/useAdvertisements';
 import type { Advertisement } from '@/hooks/useAdvertisements';
 import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
 import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
+import type { PublicMotelListItem } from '@/lib/domain/motels/publicListItem';
 
-interface Motel {
-  id: string;
-  slug: string;
-  name: string;
-  featuredPhoto?: string | null;
-  featuredPhotoWeb?: string | null;
-  photos?: Array<{ url: string; kind: string }>;
-  plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
-}
+type Motel = PublicMotelListItem;
 
 interface FeaturedCarouselProps {
   featuredMotels: Motel[];
@@ -150,7 +143,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
 
           /* ── SLIDE DE MOTEL ── */
           const motel = item.data as Motel;
-          const realPhotoUrl = motel.featuredPhotoWeb || motel.featuredPhoto || motel.photos?.[0]?.url || null;
+          const realPhotoUrl = motel.thumbnail || motel.featuredPhoto || motel.photos[0] || null;
           const photoUrl = failedImages[motel.id] ? null : realPhotoUrl;
           const isPlaceholder = !photoUrl;
 

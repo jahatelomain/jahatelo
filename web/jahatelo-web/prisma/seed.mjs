@@ -296,18 +296,9 @@ async function main() {
       },
     });
 
-    const motelAmenities = cleanList(motelData.amenities);
-    if (motelAmenities.length > 0) {
-      await prisma.motelAmenity.createMany({
-        data: motelAmenities
-          .map((amenity) => amenitiesMap.get(amenity))
-          .filter(Boolean)
-          .map((amenityId) => ({
-            motelId: motel.id,
-            amenityId,
-          })),
-      });
-    }
+    const roomAmenityIds = cleanList(motelData.amenities)
+      .map((amenity) => amenitiesMap.get(amenity))
+      .filter(Boolean);
 
     const roomNames = cleanList(motelData.rooms);
     const roomsToCreate = roomNames.length > 0 ? roomNames : ['Suite Estándar'];
@@ -322,6 +313,9 @@ async function main() {
           basePrice: null,
           priceLabel: motelData.prices || 'Consultar tarifas',
           isActive: true,
+          amenities: roomAmenityIds.length
+            ? { create: roomAmenityIds.map((amenityId) => ({ amenityId })) }
+            : undefined,
           photos: {
             create: [
               {
