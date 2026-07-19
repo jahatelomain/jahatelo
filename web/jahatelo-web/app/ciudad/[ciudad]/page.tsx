@@ -100,18 +100,6 @@ export default async function CityPage({ params }: Props) {
     { name: cityName, url: `${baseUrl}/ciudad/${ciudad.toLowerCase()}` },
   ]);
 
-  // Agrupar moteles por barrio
-  const motelsByNeighborhood = motels.reduce((acc, motel) => {
-    const neighborhood = motel.neighborhood || 'Otros';
-    if (!acc[neighborhood]) {
-      acc[neighborhood] = [];
-    }
-    acc[neighborhood].push(motel);
-    return acc;
-  }, {} as Record<string, typeof motels>);
-
-  const neighborhoods = Object.keys(motelsByNeighborhood).sort();
-
   return (
     <>
       <JsonLd data={collectionSchema} />
@@ -129,29 +117,6 @@ export default async function CityPage({ params }: Props) {
             </p>
           </div>
 
-          {/* Filtro por barrios */}
-          {neighborhoods.length > 1 && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Barrios</h2>
-              <div className="flex flex-wrap gap-3">
-                {neighborhoods.map((neighborhood) => {
-                  const count = motelsByNeighborhood[neighborhood].length;
-                  const slug = neighborhood.toLowerCase().replace(/\s+/g, '-');
-                  return (
-                    <a
-                      key={neighborhood}
-                      href={`/ciudad/${ciudad}/${slug}`}
-                      className="px-4 py-2 bg-white border-2 border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-400 transition-all duration-200"
-                    >
-                      <span className="font-medium text-gray-800">{neighborhood}</span>
-                      <span className="ml-2 text-sm text-gray-500">({count})</span>
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           {/* Lista de moteles */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {motels.map((motel) => (
@@ -163,7 +128,6 @@ export default async function CityPage({ params }: Props) {
                   name: motel.name,
                   description: motel.description,
                   city: motel.city,
-                  neighborhood: motel.neighborhood,
                   address: motel.address,
                   location: motel.latitude && motel.longitude ? { lat: motel.latitude, lng: motel.longitude } : null,
                   rating: { average: motel.ratingAvg ?? 0, count: motel.ratingCount ?? 0 },

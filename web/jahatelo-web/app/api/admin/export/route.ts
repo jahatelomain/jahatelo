@@ -88,7 +88,6 @@ export async function GET(request: NextRequest) {
           status: true,
           isActive: true,
           city: true,
-          neighborhood: true,
           address: true,
           phone: true,
           whatsapp: true,
@@ -101,7 +100,7 @@ export async function GET(request: NextRequest) {
 
       const header = toRow([
         'ID', 'Nombre', 'Slug', 'Plan', 'Estado', 'Activo',
-        'Ciudad', 'Barrio', 'Dirección', 'Teléfono', 'WhatsApp',
+        'Ciudad', 'Dirección', 'Teléfono', 'WhatsApp',
         'Rating Promedio', 'Cantidad Reseñas', 'Fecha Registro',
       ]);
 
@@ -114,7 +113,6 @@ export async function GET(request: NextRequest) {
           r.status,
           r.isActive ? 'Sí' : 'No',
           r.city ?? '',
-          r.neighborhood ?? '',
           r.address ?? '',
           r.phone ?? '',
           r.whatsapp ?? '',

@@ -15,7 +15,6 @@ type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 type Motel = {
   id: string;
   name: string;
-  neighborhood: string;
   city: string;
   status: MotelStatus;
   isActive: boolean;
@@ -481,7 +480,7 @@ export default function MotelsAdminPage() {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Buscar por nombre, ciudad, barrio o contacto..."
+                placeholder="Buscar por nombre, ciudad o contacto..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full border border-slate-300 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
@@ -775,7 +774,7 @@ export default function MotelsAdminPage() {
                     {motel.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 max-w-[240px] truncate">
-                    {motel.neighborhood}, {motel.city}
+                    {motel.city}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 max-w-[180px] truncate">
                     {motel.contactName || motel.contactEmail || motel.contactPhone || '-'}

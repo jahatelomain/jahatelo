@@ -8,11 +8,11 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
 
 export const metadata: Metadata = {
   title: 'Buscar Moteles | Jahatelo',
-  description: 'Buscá moteles por nombre, ciudad, barrio o características. Encontrá el lugar ideal con precios, fotos y promos actualizadas.',
+  description: 'Buscá moteles por nombre, ciudad o características. Encontrá el lugar ideal con precios, fotos y promos actualizadas.',
   alternates: { canonical: `${BASE_URL}/search` },
   openGraph: {
     title: 'Buscar Moteles | Jahatelo',
-    description: 'Buscá moteles por nombre, ciudad, barrio o características. Encontrá el lugar ideal con precios, fotos y promos actualizadas.',
+    description: 'Buscá moteles por nombre, ciudad o características. Encontrá el lugar ideal con precios, fotos y promos actualizadas.',
     url: `${BASE_URL}/search`,
     type: 'website',
     siteName: 'Jahatelo',
@@ -48,7 +48,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               Buscar Moteles
             </h1>
             <p className="text-lg text-purple-200/70 animate-fade-up-delay-2">
-              Buscá por nombre, ciudad, barrio o características
+              Buscá por nombre, ciudad o características
             </p>
           </div>
         </div>

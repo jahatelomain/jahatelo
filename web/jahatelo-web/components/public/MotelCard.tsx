@@ -19,7 +19,6 @@ export interface MotelCardProps {
     name: string;
     slug: string;
     city: string;
-    neighborhood: string;
     isFeatured: boolean;
     ratingAvg?: number | null;
     ratingCount?: number | null;
@@ -132,7 +131,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
             {motel.name}
           </h3>
           <p className="text-sm text-gray-500 mb-3">
-            {motel.city || motel.neighborhood || 'Sin ciudad'}
+            {motel.city || 'Sin ciudad'}
             {motel.distanceKm !== undefined && (
               <span className="ml-2 inline-flex items-center gap-1 text-purple-600 font-medium">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

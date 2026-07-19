@@ -61,7 +61,6 @@ export async function GET(request: NextRequest) {
     const parsed = MobileMotelsQuerySchema.safeParse({
       search: params.get('search') || undefined,
       city: params.get('city') || undefined,
-      neighborhood: params.get('neighborhood') || undefined,
       amenity: params.get('amenity') || undefined,
       featured: params.get('featured') || undefined,
       promos: params.get('promos') || undefined,
@@ -79,7 +78,6 @@ export async function GET(request: NextRequest) {
 
     const search = normalizeSearch(parsed.data.search);
     const city = normalize(parsed.data.city);
-    const neighborhood = normalize(parsed.data.neighborhood);
     const amenity = normalize(parsed.data.amenity);
     const ids = parsed.data.ids?.split(',').map((value) => value.trim()).filter(Boolean) ?? [];
     const page = parsed.data.page ?? 1;
@@ -94,7 +92,6 @@ export async function GET(request: NextRequest) {
         WHERE LOWER(TRANSLATE(m.name, ${ACCENT_FROM}, ${ACCENT_TO})) LIKE ${pattern}
           OR LOWER(TRANSLATE(COALESCE(m.description, ''), ${ACCENT_FROM}, ${ACCENT_TO})) LIKE ${pattern}
           OR LOWER(TRANSLATE(m.city, ${ACCENT_FROM}, ${ACCENT_TO})) LIKE ${pattern}
-          OR LOWER(TRANSLATE(m.neighborhood, ${ACCENT_FROM}, ${ACCENT_TO})) LIKE ${pattern}
       `);
       and.push({ id: { in: matches.map(({ id }) => id) } });
     }
@@ -103,7 +100,6 @@ export async function GET(request: NextRequest) {
       and.push({ OR: [{ id: { in: ids } }, { slug: { in: ids } }] });
     }
     if (city) and.push({ city: { contains: city, mode: 'insensitive' } });
-    if (neighborhood) and.push({ neighborhood: { contains: neighborhood, mode: 'insensitive' } });
     if (parsed.data.featured !== undefined) and.push({ isFeatured: parsed.data.featured });
 
     if (amenity) {

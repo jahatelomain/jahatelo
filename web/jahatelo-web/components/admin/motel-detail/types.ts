@@ -71,7 +71,6 @@ export type Motel = {
   description: string | null;
   country: string | null;
   city: string;
-  neighborhood: string;
   address: string;
   mapUrl: string | null;
   phone: string | null;

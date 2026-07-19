@@ -133,7 +133,6 @@ const mapMotelSummary = (apiMotel) => {
     id: apiMotel.id,
     slug: apiMotel.slug,
     nombre: apiMotel.name,
-    barrio: apiMotel.neighborhood,
     ciudad: apiMotel.city,
     distanciaKm: null, // El API no devuelve distancia por ahora
     precioDesde: apiMotel.startingPrice || 0,
@@ -227,7 +226,6 @@ export const fetchMotels = async (params = {}, useCache = true, requestOptions =
   // Agregar parámetros si existen
   if (params.search) queryParams.append('search', params.search);
   if (params.city) queryParams.append('city', params.city);
-  if (params.neighborhood) queryParams.append('neighborhood', params.neighborhood);
   if (params.amenity) queryParams.append('amenity', params.amenity);
   if (params.featured !== undefined) queryParams.append('featured', params.featured);
   if (params.promos !== undefined) queryParams.append('promos', params.promos);
@@ -358,7 +356,6 @@ export const fetchMotelBySlug = async (slugOrId, useCache = true) => {
       id: normalizedDetail.id,
       slug: normalizedDetail.slug,
       nombre: normalizedDetail.nombre,
-      barrio: normalizedDetail.barrio,
       ciudad: normalizedDetail.ciudad,
       precioDesde: normalizedDetail.precioDesde,
       rating: normalizedDetail.rating,

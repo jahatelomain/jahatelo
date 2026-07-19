@@ -21,7 +21,6 @@ type MapMotel = {
   name: string;
   slug: string;
   city: string;
-  neighborhood: string;
   latitude: number;
   longitude: number;
   featuredPhoto: string | null;

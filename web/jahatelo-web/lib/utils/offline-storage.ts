@@ -26,7 +26,6 @@ export interface MotelDraft {
   // Ubicación
   address: string;
   city: string;
-  neighborhood: string;
   reference: string;
   googleMapsUrl: string;
 
@@ -298,7 +297,6 @@ export function createEmptyDraft(): Partial<MotelDraft> {
     email: '',
     address: '',
     city: '',
-    neighborhood: '',
     reference: '',
     googleMapsUrl: '',
     scheduleWeekdays: '',

@@ -9,7 +9,6 @@ type PendingMotel = {
   id: string;
   name: string;
   city: string;
-  neighborhood: string;
   createdAt: Date;
 };
 
@@ -137,7 +136,7 @@ export default function QuickActions({ initialMotels }: QuickActionsProps) {
               <div className="w-full min-w-0 sm:flex-1">
                 <p className="font-medium text-slate-900 truncate">{motel.name}</p>
                 <p className="text-xs text-slate-600">
-                  {motel.city} • {motel.neighborhood} • Registrado {getTimeAgo(motel.createdAt)}
+                  {motel.city} • Registrado {getTimeAgo(motel.createdAt)}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:justify-end sm:flex-shrink-0">

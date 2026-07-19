@@ -79,7 +79,6 @@ export default function MotelDetailPage() {
     description: '',
     country: 'Paraguay',
     city: '',
-    neighborhood: '',
     address: '',
     mapUrl: '',
     phone: '',
@@ -178,7 +177,6 @@ export default function MotelDetailPage() {
         description: data.description || '',
         country: data.country || 'Paraguay',
         city: data.city || '',
-        neighborhood: data.neighborhood || '',
         address: data.address || '',
         mapUrl: data.mapUrl || '',
         phone: data.phone || '',
@@ -422,7 +420,6 @@ export default function MotelDetailPage() {
         description: normalizeOptionalText(motelForm.description || ''),
         country: normalizeOptionalText(motelForm.country || ''),
         city: normalizeOptionalText(motelForm.city || ''),
-        neighborhood: normalizeOptionalText(motelForm.neighborhood || ''),
         address: normalizeOptionalText(motelForm.address || ''),
         mapUrl: normalizedMapUrl,
         phone: normalizeOptionalText(motelForm.phone || ''),
@@ -1275,8 +1272,6 @@ export default function MotelDetailPage() {
                     <dd className="mt-1 text-sm text-slate-900">{motel.city}</dd>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                    <dt className="text-xs font-medium text-slate-500 uppercase">Barrio</dt>
-                    <dd className="mt-1 text-sm text-slate-900">{motel.neighborhood}</dd>
                   </div>
                   <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                     <dt className="text-xs font-medium text-slate-500 uppercase">Dirección</dt>

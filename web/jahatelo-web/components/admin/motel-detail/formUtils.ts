@@ -2,7 +2,6 @@ import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
 
 const FIELD_LABELS: Record<string, string> = {
   name: 'Nombre', description: 'Descripcion', country: 'Pais', city: 'Ciudad',
-  neighborhood: 'Barrio', address: 'Direccion', mapUrl: 'URL de mapa',
   latitude: 'Latitud', longitude: 'Longitud', phone: 'Telefono', whatsapp: 'WhatsApp',
   website: 'Sitio web', instagram: 'Instagram', contactName: 'Contacto usuarios',
   contactEmail: 'Correo usuarios', contactPhone: 'Telefono usuarios',

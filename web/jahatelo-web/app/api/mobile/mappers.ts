@@ -207,7 +207,6 @@ export function mapMotelToListItem(motel: MotelForList) {
     name: motel.name,
     description: motel.description,
     city: motel.city,
-    neighborhood: motel.neighborhood,
     address: motel.address,
     location:
       motel.latitude && motel.longitude

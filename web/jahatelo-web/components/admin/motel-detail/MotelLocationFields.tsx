@@ -1,6 +1,6 @@
 import { COUNTRY_OPTIONS } from './formDefaults';
 
-type LocationForm = { country: string; city: string; neighborhood: string; address: string; mapUrl: string };
+type LocationForm = { country: string; city: string; address: string; mapUrl: string };
 
 export default function MotelLocationFields<T extends LocationForm>({ form, onChange }: { form: T; onChange: (form: T) => void }) {
   const inputClass = 'w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-transparent focus:ring-2 focus:ring-purple-600';
@@ -10,7 +10,6 @@ export default function MotelLocationFields<T extends LocationForm>({ form, onCh
       <div className="grid gap-4 md:grid-cols-2">
         <Field label="País"><select value={form.country} onChange={(event) => onChange({ ...form, country: event.target.value })} className={`${inputClass} bg-white`}>{COUNTRY_OPTIONS.map((country) => <option key={country} value={country}>{country}</option>)}</select></Field>
         <Field label="Ciudad"><input type="text" value={form.city} onChange={(event) => onChange({ ...form, city: event.target.value })} className={inputClass} /></Field>
-        <Field label="Barrio"><input type="text" value={form.neighborhood} onChange={(event) => onChange({ ...form, neighborhood: event.target.value })} className={inputClass} /></Field>
         <Field label="Dirección"><input type="text" value={form.address} onChange={(event) => onChange({ ...form, address: event.target.value })} className={inputClass} /></Field>
         <div className="md:col-span-2">
           <Field label="Link o iframe de Google Maps (ubicación exacta)"><input type="text" value={form.mapUrl} onChange={(event) => onChange({ ...form, mapUrl: event.target.value })} className={inputClass} placeholder="https://maps.google.com/..." /></Field>

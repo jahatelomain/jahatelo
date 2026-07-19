@@ -67,7 +67,6 @@ export const MotelSchema = z.object({
   name: z.string().min(3, 'Nombre muy corto').max(100, 'Nombre muy largo').optional(),
   description: z.string().max(2000, 'Descripción muy larga').optional().nullable(),
   city: z.string().min(2).max(100).optional(),
-  neighborhood: z.string().min(2).max(100).optional(),
   address: z.string().min(10, 'Dirección muy corta').max(200, 'Dirección muy larga').optional(),
   country: z.string().min(2).max(100).optional().nullable(),
   mapUrl: z.string().url('URL inválida').optional().nullable(),
@@ -132,7 +131,6 @@ export const MotelRegisterSchema = z.object({
 export const PublicMotelRegisterSchema = z.object({
   name: z.string().min(2).max(100),
   city: z.string().min(2).max(100),
-  neighborhood: z.string().min(2).max(100),
   address: z.string().min(10).max(200),
   contactName: z.string().min(2).max(100).optional().nullable(),
   contactEmail: z.string().email().max(255).optional().nullable(),
@@ -669,7 +667,6 @@ export const SearchSuggestionQuerySchema = z.object({
 export const MobileMotelsQuerySchema = z.object({
   search: z.string().max(200).optional(),
   city: z.string().max(100).optional(),
-  neighborhood: z.string().max(100).optional(),
   amenity: z.string().max(100).optional(),
   featured: z.enum(['true', 'false', '1', '0']).transform((value) => value === 'true' || value === '1').optional(),
   promos: z.enum(['true', 'false', '1', '0']).transform((value) => value === 'true' || value === '1').optional(),

@@ -134,7 +134,6 @@ model Motel {
   slug             String          @unique
   description      String?
   city             String
-  neighborhood     String
   address          String
   country          String?
   mapUrl           String?

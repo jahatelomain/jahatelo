@@ -39,7 +39,6 @@ export async function generateMetadata({ params }: MotelDetailPageProps): Promis
       name: true,
       description: true,
       city: true,
-      neighborhood: true,
       featuredPhoto: true,
       featuredPhotoWeb: true,
       status: true,
@@ -56,7 +55,7 @@ export async function generateMetadata({ params }: MotelDetailPageProps): Promis
   const description =
     motel.description
       ? motel.description.slice(0, 155).trim()
-      : `Reservá en ${motel.name}, ubicado en ${motel.neighborhood ? `${motel.neighborhood}, ` : ''}${motel.city}. Habitaciones, precios y promos en Jahatelo.`;
+      : `Reservá en ${motel.name}, ubicado en ${motel.city}. Habitaciones, precios y promos en Jahatelo.`;
 
   const ogImage = motel.featuredPhotoWeb || motel.featuredPhoto || undefined;
   const url = `${BASE_URL}/motels/${slug}`;
@@ -537,7 +536,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span>{motel.city}, {motel.neighborhood}</span>
+                  <span>{motel.city}</span>
                 </div>
 
                 {hasReviews && (

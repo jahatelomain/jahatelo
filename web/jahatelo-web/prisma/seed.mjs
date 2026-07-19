@@ -72,7 +72,6 @@ const motelsData = [
   {
     name: 'Platinum Motel',
     city: 'Fernando de la Mora',
-    neighborhood: 'Zona Norte',
     address: 'Cerca de la UNA',
     phones: '+595984444579, +59521680494-5',
     rooms: 'Suite Presidencial, Suite Master, Suite Platinum',
@@ -135,7 +134,6 @@ const motelsData = [
   {
     name: 'Motel Samoa',
     city: 'Ciudad del Este',
-    neighborhood: 'Barrio San Miguel',
     address: 'Avda. Carlos A. López',
     phones: '+59561500651, +59561514913, +59561566667',
   },
@@ -148,7 +146,6 @@ const motelsData = [
   {
     name: 'Motel Los Leones',
     city: 'Ciudad del Este',
-    neighborhood: 'Barrio Che La Reina',
     phones: '+59561572998',
   },
   {
@@ -258,7 +255,6 @@ async function main() {
         slug,
         description: `Motel ${motelData.name} ubicado en ${motelData.city}, Paraguay.`,
         city: motelData.city,
-        neighborhood: motelData.neighborhood || motelData.city,
         address:
           motelData.address && motelData.address !== '(No especificada)'
             ? motelData.address

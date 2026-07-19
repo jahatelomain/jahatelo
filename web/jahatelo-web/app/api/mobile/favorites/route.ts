@@ -137,7 +137,6 @@ export async function GET(request: NextRequest) {
           id: motel.id,
           slug: motel.slug,
           nombre: motel.name,
-          barrio: motel.neighborhood,
           ciudad: motel.city,
           precioDesde,
           amenities: Array.from(amenityMap.values()),
