@@ -4,7 +4,6 @@ export type PublicMotelListItem = {
   name: string;
   description: string | null;
   city: string;
-  neighborhood: string;
   address: string;
   location: { lat: number; lng: number } | null;
   rating: { average: number; count: number };

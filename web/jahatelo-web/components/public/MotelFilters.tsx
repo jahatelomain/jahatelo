@@ -12,10 +12,8 @@ interface Amenity {
 
 interface MotelFiltersProps {
   cities: { city: string }[];
-  neighborhoods: { neighborhood: string }[];
   amenities: Amenity[];
   currentCity?: string;
-  currentNeighborhood?: string;
   currentSearch?: string;
   currentAmenities?: string[];
   currentPromos?: string;
@@ -23,10 +21,8 @@ interface MotelFiltersProps {
 
 export default function MotelFilters({
   cities,
-  neighborhoods,
   amenities,
   currentCity,
-  currentNeighborhood,
   currentSearch,
   currentAmenities = [],
   currentPromos,
@@ -51,16 +47,8 @@ export default function MotelFilters({
 
     if (value) {
       params.set(key, value);
-      // If changing city, remove neighborhood
-      if (key === 'city') {
-        params.delete('neighborhood');
-      }
     } else {
       params.delete(key);
-      // If clearing city, also clear neighborhood
-      if (key === 'city') {
-        params.delete('neighborhood');
-      }
     }
 
     router.push(`/search?${params.toString()}`);
@@ -89,7 +77,6 @@ export default function MotelFilters({
   const promosActive = currentPromos === '1';
   const hasFilters =
     currentCity ||
-    currentNeighborhood ||
     currentSearch ||
     selectedAmenities.length > 0 ||
     promosActive;
@@ -109,7 +96,7 @@ export default function MotelFilters({
           <input
             id="search"
             type="text"
-            placeholder="Nombre, ciudad, barrio..."
+            placeholder="Nombre o ciudad..."
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
@@ -144,28 +131,6 @@ export default function MotelFilters({
           ))}
         </select>
       </div>
-
-      {/* Neighborhood Filter */}
-      {currentCity && neighborhoods.length > 0 && (
-        <div className="mb-6">
-          <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700 mb-2">
-            Barrio
-          </label>
-          <select
-            id="neighborhood"
-            value={currentNeighborhood || ''}
-            onChange={(e) => updateFilter('neighborhood', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-          >
-            <option value="">Todos los barrios</option>
-            {neighborhoods.map((n) => (
-              <option key={n.neighborhood} value={n.neighborhood}>
-                {n.neighborhood}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
 
       {/* Amenities Filter */}
       {amenities.length > 0 && (

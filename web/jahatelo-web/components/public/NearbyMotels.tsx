@@ -213,7 +213,6 @@ export default function NearbyMotels() {
             name: motel.name,
             slug: motel.slug,
             city: motel.city,
-            neighborhood: motel.neighborhood,
             latitude: motel.location!.lat,
             longitude: motel.location!.lng,
             featuredPhoto: motel.featuredPhoto,

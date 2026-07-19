@@ -194,7 +194,7 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
             style={[styles.animatedPlaceholder, { opacity: placeholderOpacity, color: colors.muted }]}
             pointerEvents="none"
           >
-            Buscar moteles, barrios o amenities
+            Buscar moteles, ciudades o amenities
           </RNAnimated.Text>
         )}
       </View>

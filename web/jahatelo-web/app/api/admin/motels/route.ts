@@ -53,7 +53,6 @@ export async function GET(request: NextRequest) {
             OR: [
               { name: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
               { city: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { neighborhood: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
               { contactName: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
               { contactEmail: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
               { contactPhone: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
@@ -87,7 +86,6 @@ export async function GET(request: NextRequest) {
           name: true,
           slug: true,
           city: true,
-          neighborhood: true,
           status: true,
           isActive: true,
           contactName: true,

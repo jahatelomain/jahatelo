@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
         isActive: true,
         name: { contains: query, mode: 'insensitive' },
       },
-      select: { id: true, name: true, city: true, neighborhood: true, slug: true },
+      select: { id: true, name: true, city: true, slug: true },
       take: 5,
     });
 
@@ -35,32 +35,17 @@ export async function GET(request: NextRequest) {
       take: 5,
     });
 
-    const neighborhoods = await prisma.motel.findMany({
-      where: {
-        status: 'APPROVED',
-        isActive: true,
-        neighborhood: { contains: query, mode: 'insensitive' },
-      },
-      select: { neighborhood: true },
-      distinct: ['neighborhood'],
-      take: 5,
-    });
-
     const suggestions = [
       ...motels.map((motel) => ({
         type: 'motel',
         id: motel.id,
         label: motel.name,
-        subtitle: `${motel.city}, ${motel.neighborhood}`,
+        subtitle: motel.city,
         slug: motel.slug,
       })),
       ...cities.map((item) => ({
         type: 'city',
         label: item.city,
-      })),
-      ...neighborhoods.map((item) => ({
-        type: 'neighborhood',
-        label: item.neighborhood,
       })),
     ];
 

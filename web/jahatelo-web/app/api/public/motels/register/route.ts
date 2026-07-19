@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const sanitized = sanitizeObject(body);
-    const { name, city, neighborhood, address, contactName, contactEmail, contactPhone } =
+    const { name, city, address, contactName, contactEmail, contactPhone } =
       PublicMotelRegisterSchema.parse(sanitized);
 
     if (!contactEmail && !contactPhone) {
@@ -44,7 +44,6 @@ export async function POST(request: NextRequest) {
         name,
         slug,
         city,
-        neighborhood,
         address,
         contactName,
         contactEmail,

@@ -85,7 +85,6 @@ type MapMotel = {
   name: string;
   slug: string;
   city: string;
-  neighborhood: string;
   latitude: number;
   longitude: number;
   featuredPhoto: string | null;
@@ -460,7 +459,7 @@ export default function GoogleMapComponent({
             ${motel.name}
           </h3>
           <p style="font-size: 13px; color: #6B7280; margin: 0 0 8px 0;">
-            ${motel.neighborhood}, ${motel.city}
+            ${motel.city}
           </p>
           ${motel.hasPromo ? `
             <div style="display: inline-flex; align-items: center; gap: 4px; background: #FEE2E2; color: #DC2626; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 12px; margin-bottom: 12px;">

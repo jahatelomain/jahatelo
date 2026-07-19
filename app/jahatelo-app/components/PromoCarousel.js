@@ -133,7 +133,7 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
             <View style={styles.locationRow}>
               <Ionicons name="location-outline" size={14} color={COLORS.white} />
               <Text style={styles.cardLocation} numberOfLines={1}>
-                {motel.barrio || motel.ciudad}
+                {motel.ciudad}
               </Text>
             </View>
           </View>

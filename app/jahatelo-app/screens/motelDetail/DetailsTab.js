@@ -52,7 +52,7 @@ export default function DetailsTab({ route }) {
         <View style={styles.infoRow}>
           <Ionicons name="location-outline" size={16} color="#666" />
           <Text style={styles.infoText}>
-            {motel.barrio}, {motel.ciudad}
+            {motel.ciudad}
           </Text>
         </View>
 

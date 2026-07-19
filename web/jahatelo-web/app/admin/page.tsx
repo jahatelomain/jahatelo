@@ -54,7 +54,6 @@ export default async function AdminDashboard() {
     id: string;
     name: string;
     city: string;
-    neighborhood: string;
     createdAt: Date;
   }> = [];
 
@@ -81,7 +80,6 @@ export default async function AdminDashboard() {
         id: true,
         name: true,
         city: true,
-        neighborhood: true,
         createdAt: true,
       },
     });
@@ -120,7 +118,6 @@ export default async function AdminDashboard() {
           id: true,
           name: true,
           city: true,
-          neighborhood: true,
           createdAt: true,
         },
       }),

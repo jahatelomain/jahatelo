@@ -304,7 +304,7 @@ export default function SearchScreen({ route }) {
           <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Buscar por nombre, barrio o ciudad..."
+            placeholder="Buscar por nombre o ciudad..."
             value={searchQuery}
             onChangeText={setSearchQuery}
             onFocus={handleSearchFocus}

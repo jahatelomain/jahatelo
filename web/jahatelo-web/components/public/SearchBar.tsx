@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
 
 type SearchSuggestion = {
-  type: 'motel' | 'city' | 'neighborhood' | string;
+  type: 'motel' | 'city' | string;
   label: string;
   slug?: string;
   subtitle?: string;
@@ -72,10 +72,6 @@ export default function SearchBar() {
       router.push(`/search?city=${encodeURIComponent(item.label)}`);
       return;
     }
-    if (item.type === 'neighborhood') {
-      router.push(`/search?q=${encodeURIComponent(item.label)}`);
-      return;
-    }
     router.push(`/search?q=${encodeURIComponent(query)}`);
   };
 
@@ -117,7 +113,7 @@ export default function SearchBar() {
           setActiveIndex(-1);
         }}
         onKeyDown={handleKeyDown}
-        placeholder="Busca moteles, ciudades o barrios"
+        placeholder="Busca moteles o ciudades"
         className="search-pulse w-full rounded-2xl border-0 bg-white/95 backdrop-blur-sm pl-12 pr-4 py-4 text-gray-900 caret-purple-600 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-xl text-base"
       />
 

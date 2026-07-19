@@ -4,7 +4,6 @@ type MotelSchemaInput = {
   image?: string | null;
   address?: string | null;
   city?: string | null;
-  neighborhood?: string | null;
   country?: string | null;
   ratingAvg?: number | null;
   ratingCount?: number | null;
@@ -29,7 +28,7 @@ export function generateMotelSchema(motel: MotelSchemaInput) {
     telephone: motel.phone || motel.whatsapp || undefined,
     address: {
       '@type': 'PostalAddress',
-      streetAddress: motel.neighborhood || motel.address || undefined,
+      streetAddress: motel.address || undefined,
       addressLocality: motel.city || undefined,
       addressRegion: 'Paraguay',
       addressCountry: motel.country || 'PY',
@@ -160,26 +159,6 @@ export function generateCityCollectionSchema(city: string, motelCount: number) {
       '@type': 'ItemList',
       numberOfItems: motelCount,
       itemListElement: [], // Se puede agregar los moteles individuales si se desea
-    },
-  };
-}
-
-export function generateNeighborhoodCollectionSchema(
-  city: string,
-  neighborhood: string,
-  motelCount: number
-) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    name: `Moteles en ${neighborhood}, ${city}`,
-    description: `Encuentra los mejores moteles en ${neighborhood}, ${city}, Paraguay. ${motelCount} opciones disponibles.`,
-    url: `${baseUrl}/ciudad/${encodeURIComponent(city.toLowerCase())}/${encodeURIComponent(neighborhood.toLowerCase())}`,
-    mainEntity: {
-      '@type': 'ItemList',
-      numberOfItems: motelCount,
-      itemListElement: [],
     },
   };
 }

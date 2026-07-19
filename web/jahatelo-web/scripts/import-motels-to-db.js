@@ -19,17 +19,6 @@ function generateSlug(name) {
     .replace(/^-+|-+$/g, '');
 }
 
-// Función para extraer vecindario de dirección
-function extractNeighborhood(address) {
-  // Intenta extraer el barrio de la dirección
-  // Formato típico: "Calle 123, Barrio, Ciudad, Paraguay"
-  const parts = address.split(',').map(p => p.trim());
-  if (parts.length >= 3) {
-    return parts[parts.length - 3]; // Tercer elemento desde el final
-  }
-  return 'Centro'; // Default
-}
-
 // Función para limpiar número de teléfono
 function cleanPhoneNumber(phone) {
   if (!phone) return null;
@@ -60,7 +49,6 @@ async function importMotels() {
   for (const motelData of motelsData) {
     try {
       const slug = generateSlug(motelData.name);
-      const neighborhood = extractNeighborhood(motelData.address);
       const phone = cleanPhoneNumber(motelData.phone);
       const whatsapp = phone ? phone.replace(/^\+/, '') : null;
 
@@ -78,7 +66,6 @@ async function importMotels() {
         name: motelData.name,
         slug,
         city: motelData.city,
-        neighborhood,
         address: motelData.address,
         latitude: motelData.latitude,
         longitude: motelData.longitude,
@@ -86,8 +73,8 @@ async function importMotels() {
         whatsapp,
         website: motelData.website,
         mapUrl: motelData.googleMapsUrl,
-        ratingAvg: motelData.rating || 0,
-        ratingCount: motelData.totalRatings || 0,
+        // Las calificaciones pertenecen exclusivamente a reseñas de Jahatelo.
+        // Google se utiliza solo para datos de ubicación y contacto.
         status: 'PENDING', // Requiere revisión manual
         isActive: false, // Desactivado hasta verificar
         plan: 'BASIC',

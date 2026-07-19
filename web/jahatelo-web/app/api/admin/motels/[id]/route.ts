@@ -142,7 +142,6 @@ export async function PATCH(
       ...(validated.name ? { name: sanitizeText(validated.name) } : {}),
       ...(validated.description ? { description: sanitizeText(validated.description) } : {}),
       ...(validated.city ? { city: sanitizeText(validated.city) } : {}),
-      ...(validated.neighborhood ? { neighborhood: sanitizeText(validated.neighborhood) } : {}),
       ...(validated.address ? { address: sanitizeText(validated.address) } : {}),
     };
 

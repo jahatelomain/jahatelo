@@ -87,7 +87,7 @@ export default function MotelAdminHeader({
             <h1 className="text-2xl font-semibold text-slate-900 mb-2">{motel.name}</h1>
             <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
               {motel.country && <><span>{motel.country}</span><span className="text-slate-300">•</span></>}
-              <span>{motel.city}</span><span className="text-slate-300">•</span><span>{motel.neighborhood}</span>
+              <span>{motel.city}</span>
               {motel.address && <><span className="text-slate-300">•</span><span>{motel.address}</span></>}
             </div>
             {motel.description && <p className="mt-3 text-sm text-slate-600 leading-relaxed">{motel.description}</p>}
