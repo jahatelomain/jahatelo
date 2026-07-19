@@ -7,6 +7,12 @@ export function sanitizeHtml(dirty: string): string {
     return sanitizeText(dirty);
   }
 
+  // DOMPurify usa jsdom al evaluarse en Node. Cargarlo únicamente en el
+  // navegador evita incluir esa dependencia de pruebas en los handlers API.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const domPurifyModule = require('isomorphic-dompurify') as typeof import('isomorphic-dompurify');
+  const DOMPurify = 'default' in domPurifyModule ? domPurifyModule.default : domPurifyModule;
+
   return DOMPurify.sanitize(dirty, {
     ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'br', 'p'],
     ALLOWED_ATTR: [],
@@ -65,4 +71,3 @@ export function escapeHtml(text: string): string {
   };
   return text.replace(/[&<>"'/]/g, (char) => map[char]);
 }
-import DOMPurify from 'isomorphic-dompurify';

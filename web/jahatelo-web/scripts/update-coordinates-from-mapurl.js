@@ -103,7 +103,7 @@ const resolveMapUrl = async (value) => {
   try {
     const res = await fetch(value, { redirect: 'follow' });
     return res.url || value;
-  } catch (error) {
+  } catch {
     return value;
   }
 };

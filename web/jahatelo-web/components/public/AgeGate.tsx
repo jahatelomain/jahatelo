@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 export default function AgeGate() {
   const [show, setShow] = useState(false);
@@ -55,10 +56,12 @@ export default function AgeGate() {
         <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
           {/* Logo */}
           <div className="flex items-center justify-center gap-0 mb-6">
-            <img src="/logo-icon.png" alt="Jahatelo" className="w-16 h-16 object-contain" />
-            <img
+            <Image src="/logo-icon.png" alt="Jahatelo" width={64} height={64} className="w-16 h-16 object-contain" />
+            <Image
               src="/logo-text-gradient.png"
               alt="Jahatelo"
+              width={160}
+              height={32}
               className="h-8 w-auto object-contain -ml-0.5"
             />
           </div>

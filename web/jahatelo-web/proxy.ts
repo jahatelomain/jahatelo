@@ -101,7 +101,7 @@ async function applyRateLimit(
   return rateLimitInMemory(ip, limit, windowMs);
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
   const origin = request.headers.get('origin');
