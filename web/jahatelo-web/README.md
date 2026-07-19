@@ -104,7 +104,7 @@ npx prisma db seed
 El seed creará:
 - 30 moteles de Paraguay con datos reales
 - Habitaciones con diferentes tipos y precios
-- Amenities (Jacuzzi, Piscina climatizada, Garage privado, etc.)
+- Amenities por habitación (Jacuzzi, Piscina climatizada, etc.)
 - Fotos, datos de contacto y ubicación
 - **5 usuarios de prueba** (1 SUPERADMIN, 2 MOTEL_ADMIN, 2 USER) con password: Admin123!
 

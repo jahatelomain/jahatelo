@@ -193,8 +193,6 @@ GET /api/mobile/motels/motel-paraiso
       "id": "room123",
       "name": "Habitación Deluxe",
       "description": "Habitación con jacuzzi y TV 50 pulgadas",
-      "basePrice": 60000,
-      "priceLabel": "Desde $45.000",
       "prices": {
         "price1h": 45000,
         "price1_5h": 55000,
@@ -211,7 +209,6 @@ GET /api/mobile/motels/motel-paraiso
       ],
       "maxPersons": 2,
       "hasJacuzzi": true,
-      "hasPrivateGarage": true,
       "isFeatured": true
     }
   ],

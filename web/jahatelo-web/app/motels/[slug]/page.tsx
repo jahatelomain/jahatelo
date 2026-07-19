@@ -292,7 +292,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                   { label: '3h', value: effectivePrices.price3h },
                   { label: '12h', value: effectivePrices.price12h },
                   { label: '24h', value: effectivePrices.price24h },
-                  { label: 'Noche', value: effectivePrices.priceNight },
+                  { label: 'Dormida', value: effectivePrices.priceNight },
                 ].filter((p) => p.value !== null && p.value !== undefined);
 
                 return (
@@ -333,11 +333,6 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                           {room.hasJacuzzi && (
                             <span className="inline-flex items-center gap-1 text-sm text-purple-600 font-medium">
                               ♨️ Jacuzzi
-                            </span>
-                          )}
-                          {room.hasPrivateGarage && (
-                            <span className="inline-flex items-center gap-1 text-sm text-purple-600 font-medium">
-                              🚗 Cochera privada
                             </span>
                           )}
                         </div>

@@ -252,31 +252,9 @@ export function mapMotelToListItem(motel: MotelForList) {
 }
 
 /**
- * Genera el priceLabel basado en los precios disponibles
- */
-export function generatePriceLabel(room: RoomType): string {
-  const prices = [
-    { value: room.price1h, label: '1h' },
-    { value: room.price1_5h, label: '1.5h' },
-    { value: room.price2h, label: '2h' },
-    { value: room.price3h, label: '3h' },
-    { value: room.price12h, label: '12h' },
-    { value: room.price24h, label: '24h' },
-    { value: room.priceNight, label: 'noche' },
-  ].filter((p) => p.value !== null);
-
-  if (prices.length === 0) return 'Precio no disponible';
-
-  const minPrice = Math.min(...prices.map((p) => p.value!));
-  return `Desde $${minPrice.toLocaleString('es-CO')}`;
-}
-
-/**
  * Mapea un RoomType al formato para mobile (detalle)
  */
 export function mapRoomForMobile(room: RoomWithRelations) {
-  const basePrice = room.basePrice || room.price1h || room.price2h || 0;
-
   const photoUrls = room.roomPhotos.map((photo) => photo.url);
 
   const dayGroup = getCurrentDayGroup();
@@ -286,8 +264,6 @@ export function mapRoomForMobile(room: RoomWithRelations) {
     id: room.id,
     name: room.name,
     description: room.description,
-    basePrice,
-    priceLabel: room.priceLabel || generatePriceLabel(room),
     prices: effectivePrices,
     dayRates: room.dayRates?.map((dr) => ({
       dayGroup: dr.dayGroup,
@@ -308,7 +284,6 @@ export function mapRoomForMobile(room: RoomWithRelations) {
     photos: photoUrls,
     maxPersons: room.maxPersons,
     hasJacuzzi: room.hasJacuzzi,
-    hasPrivateGarage: room.hasPrivateGarage,
     isFeatured: room.isFeatured,
   };
 }

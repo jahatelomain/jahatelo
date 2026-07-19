@@ -10,7 +10,7 @@ const motelsData = [
     address: 'Ruta 3, Gral. Elizardo Aquino',
     phones: '+595985597167, +59521760573-5',
     rooms: 'Suite Presidencial, Master Suite, Junior Suite',
-    amenities: 'Piscina climatizada, Jacuzzi, Sillón de masajes, Cama de agua, Garaje privado',
+    amenities: 'Piscina climatizada, Jacuzzi, Sillón de masajes, Cama de agua',
   },
   {
     name: 'Pausa Motel',
@@ -18,7 +18,7 @@ const motelsData = [
     address: 'Ruta 3 - Km 14',
     phones: '+595991742852',
     rooms: 'Suite Ejecutiva, Suite Presidencial, Habitaciones Temáticas',
-    amenities: 'Jacuzzi, Sauna, Garaje privado',
+    amenities: 'Jacuzzi, Sauna',
   },
   {
     name: 'The One Motel',
@@ -26,7 +26,7 @@ const motelsData = [
     address: 'Ruta 3 Gral. Elizardo Aquino',
     phones: '+59521752235, +595983444064',
     rooms: 'Habitación Básica, Suite de Lujo',
-    amenities: 'Ambientación moderna, Garaje privado',
+    amenities: 'Ambientación moderna',
   },
   {
     name: 'Motel First Class',
@@ -39,7 +39,7 @@ const motelsData = [
     address: 'Avda. Eusebio Ayala 4118',
     phones: '+59521905529',
     rooms: 'Deluxe Plus, Premium, Presidencial',
-    amenities: 'Jacuzzi, Pantalla grande, Garaje privado',
+    amenities: 'Jacuzzi, Pantalla grande',
   },
   {
     name: 'Sunset Motel Boutique',
@@ -47,7 +47,7 @@ const motelsData = [
     address: 'Mcal. Estigarribia c/ Cap. Bado',
     phones: '+59521909070',
     rooms: 'Suite Básica, Habitación VIP',
-    amenities: 'Diseño Boutique, Garaje privado',
+    amenities: 'Diseño Boutique',
   },
   {
     name: 'Motel 007',
@@ -76,7 +76,7 @@ const motelsData = [
     address: 'Cerca de la UNA',
     phones: '+595984444579, +59521680494-5',
     rooms: 'Suite Presidencial, Suite Master, Suite Platinum',
-    amenities: 'Jacuzzi, Cama de agua, Sauna, Garaje privado',
+    amenities: 'Jacuzzi, Cama de agua, Sauna',
   },
   {
     name: 'Motel Studio A',
@@ -88,7 +88,7 @@ const motelsData = [
     city: 'San Lorenzo',
     address: 'Ruta Mcal. Estigarribia 2390',
     phones: '+59521570300, +595983802486',
-    amenities: 'Garaje privado',
+    amenities: '',
   },
   {
     name: 'Motel Del Rey',
@@ -130,7 +130,7 @@ const motelsData = [
     city: 'Ciudad del Este',
     address: 'Ruta Internacional N°7 - Km 8 1/2 Lado Monday',
     phones: '+59561575472-4, +595983680815',
-    amenities: 'Garaje privado',
+    amenities: '',
   },
   {
     name: 'Motel Samoa',
@@ -310,8 +310,6 @@ async function main() {
           name: roomName,
           slug: slugify(`${slug}-${roomName}-${roomIndex}`),
           description: `Habitación disponible en ${motelData.name}.`,
-          basePrice: null,
-          priceLabel: motelData.prices || 'Consultar tarifas',
           isActive: true,
           amenities: roomAmenityIds.length
             ? { create: roomAmenityIds.map((amenityId) => ({ amenityId })) }

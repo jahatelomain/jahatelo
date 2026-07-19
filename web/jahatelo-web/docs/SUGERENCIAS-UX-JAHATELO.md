@@ -375,7 +375,6 @@ Paradise Motel ⭐ 4.5 (127 reviews)
 ```
 ✨ Amenities
 ☑️ Wi-Fi gratis
-☑️ Estacionamiento privado
 ☑️ Aire acondicionado
 ☑️ TV por cable
 ☐ Jacuzzi

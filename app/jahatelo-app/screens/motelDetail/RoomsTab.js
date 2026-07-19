@@ -16,7 +16,7 @@ const DURATIONS = [
   { key: 'price3h',    label: '3h' },
   { key: 'price12h',   label: '12h' },
   { key: 'price24h',   label: '24h' },
-  { key: 'priceNight', label: 'Noche' },
+  { key: 'priceNight', label: 'Dormida' },
 ];
 
 /**
@@ -57,7 +57,7 @@ function RoomCard({ room, motel, onPhotoGestureStart, onPhotoGestureEnd }) {
   const handleAmenityLongPress = useCallback(() => {
     if (tooltipTimer.current) clearTimeout(tooltipTimer.current);
     setShowTooltip(true);
-    tooltipTimer.current = setTimeout(() => setShowTooltip(false), 3000);
+    tooltipTimer.current = setTimeout(() => setShowTooltip(false), 6000);
   }, []);
 
   const handleShare = useCallback(() => {
@@ -143,20 +143,9 @@ function RoomCard({ room, motel, onPhotoGestureStart, onPhotoGestureEnd }) {
           <PriceRow prices={currentPrices} />
         </View>
       ) : (
-        // Fallback: precio base o label
+        // Sin tarifas configuradas
         <View style={styles.roomPriceRow}>
-          {room.priceLabel && room.priceLabel.trim().length > 0 ? (
-            <Text style={[styles.roomPriceLabel, { fontWeight: '600' }]}>{room.priceLabel}</Text>
-          ) : (
-            <>
-              <Text style={styles.roomPriceLabel}>DESDE</Text>
-              <Text style={styles.roomPrice}>
-                {room.basePrice && room.basePrice > 0
-                  ? formatPrice(room.basePrice)
-                  : 'CONSULTAR'}
-              </Text>
-            </>
-          )}
+          <Text style={styles.roomPrice}>CONSULTAR</Text>
         </View>
       )}
 
