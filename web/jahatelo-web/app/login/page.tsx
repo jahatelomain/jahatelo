@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import GoogleLoginButton from '@/components/GoogleLoginButton';
 
@@ -10,7 +11,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
-  const { login, loginWithGoogle, refreshUser } = useAuth();
+  const { login, refreshUser } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -181,10 +182,12 @@ function LoginForm() {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-0 mb-4">
-              <img src="/logo-icon.png" alt="Jahatelo" className="w-16 h-16 object-contain" />
-              <img
+              <Image src="/logo-icon.png" alt="Jahatelo" width={64} height={64} className="w-16 h-16 object-contain" />
+              <Image
                 src="/logo-text-gradient.png"
                 alt="Jahatelo"
+                width={160}
+                height={36}
                 className="h-9 w-auto object-contain -ml-0.5"
               />
             </div>
@@ -405,7 +408,7 @@ function LoginForm() {
             </div>
             <div className="mt-4">
               <GoogleLoginButton
-                onSuccess={(user) => {
+                onSuccess={() => {
                   const target = redirect || '/';
                   router.push(target);
                   router.refresh();

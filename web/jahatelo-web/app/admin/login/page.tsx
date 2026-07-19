@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 function LoginForm() {
   const router = useRouter();
@@ -54,9 +55,11 @@ function LoginForm() {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
-              <img
+              <Image
                 src="/logo-icon.png"
                 alt="Jahatelo"
+                width={96}
+                height={96}
                 className="h-20 md:h-24 w-auto object-contain"
               />
             </div>

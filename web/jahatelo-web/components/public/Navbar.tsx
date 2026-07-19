@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,10 +29,12 @@ export default function Navbar() {
         <div className="flex items-center h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center justify-center hover:opacity-80 transition-opacity shrink-0">
-            <img
+            <Image
               src="/logo-icon.png"
               alt="Jahatelo"
-              className="h-20 md:h-24 w-auto object-contain"
+              width={67}
+              height={67}
+              className="h-14 md:h-[67px] w-auto object-contain"
             />
           </Link>
 

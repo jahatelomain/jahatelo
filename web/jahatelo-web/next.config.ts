@@ -135,9 +135,10 @@ export default withSentryConfig(nextConfig, {
     deleteSourcemapsAfterUpload: true,
   },
 
-  // Reducir tamaño del bundle eliminando logs internos de Sentry
-  disableLogger: true,
-
-  // Desactivar monitoreo automático de Vercel Cron
-  automaticVercelMonitors: false,
+  // Reducir tamaño del bundle eliminando logs internos de Sentry.
+  webpack: {
+    treeshake: {
+      removeDebugLogging: true,
+    },
+  },
 });

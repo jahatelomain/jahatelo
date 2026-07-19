@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import DirtyBanner from '@/components/admin/DirtyBanner';
+import AdminImage from '@/components/admin/motel-detail/AdminImage';
 import { getErrorMessage } from '@/lib/errors';
 
 const placements = [
@@ -390,9 +391,11 @@ export default function EditAdvertisementPage() {
             />
             {form.imageUrl && (
               <div className="mt-2">
-                <img
+                <AdminImage
                   src={form.imageUrl}
                   alt="Preview"
+                  width={512}
+                  height={288}
                   className="h-32 w-auto rounded-lg border border-slate-200 object-cover"
                 />
               </div>
@@ -467,9 +470,11 @@ export default function EditAdvertisementPage() {
                   placeholder="https://... o /uploads/... (URL web 16:9)"
                 />
                 {(form.largeImageUrlWeb || form.largeImageUrl) && (
-                  <img
+                  <AdminImage
                     src={form.largeImageUrlWeb || form.largeImageUrl}
                     alt="Preview web"
+                    width={1600}
+                    height={900}
                     className="w-full aspect-[16/9] rounded-lg border border-slate-200 object-cover"
                   />
                 )}
@@ -503,9 +508,11 @@ export default function EditAdvertisementPage() {
                   placeholder="https://... o /uploads/... (URL app 4:5)"
                 />
                 {(form.largeImageUrlApp || form.largeImageUrl) && (
-                  <img
+                  <AdminImage
                     src={form.largeImageUrlApp || form.largeImageUrl}
                     alt="Preview app"
+                    width={800}
+                    height={1000}
                     className="w-full aspect-[4/5] rounded-lg border border-slate-200 object-cover"
                   />
                 )}

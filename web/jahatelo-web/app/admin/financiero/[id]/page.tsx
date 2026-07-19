@@ -70,7 +70,6 @@ export default function EditFinancieroPage() {
   const toast = useToast();
   const [motel, setMotel] = useState<Motel | null>(null);
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [readOnly, setReadOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -122,8 +121,6 @@ export default function EditFinancieroPage() {
       }
 
       const user = data.user as CurrentUser;
-      setCurrentUser(user);
-
       if (user.role === 'MOTEL_ADMIN') {
         if (!user.motelId) {
           router.push('/admin');

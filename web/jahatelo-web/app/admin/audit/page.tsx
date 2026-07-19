@@ -87,7 +87,6 @@ export default function AuditPage() {
       if (userFilter) params.set('userId', userFilter);
       if (searchQuery) params.set('q', searchQuery);
 
-      const queryString = params.toString();
       if (page) params.set('page', String(page));
       params.set('limit', String(pageSize));
       const response = await fetch(`/api/admin/audit${params.toString() ? `?${params.toString()}` : ''}`);

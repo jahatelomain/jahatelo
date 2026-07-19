@@ -10,6 +10,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { BadgeCheck, Pencil, Power, Ticket, Trash2 } from 'lucide-react';
 import SearchableSelect from '@/components/admin/SearchableSelect';
+import AdminImage from '@/components/admin/motel-detail/AdminImage';
 import { getErrorMessage } from '@/lib/errors';
 
 type Motel = {
@@ -182,8 +183,23 @@ export default function PromosAdminPage() {
   });
 
   useEffect(() => {
-    checkAccess();
-  }, []);
+    const checkAccess = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (!data.user || data.user.role !== 'SUPERADMIN') {
+          router.push('/admin');
+          return;
+        }
+        setCurrentUser(data.user);
+      } catch (error) {
+        console.error('Error checking access:', error);
+        router.push('/admin');
+      }
+    };
+
+    void checkAccess();
+  }, [router]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -588,21 +604,6 @@ export default function PromosAdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, filterStatus, filterType, debouncedSearchQuery, currentUser]);
 
-  const checkAccess = async () => {
-    try {
-      const res = await fetch('/api/auth/me');
-      const data = await res.json();
-      if (!data.user || data.user.role !== 'SUPERADMIN') {
-        router.push('/admin');
-        return;
-      }
-      setCurrentUser(data.user);
-    } catch (error) {
-      console.error('Error checking access:', error);
-      router.push('/admin');
-    }
-  };
-
   const { sentinelRef } = useInfiniteScroll({
     loading: loadingMore,
     hasMore,
@@ -816,7 +817,7 @@ export default function PromosAdminPage() {
                 </label>
                 {formData.imageUrl && (
                   <div className="relative w-20 h-20">
-                    <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover rounded-lg border border-slate-200" />
+                    <AdminImage src={formData.imageUrl} alt="Preview" width={80} height={80} className="w-full h-full object-cover rounded-lg border border-slate-200" />
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, imageUrl: '' })}
@@ -1091,7 +1092,7 @@ export default function PromosAdminPage() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {promo.imageUrl && (
-                            <img src={promo.imageUrl} alt={promo.title} className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
+                            <AdminImage src={promo.imageUrl} alt={promo.title} width={48} height={48} className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
                           )}
                           <div>
                             <p className="font-medium text-slate-900">{promo.title}</p>

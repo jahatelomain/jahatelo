@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { UserPayload } from '@/lib/auth';
@@ -62,7 +63,7 @@ export default function AdminLayout({
     return () => {
       mounted = false;
     };
-  }, [isLoginPage, pathname]);
+  }, [isLoginPage, pathname, router]);
 
   // Auto-expand section if current path matches
   useEffect(() => {
@@ -353,10 +354,12 @@ export default function AdminLayout({
                   )}
                 </svg>
               </button>
-              <img
+              <Image
                 src="/logo-icon.png"
                 alt="Jahatelo"
-                className="h-20 w-auto object-contain shrink-0"
+                width={56}
+                height={56}
+                className="h-14 w-auto object-contain shrink-0"
               />
               <div className="hidden sm:flex flex-col">
                 <span className="text-sm font-bold text-slate-800 leading-tight">Jahatelo</span>
@@ -419,7 +422,7 @@ export default function AdminLayout({
       >
         <nav className="p-4">
           <div className="space-y-2">
-            {filteredNavStructure.map((element, index) => {
+            {filteredNavStructure.map((element) => {
               if (isNavSection(element)) {
                 return renderSection(element, true);
               } else {
@@ -441,7 +444,7 @@ export default function AdminLayout({
         <aside className="w-64 bg-slate-50 border-r border-slate-200 min-h-[calc(100vh-88px)] sticky top-[88px] hidden md:block">
           <nav className="p-4">
             <div className="space-y-2">
-              {filteredNavStructure.map((element, index) => {
+              {filteredNavStructure.map((element) => {
                 if (isNavSection(element)) {
                   return renderSection(element, false);
                 } else {

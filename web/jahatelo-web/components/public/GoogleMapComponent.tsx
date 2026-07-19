@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 type LatLngLiteral = { lat: number; lng: number };
 
@@ -50,6 +50,8 @@ const BASE_PIN_RADIUS = 13;
 const GLOBAL_PIN_SCALE = 1.1;
 const BASE_LABEL_GAP = 22;
 const EXTRA_LABEL_GAP_PX = 3;
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+const GOOGLE_MAPS_CONFIG_ERROR = 'API key de Google Maps no configurada. Contacte al administrador.';
 
 function createPinElement(color: string, opacity: number, scale: number) {
   if (typeof document === 'undefined') {
@@ -100,12 +102,159 @@ type GoogleMapComponentProps = {
   initialUserLocation?: [number, number]; // initial user location to show
 };
 
+type MapPlanConfig = {
+  color: string;
+  labelColor: string;
+  opacity: number;
+  scale: number;
+  badge: string | null;
+  glow: string | null;
+};
+
 // Declare global google types
 declare global {
   interface Window {
     google: { maps: GoogleMapsApi };
     initMap?: () => void;
   }
+}
+
+function createMotelLabelOverlay({
+  maps,
+  position,
+  text,
+  planConfig,
+  effectiveScale,
+  zIndex,
+  onClick,
+}: {
+  maps: GoogleMapsApi;
+  position: LatLngLiteral;
+  text: string;
+  planConfig: MapPlanConfig;
+  effectiveScale: number;
+  zIndex: number;
+  onClick: () => void;
+}): GoogleOverlay {
+  class MotelLabelOverlay extends maps.OverlayView {
+    div: HTMLDivElement | null = null;
+
+    onAdd() {
+      this.div = document.createElement('div');
+      this.div.style.position = 'absolute';
+      this.div.style.background = planConfig.labelColor;
+      this.div.style.color = '#FFFFFF';
+      this.div.style.padding = `${Math.round(6 * effectiveScale)}px ${Math.round(12 * effectiveScale)}px`;
+      this.div.style.borderRadius = `${Math.round(10 * planConfig.scale)}px`;
+      this.div.style.border = '2px solid #FFFFFF';
+      this.div.style.fontSize = `${Math.round(13 * effectiveScale)}px`;
+      this.div.style.fontWeight = '500';
+      this.div.style.whiteSpace = 'nowrap';
+      this.div.style.cursor = 'pointer';
+      this.div.style.zIndex = String(zIndex + 10);
+      this.div.style.boxShadow = planConfig.glow
+        ? `0 2px 8px rgba(0, 0, 0, 0.15), 0 0 14px ${planConfig.glow}`
+        : '0 2px 8px rgba(0, 0, 0, 0.15)';
+      this.div.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      this.div.style.maxWidth = `${Math.round(180 * effectiveScale)}px`;
+      this.div.style.overflow = 'visible';
+      this.div.style.display = 'inline-flex';
+      this.div.style.alignItems = 'center';
+      this.div.style.pointerEvents = 'auto';
+
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = text;
+      nameSpan.style.display = 'inline-block';
+      nameSpan.style.maxWidth = `${Math.round(150 * effectiveScale)}px`;
+      nameSpan.style.overflow = 'hidden';
+      nameSpan.style.textOverflow = 'ellipsis';
+      nameSpan.style.whiteSpace = 'nowrap';
+      nameSpan.style.verticalAlign = 'middle';
+      this.div.appendChild(nameSpan);
+
+      if (planConfig.badge) {
+        this.div.style.animation = 'jahatelo-pin-bounce 1.6s ease-in-out infinite';
+        const badge = document.createElement('div');
+        badge.textContent = planConfig.badge;
+        badge.style.position = 'absolute';
+        badge.style.top = `${Math.round(-6 * effectiveScale)}px`;
+        badge.style.right = `${Math.round(-6 * effectiveScale)}px`;
+        badge.style.width = `${Math.round(18 * effectiveScale)}px`;
+        badge.style.height = `${Math.round(18 * effectiveScale)}px`;
+        badge.style.borderRadius = '999px';
+        badge.style.background = '#FFFFFF';
+        badge.style.border = `2px solid ${planConfig.color}`;
+        badge.style.display = 'flex';
+        badge.style.alignItems = 'center';
+        badge.style.justifyContent = 'center';
+        badge.style.fontSize = `${Math.round(10 * effectiveScale)}px`;
+        badge.style.fontWeight = '700';
+        badge.style.color = planConfig.color;
+        if (planConfig.glow) badge.style.boxShadow = `0 0 10px ${planConfig.glow}`;
+        this.div.appendChild(badge);
+      }
+
+      this.div.addEventListener('click', onClick);
+      this.getPanes().floatPane.appendChild(this.div);
+    }
+
+    draw() {
+      if (!this.div) return;
+      const pixel = this.getProjection().fromLatLngToDivPixel(new maps.LatLng(position.lat, position.lng));
+      this.div.style.left = `${pixel.x - this.div.offsetWidth / 2}px`;
+      const labelOffset = Math.round(
+        BASE_PIN_HEIGHT * effectiveScale + BASE_LABEL_GAP * effectiveScale + EXTRA_LABEL_GAP_PX,
+      );
+      this.div.style.top = `${pixel.y - labelOffset}px`;
+    }
+
+    onRemove() {
+      this.div?.parentNode?.removeChild(this.div);
+      this.div = null;
+    }
+  }
+
+  return new MotelLabelOverlay();
+}
+
+function createUserLabelOverlay(maps: GoogleMapsApi, position: LatLngLiteral): GoogleOverlay {
+  class UserLabelOverlay extends maps.OverlayView {
+    div: HTMLDivElement | null = null;
+
+    onAdd() {
+      this.div = document.createElement('div');
+      this.div.style.position = 'absolute';
+      this.div.style.background = '#8E2DE2';
+      this.div.style.color = '#FFFFFF';
+      this.div.style.padding = '6px 12px';
+      this.div.style.borderRadius = '10px';
+      this.div.style.border = '2px solid #FFFFFF';
+      this.div.style.fontSize = '13px';
+      this.div.style.fontWeight = '500';
+      this.div.style.whiteSpace = 'nowrap';
+      this.div.style.cursor = 'pointer';
+      this.div.style.zIndex = '1210';
+      this.div.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
+      this.div.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      this.div.textContent = 'Tu ubicación';
+      this.div.style.pointerEvents = 'auto';
+      this.getPanes().overlayLayer.appendChild(this.div);
+    }
+
+    draw() {
+      if (!this.div) return;
+      const pixel = this.getProjection().fromLatLngToDivPixel(new maps.LatLng(position.lat, position.lng));
+      this.div.style.left = `${pixel.x - this.div.offsetWidth / 2}px`;
+      this.div.style.top = `${pixel.y - 67}px`;
+    }
+
+    onRemove() {
+      this.div?.parentNode?.removeChild(this.div);
+      this.div = null;
+    }
+  }
+
+  return new UserLabelOverlay();
 }
 
 export default function GoogleMapComponent({
@@ -120,22 +269,20 @@ export default function GoogleMapComponent({
   const userMarkerRef = useRef<GoogleMarker | null>(null);
   const userLabelRef = useRef<GoogleOverlay | null>(null);
   const circleRef = useRef<GoogleCircle | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const addUserMarkerRef = useRef<(location: [number, number]) => void>(() => undefined);
+  const [isLoaded, setIsLoaded] = useState(
+    () => typeof window !== 'undefined' && Boolean(window.google?.maps),
+  );
+  const [error, setError] = useState<string | null>(GOOGLE_MAPS_API_KEY ? null : GOOGLE_MAPS_CONFIG_ERROR);
 
   // Load Google Maps script
   useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     const scriptId = 'google-maps-js';
 
-    if (!apiKey) {
-      setError('API key de Google Maps no configurada. Contacte al administrador.');
-      return;
-    }
+    if (!GOOGLE_MAPS_API_KEY) return;
 
     // Check if already loaded
     if (window.google && window.google.maps) {
-      setIsLoaded(true);
       return;
     }
 
@@ -148,7 +295,7 @@ export default function GoogleMapComponent({
 
     const script = document.createElement('script');
     script.id = scriptId;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=marker`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=marker`;
     script.async = true;
     script.defer = true;
     script.onload = () => setIsLoaded(true);
@@ -196,7 +343,7 @@ export default function GoogleMapComponent({
 
     // Add initial user location if provided
     if (initialUserLocation) {
-      addUserMarker(initialUserLocation);
+      addUserMarkerRef.current(initialUserLocation);
     }
   }, [isLoaded, motels, initialUserLocation]);
 
@@ -263,117 +410,18 @@ export default function GoogleMapComponent({
         zIndex: planZIndex,
       });
 
-      // Crear etiqueta HTML personalizada como overlay
-      class CustomLabel extends window.google.maps.OverlayView {
-        position: LatLngLiteral;
-        text: string;
-        div: HTMLDivElement | null = null;
-
-        constructor(position: LatLngLiteral, text: string) {
-          super();
-          this.position = position;
-          this.text = text;
-        }
-
-        onAdd() {
-          this.div = document.createElement('div');
-          this.div.style.position = 'absolute';
-          this.div.style.background = planConfig.labelColor;
-          this.div.style.color = '#FFFFFF';
-          this.div.style.padding = `${Math.round(6 * effectiveScale)}px ${Math.round(12 * effectiveScale)}px`;
-          this.div.style.borderRadius = `${Math.round(10 * planConfig.scale)}px`;
-          this.div.style.border = '2px solid #FFFFFF';
-          this.div.style.fontSize = `${Math.round(13 * effectiveScale)}px`;
-          this.div.style.fontWeight = '500';
-          this.div.style.whiteSpace = 'nowrap';
-          this.div.style.cursor = 'pointer';
-          this.div.style.zIndex = String(planZIndex + 10);
-          this.div.style.boxShadow = planConfig.glow
-            ? `0 2px 8px rgba(0, 0, 0, 0.15), 0 0 14px ${planConfig.glow}`
-            : '0 2px 8px rgba(0, 0, 0, 0.15)';
-          this.div.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          this.div.style.position = 'absolute';
-          this.div.style.maxWidth = `${Math.round(180 * effectiveScale)}px`;
-          this.div.style.overflow = 'visible';
-          this.div.style.display = 'inline-flex';
-          this.div.style.alignItems = 'center';
-          this.div.style.pointerEvents = 'auto';
-
-          // Keep labels dynamic but prevent long names from leaking past the pill.
-          const nameSpan = document.createElement('span');
-          nameSpan.textContent = this.text;
-          nameSpan.style.display = 'inline-block';
-          nameSpan.style.maxWidth = `${Math.round(150 * effectiveScale)}px`;
-          nameSpan.style.overflow = 'hidden';
-          nameSpan.style.textOverflow = 'ellipsis';
-          nameSpan.style.whiteSpace = 'nowrap';
-          nameSpan.style.verticalAlign = 'middle';
-          this.div.appendChild(nameSpan);
-
-          if (planConfig.badge) {
-            this.div.style.animation = 'jahatelo-pin-bounce 1.6s ease-in-out infinite';
-          }
-
-          if (planConfig.badge) {
-            const badge = document.createElement('div');
-            badge.textContent = planConfig.badge;
-            badge.style.position = 'absolute';
-            badge.style.top = `${Math.round(-6 * effectiveScale)}px`;
-            badge.style.right = `${Math.round(-6 * effectiveScale)}px`;
-            badge.style.width = `${Math.round(18 * effectiveScale)}px`;
-            badge.style.height = `${Math.round(18 * effectiveScale)}px`;
-            badge.style.borderRadius = '999px';
-            badge.style.background = '#FFFFFF';
-            badge.style.border = `2px solid ${planConfig.color}`;
-            badge.style.display = 'flex';
-            badge.style.alignItems = 'center';
-            badge.style.justifyContent = 'center';
-            badge.style.fontSize = `${Math.round(10 * effectiveScale)}px`;
-            badge.style.fontWeight = '700';
-            badge.style.color = planConfig.color;
-            if (planConfig.glow) {
-              badge.style.boxShadow = `0 0 10px ${planConfig.glow}`;
-            }
-            this.div.appendChild(badge);
-          }
-
-          // Click en la etiqueta también abre el InfoWindow
-          this.div.addEventListener('click', () => {
-            markersRef.current.forEach(m => {
-              if (m.infoWindow) m.infoWindow.close();
-            });
-            marker.infoWindow?.open(googleMapRef.current!, marker);
-          });
-
-          const panes = this.getPanes();
-          panes.floatPane.appendChild(this.div);
-        }
-
-        draw() {
-          if (!this.div) return;
-          const overlayProjection = this.getProjection();
-          const position = overlayProjection.fromLatLngToDivPixel(
-            new window.google.maps.LatLng(this.position.lat, this.position.lng)
-          );
-          this.div.style.left = position.x - (this.div.offsetWidth / 2) + 'px';
-          const labelOffset = Math.round(
-            (BASE_PIN_HEIGHT * effectiveScale) + (BASE_LABEL_GAP * effectiveScale) + EXTRA_LABEL_GAP_PX
-          );
-          this.div.style.top = position.y - labelOffset + 'px';
-        }
-
-        onRemove() {
-          if (this.div) {
-            this.div.parentNode?.removeChild(this.div);
-            this.div = null;
-          }
-        }
-      }
-
-      const customLabel = new CustomLabel(
-        { lat: motel.latitude, lng: motel.longitude },
-        motel.name
-      );
+      const customLabel = createMotelLabelOverlay({
+        maps: window.google.maps,
+        position: { lat: motel.latitude, lng: motel.longitude },
+        text: motel.name,
+        planConfig,
+        effectiveScale,
+        zIndex: planZIndex,
+        onClick: () => {
+          markersRef.current.forEach((existingMarker) => existingMarker.infoWindow?.close());
+          marker.infoWindow?.open(googleMapRef.current!, marker);
+        },
+      });
       customLabel.setMap(googleMapRef.current);
       overlaysRef.current.push(customLabel);
 
@@ -475,57 +523,7 @@ export default function GoogleMapComponent({
       zIndex: 1200,
     });
 
-    // Crear etiqueta HTML personalizada para ubicación de usuario
-    class UserLabel extends window.google.maps.OverlayView {
-      position: LatLngLiteral;
-      div: HTMLDivElement | null = null;
-
-      constructor(position: LatLngLiteral) {
-        super();
-        this.position = position;
-      }
-
-      onAdd() {
-        this.div = document.createElement('div');
-        this.div.style.position = 'absolute';
-        this.div.style.background = '#8E2DE2';
-        this.div.style.color = '#FFFFFF';
-        this.div.style.padding = '6px 12px';
-        this.div.style.borderRadius = '10px';
-        this.div.style.border = '2px solid #FFFFFF';
-        this.div.style.fontSize = '13px';
-        this.div.style.fontWeight = '500';
-        this.div.style.whiteSpace = 'nowrap';
-        this.div.style.cursor = 'pointer';
-        this.div.style.zIndex = '1210';
-        this.div.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
-        this.div.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        this.div.textContent = 'Tu ubicación';
-        this.div.style.pointerEvents = 'auto';
-
-        const panes = this.getPanes();
-        panes.overlayLayer.appendChild(this.div);
-      }
-
-      draw() {
-        if (!this.div) return;
-        const overlayProjection = this.getProjection();
-        const position = overlayProjection.fromLatLngToDivPixel(
-          new window.google.maps.LatLng(this.position.lat, this.position.lng)
-        );
-        this.div.style.left = position.x - (this.div.offsetWidth / 2) + 'px';
-        this.div.style.top = position.y - 67 + 'px'; // 22px arriba del pin (45px altura pin + 22px separación)
-      }
-
-      onRemove() {
-        if (this.div) {
-          this.div.parentNode?.removeChild(this.div);
-          this.div = null;
-        }
-      }
-    }
-
-    const userLabel = new UserLabel({ lat: location[0], lng: location[1] });
+    const userLabel = createUserLabelOverlay(window.google.maps, { lat: location[0], lng: location[1] });
     userLabel.setMap(googleMapRef.current);
     userLabelRef.current = userLabel;
 
@@ -567,6 +565,10 @@ export default function GoogleMapComponent({
     // Center map on user location
     googleMapRef.current.setCenter({ lat: location[0], lng: location[1] });
   };
+
+  useLayoutEffect(() => {
+    addUserMarkerRef.current = addUserMarker;
+  });
 
   const handleLocateMe = () => {
     if ('geolocation' in navigator) {
