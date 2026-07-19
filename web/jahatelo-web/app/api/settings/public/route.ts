@@ -10,6 +10,7 @@ import { z } from 'zod';
  */
 export async function GET(request: NextRequest) {
   try {
+    void request;
     EmptySchema.parse({});
     // Lista de configuraciones públicas permitidas
     const PUBLIC_SETTINGS = [

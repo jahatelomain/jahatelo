@@ -80,7 +80,7 @@ export default function MotelsAdminPage() {
           setIsMotelAdmin(true);
           router.push(`/admin/motels/${data.user.motelId}`);
         }
-      } catch (error) {
+      } catch {
         // ignore
       } finally {
         if (mounted) setRoleChecked(true);
@@ -144,7 +144,7 @@ export default function MotelsAdminPage() {
       }
 
       setSummary(meta?.summary ?? { statusCounts: {}, activeCounts: {} });
-    } catch (error) {
+    } catch {
       // Error de red, timeout o parsing - asignar array vacío sin loguear
       if (isLoadingMore) {
         setEndReached(true);

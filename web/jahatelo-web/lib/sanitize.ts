@@ -7,11 +7,6 @@ export function sanitizeHtml(dirty: string): string {
     return sanitizeText(dirty);
   }
 
-  // Lazy-load to avoid server-side jsdom dependency.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const domPurifyModule = require('isomorphic-dompurify') as typeof import('isomorphic-dompurify');
-  const DOMPurify = (domPurifyModule as any).default ?? domPurifyModule;
-
   return DOMPurify.sanitize(dirty, {
     ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'br', 'p'],
     ALLOWED_ATTR: [],
@@ -34,8 +29,8 @@ export function sanitizeText(text: string): string {
  * Sanitiza un objeto recursivamente, aplicando sanitizeText a todos los strings
  * Útil para sanitizar body completo de requests
  */
-export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
-  const sanitized: any = {};
+export function sanitizeObject<T extends Record<string, unknown>>(obj: T): T {
+  const sanitized: Record<string, unknown> = {};
 
   for (const key in obj) {
     const value = obj[key];
@@ -43,9 +38,9 @@ export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
     if (typeof value === 'string') {
       sanitized[key] = sanitizeText(value);
     } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      sanitized[key] = sanitizeObject(value);
+      sanitized[key] = sanitizeObject(value as Record<string, unknown>);
     } else if (Array.isArray(value)) {
-      sanitized[key] = value.map((item: any) =>
+      sanitized[key] = value.map((item: unknown) =>
         typeof item === 'string' ? sanitizeText(item) : item
       );
     } else {
@@ -70,3 +65,4 @@ export function escapeHtml(text: string): string {
   };
   return text.replace(/[&<>"'/]/g, (char) => map[char]);
 }
+import DOMPurify from 'isomorphic-dompurify';

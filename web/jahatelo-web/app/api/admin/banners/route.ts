@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
 import { AdminPaginationSchema, AdvertisementQuerySchema, AdvertisementSchema } from '@/lib/validations/schemas';
@@ -34,9 +35,9 @@ export async function GET(request: NextRequest) {
     const page = paginationResult.data.page ?? 1;
     const limit = paginationResult.data.limit ?? 20;
 
-    const where = {
-      status: status as any,
-      placement: placement as any,
+    const where: Prisma.AdvertisementWhereInput = {
+      ...(status ? { status } : {}),
+      ...(placement ? { placement } : {}),
     };
 
     const total = await prisma.advertisement.count({ where });

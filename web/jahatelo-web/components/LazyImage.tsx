@@ -11,6 +11,7 @@ export default function LazyImage(props: ImageProps) {
       {!loaded && <div className="absolute inset-0 animate-pulse bg-slate-200" />}
       <Image
         {...props}
+        alt={props.alt ?? ''}
         quality={props.quality ?? 85}
         onLoad={(event) => {
           setLoaded(true);

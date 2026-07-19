@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 type ThemeMode = 'light' | 'dark';
 
@@ -13,35 +13,30 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>('light');
+  const [theme, setThemeState] = useState<ThemeMode>(() => {
+    if (typeof window === 'undefined') return 'light';
+    const saved = localStorage.getItem('theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
 
   useEffect(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('theme') : null;
-    if (saved === 'light' || saved === 'dark') {
-      setThemeState(saved);
-      document.documentElement.classList.toggle('dark', saved === 'dark');
-      return;
-    }
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
 
-    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-    const nextTheme = prefersDark ? 'dark' : 'light';
-    setThemeState(nextTheme);
-    document.documentElement.classList.toggle('dark', prefersDark);
-  }, []);
-
-  const setTheme = (value: ThemeMode) => {
+  const setTheme = useCallback((value: ThemeMode) => {
     setThemeState(value);
     if (typeof window !== 'undefined') {
       localStorage.setItem('theme', value);
       document.documentElement.classList.toggle('dark', value === 'dark');
     }
-  };
+  }, []);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
+  }, [theme, setTheme]);
 
-  const value = useMemo(() => ({ theme, toggleTheme, setTheme }), [theme]);
+  const value = useMemo(() => ({ theme, toggleTheme, setTheme }), [theme, toggleTheme, setTheme]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

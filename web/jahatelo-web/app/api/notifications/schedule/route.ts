@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { scheduleNotification, sendPromoNotificationToFavorites, processScheduledNotificationById } from '@/lib/push-notifications';
 import { sanitizeObject } from '@/lib/sanitize';
 import { requireAdminAccess } from '@/lib/adminAccess';
+import type { Prisma } from '@prisma/client';
 
 const NotificationScheduleSchema = z.object({
   title: z.string().min(1).max(65),
@@ -15,7 +16,7 @@ const NotificationScheduleSchema = z.object({
   targetUserIds: z.array(z.string().min(1).max(100)).optional().nullable(),
   relatedEntityId: z.string().max(100).optional().nullable(),
   category: z.enum(['advertising', 'security', 'maintenance']).optional().nullable(),
-  data: z.record(z.string(), z.any()).optional().nullable(),
+  data: z.record(z.string(), z.unknown()).optional().nullable(),
 });
 
 const NotificationScheduleQuerySchema = z.object({
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
       targetRole: targetRole ?? undefined,
       targetMotelId: targetMotelId ?? undefined,
       relatedEntityId: relatedEntityId ?? undefined,
-      notificationData: notificationData ?? undefined,
+      notificationData: notificationData as Prisma.InputJsonObject | undefined,
     });
 
     if (sendNow) {
@@ -197,7 +198,7 @@ export async function GET(request: NextRequest) {
 
     const { sent: sentFilter, type, limit } = parsed.data;
 
-    const where: any = {};
+    const where: Prisma.ScheduledNotificationWhereInput = {};
 
     if (sentFilter !== 'all') {
       where.sent = sentFilter === 'true';

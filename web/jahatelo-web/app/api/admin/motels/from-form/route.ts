@@ -55,7 +55,7 @@ function parseMoney(raw: string): number | null {
 
 export async function POST(request: NextRequest) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'motels');
     if (access.error) return access.error;
 
     const body = await request.json();

@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 
 type AnalyticsData = {
   conversionRate: number;
@@ -20,8 +19,6 @@ type AnalyticsMetricsProps = {
 };
 
 export default function AnalyticsMetrics({ data }: AnalyticsMetricsProps) {
-  const router = useRouter();
-
   const formatTrend = (value: number) => {
     if (value === 0) return { icon: '→', color: 'text-slate-500', text: 'Sin cambios' };
     if (value > 0) return { icon: '↗', color: 'text-green-600', text: `+${value}%` };

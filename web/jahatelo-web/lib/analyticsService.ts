@@ -7,7 +7,7 @@ interface TrackEventParams {
   motelId: string;
   eventType: 'VIEW' | 'CLICK_PHONE' | 'CLICK_WHATSAPP' | 'CLICK_MAP' | 'CLICK_WEBSITE' | 'FAVORITE_ADD' | 'FAVORITE_REMOVE';
   source?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**

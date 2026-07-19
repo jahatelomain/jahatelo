@@ -530,7 +530,7 @@ export const AnalyticsTrackSchema = z.object({
   userCity: z.string().max(100).optional().nullable(),
   userCountry: z.string().max(100).optional().nullable(),
   deviceType: z.string().max(50).optional().nullable(),
-  metadata: z.record(z.string(), z.any()).optional().nullable(),
+  metadata: z.record(z.string(), z.unknown()).optional().nullable(),
 });
 
 // ============================================
@@ -691,7 +691,7 @@ export const MobileProfileUpdateSchema = z.object({
   phone: z.string().regex(/^\+?[0-9]{9,15}$/).optional().nullable(),
   profilePhoto: UploadOrUrlOptionalSchema,
   pushToken: z.string().max(200).optional().nullable(),
-  deviceInfo: z.record(z.string(), z.any()).optional().nullable(),
+  deviceInfo: z.record(z.string(), z.unknown()).optional().nullable(),
 });
 
 export const MobileNotificationPreferencesSchema = z.object({

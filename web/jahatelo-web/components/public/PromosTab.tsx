@@ -123,11 +123,11 @@ export default function PromosTab({ promos }: PromosTabProps) {
               <div className="mt-2">
                 {claimedCodes[promo.id] ? (
                   <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
-                    <p className="text-xs text-purple-600 font-medium mb-1">Tu código promocional</p>
+                    <p className="text-xs text-purple-600 font-medium mb-1">Tu código de descuento</p>
                     <p className="text-3xl font-bold font-mono tracking-widest text-purple-800 mb-2">
                       {claimedCodes[promo.id].code}
                     </p>
-                    <p className="text-xs text-gray-600">Presentá este código en recepción</p>
+                    <p className="text-xs text-gray-600">Mostrá este código al llegar al motel</p>
                   </div>
                 ) : (
                   <>
@@ -136,7 +136,7 @@ export default function PromosTab({ promos }: PromosTabProps) {
                       disabled={claimLoading[promo.id]}
                       className="w-full py-2.5 bg-purple-600 text-white rounded-lg font-semibold text-sm hover:bg-purple-700 disabled:opacity-60 transition-colors"
                     >
-                      {claimLoading[promo.id] ? 'Generando...' : 'Obtener mi código'}
+                      {claimLoading[promo.id] ? 'Generando...' : 'Obtener código'}
                     </button>
                     {claimError[promo.id] && (
                       <p className="mt-2 text-xs text-red-600 text-center">{claimError[promo.id]}</p>

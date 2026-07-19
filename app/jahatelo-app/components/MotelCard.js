@@ -18,6 +18,7 @@ import { useFavorites } from '../hooks/useFavorites';
 import { prefetchMotelDetails } from '../services/prefetchService';
 import { getAmenityIconConfig } from '../constants/amenityIcons';
 import { COLORS } from '../constants/theme';
+import { hasMotelPlanGlow, isMotelPlanDisabled } from '../constants/motelPlans';
 import { trackFavoriteAdd, trackFavoriteRemove } from '../services/analyticsService';
 import { shareMotel } from '../utils/share';
 
@@ -25,8 +26,8 @@ function MotelCardComponent({ motel, onPress }) {
   const { isFavorite, toggleFavorite } = useFavorites();
 
   // Derivadas de motel con null safety — deben estar antes de los hooks
-  const isDisabled = motel?.plan === 'FREE';
-  const isDiamond = motel?.plan === 'DIAMOND';
+  const isDisabled = isMotelPlanDisabled(motel?.plan);
+  const isDiamond = hasMotelPlanGlow(motel?.plan);
 
   // Valores animados para la card
   const scale = useSharedValue(1);

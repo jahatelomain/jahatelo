@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Datos inválidos',
-          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })),
+          details: error.issues.map((e) => ({ field: e.path.join('.'), message: e.message })),
         },
         { status: 400 }
       );

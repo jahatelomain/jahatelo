@@ -1,7 +1,47 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+
+type LatLngLiteral = { lat: number; lng: number };
+
+type GoogleMap = {
+  setCenter(position: LatLngLiteral): void;
+};
+
+type GoogleInfoWindow = {
+  close(): void;
+  open(mapOrOptions: GoogleMap | { anchor: GoogleMarker; map: GoogleMap }, anchor?: GoogleMarker): void;
+};
+
+type GoogleMarker = {
+  map?: GoogleMap | null;
+  setMap?(map: GoogleMap | null): void;
+  addListener(eventName: string, handler: () => void): void;
+  infoWindow?: GoogleInfoWindow;
+};
+
+type GoogleCircle = {
+  setMap(map: GoogleMap | null): void;
+};
+
+type GoogleOverlay = {
+  setMap(map: GoogleMap | null): void;
+  getPanes(): { floatPane: Node; overlayLayer: Node };
+  getProjection(): {
+    fromLatLngToDivPixel(position: unknown): { x: number; y: number };
+  };
+};
+
+type GoogleMapsApi = {
+  Map: new (element: HTMLElement, options: Record<string, unknown>) => GoogleMap;
+  InfoWindow: new (options: { content: string }) => GoogleInfoWindow;
+  Circle: new (options: Record<string, unknown>) => GoogleCircle;
+  LatLng: new (lat: number, lng: number) => unknown;
+  OverlayView: new () => GoogleOverlay;
+  marker: {
+    AdvancedMarkerElement: new (options: Record<string, unknown>) => GoogleMarker;
+  };
+};
 
 const BASE_PIN_WIDTH = 32;
 const BASE_PIN_HEIGHT = 45;
@@ -63,7 +103,7 @@ type GoogleMapComponentProps = {
 // Declare global google types
 declare global {
   interface Window {
-    google: any;
+    google: { maps: GoogleMapsApi };
     initMap?: () => void;
   }
 }
@@ -74,15 +114,12 @@ export default function GoogleMapComponent({
   initialUserLocation
 }: GoogleMapComponentProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const googleMapRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
-  const overlaysRef = useRef<any[]>([]);
-  const userMarkerRef = useRef<any>(null);
-  const userLabelRef = useRef<any>(null);
-  const circleRef = useRef<any>(null);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(
-    initialUserLocation || null
-  );
+  const googleMapRef = useRef<GoogleMap | null>(null);
+  const markersRef = useRef<GoogleMarker[]>([]);
+  const overlaysRef = useRef<GoogleOverlay[]>([]);
+  const userMarkerRef = useRef<GoogleMarker | null>(null);
+  const userLabelRef = useRef<GoogleOverlay | null>(null);
+  const circleRef = useRef<GoogleCircle | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -228,11 +265,11 @@ export default function GoogleMapComponent({
 
       // Crear etiqueta HTML personalizada como overlay
       class CustomLabel extends window.google.maps.OverlayView {
-        position: any;
+        position: LatLngLiteral;
         text: string;
         div: HTMLDivElement | null = null;
 
-        constructor(position: any, text: string) {
+        constructor(position: LatLngLiteral, text: string) {
           super();
           this.position = position;
           this.text = text;
@@ -305,7 +342,7 @@ export default function GoogleMapComponent({
             markersRef.current.forEach(m => {
               if (m.infoWindow) m.infoWindow.close();
             });
-            marker.infoWindow.open(googleMapRef.current, marker);
+            marker.infoWindow?.open(googleMapRef.current!, marker);
           });
 
           const panes = this.getPanes();
@@ -402,7 +439,7 @@ export default function GoogleMapComponent({
             m.infoWindow.close();
           }
         });
-        infoWindow.open({ anchor: marker, map: googleMapRef.current });
+        infoWindow.open({ anchor: marker, map: googleMapRef.current! });
       });
 
       marker.infoWindow = infoWindow;
@@ -416,7 +453,11 @@ export default function GoogleMapComponent({
 
     // Remove existing user marker and circle
     if (userMarkerRef.current) {
-      userMarkerRef.current.setMap(null);
+      if (userMarkerRef.current.setMap) {
+        userMarkerRef.current.setMap(null);
+      } else {
+        userMarkerRef.current.map = null;
+      }
     }
     if (userLabelRef.current) {
       userLabelRef.current.setMap(null);
@@ -436,10 +477,10 @@ export default function GoogleMapComponent({
 
     // Crear etiqueta HTML personalizada para ubicación de usuario
     class UserLabel extends window.google.maps.OverlayView {
-      position: any;
+      position: LatLngLiteral;
       div: HTMLDivElement | null = null;
 
-      constructor(position: any) {
+      constructor(position: LatLngLiteral) {
         super();
         this.position = position;
       }
@@ -503,7 +544,7 @@ export default function GoogleMapComponent({
     });
 
     marker.addListener('click', () => {
-      infoWindow.open(googleMapRef.current, marker);
+      infoWindow.open(googleMapRef.current!, marker);
     });
 
     userMarkerRef.current = marker;
@@ -533,7 +574,6 @@ export default function GoogleMapComponent({
         (position) => {
           const { latitude, longitude } = position.coords;
           const newLocation: [number, number] = [latitude, longitude];
-          setUserLocation(newLocation);
           addUserMarker(newLocation);
         },
         (error) => {

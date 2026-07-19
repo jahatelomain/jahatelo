@@ -4,8 +4,9 @@ import { Fragment } from 'react';
 import MotelCard from '@/components/public/MotelCard';
 import AdInlineCard from '@/components/public/AdInlineCard';
 import { useAdvertisements } from '@/hooks/useAdvertisements';
+import type { MotelCardProps } from '@/components/public/MotelCard';
 
-export default function MotelListWithAds({ motels }: { motels: any[] }) {
+export default function MotelListWithAds({ motels }: { motels: MotelCardProps['motel'][] }) {
   const { ads, loading } = useAdvertisements('LIST_INLINE');
   const activeAds = loading ? [] : ads;
   let adIndex = 0;

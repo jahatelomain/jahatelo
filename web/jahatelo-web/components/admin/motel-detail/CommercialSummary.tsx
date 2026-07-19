@@ -1,0 +1,13 @@
+import type { Motel } from './types';
+
+export default function CommercialSummary({ motel, onEdit }: { motel: Motel; onEdit: () => void }) {
+  const status = motel.status === 'PENDING' ? 'Pendiente' : motel.status === 'APPROVED' ? 'Aprobado' : 'Rechazado';
+  return <>
+    <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6"><h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">Contactos administrativos</h3><div className="grid md:grid-cols-2 gap-6"><Contact title="Contacto administrativo" name={motel.adminContactName} phone={motel.adminContactPhone} email={motel.adminContactEmail} /><Contact title="Contacto operativo" name={motel.operationsContactName} phone={motel.operationsContactPhone} email={motel.operationsContactEmail} /></div></section>
+    <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6"><h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">Facturación y estado</h3><div className="grid md:grid-cols-2 gap-4"><Value label="Plan" value={motel.plan || 'BASIC'} /><Value label="Próxima facturación" value={motel.nextBillingAt ? new Date(motel.nextBillingAt).toLocaleDateString('es-PY') : '-'} /><Value label="Estado" value={status} strong /><Value label="Habilitado" value={motel.isActive ? 'Sí' : 'No'} strong /><div><p className="text-xs font-medium text-slate-500 uppercase">Destacado</p><div className="mt-1">{motel.isFeatured ? <span className="inline-flex px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-semibold">⭐ Destacado en app</span> : <span className="text-slate-400 text-sm">No destacado</span>}</div></div></div></section>
+    <div className="flex"><button type="button" onClick={onEdit} className="inline-flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-lg hover:bg-purple-700 font-medium">✎ Editar configuración</button></div>
+  </>;
+}
+
+function Contact({ title, name, phone, email }: { title: string; name: string | null; phone: string | null; email: string | null }) { return <div><p className="text-xs font-semibold text-slate-500 uppercase mb-1">{title}</p><p className="text-slate-900 font-medium">{name || '-'}</p><p className="text-sm text-slate-600 mt-1">Teléfono: {phone || '-'}</p><p className="text-sm text-slate-600">Correo: {email || '-'}</p></div>; }
+function Value({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) { return <div><p className="text-xs font-medium text-slate-500 uppercase">{label}</p><p className={`mt-1 text-slate-900 ${strong ? 'font-semibold' : ''}`}>{value}</p></div>; }

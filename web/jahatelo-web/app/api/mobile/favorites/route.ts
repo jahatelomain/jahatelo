@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
         const amenityMap = new Map<string, { name: string; icon: string | null }>();
         for (const room of motel.rooms) {
           if (!room.isActive) continue;
-          for (const ra of (room as any).amenities ?? []) {
+          for (const ra of room.amenities) {
             if (!amenityMap.has(ra.amenity.id)) {
               amenityMap.set(ra.amenity.id, { name: ra.amenity.name, icon: ra.amenity.icon });
             }

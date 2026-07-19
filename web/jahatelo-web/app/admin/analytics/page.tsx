@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
+import SearchableSelect from '@/components/admin/SearchableSelect';
 
 interface AnalyticsData {
   motel: {
@@ -193,18 +194,17 @@ export default function GlobalAnalyticsPage() {
               Exportar CSV
             </a>
             {/* Selector de Motel */}
-            <select
+            <div className="min-w-64">
+              <SearchableSelect
               value={selectedMotelId}
-              onChange={(e) => setSelectedMotelId(e.target.value)}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-            >
-              <option value="">Todos los moteles</option>
-              {motels.map((motel) => (
-                <option key={motel.id} value={motel.id}>
-                  {motel.name}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedMotelId}
+              placeholder="Buscar motel..."
+              options={[
+                { value: '', label: 'Todos los moteles' },
+                ...motels.map((motel) => ({ value: motel.id, label: motel.name })),
+              ]}
+              />
+            </div>
 
             {/* Selector de período */}
             <select

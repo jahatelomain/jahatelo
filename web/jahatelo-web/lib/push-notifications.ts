@@ -1,4 +1,31 @@
+import { Prisma, UserRole } from '@prisma/client';
 import { prisma } from './prisma';
+
+type NotificationData = Prisma.InputJsonObject;
+
+type ExpoPushResponseEntry = {
+  status?: string;
+  message?: string;
+  details?: { error?: string };
+};
+
+function getExpoPushResponseEntry(value: unknown): ExpoPushResponseEntry | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const data = (value as { data?: unknown }).data;
+  const entry = Array.isArray(data) ? data[0] : data;
+  return typeof entry === 'object' && entry !== null ? entry as ExpoPushResponseEntry : undefined;
+}
+
+function hasIncludeGuests(data: unknown): boolean {
+  return typeof data === 'object' && data !== null &&
+    (data as { includeGuests?: unknown }).includeGuests === true;
+}
+
+function toNotificationData(data: unknown): NotificationData {
+  return typeof data === 'object' && data !== null && !Array.isArray(data)
+    ? data as NotificationData
+    : {};
+}
 
 /**
  * Tipo de notificación push
@@ -6,7 +33,7 @@ import { prisma } from './prisma';
 export interface PushNotification {
   title: string;
   body: string;
-  data?: Record<string, any>;
+  data?: NotificationData;
   sound?: 'default' | null;
   badge?: number;
   channelId?: string;
@@ -19,7 +46,7 @@ export interface PushNotification {
 export interface PushSendResult {
   success: boolean;
   error?: string;
-  details?: any;
+  details?: unknown;
 }
 
 /**
@@ -61,9 +88,8 @@ export async function sendPushNotification(
       body: JSON.stringify(message),
     });
 
-    const result = await response.json();
-    const data = result.data;
-    const entry = Array.isArray(data) ? data[0] : data;
+    const result: unknown = await response.json();
+    const entry = getExpoPushResponseEntry(result);
 
     if (response.ok && entry?.status === 'ok') {
       return {
@@ -370,7 +396,7 @@ export async function scheduleNotification(data: {
   targetRole?: string;
   targetMotelId?: string;
   relatedEntityId?: string;
-  notificationData?: Record<string, any>;
+  notificationData?: NotificationData;
 }): Promise<{ id: string }> {
   try {
     const scheduledNotification = await prisma.scheduledNotification.create({
@@ -384,7 +410,7 @@ export async function scheduleNotification(data: {
         targetRole: data.targetRole,
         targetMotelId: data.targetMotelId,
         relatedEntityId: data.relatedEntityId,
-        data: data.notificationData || {},
+        data: data.notificationData ?? {},
       },
     });
 
@@ -455,10 +481,10 @@ async function deliverScheduledNotification(notification: {
   targetRole: string | null;
   targetMotelId: string | null;
 }) {
-  let tokens: string[] = [];
+  const tokens: string[] = [];
   let skipped = 0;
   const category = notification.category || 'advertising';
-  const includeGuests = (notification.data as any)?.includeGuests === true;
+  const includeGuests = hasIncludeGuests(notification.data);
 
   if (notification.targetUserIds.length > 0) {
     const users = await prisma.user.findMany({
@@ -488,7 +514,7 @@ async function deliverScheduledNotification(notification: {
   } else if (notification.targetRole) {
     const users = await prisma.user.findMany({
       where: {
-        role: notification.targetRole as any,
+        role: notification.targetRole as UserRole,
         isActive: true,
       },
       include: {
@@ -575,7 +601,7 @@ async function deliverScheduledNotification(notification: {
     const results = await sendPushNotifications(tokens, {
       title: notification.title,
       body: notification.body,
-      data: (notification.data as Record<string, any>) || {},
+      data: toNotificationData(notification.data),
       sound: 'default',
     });
 

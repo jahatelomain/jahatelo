@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { ADMIN_MODULES, ADMIN_MODULE_LABELS } from '@/lib/adminModules';
@@ -47,11 +47,7 @@ export default function RolesPage() {
   const filtersKeyRef = useRef('');
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
-  useEffect(() => {
-    checkAccess();
-  }, []);
-
-  const checkAccess = async () => {
+  const checkAccess = useCallback(async () => {
     try {
       const response = await fetch('/api/auth/me');
       const data = await response.json();
@@ -66,9 +62,9 @@ export default function RolesPage() {
       console.error('Error checking access:', error);
       router.push('/admin');
     }
-  };
+  }, [router]);
 
-  const fetchUsers = async (isLoadingMore = false) => {
+  const fetchUsers = useCallback(async (isLoadingMore = false) => {
     if (isLoadingMore) {
       setLoadingMore(true);
     } else {
@@ -108,7 +104,11 @@ export default function RolesPage() {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, [debouncedSearchQuery, moduleFilter, page, roleFilter, toast]);
+
+  useEffect(() => {
+    void checkAccess();
+  }, [checkAccess]);
 
   const openPermissionsEditor = (user: User) => {
     setSelectedUser(user);
@@ -177,9 +177,8 @@ export default function RolesPage() {
       }
     }
     const isLoadingMore = page > 1;
-    fetchUsers(isLoadingMore);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, roleFilter, moduleFilter, debouncedSearchQuery, currentUser]);
+    void fetchUsers(isLoadingMore);
+  }, [currentUser, debouncedSearchQuery, fetchUsers, moduleFilter, page, roleFilter]);
 
   const { sentinelRef } = useInfiniteScroll({
     loading: loadingMore,

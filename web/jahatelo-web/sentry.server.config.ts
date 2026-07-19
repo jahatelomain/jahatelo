@@ -21,7 +21,7 @@ Sentry.init({
   debug: process.env.NODE_ENV === 'development',
 
   // Filtrar información sensible
-  beforeSend(event, hint) {
+  beforeSend(event) {
     // No enviar en desarrollo
     if (process.env.NODE_ENV === 'development') {
       console.error('Sentry Server Event:', event);
@@ -37,7 +37,7 @@ Sentry.init({
 
     // Filtrar datos sensibles del body
     if (event.request?.data) {
-      const data = event.request.data as any;
+      const data = event.request.data as Record<string, unknown>;
       if (data.password) data.password = '[FILTERED]';
       if (data.passwordHash) data.passwordHash = '[FILTERED]';
       if (data.token) data.token = '[FILTERED]';

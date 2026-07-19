@@ -9,9 +9,11 @@ import FavoriteButtonClient from '@/components/public/FavoriteButtonClient';
 import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
 import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
 import type { CSSProperties } from 'react';
+import { formatGuaranies } from '@/lib/formatCurrency';
 import type { PublicMotelListItem } from '@/lib/domain/motels/publicListItem';
+import { hasMotelPlanGlow, isMotelPlanDisabled, normalizeMotelPlan } from '@/lib/domain/motels/planPresentation';
 
-interface MotelCardProps {
+export interface MotelCardProps {
   motel: (PublicMotelListItem | {
     id: string;
     name: string;
@@ -70,9 +72,10 @@ export default function MotelCard({ motel }: MotelCardProps) {
     : Array.from(new Map(
         (motel.rooms ?? []).flatMap((room) => room.amenities ?? []).map(({ amenity }) => [amenity.name, amenity]),
       ).values()).slice(0, 3);
-  const isDisabled = motel.plan === 'FREE';
-  const isDiamond = motel.plan === 'DIAMOND';
-  const isGold = motel.plan === 'GOLD';
+  const normalizedPlan = normalizeMotelPlan(motel.plan);
+  const isDisabled = isMotelPlanDisabled(normalizedPlan);
+  const isDiamond = hasMotelPlanGlow(normalizedPlan);
+  const isGold = normalizedPlan === 'GOLD';
 
   const cardInner = (
     <div
@@ -103,9 +106,9 @@ export default function MotelCard({ motel }: MotelCardProps) {
             <FavoriteButtonClient motelId={motel.id} source="LIST" size="small" />
           </div>
           <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
-            {motel.isFeatured && (
-              <div className="bg-purple-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                Destacado
+            {(isCanonical ? motel.tienePromo : false) && (
+              <div className="bg-purple-100 text-purple-950 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                PROMO
               </div>
             )}
             {isDiamond && (
@@ -129,14 +132,14 @@ export default function MotelCard({ motel }: MotelCardProps) {
             {motel.name}
           </h3>
           <p className="text-sm text-gray-500 mb-3">
-            {motel.city}, {motel.neighborhood}
+            {motel.city || motel.neighborhood || 'Sin ciudad'}
             {motel.distanceKm !== undefined && (
               <span className="ml-2 inline-flex items-center gap-1 text-purple-600 font-medium">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                {motel.distanceKm} km
+                a {motel.distanceKm.toFixed(1)} km
               </span>
             )}
           </p>
@@ -157,9 +160,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
                   ({ratingCount} {ratingCount === 1 ? 'reseña' : 'reseñas'})
                 </span>
               </>
-            ) : (
-              <span className="text-sm text-gray-400">Sin reseñas aún</span>
-            )}
+            ) : null}
           </div>
 
           {/* Amenities */}
@@ -185,9 +186,8 @@ export default function MotelCard({ motel }: MotelCardProps) {
           {/* Price */}
           {minPrice !== null && (
             <div className="mt-auto pt-4 border-t border-gray-100">
-              <p className="text-sm text-gray-500">Desde</p>
               <p className="text-xl font-bold text-purple-600">
-                ${minPrice.toLocaleString()}
+                {formatGuaranies(minPrice)}
               </p>
             </div>
           )}

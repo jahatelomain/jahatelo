@@ -12,10 +12,8 @@ interface FavoriteButtonProps {
 }
 
 export default function FavoriteButton({
-  motelId,
   isFavorite,
   onToggle,
-  source = 'LIST',
   size = 'medium',
   variant = 'icon',
 }: FavoriteButtonProps) {

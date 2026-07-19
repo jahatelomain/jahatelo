@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState, ChangeEvent, useRef } from 'react';
-import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState, ChangeEvent, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import * as LucideIcons from 'lucide-react';
+import { toast } from 'sonner';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import DirtyBanner from '@/components/admin/DirtyBanner';
 import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
@@ -14,151 +13,51 @@ import {
   normalizeOptionalText,
   normalizeUploadUrl,
 } from '@/components/admin/motel-detail/formUtils';
-
-type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
-
-type Motel = {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  country: string | null;
-  city: string;
-  neighborhood: string;
-  address: string;
-  mapUrl: string | null;
-  phone: string | null;
-  whatsapp: string | null;
-  website: string | null;
-  instagram: string | null;
-  status: MotelStatus;
-  isActive: boolean;
-  contactName: string | null;
-  contactEmail: string | null;
-  contactPhone: string | null;
-  adminContactName: string | null;
-  adminContactEmail: string | null;
-  adminContactPhone: string | null;
-  operationsContactName: string | null;
-  operationsContactEmail: string | null;
-  operationsContactPhone: string | null;
-  plan: string | null;
-  nextBillingAt: string | null;
-  isFeatured: boolean;
-  featuredPhoto: string | null;
-  featuredPhotoWeb?: string | null;
-  featuredPhotoApp?: string | null;
-  ratingAvg: number | null;
-  ratingCount: number | null;
-  createdAt?: string;
-  updatedAt?: string;
-  rooms?: RoomType[];
-  menuCategories?: MenuCategory[];
-  photos?: Array<{ id: string; url: string; order: number }>;
-};
-
-type DayRateForm = {
-  price1h: string;
-  price1_5h: string;
-  price2h: string;
-  price3h: string;
-  price12h: string;
-  price24h: string;
-  priceNight: string;
-};
-
-type RoomType = {
-  id: string;
-  name: string;
-  description: string | null;
-  order?: number;
-  price1h: number | null;
-  price1_5h: number | null;
-  price2h: number | null;
-  price3h: number | null;
-  price12h: number | null;
-  price24h: number | null;
-  priceNight: number | null;
-  maxPersons: number | null;
-  hasJacuzzi: boolean;
-  isFeatured: boolean;
-  isActive: boolean;
-  amenities: Array<{
-    amenity: {
-      id: string;
-      name: string;
-      icon: string | null;
-    };
-  }>;
-  roomPhotos?: Array<{
-    id: string;
-    url: string;
-    order: number;
-  }>;
-  dayRates?: Array<{
-    dayGroup: 'WEEKDAY' | 'WEEKEND';
-    price1h: number | null;
-    price1_5h: number | null;
-    price2h: number | null;
-    price3h: number | null;
-    price12h: number | null;
-    price24h: number | null;
-    priceNight: number | null;
-  }>;
-};
-
-type MenuCategory = {
-  id: string;
-  title: string;
-  sortOrder: number;
-  items: MenuItem[];
-};
-
-type MenuItem = {
-  id: string;
-  name: string;
-  price: number;
-  description: string | null;
-};
-
-type Amenity = {
-  id: string;
-  name: string;
-  type: string | null;
-  icon: string | null;
-};
-
-type Promo = {
-  id: string;
-  title: string;
-  description: string | null;
-  imageUrl: string | null;
-  validFrom: string | null;
-  validUntil: string | null;
-  isActive: boolean;
-  isGlobal: boolean;
-  hasPromoCode: boolean;
-  codeRepeatRule: string | null;
-  codeLimit: number | null;
-  codeLimitPeriod: string | null;
-};
-
-type PromoCodeEntry = {
-  id: string;
-  code: string;
-  status: 'PENDING' | 'USED';
-  deviceId: string;
-  createdAt: string;
-  redeemedAt: string | null;
-  redeemedBy: string | null;
-};
-
-type RedeemResult =
-  | { valid: false; reason: 'INVALID_CODE' | 'WRONG_PROMO' | 'ALREADY_USED' | 'PROMO_INACTIVE'; redeemedAt?: string }
-  | { valid: true; codeId?: string; promoTitle?: string; promoDescription?: string | null; promoImageUrl?: string | null; confirmed?: boolean };
+import type {
+  Amenity,
+  DayRateForm,
+  Motel,
+  MotelAdminTab,
+  MotelReview,
+  MotelStatus,
+  Promo,
+  PromoCodeEntry,
+  RedeemResult,
+  RoomType,
+} from '@/components/admin/motel-detail/types';
+import {
+  createEmptyDayRate,
+  createInitialPromoForm,
+  createInitialRoomForm,
+} from '@/components/admin/motel-detail/formDefaults';
+import { createCroppedImageFile } from '@/components/admin/motel-detail/imageProcessing';
+import {
+  formatLimit,
+  getPlanLabel,
+  getPlanPromoLimit,
+  getPlanRoomPhotoLimit,
+  sortByExplicitOrder,
+} from '@/components/admin/motel-detail/displayUtils';
+import MotelAdminTabs from '@/components/admin/motel-detail/MotelAdminTabs';
+import ReviewsPanel from '@/components/admin/motel-detail/ReviewsPanel';
+import MotelAdminHeader from '@/components/admin/motel-detail/MotelAdminHeader';
+import MenuCategoryCard from '@/components/admin/motel-detail/MenuCategoryCard';
+import MenuForms from '@/components/admin/motel-detail/MenuForms';
+import MotelPhotoGalleryCard from '@/components/admin/motel-detail/MotelPhotoGalleryCard';
+import MotelLocationFields from '@/components/admin/motel-detail/MotelLocationFields';
+import CommercialContactFields from '@/components/admin/motel-detail/CommercialContactFields';
+import CommercialPlanFields from '@/components/admin/motel-detail/CommercialPlanFields';
+import RoomEditorForm from '@/components/admin/motel-detail/RoomEditorForm';
+import useFormDirty from '@/hooks/useFormDirty';
+import RoomList from '@/components/admin/motel-detail/RoomList';
+import FeaturedPhotoFields from '@/components/admin/motel-detail/FeaturedPhotoFields';
+import PromoEditorForm from '@/components/admin/motel-detail/PromoEditorForm';
+import CommercialSummary from '@/components/admin/motel-detail/CommercialSummary';
+import GeneralInfoSummary from '@/components/admin/motel-detail/GeneralInfoSummary';
+import PromoCard from '@/components/admin/motel-detail/PromoCard';
+import PromoCodePanel from '@/components/admin/motel-detail/PromoCodePanel';
 
 export default function MotelDetailPage() {
-  const countryOptions = ['Paraguay', 'Argentina', 'Peru', 'Bolivia', 'Chile', 'Brasil'];
   const params = useParams<{ id?: string }>();
   const id = useMemo(() => {
     const value = params?.id;
@@ -170,7 +69,7 @@ export default function MotelDetailPage() {
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'promos' | 'details' | 'rooms' | 'menu' | 'commercial' | 'reviews'>('details');
+  const [activeTab, setActiveTab] = useState<MotelAdminTab>('details');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
 
   const [editingMotel, setEditingMotel] = useState(false);
@@ -206,30 +105,11 @@ export default function MotelDetailPage() {
     featuredPhotoApp: '',
   });
 
-  const emptyDayRate = (): DayRateForm => ({
-    price1h: '', price1_5h: '', price2h: '', price3h: '',
-    price12h: '', price24h: '', priceNight: '',
-  });
-
   const [showRoomForm, setShowRoomForm] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
-  const [roomForm, setRoomForm] = useState({
-    name: '',
-    description: '',
-    price1h: '',
-    price1_5h: '',
-    price2h: '',
-    price3h: '',
-    price12h: '',
-    price24h: '',
-    priceNight: '',
-    maxPersons: '',
-    hasJacuzzi: false,
-    isFeatured: false,
-    amenityIds: [] as string[],
-  });
-  const [weekdayRates, setWeekdayRates] = useState<DayRateForm>(emptyDayRate());
-  const [weekendRates, setWeekendRates] = useState<DayRateForm>(emptyDayRate());
+  const [roomForm, setRoomForm] = useState(createInitialRoomForm());
+  const [weekdayRates, setWeekdayRates] = useState(createEmptyDayRate());
+  const [weekendRates, setWeekendRates] = useState(createEmptyDayRate());
 
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [categoryForm, setCategoryForm] = useState({ title: '', sortOrder: 0 });
@@ -239,17 +119,6 @@ export default function MotelDetailPage() {
   const [itemForm, setItemForm] = useState({ name: '', price: '', description: '' });
 
   // Promos state
-  const createInitialPromoForm = () => ({
-    title: '',
-    description: '',
-    imageUrl: '',
-    isGlobal: false,
-    hasPromoCode: false,
-    codeRepeatRule: 'NEVER' as string,
-    codeLimit: '',
-    codeLimitPeriod: 'UNLIMITED' as string,
-  });
-
   const [promos, setPromos] = useState<Promo[]>([]);
   const [showPromoForm, setShowPromoForm] = useState(false);
   const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
@@ -269,15 +138,8 @@ export default function MotelDetailPage() {
   const [uploadingFeaturedApp, setUploadingFeaturedApp] = useState(false);
   const [uploadingRoomId, setUploadingRoomId] = useState<string | null>(null);
   const [uploadingPromo, setUploadingPromo] = useState(false);
-  const [draggedPhotoId, setDraggedPhotoId] = useState<string | null>(null);
-  const [dragOverPhotoId, setDragOverPhotoId] = useState<string | null>(null);
-  const [draggedMotelPhotoId, setDraggedMotelPhotoId] = useState<string | null>(null);
-  const [dragOverMotelPhotoId, setDragOverMotelPhotoId] = useState<string | null>(null);
-  const [uploadingMotelPhoto, setUploadingMotelPhoto] = useState(false);
-  const [reviews, setReviews] = useState<Array<{ id: string; score: number; comment: string | null; isVerified: boolean; isAnonymous: boolean; createdAt: string; user: { id: string; name: string | null; email: string | null } | null }>>([]);
+  const [reviews, setReviews] = useState<MotelReview[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [draggedRoomId, setDraggedRoomId] = useState<string | null>(null);
-  const [dragOverRoomId, setDragOverRoomId] = useState<string | null>(null);
   const [roomOrderIds, setRoomOrderIds] = useState<string[]>([]);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
@@ -287,113 +149,14 @@ export default function MotelDetailPage() {
     danger?: boolean;
     onConfirm: () => void;
   } | null>(null);
-  const [promoFormDirty, setPromoFormDirty] = useState(false);
-  const [motelFormDirty, setMotelFormDirty] = useState(false);
-  const [roomFormDirty, setRoomFormDirty] = useState(false);
-  const [categoryFormDirty, setCategoryFormDirty] = useState(false);
-  const [itemFormDirty, setItemFormDirty] = useState(false);
-  const promoFormSnapshotRef = useRef('');
-  const motelFormSnapshotRef = useRef('');
-  const roomFormSnapshotRef = useRef('');
   const roomFormRef = useRef<HTMLDivElement | null>(null);
-  const categoryFormSnapshotRef = useRef('');
-  const itemFormSnapshotRef = useRef('');
+  const promoFormDirty = useFormDirty(promoForm, showPromoForm);
+  const motelFormDirty = useFormDirty(motelForm, editingMotel || editingCommercial);
+  const roomFormDirty = useFormDirty(roomForm, showRoomForm);
+  const categoryFormDirty = useFormDirty(categoryForm, showCategoryForm);
+  const itemFormDirty = useFormDirty(itemForm, showItemForm);
 
-  useEffect(() => {
-    if (!id || id === 'undefined') {
-      setLoading(false);
-      return;
-    }
-
-    fetchMotel();
-    fetchAmenities();
-    fetchPromos();
-    fetchCurrentUser();
-  }, [id]);
-
-  useEffect(() => {
-    if (activeTab === 'reviews' && reviews.length === 0) {
-      fetchReviews();
-    }
-    if (activeTab !== 'details' && editingMotel) {
-      setEditingMotel(false);
-    }
-    if (activeTab !== 'commercial' && editingCommercial) {
-      setEditingCommercial(false);
-    }
-  }, [activeTab, editingMotel, editingCommercial]);
-
-  useEffect(() => {
-    if (showPromoForm) {
-      promoFormSnapshotRef.current = JSON.stringify(promoForm);
-      setPromoFormDirty(false);
-    }
-  }, [showPromoForm, promoForm]);
-
-  useEffect(() => {
-    if (!showPromoForm) return;
-    const snapshot = promoFormSnapshotRef.current;
-    if (!snapshot) return;
-    setPromoFormDirty(JSON.stringify(promoForm) !== snapshot);
-  }, [promoForm, showPromoForm]);
-
-  useEffect(() => {
-    if (editingMotel || editingCommercial) {
-      motelFormSnapshotRef.current = JSON.stringify(motelForm);
-      setMotelFormDirty(false);
-    }
-  }, [editingMotel, editingCommercial, motelForm]);
-
-  useEffect(() => {
-    if (!editingMotel && !editingCommercial) return;
-    const snapshot = motelFormSnapshotRef.current;
-    if (!snapshot) return;
-    setMotelFormDirty(JSON.stringify(motelForm) !== snapshot);
-  }, [motelForm, editingMotel, editingCommercial]);
-
-  useEffect(() => {
-    if (showRoomForm) {
-      roomFormSnapshotRef.current = JSON.stringify(roomForm);
-      setRoomFormDirty(false);
-    }
-  }, [showRoomForm, roomForm]);
-
-  useEffect(() => {
-    if (!showRoomForm) return;
-    const snapshot = roomFormSnapshotRef.current;
-    if (!snapshot) return;
-    setRoomFormDirty(JSON.stringify(roomForm) !== snapshot);
-  }, [roomForm, showRoomForm]);
-
-  useEffect(() => {
-    if (showCategoryForm) {
-      categoryFormSnapshotRef.current = JSON.stringify(categoryForm);
-      setCategoryFormDirty(false);
-    }
-  }, [showCategoryForm, categoryForm]);
-
-  useEffect(() => {
-    if (!showCategoryForm) return;
-    const snapshot = categoryFormSnapshotRef.current;
-    if (!snapshot) return;
-    setCategoryFormDirty(JSON.stringify(categoryForm) !== snapshot);
-  }, [categoryForm, showCategoryForm]);
-
-  useEffect(() => {
-    if (showItemForm) {
-      itemFormSnapshotRef.current = JSON.stringify(itemForm);
-      setItemFormDirty(false);
-    }
-  }, [showItemForm, itemForm]);
-
-  useEffect(() => {
-    if (!showItemForm) return;
-    const snapshot = itemFormSnapshotRef.current;
-    if (!snapshot) return;
-    setItemFormDirty(JSON.stringify(itemForm) !== snapshot);
-  }, [itemForm, showItemForm]);
-
-  const fetchMotel = async () => {
+  const fetchMotel = useCallback(async () => {
     try {
       setFetchError(null);
       const res = await fetch(`/api/admin/motels/${id}`);
@@ -446,9 +209,9 @@ export default function MotelDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, router]);
 
-  const fetchAmenities = async () => {
+  const fetchAmenities = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/amenities');
       const data = await res.json();
@@ -456,9 +219,9 @@ export default function MotelDetailPage() {
     } catch (error) {
       console.error('Error fetching amenities:', error);
     }
-  };
+  }, []);
 
-  const fetchPromos = async () => {
+  const fetchPromos = useCallback(async () => {
     try {
       const res = await fetch(`/api/admin/promos?motelId=${id}`);
       const data = await res.json();
@@ -466,9 +229,9 @@ export default function MotelDetailPage() {
     } catch (error) {
       console.error('Error fetching promos:', error);
     }
-  };
+  }, [id]);
 
-  const fetchCurrentUser = async () => {
+  const fetchCurrentUser = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/me', { cache: 'no-store' });
       if (res.ok) {
@@ -479,7 +242,7 @@ export default function MotelDetailPage() {
       console.error('Error fetching current user:', error);
       setCurrentUser(null);
     }
-  };
+  }, []);
 
   const buildPromoPayload = (form: ReturnType<typeof createInitialPromoForm>) => ({
     ...form,
@@ -506,7 +269,7 @@ export default function MotelDetailPage() {
           setPromoForm(createInitialPromoForm());
         } else {
           const message = await getResponseError(res, 'Error al actualizar promo');
-          alert(message);
+          toast.error(message);
         }
       } else {
         // Create new promo
@@ -521,12 +284,12 @@ export default function MotelDetailPage() {
           setPromoForm(createInitialPromoForm());
         } else {
           const message = await getResponseError(res, 'Error al crear promo');
-          alert(message);
+          toast.error(message);
         }
       }
     } catch (error) {
       console.error('Error saving promo:', error);
-      alert('Error al guardar promo');
+      toast.error('Error al guardar promo');
     }
   };
 
@@ -631,7 +394,7 @@ export default function MotelDetailPage() {
       setPromoForm({ ...promoForm, imageUrl: uploadedUrl });
     } catch (error) {
       console.error('Error uploading promo image:', error);
-      alert('Error al subir la imagen');
+      toast.error('Error al subir la imagen');
     } finally {
       setUploadingPromo(false);
     }
@@ -696,11 +459,11 @@ export default function MotelDetailPage() {
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
         const message = await getResponseError(res, 'Error al actualizar motel');
-        alert(message);
+        toast.error(message);
       }
     } catch (error) {
       console.error('Error updating motel:', error);
-      alert('Error al actualizar motel');
+      toast.error('Error al actualizar motel');
     }
   };
 
@@ -718,11 +481,11 @@ export default function MotelDetailPage() {
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
         const message = await getResponseError(res, 'Error al actualizar motel');
-        alert(message);
+        toast.error(message);
       }
     } catch (error) {
       console.error('Error updating motel:', error);
-      alert('Error al actualizar motel');
+      toast.error('Error al actualizar motel');
     }
   };
 
@@ -743,10 +506,10 @@ export default function MotelDetailPage() {
             return;
           }
           const message = await getResponseError(res, 'Error al eliminar motel');
-          alert(message);
+          toast.error(message);
         } catch (error) {
           console.error('Error deleting motel:', error);
-          alert('Error al eliminar motel');
+          toast.error('Error al eliminar motel');
         } finally {
           setConfirmAction(null);
         }
@@ -801,31 +564,17 @@ export default function MotelDetailPage() {
         fetchMotel();
         setShowRoomForm(false);
         setEditingRoomId(null);
-        setRoomForm({
-          name: '',
-          description: '',
-          price1h: '',
-          price1_5h: '',
-          price2h: '',
-          price3h: '',
-          price12h: '',
-          price24h: '',
-          priceNight: '',
-          maxPersons: '',
-          hasJacuzzi: false,
-          isFeatured: false,
-          amenityIds: []
-        });
-        setWeekdayRates(emptyDayRate());
-        setWeekendRates(emptyDayRate());
+        setRoomForm(createInitialRoomForm());
+        setWeekdayRates(createEmptyDayRate());
+        setWeekendRates(createEmptyDayRate());
         setSaveStatus('success');
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
-        alert('Error al guardar habitación');
+        toast.error('Error al guardar habitación');
       }
     } catch (error) {
       console.error('Error saving room:', error);
-      alert('Error al guardar habitación');
+      toast.error('Error al guardar habitación');
     }
   };
 
@@ -857,7 +606,7 @@ export default function MotelDetailPage() {
       price12h: wd.price12h?.toString() || '',
       price24h: wd.price24h?.toString() || '',
       priceNight: wd.priceNight?.toString() || '',
-    } : emptyDayRate());
+    } : createEmptyDayRate());
     setWeekendRates(we ? {
       price1h: we.price1h?.toString() || '',
       price1_5h: we.price1_5h?.toString() || '',
@@ -866,11 +615,19 @@ export default function MotelDetailPage() {
       price12h: we.price12h?.toString() || '',
       price24h: we.price24h?.toString() || '',
       priceNight: we.priceNight?.toString() || '',
-    } : emptyDayRate());
+    } : createEmptyDayRate());
     setShowRoomForm(true);
     setTimeout(() => {
       roomFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 50);
+  };
+
+  const closeRoomForm = () => {
+    setShowRoomForm(false);
+    setEditingRoomId(null);
+    setRoomForm(createInitialRoomForm());
+    setWeekdayRates(createEmptyDayRate());
+    setWeekendRates(createEmptyDayRate());
   };
 
   const handleDeleteRoom = async (roomId: string) => {
@@ -891,11 +648,11 @@ export default function MotelDetailPage() {
             setSaveStatus('success');
             setTimeout(() => setSaveStatus('idle'), 2500);
           } else {
-            alert('Error al eliminar habitación');
+            toast.error('Error al eliminar habitación');
           }
         } catch (error) {
           console.error('Error deleting room:', error);
-          alert('Error al eliminar habitación');
+          toast.error('Error al eliminar habitación');
         } finally {
           setConfirmAction(null);
         }
@@ -922,11 +679,11 @@ export default function MotelDetailPage() {
         setSaveStatus('success');
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
-        alert('Error al crear categoría');
+        toast.error('Error al crear categoría');
       }
     } catch (error) {
       console.error('Error saving category:', error);
-      alert('Error al crear categoría');
+      toast.error('Error al crear categoría');
     }
   };
 
@@ -948,11 +705,11 @@ export default function MotelDetailPage() {
             setSaveStatus('success');
             setTimeout(() => setSaveStatus('idle'), 2500);
           } else {
-            alert('Error al eliminar categoría');
+            toast.error('Error al eliminar categoría');
           }
         } catch (error) {
           console.error('Error deleting category:', error);
-          alert('Error al eliminar categoría');
+          toast.error('Error al eliminar categoría');
         } finally {
           setConfirmAction(null);
         }
@@ -982,11 +739,11 @@ export default function MotelDetailPage() {
         setSaveStatus('success');
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
-        alert('Error al crear item');
+        toast.error('Error al crear item');
       }
     } catch (error) {
       console.error('Error saving item:', error);
-      alert('Error al crear item');
+      toast.error('Error al crear item');
     }
   };
 
@@ -1008,25 +765,16 @@ export default function MotelDetailPage() {
             setSaveStatus('success');
             setTimeout(() => setSaveStatus('idle'), 2500);
           } else {
-            alert('Error al eliminar item');
+            toast.error('Error al eliminar item');
           }
         } catch (error) {
           console.error('Error deleting item:', error);
-          alert('Error al eliminar item');
+          toast.error('Error al eliminar item');
         } finally {
           setConfirmAction(null);
         }
       },
     });
-  };
-
-  const toggleAmenity = (amenityId: string) => {
-    setRoomForm((prev) => ({
-      ...prev,
-      amenityIds: prev.amenityIds.includes(amenityId)
-        ? prev.amenityIds.filter((id) => id !== amenityId)
-        : [...prev.amenityIds, amenityId],
-    }));
   };
 
   const handleAddRoomPhoto = async (roomId: string, url: string) => {
@@ -1048,11 +796,11 @@ export default function MotelDetailPage() {
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
         const message = await getResponseError(res, 'Error al agregar foto');
-        alert(message);
+        toast.error(message);
       }
     } catch (error) {
       console.error('Error adding room photo:', error);
-      alert('Error al agregar foto');
+      toast.error('Error al agregar foto');
     }
   };
 
@@ -1074,11 +822,11 @@ export default function MotelDetailPage() {
             setSaveStatus('success');
             setTimeout(() => setSaveStatus('idle'), 2500);
           } else {
-            alert('Error al eliminar foto');
+            toast.error('Error al eliminar foto');
           }
         } catch (error) {
           console.error('Error deleting room photo:', error);
-          alert('Error al eliminar foto');
+          toast.error('Error al eliminar foto');
         } finally {
           setConfirmAction(null);
         }
@@ -1112,7 +860,7 @@ export default function MotelDetailPage() {
     } catch (error) {
       console.error('Error reordering room photos:', error);
       fetchMotel();
-      alert('Error al reordenar fotos');
+      toast.error('Error al reordenar fotos');
     }
   };
 
@@ -1128,20 +876,29 @@ export default function MotelDetailPage() {
       await fetchMotel();
     } catch (error) {
       console.error('Error adding motel photo:', error);
-      alert('Error al agregar foto');
+      toast.error('Error al agregar foto');
     }
   };
 
-  const handleDeleteMotelPhoto = async (photoId: string) => {
-    if (!confirm('¿Eliminar esta foto?')) return;
-    try {
-      const res = await fetch(`/api/admin/motel-photos/${photoId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed');
-      setMotel((prev) => prev ? { ...prev, photos: (prev.photos ?? []).filter((p) => p.id !== photoId) } : prev);
-    } catch (error) {
-      console.error('Error deleting motel photo:', error);
-      alert('Error al eliminar foto');
-    }
+  const handleDeleteMotelPhoto = (photoId: string) => {
+    setConfirmAction({
+      title: 'Eliminar foto',
+      message: '¿Eliminar esta foto? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/motel-photos/${photoId}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error('Failed');
+          setMotel((prev) => prev ? { ...prev, photos: (prev.photos ?? []).filter((photo) => photo.id !== photoId) } : prev);
+        } catch (error) {
+          console.error('Error deleting motel photo:', error);
+          toast.error('Error al eliminar foto');
+        } finally {
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
   const handleReorderMotelPhotos = async (photos: Array<{ id: string; url: string; order: number }>) => {
@@ -1160,11 +917,11 @@ export default function MotelDetailPage() {
     } catch (error) {
       console.error('Error reordering motel photos:', error);
       fetchMotel();
-      alert('Error al reordenar las fotos del motel');
+      toast.error('Error al reordenar las fotos del motel');
     }
   };
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     if (!id) return;
     setReviewsLoading(true);
     try {
@@ -1176,22 +933,52 @@ export default function MotelDetailPage() {
     } finally {
       setReviewsLoading(false);
     }
-  };
+  }, [id]);
 
-  const handleDeleteReview = async (reviewId: string) => {
-    if (!confirm('¿Eliminar esta reseña? Esta acción no se puede deshacer.')) return;
-    try {
-      const res = await fetch(`/api/admin/reviews/${reviewId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed');
-      setReviews((prev) => prev.filter((r) => r.id !== reviewId));
-      setMotel((prev) => prev ? {
-        ...prev,
-        ratingCount: (prev.ratingCount ?? 1) - 1,
-      } : prev);
-    } catch (error) {
-      console.error('Error deleting review:', error);
-      alert('Error al eliminar la reseña');
+  useEffect(() => {
+    if (!id || id === 'undefined') {
+      setLoading(false);
+      return;
     }
+
+    fetchMotel();
+    fetchAmenities();
+    fetchPromos();
+    fetchCurrentUser();
+  }, [id, fetchAmenities, fetchCurrentUser, fetchMotel, fetchPromos]);
+
+  useEffect(() => {
+    if (activeTab === 'reviews' && reviews.length === 0) {
+      fetchReviews();
+    }
+    if (activeTab !== 'details' && editingMotel) {
+      setEditingMotel(false);
+    }
+    if (activeTab !== 'commercial' && editingCommercial) {
+      setEditingCommercial(false);
+    }
+  }, [activeTab, editingMotel, editingCommercial, fetchReviews, reviews.length]);
+
+  const handleDeleteReview = (reviewId: string) => {
+    setConfirmAction({
+      title: 'Eliminar reseña',
+      message: '¿Eliminar esta reseña? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/reviews/${reviewId}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error('Failed');
+          setReviews((prev) => prev.filter((review) => review.id !== reviewId));
+          setMotel((prev) => prev ? { ...prev, ratingCount: Math.max(0, (prev.ratingCount ?? 1) - 1) } : prev);
+        } catch (error) {
+          console.error('Error deleting review:', error);
+          toast.error('Error al eliminar la reseña');
+        } finally {
+          setConfirmAction(null);
+        }
+      },
+    });
   };
 
   const handleReorderRooms = async (orderedRooms: RoomType[]) => {
@@ -1225,7 +1012,7 @@ export default function MotelDetailPage() {
       // Restaurar inmediatamente el orden anterior si el guardado falla.
       setRoomOrderIds(previousOrderIds);
       setMotel((prev) => prev ? { ...prev, rooms: previousRooms } : prev);
-      alert('No se pudo guardar el nuevo orden de las habitaciones. Intentá nuevamente.');
+      toast.error('No se pudo guardar el nuevo orden de las habitaciones. Intentá nuevamente.');
     }
   };
 
@@ -1253,80 +1040,6 @@ export default function MotelDetailPage() {
     return data.url as string;
   };
 
-  const loadImageFromFile = (file: File) =>
-    new Promise<{ image: HTMLImageElement; revoke: () => void }>((resolve, reject) => {
-      const objectUrl = URL.createObjectURL(file);
-      const image = new Image();
-      image.onload = () => resolve({ image, revoke: () => URL.revokeObjectURL(objectUrl) });
-      image.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
-        reject(new Error('No se pudo leer la imagen.'));
-      };
-      image.src = objectUrl;
-    });
-
-  const cropImageToRatio = (
-    image: HTMLImageElement,
-    ratio: number,
-    outputType = 'image/jpeg'
-  ) =>
-    new Promise<Blob>((resolve, reject) => {
-      const sourceWidth = image.naturalWidth || image.width;
-      const sourceHeight = image.naturalHeight || image.height;
-      if (!sourceWidth || !sourceHeight) {
-        reject(new Error('La imagen no tiene dimensiones válidas.'));
-        return;
-      }
-
-      const sourceRatio = sourceWidth / sourceHeight;
-      let cropWidth = sourceWidth;
-      let cropHeight = sourceHeight;
-      let cropX = 0;
-      let cropY = 0;
-
-      if (sourceRatio > ratio) {
-        cropWidth = Math.round(sourceHeight * ratio);
-        cropX = Math.round((sourceWidth - cropWidth) / 2);
-      } else if (sourceRatio < ratio) {
-        cropHeight = Math.round(sourceWidth / ratio);
-        cropY = Math.round((sourceHeight - cropHeight) / 2);
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = cropWidth;
-      canvas.height = cropHeight;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('No se pudo crear el canvas.'));
-        return;
-      }
-
-      ctx.drawImage(image, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            reject(new Error('No se pudo procesar la imagen.'));
-            return;
-          }
-          resolve(blob);
-        },
-        outputType,
-        0.9
-      );
-    });
-
-  const createCroppedFile = async (file: File, ratio: number, suffix: string) => {
-    const { image, revoke } = await loadImageFromFile(file);
-    try {
-      const blob = await cropImageToRatio(image, ratio);
-      const baseName = file.name.replace(/\.[^.]+$/, '');
-      const fileName = `${baseName}-${suffix}.jpg`;
-      return new File([blob], fileName, { type: blob.type || 'image/jpeg' });
-    } finally {
-      revoke();
-    }
-  };
-
   const handleFeaturedFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -1334,8 +1047,8 @@ export default function MotelDetailPage() {
     setUploadingFeatured(true);
     try {
       const [webFile, appFile] = await Promise.all([
-        createCroppedFile(file, 16 / 9, 'web'),
-        createCroppedFile(file, 4 / 5, 'app'),
+        createCroppedImageFile(file, 16 / 9, 'web'),
+        createCroppedImageFile(file, 4 / 5, 'app'),
       ]);
       const [webUrl, appUrl] = await Promise.all([
         uploadFileToS3(webFile),
@@ -1351,7 +1064,7 @@ export default function MotelDetailPage() {
       setTimeout(() => setSaveStatus('idle'), 2500);
     } catch (error) {
       console.error('Error uploading featured photo:', error);
-      alert('No se pudo subir la imagen. Intenta nuevamente.');
+      toast.error('No se pudo subir la imagen. Intenta nuevamente.');
     } finally {
       setUploadingFeatured(false);
       event.target.value = '';
@@ -1370,7 +1083,7 @@ export default function MotelDetailPage() {
     try {
       const targetRatio = variant === 'web' ? 16 / 9 : 4 / 5;
       const suffix = variant === 'web' ? 'web' : 'app';
-      const croppedFile = await createCroppedFile(file, targetRatio, suffix);
+      const croppedFile = await createCroppedImageFile(file, targetRatio, suffix);
       const url = await uploadFileToS3(croppedFile);
       setMotelForm((prev) => ({
         ...prev,
@@ -1382,7 +1095,7 @@ export default function MotelDetailPage() {
       setTimeout(() => setSaveStatus('idle'), 2500);
     } catch (error) {
       console.error('Error uploading featured photo variant:', error);
-      alert('No se pudo subir la imagen. Intenta nuevamente.');
+      toast.error('No se pudo subir la imagen. Intenta nuevamente.');
     } finally {
       setUploading(false);
       event.target.value = '';
@@ -1402,7 +1115,7 @@ export default function MotelDetailPage() {
       await handleAddRoomPhoto(roomId, url);
     } catch (error) {
       console.error('Error uploading room photo:', error);
-      alert('No se pudo subir la imagen. Intenta nuevamente.');
+      toast.error('No se pudo subir la imagen. Intenta nuevamente.');
     } finally {
       setUploadingRoomId(null);
       event.target.value = '';
@@ -1422,62 +1135,15 @@ export default function MotelDetailPage() {
   }
 
   // Constantes seguras para evitar errores de undefined
-  const roomOrderIndex = new Map(roomOrderIds.map((roomId, index) => [roomId, index]));
-  const rooms = [...(motel.rooms ?? [])].sort((a, b) => {
-    const visualOrderA = roomOrderIndex.get(a.id);
-    const visualOrderB = roomOrderIndex.get(b.id);
-    if (visualOrderA !== undefined && visualOrderB !== undefined) {
-      return visualOrderA - visualOrderB;
-    }
-    if (visualOrderA !== undefined) return -1;
-    if (visualOrderB !== undefined) return 1;
-    return (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name);
-  });
+  const rooms = sortByExplicitOrder(motel.rooms ?? [], roomOrderIds);
   const menuCategories = motel.menuCategories ?? [];
   const activePromosCount = promos.filter((promo) => promo.isActive).length;
 
-  // Constantes seguras para valores numéricos
-  const safeRatingAvg = typeof motel.ratingAvg === 'number' ? motel.ratingAvg : 0;
-  const safeRatingCount = typeof motel.ratingCount === 'number' ? motel.ratingCount : 0;
   const featuredPhotoWeb = normalizeLocalUrl(motel.featuredPhotoWeb || motel.featuredPhoto || null);
   const featuredPhotoApp = normalizeLocalUrl(motel.featuredPhotoApp || motel.featuredPhoto || null);
 
-  // Función helper para formatear precios de forma segura
-  const formatPrice = (price: number | null | undefined): string => {
-    const numPrice = typeof price === 'number' ? price : 0;
-    return numPrice.toLocaleString();
-  };
-
-  const normalizePlan = (plan: string | null | undefined) => (plan || 'BASIC').toUpperCase();
-
-  const getPlanLabel = (plan: string | null | undefined) => {
-    const normalized = normalizePlan(plan);
-    if (normalized === 'GOLD') return 'Gold';
-    if (normalized === 'DIAMOND') return 'Diamond';
-    if (normalized === 'FREE') return 'Free';
-    return 'Básico';
-  };
-
-  const getPromoLimit = (plan: string | null | undefined) => {
-    const normalized = normalizePlan(plan);
-    if (normalized === 'GOLD') return 3;
-    if (normalized === 'DIAMOND') return Number.POSITIVE_INFINITY;
-    return 1;
-  };
-
-  const getRoomPhotoLimit = (plan: string | null | undefined) => {
-    const normalized = normalizePlan(plan);
-    if (normalized === 'GOLD') return 3;
-    if (normalized === 'DIAMOND') return Number.POSITIVE_INFINITY;
-    return 1;
-  };
-
-  const formatLimit = (limit: number) => (Number.isFinite(limit) ? `${limit}` : 'Ilimitadas');
-
-  const whatsappLink = motel.whatsapp ? `https://wa.me/${motel.whatsapp.replace(/\D/g, '')}` : '';
-  const phoneLink = motel.phone ? `tel:${motel.phone}` : '';
-  const promoLimit = getPromoLimit(motel.plan);
-  const roomPhotoLimit = getRoomPhotoLimit(motel.plan);
+  const promoLimit = getPlanPromoLimit(motel.plan);
+  const roomPhotoLimit = getPlanRoomPhotoLimit(motel.plan);
 
   return (
     <div className="space-y-6">
@@ -1487,236 +1153,26 @@ export default function MotelDetailPage() {
           Cambios guardados
         </div>
       )}
-      {/* Cabecera de la página */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <span
-                className={`px-3 py-1.5 text-xs font-semibold rounded-full ${
-                  motel.status === 'PENDING'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : motel.status === 'APPROVED'
-                    ? 'bg-emerald-100 text-emerald-700'
-                    : 'bg-rose-100 text-rose-700'
-                }`}
-              >
-                {motel.status === 'PENDING' ? 'Pendiente' : motel.status === 'APPROVED' ? 'Aprobado' : 'Rechazado'}
-              </span>
-              <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full ${
-                  motel.isActive
-                    ? 'bg-purple-100 text-purple-700'
-                    : 'bg-slate-100 text-slate-600'
-                }`}
-              >
-                <span>{motel.isActive ? '✅' : '⏸'}</span>
-                {motel.isActive ? 'Habilitado' : 'Deshabilitado'}
-              </span>
-              {motel.plan && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-900 text-white">
-                  {motel.plan}
-                </span>
-              )}
-            </div>
-            {currentUser?.role === 'SUPERADMIN' && (
-              <div className="flex flex-wrap gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Estado</label>
-                  <select
-                    value={motel.status}
-                    onChange={(e) => updateStatusFlags({ status: e.target.value as MotelStatus })}
-                    className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                  >
-                    <option value="PENDING">Pendiente</option>
-                    <option value="APPROVED">Aprobado</option>
-                    <option value="REJECTED">Rechazado</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Habilitado</label>
-                  <select
-                    value={motel.isActive ? 'true' : 'false'}
-                    onChange={(e) => updateStatusFlags({ isActive: e.target.value === 'true' })}
-                    className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                  >
-                    <option value="true">Sí</option>
-                    <option value="false">No</option>
-                  </select>
-                </div>
-              </div>
-            )}
+      <MotelAdminHeader
+        motel={motel}
+        isSuperAdmin={currentUser?.role === 'SUPERADMIN'}
+        featuredPhotoWeb={featuredPhotoWeb}
+        featuredPhotoApp={featuredPhotoApp}
+        roomCount={rooms.length}
+        promoCount={promos.length}
+        onStatusChange={updateStatusFlags}
+        onDelete={handleDeleteMotel}
+      />
 
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900 mb-2">{motel.name}</h1>
-              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                {motel.country && (
-                  <>
-                    <span>{motel.country}</span>
-                    <span className="text-slate-300">•</span>
-                  </>
-                )}
-                <span>{motel.city}</span>
-                <span className="text-slate-300">•</span>
-                <span>{motel.neighborhood}</span>
-                {motel.address && (
-                  <>
-                    <span className="text-slate-300">•</span>
-                    <span>{motel.address}</span>
-                  </>
-                )}
-              </div>
-              {motel.description && (
-                <p className="mt-3 text-sm text-slate-600 leading-relaxed">{motel.description}</p>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {motel.mapUrl && (
-                <a
-                  href={motel.mapUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-purple-200 hover:text-purple-700 transition-colors"
-                >
-                  <LucideIcons.MapPin className="w-3.5 h-3.5" />
-                  Ver mapa
-                </a>
-              )}
-              {whatsappLink && (
-                <a
-                  href={whatsappLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
-                >
-                  <LucideIcons.MessageCircle className="w-3.5 h-3.5" />
-                  WhatsApp
-                </a>
-              )}
-              {phoneLink && (
-                <a
-                  href={phoneLink}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-purple-200 hover:text-purple-700 transition-colors"
-                >
-                  <LucideIcons.Phone className="w-3.5 h-3.5" />
-                  Llamar
-                </a>
-              )}
-              {currentUser?.role === 'SUPERADMIN' && (
-                <button
-                  type="button"
-                  onClick={handleDeleteMotel}
-                  className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:border-red-300 hover:bg-red-100 transition-colors"
-                >
-                  <LucideIcons.Trash2 className="w-3.5 h-3.5" />
-                  Eliminar
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-            {featuredPhotoWeb || featuredPhotoApp ? (
-              <img
-                src={featuredPhotoWeb || featuredPhotoApp || ''}
-                alt={motel.name}
-                className="h-56 w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-56 items-center justify-center bg-gradient-to-br from-slate-100 via-white to-slate-200 text-slate-400">
-                <LucideIcons.Image className="h-10 w-10" />
-              </div>
-            )}
-            {(featuredPhotoWeb || featuredPhotoApp) && (
-              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-900/60 to-transparent" />
-            )}
-          </div>
-        </div>
-
-        <div className="grid sm:grid-cols-3 gap-3 mt-6">
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Calificación</p>
-            <p className="mt-1 text-lg font-semibold text-slate-900">
-              {safeRatingAvg.toFixed(1)} <span className="text-sm font-medium text-slate-500">({safeRatingCount})</span>
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Habitaciones</p>
-            <p className="mt-1 text-lg font-semibold text-slate-900">{rooms.length}</p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Promos activas</p>
-            <p className="mt-1 text-lg font-semibold text-slate-900">{promos.length}</p>
-          </div>
-        </div>
-
-        <div className="mt-4 pt-4 border-t border-slate-200">
-          <p className="text-xs text-slate-500">
-            Creado el {motel.createdAt ? new Date(motel.createdAt).toLocaleDateString('es-AR') : '—'} · Última actualización {motel.updatedAt ? new Date(motel.updatedAt).toLocaleDateString('es-AR') : 'reciente'}
-          </p>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-slate-200">
-        <button
-          onClick={() => setActiveTab('details')}
-          className={`px-5 py-3 font-medium text-sm transition-colors ${
-            activeTab === 'details'
-              ? 'border-b-2 border-purple-600 text-purple-700 -mb-[2px]'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Detalles
-        </button>
-        <button
-          onClick={() => setActiveTab('rooms')}
-          className={`px-5 py-3 font-medium text-sm transition-colors ${
-            activeTab === 'rooms'
-              ? 'border-b-2 border-purple-600 text-purple-700 -mb-[2px]'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Habitaciones <span className="ml-1 opacity-70">({rooms.length})</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('promos')}
-          className={`px-5 py-3 font-medium text-sm transition-colors ${
-            activeTab === 'promos'
-              ? 'border-b-2 border-purple-600 text-purple-700 -mb-[2px]'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Promos <span className="ml-1 opacity-70">({promos.length})</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('menu')}
-          className={`px-5 py-3 font-medium text-sm transition-colors ${
-            activeTab === 'menu'
-              ? 'border-b-2 border-purple-600 text-purple-700 -mb-[2px]'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Menú <span className="ml-1 opacity-70">({menuCategories.length})</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('reviews')}
-          className={`px-5 py-3 font-medium text-sm transition-colors ${
-            activeTab === 'reviews'
-              ? 'border-b-2 border-purple-600 text-purple-700 -mb-[2px]'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Reseñas <span className="ml-1 opacity-70">({motel.ratingCount ?? 0})</span>
-        </button>
-        <Link
-          href={`/admin/motels/${id}/analytics`}
-          className="px-5 py-3 font-medium text-sm text-slate-500 hover:text-slate-700 transition-colors"
-        >
-          Analytics
-        </Link>
-      </div>
+      <MotelAdminTabs
+        activeTab={activeTab}
+        motelId={id}
+        roomCount={rooms.length}
+        promoCount={promos.length}
+        menuCategoryCount={menuCategories.length}
+        reviewCount={motel.ratingCount ?? 0}
+        onChange={setActiveTab}
+      />
 
       {activeTab === 'promos' && (
         <div className="space-y-6">
@@ -1746,207 +1202,21 @@ export default function MotelDetailPage() {
           </div>
 
           {showPromoForm && (
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  {editingPromoId ? 'Editar Promo' : 'Nueva Promo'}
-                </h3>
-                <button
-                  onClick={() => {
-                    setShowPromoForm(false);
-                    setEditingPromoId(null);
-                    setPromoForm(createInitialPromoForm());
-                  }}
-                  className="text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <DirtyBanner visible={promoFormDirty} />
-              <form onSubmit={handleSavePromo} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Título *</label>
-                  <input
-                    type="text"
-                    value={promoForm.title}
-                    onChange={(e) => setPromoForm({ ...promoForm, title: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    placeholder="Ej: 2x1 en habitaciones los fines de semana"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Descripción</label>
-                  <textarea
-                    value={promoForm.description}
-                    onChange={(e) => setPromoForm({ ...promoForm, description: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    rows={3}
-                    placeholder="Detalles de la promoción (opcional)"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">URL de Imagen</label>
-                  <input
-                    type="text"
-                    value={promoForm.imageUrl}
-                    onChange={(e) => setPromoForm({ ...promoForm, imageUrl: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    placeholder="https://ejemplo.com/promo.jpg"
-                  />
-                  <div className="flex flex-wrap items-center gap-3 mt-3">
-                    <label
-                      className={`inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg cursor-pointer font-medium hover:bg-slate-200 transition ${
-                        uploadingPromo ? 'opacity-70 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handlePromoFileChange}
-                        disabled={uploadingPromo}
-                      />
-                      {uploadingPromo ? (
-                        <>
-                          <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l3 3" />
-                          </svg>
-                          Subiendo...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4-4 4 4m-4-4v9" />
-                          </svg>
-                          Subir desde archivo
-                        </>
-                      )}
-                    </label>
-                    <p className="text-xs text-slate-500">Formatos sugeridos: JPG o PNG.</p>
-                  </div>
-                  {promoForm.imageUrl && (
-                    <div className="mt-3">
-                      <img
-                        src={promoForm.imageUrl}
-                        alt="Preview"
-                        className="w-full max-w-md h-48 object-cover rounded-lg border border-slate-200"
-                        onError={(e) => {
-                          e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f1f5f9" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-                {currentUser?.role === 'SUPERADMIN' && (
-                  <div className="border-t border-slate-200 pt-4">
-                    <label className="inline-flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={promoForm.isGlobal}
-                        onChange={(e) => setPromoForm({ ...promoForm, isGlobal: e.target.checked })}
-                        className="rounded text-purple-600 focus:ring-purple-600"
-                      />
-                      <span className="text-sm text-slate-700">
-                        <span className="font-medium">Mostrar en Home</span>
-                        <span className="text-xs text-slate-500 block">Esta promo aparecerá en la sección de promociones del Home de la app</span>
-                      </span>
-                    </label>
-                  </div>
-                )}
-
-                {/* PromoCode section */}
-                <div className="rounded-xl border-2 border-dashed border-purple-200 bg-purple-50/40 p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                      </svg>
-                      <span className="text-sm font-semibold text-slate-800">Código Promocional</span>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={promoForm.hasPromoCode}
-                        onChange={(e) => setPromoForm({ ...promoForm, hasPromoCode: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-10 h-6 bg-slate-200 peer-focus:ring-2 peer-focus:ring-purple-400 rounded-full peer peer-checked:bg-purple-600 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-4" />
-                      <span className="ml-2 text-sm font-medium text-slate-700">
-                        {promoForm.hasPromoCode ? 'Activado' : 'Desactivado'}
-                      </span>
-                    </label>
-                  </div>
-                  {promoForm.hasPromoCode && (
-                    <div className="space-y-3 pt-2 border-t border-purple-100">
-                      <p className="text-xs text-purple-700 bg-purple-100 rounded-lg px-3 py-2">
-                        Los usuarios podrán reclamar un código desde la app y presentarlo en el motel.
-                      </p>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">¿Cada cuánto puede reclamar un usuario?</label>
-                        <select
-                          value={promoForm.codeRepeatRule}
-                          onChange={(e) => setPromoForm({ ...promoForm, codeRepeatRule: e.target.value })}
-                          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white"
-                        >
-                          <option value="NEVER">Una sola vez por persona</option>
-                          <option value="DAILY">Una vez por día</option>
-                          <option value="WEEKLY">Una vez por semana</option>
-                          <option value="MONTHLY">Una vez por mes</option>
-                        </select>
-                      </div>
-                      <div className="flex gap-3">
-                        <div className="flex-1">
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Límite total de códigos</label>
-                          <input
-                            type="number"
-                            min={1}
-                            value={promoForm.codeLimit}
-                            onChange={(e) => setPromoForm({ ...promoForm, codeLimit: e.target.value })}
-                            placeholder="Sin tope"
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Período del límite</label>
-                          <select
-                            value={promoForm.codeLimitPeriod}
-                            onChange={(e) => setPromoForm({ ...promoForm, codeLimitPeriod: e.target.value })}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white"
-                          >
-                            <option value="UNLIMITED">Sin tope</option>
-                            <option value="WEEKLY">Por semana</option>
-                            <option value="MONTHLY">Por mes</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowPromoForm(false);
-                      setEditingPromoId(null);
-                      setPromoForm(createInitialPromoForm());
-                    }}
-                    className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors shadow-sm shadow-purple-200"
-                  >
-                    {editingPromoId ? 'Guardar Cambios' : 'Crear Promo'}
-                  </button>
-                </div>
-              </form>
-            </div>
+            <PromoEditorForm
+              editing={Boolean(editingPromoId)}
+              dirty={promoFormDirty}
+              uploading={uploadingPromo}
+              canPublishGlobally={currentUser?.role === 'SUPERADMIN'}
+              form={promoForm}
+              onChange={setPromoForm}
+              onFileChange={handlePromoFileChange}
+              onCancel={() => {
+                setShowPromoForm(false);
+                setEditingPromoId(null);
+                setPromoForm(createInitialPromoForm());
+              }}
+              onSubmit={handleSavePromo}
+            />
           )}
 
           <div className="grid md:grid-cols-2 gap-4">
@@ -1960,202 +1230,24 @@ export default function MotelDetailPage() {
               </div>
             ) : (
               promos.map((promo) => (
-                <div key={promo.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:border-purple-200 transition-colors">
-                  {promo.imageUrl && (
-                    <img
-                      src={promo.imageUrl}
-                      alt={promo.title}
-                      className="w-full h-48 object-cover rounded-t-xl"
-                      onError={(e) => {
-                        e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f1f5f9" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
-                      }}
-                    />
-                  )}
-                  <div className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-lg font-semibold text-slate-900 flex-1">{promo.title}</h3>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        {promo.hasPromoCode && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full font-semibold">
-                            Código
-                          </span>
-                        )}
-                        {currentUser?.role === 'SUPERADMIN' && promo.isGlobal && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-semibold">
-                            🏠 Home
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {promo.description && (
-                      <p className="text-sm text-slate-600 mb-3">{promo.description}</p>
-                    )}
-                    <div className="flex items-center gap-2 pt-3 border-t border-slate-200">
-                      <button
-                        onClick={() => handleEditPromo(promo)}
-                        className="inline-flex items-center rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
-                      >
-                        Editar
-                      </button>
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setOpenPromoMenuId(openPromoMenuId === promo.id ? null : promo.id)}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 transition-colors cursor-pointer"
-                        >
-                          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
-                          </svg>
-                        </button>
-                        {openPromoMenuId === promo.id && (
-                          <>
-                            <div className="fixed inset-0 z-10" onClick={() => setOpenPromoMenuId(null)} />
-                            <div className="absolute right-0 mt-2 w-32 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
-                              <button
-                                onClick={() => { handleDeletePromo(promo.id); setOpenPromoMenuId(null); }}
-                                className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50 rounded-lg"
-                              >
-                                Eliminar
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
+                <PromoCard key={promo.id} promo={promo} superAdmin={currentUser?.role === 'SUPERADMIN'} menuOpen={openPromoMenuId === promo.id} onEdit={handleEditPromo} onDelete={handleDeletePromo} onMenuChange={setOpenPromoMenuId}>
 
-                    {/* PromoCode validator + history */}
                     {promo.hasPromoCode && (
-                      <div className="mt-4 border-t border-slate-100 pt-4 space-y-3">
-                        <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Validar Código</p>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            maxLength={6}
-                            value={redeemInput[promo.id] || ''}
-                            onChange={(e) => setRedeemInput((prev) => ({ ...prev, [promo.id]: e.target.value.toUpperCase() }))}
-                            placeholder="XXXXXX"
-                            className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono uppercase focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                          />
-                          <button
-                            onClick={() => handleVerifyCode(promo.id)}
-                            disabled={redeemLoading[promo.id] || (redeemInput[promo.id] || '').length !== 6}
-                            className="px-4 py-2 bg-slate-700 text-white text-sm rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors"
-                          >
-                            {redeemLoading[promo.id] ? '...' : 'Verificar'}
-                          </button>
-                        </div>
-
-                        {/* Redeem result */}
-                        {redeemResult[promo.id] && (() => {
-                          const result = redeemResult[promo.id]!;
-                          if (!result.valid) {
-                            const messages: Record<string, string> = {
-                              INVALID_CODE: 'Código no encontrado',
-                              WRONG_PROMO: 'Este código no corresponde a esta promo',
-                              ALREADY_USED: `Ya fue utilizado${result.redeemedAt ? ` el ${new Date(result.redeemedAt).toLocaleDateString('es-PY')}` : ''}`,
-                              PROMO_INACTIVE: 'Esta promo no está activa',
-                            };
-                            return (
-                              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
-                                {messages[result.reason] || 'Código inválido'}
-                              </div>
-                            );
-                          }
-                          if (result.confirmed) {
-                            return (
-                              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700 font-medium">
-                                ✓ Código marcado como utilizado
-                              </div>
-                            );
-                          }
-                          return (
-                            <div className="bg-white border border-green-300 rounded-lg p-3 space-y-2">
-                              {result.promoImageUrl && (
-                                <img src={result.promoImageUrl} alt={result.promoTitle} className="w-full h-24 object-cover rounded" />
-                              )}
-                              <p className="text-sm font-semibold text-slate-900">{result.promoTitle}</p>
-                              {result.promoDescription && <p className="text-xs text-slate-600">{result.promoDescription}</p>}
-                              <button
-                                onClick={() => {
-                                  setConfirmAction({
-                                    title: 'Confirmar uso del código',
-                                    message: 'Esta acción es irreversible. ¿Confirmar que el código fue utilizado?',
-                                    confirmText: 'Confirmar uso',
-                                    cancelText: 'Cancelar',
-                                    danger: true,
-                                    onConfirm: () => {
-                                      setConfirmAction(null);
-                                      handleConfirmRedeem(promo.id);
-                                    },
-                                  });
-                                }}
-                                disabled={redeemLoading[promo.id]}
-                                className="w-full py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors font-medium"
-                              >
-                                Confirmar uso (irreversible)
-                              </button>
-                            </div>
-                          );
-                        })()}
-
-                        {/* History toggle */}
-                        <button
-                          onClick={() => {
-                            const isOpen = expandedCodes[promo.id];
-                            setExpandedCodes((prev) => ({ ...prev, [promo.id]: !isOpen }));
-                            if (!isOpen) fetchPromoCodes(promo.id);
-                          }}
-                          className="text-xs text-purple-600 hover:underline"
-                        >
-                          {expandedCodes[promo.id] ? 'Ocultar historial' : 'Ver historial de códigos'}
-                          {promoCodesSummary[promo.id] && ` (${promoCodesSummary[promo.id].total} total)`}
-                        </button>
-
-                        {expandedCodes[promo.id] && (
-                          <div className="space-y-2">
-                            {promoCodesSummary[promo.id] && (
-                              <div className="flex gap-3 text-xs text-slate-500">
-                                <span>Total: <strong>{promoCodesSummary[promo.id].total}</strong></span>
-                                <span>Pendientes: <strong>{promoCodesSummary[promo.id].pending}</strong></span>
-                                <span>Usados: <strong>{promoCodesSummary[promo.id].used}</strong></span>
-                              </div>
-                            )}
-                            {(promoCodesMap[promo.id] || []).length === 0 ? (
-                              <p className="text-xs text-slate-400 italic">Sin códigos generados aún</p>
-                            ) : (
-                              <div className="overflow-x-auto">
-                                <table className="w-full text-xs">
-                                  <thead>
-                                    <tr className="text-left text-slate-500 border-b border-slate-100">
-                                      <th className="pb-1 pr-2">Código</th>
-                                      <th className="pb-1 pr-2">Estado</th>
-                                      <th className="pb-1 pr-2">Generado</th>
-                                      <th className="pb-1 pr-2">Usado el</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {(promoCodesMap[promo.id] || []).map((c) => (
-                                      <tr key={c.id} className="border-b border-slate-50">
-                                        <td className="py-1 pr-2 font-mono font-bold">{c.code}</td>
-                                        <td className="py-1 pr-2">
-                                          <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${c.status === 'USED' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                                            {c.status === 'USED' ? 'Usado' : 'Pendiente'}
-                                          </span>
-                                        </td>
-                                        <td className="py-1 pr-2 text-slate-500">{new Date(c.createdAt).toLocaleDateString('es-PY')}</td>
-                                        <td className="py-1 pr-2 text-slate-500">{c.redeemedAt ? new Date(c.redeemedAt).toLocaleDateString('es-PY') : '-'}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                      <PromoCodePanel
+                        promoId={promo.id}
+                        input={redeemInput[promo.id] || ''}
+                        loading={Boolean(redeemLoading[promo.id])}
+                        result={redeemResult[promo.id] || null}
+                        expanded={Boolean(expandedCodes[promo.id])}
+                        codes={promoCodesMap[promo.id] || []}
+                        summary={promoCodesSummary[promo.id]}
+                        onInputChange={(value) => setRedeemInput((prev) => ({ ...prev, [promo.id]: value }))}
+                        onVerify={() => handleVerifyCode(promo.id)}
+                        onConfirm={() => setConfirmAction({ title: 'Confirmar uso del código', message: 'Esta acción es irreversible. ¿Confirmar que el código fue utilizado?', confirmText: 'Confirmar uso', cancelText: 'Cancelar', danger: true, onConfirm: () => { setConfirmAction(null); handleConfirmRedeem(promo.id); } })}
+                        onToggleHistory={(expanded) => { setExpandedCodes((prev) => ({ ...prev, [promo.id]: expanded })); if (expanded) fetchPromoCodes(promo.id); }}
+                      />
                     )}
-                  </div>
-                </div>
+                </PromoCard>
               ))
             )}
           </div>
@@ -2166,80 +1258,7 @@ export default function MotelDetailPage() {
         <div className="space-y-6">
           {!editingMotel ? (
             <>
-              {/* Card 1: Datos Generales */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Datos generales</h3>
-                  <span className="text-xs text-slate-500">ID: {motel.id}</span>
-                </div>
-                <dl className="grid md:grid-cols-2 gap-4">
-                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                    <dt className="text-xs font-medium text-slate-500 uppercase">Nombre</dt>
-                    <dd className="mt-1 text-sm font-semibold text-slate-900">{motel.name}</dd>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                    <dt className="text-xs font-medium text-slate-500 uppercase">Slug</dt>
-                    <dd className="mt-1 font-mono text-sm text-slate-700">{motel.slug}</dd>
-                  </div>
-                  <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                    <dt className="text-xs font-medium text-slate-500 uppercase">Descripción</dt>
-                    <dd className="mt-1 text-sm text-slate-900">{motel.description || '-'}</dd>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                    <dt className="text-xs font-medium text-slate-500 uppercase">Teléfono</dt>
-                    <dd className="mt-1 text-sm text-slate-900">{motel.phone || '-'}</dd>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                    <dt className="text-xs font-medium text-slate-500 uppercase">WhatsApp</dt>
-                    <dd className="mt-1 text-sm text-slate-900">{motel.whatsapp || '-'}</dd>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                    <dt className="text-xs font-medium text-slate-500 uppercase">Calificación</dt>
-                    <dd className="mt-1 text-sm text-slate-900">
-                      {safeRatingAvg.toFixed(1)} ⭐ {safeRatingCount === 0 ? '(Sin reseñas aún)' : `(${safeRatingCount} ${safeRatingCount === 1 ? 'reseña' : 'reseñas'})`}
-                    </dd>
-                  </div>
-                  <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                    <dt className="text-xs font-medium text-slate-500 uppercase">Foto principal</dt>
-                    {featuredPhotoWeb || featuredPhotoApp ? (
-                      <div className="mt-3 grid gap-4 md:grid-cols-2">
-                        <div>
-                          <p className="text-xs font-medium text-slate-500 uppercase">Web (16:9)</p>
-                          {featuredPhotoWeb ? (
-                            <div className="mt-2">
-                              <img
-                                src={featuredPhotoWeb}
-                                alt={`${motel.name} - Web`}
-                                className="w-full aspect-[16/9] object-cover rounded-xl border border-slate-200 shadow-sm"
-                              />
-                              <p className="mt-2 text-xs text-slate-500 truncate">{featuredPhotoWeb}</p>
-                            </div>
-                          ) : (
-                            <p className="mt-2 text-sm text-slate-400">Sin foto web</p>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-slate-500 uppercase">App (4:5)</p>
-                          {featuredPhotoApp ? (
-                            <div className="mt-2">
-                              <img
-                                src={featuredPhotoApp}
-                                alt={`${motel.name} - App`}
-                                className="w-full aspect-[4/5] object-cover rounded-xl border border-slate-200 shadow-sm"
-                              />
-                              <p className="mt-2 text-xs text-slate-500 truncate">{featuredPhotoApp}</p>
-                            </div>
-                          ) : (
-                            <p className="mt-2 text-sm text-slate-400">Sin foto app</p>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="mt-1 text-sm text-slate-400">Sin foto principal</p>
-                    )}
-                  </div>
-                </dl>
-              </div>
+              <GeneralInfoSummary motel={motel} featuredPhotoWeb={featuredPhotoWeb} featuredPhotoApp={featuredPhotoApp} />
 
               {/* Card 2: Ubicación */}
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
@@ -2285,112 +1304,7 @@ export default function MotelDetailPage() {
                 </dl>
               </div>
 
-              {/* Card: Galería de fotos del motel */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
-                  Galería de fotos
-                </h3>
-                {(motel.photos ?? []).length > 0 && (
-                  <p className="text-xs text-slate-400 mb-4">Usá las flechas o arrastrá para reordenar</p>
-                )}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-                  {[...(motel.photos ?? [])].sort((a, b) => a.order - b.order).map((photo, photoIndex, sortedPhotos) => (
-                    <div
-                      key={photo.id}
-                      draggable
-                      onDragStart={() => setDraggedMotelPhotoId(photo.id)}
-                      onDragOver={(e) => { e.preventDefault(); setDragOverMotelPhotoId(photo.id); }}
-                      onDragEnd={() => { setDraggedMotelPhotoId(null); setDragOverMotelPhotoId(null); }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (!draggedMotelPhotoId || draggedMotelPhotoId === photo.id) return;
-                        const photos = [...(motel.photos ?? [])].sort((a, b) => a.order - b.order);
-                        const fromIdx = photos.findIndex((p) => p.id === draggedMotelPhotoId);
-                        const toIdx = photos.findIndex((p) => p.id === photo.id);
-                        const [item] = photos.splice(fromIdx, 1);
-                        photos.splice(toIdx, 0, item);
-                        handleReorderMotelPhotos(photos);
-                      }}
-                      className={`relative group rounded-xl overflow-hidden border-2 cursor-grab transition-all ${
-                        dragOverMotelPhotoId === photo.id && draggedMotelPhotoId !== photo.id
-                          ? 'border-purple-500 scale-105'
-                          : 'border-transparent'
-                      } ${draggedMotelPhotoId === photo.id ? 'opacity-40' : ''}`}
-                    >
-                      <img src={photo.url} alt="" className="w-full aspect-square object-cover" draggable={false} />
-                      <div className="absolute top-2 right-2 flex items-center gap-1">
-                        <button
-                          type="button"
-                          disabled={photoIndex === 0}
-                          onClick={() => {
-                            if (photoIndex === 0) return;
-                            const reordered = [...sortedPhotos];
-                            [reordered[photoIndex - 1], reordered[photoIndex]] = [reordered[photoIndex], reordered[photoIndex - 1]];
-                            handleReorderMotelPhotos(reordered);
-                          }}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-40"
-                          title="Mover foto hacia la izquierda"
-                          aria-label="Mover foto hacia la izquierda"
-                        >
-                          ←
-                        </button>
-                        <button
-                          type="button"
-                          disabled={photoIndex === sortedPhotos.length - 1}
-                          onClick={() => {
-                            if (photoIndex === sortedPhotos.length - 1) return;
-                            const reordered = [...sortedPhotos];
-                            [reordered[photoIndex], reordered[photoIndex + 1]] = [reordered[photoIndex + 1], reordered[photoIndex]];
-                            handleReorderMotelPhotos(reordered);
-                          }}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-40"
-                          title="Mover foto hacia la derecha"
-                          aria-label="Mover foto hacia la derecha"
-                        >
-                          →
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteMotelPhoto(photo.id)}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-red-500 text-white shadow hover:bg-red-600"
-                          title="Eliminar foto"
-                          aria-label="Eliminar foto"
-                        >
-                          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <label className={`flex items-center gap-2 cursor-pointer w-fit px-4 py-2.5 rounded-xl border border-dashed border-slate-300 text-sm text-slate-600 hover:border-purple-400 hover:text-purple-600 transition-colors ${uploadingMotelPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  {uploadingMotelPhoto ? 'Subiendo...' : 'Agregar foto'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    disabled={uploadingMotelPhoto}
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      setUploadingMotelPhoto(true);
-                      try {
-                        const url = await uploadFileToS3(file);
-                        await handleAddMotelPhoto(url);
-                      } catch {
-                        alert('Error al subir la foto');
-                      } finally {
-                        setUploadingMotelPhoto(false);
-                        e.target.value = '';
-                      }
-                    }}
-                  />
-                </label>
-              </div>
+              <MotelPhotoGalleryCard motelName={motel.name} photos={motel.photos ?? []} onReorder={handleReorderMotelPhotos} onDelete={handleDeleteMotelPhoto} onUpload={async (file) => handleAddMotelPhoto(await uploadFileToS3(file))} />
 
               <div className="flex justify-start">
                 <button
@@ -2429,150 +1343,15 @@ export default function MotelDetailPage() {
                       rows={3}
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Foto principal (auto)</label>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <label
-                        className={`inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg cursor-pointer font-medium hover:bg-slate-200 transition ${
-                          uploadingFeatured ? 'opacity-70 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleFeaturedFileChange}
-                          disabled={uploadingFeatured}
-                        />
-                        {uploadingFeatured ? (
-                          <>
-                            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l3 3" />
-                            </svg>
-                            Subiendo...
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4-4 4 4m-4-4v9" />
-                            </svg>
-                            Subir y generar 16:9 + 4:5
-                          </>
-                        )}
-                      </label>
-                      <p className="text-xs text-slate-500">Usamos recorte central para web (16:9) y app (4:5).</p>
-                    </div>
-
-                    <div className="mt-4 grid gap-4 md:grid-cols-2">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">URL Foto Web (16:9)</label>
-                        <input
-                          type="text"
-                          value={motelForm.featuredPhotoWeb}
-                          onChange={(e) => setMotelForm({ ...motelForm, featuredPhotoWeb: e.target.value })}
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                          placeholder="https://ejemplo.com/foto-web.jpg"
-                        />
-                        <div className="flex flex-wrap items-center gap-3 mt-3">
-                          <label
-                            className={`inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg cursor-pointer font-medium hover:bg-slate-200 transition ${
-                              uploadingFeaturedWeb ? 'opacity-70 cursor-not-allowed' : ''
-                            }`}
-                          >
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(event) => handleFeaturedVariantFileChange('web', event)}
-                              disabled={uploadingFeaturedWeb}
-                            />
-                            {uploadingFeaturedWeb ? (
-                              <>
-                                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l3 3" />
-                                </svg>
-                                Subiendo...
-                              </>
-                            ) : (
-                              <>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4-4 4 4m-4-4v9" />
-                                </svg>
-                                Reemplazar Web
-                              </>
-                            )}
-                          </label>
-                          <p className="text-xs text-slate-500">Recomendado 16:9.</p>
-                        </div>
-                        {motelForm.featuredPhotoWeb && (
-                          <div className="mt-3">
-                            <img
-                              src={normalizeLocalUrl(motelForm.featuredPhotoWeb) || ''}
-                              alt="Preview web"
-                              className="w-full aspect-[16/9] object-cover rounded-lg border border-slate-200"
-                              onError={(e) => {
-                                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f1f5f9" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">URL Foto App (4:5)</label>
-                        <input
-                          type="text"
-                          value={motelForm.featuredPhotoApp}
-                          onChange={(e) => setMotelForm({ ...motelForm, featuredPhotoApp: e.target.value })}
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                          placeholder="https://ejemplo.com/foto-app.jpg"
-                        />
-                        <div className="flex flex-wrap items-center gap-3 mt-3">
-                          <label
-                            className={`inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg cursor-pointer font-medium hover:bg-slate-200 transition ${
-                              uploadingFeaturedApp ? 'opacity-70 cursor-not-allowed' : ''
-                            }`}
-                          >
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(event) => handleFeaturedVariantFileChange('app', event)}
-                              disabled={uploadingFeaturedApp}
-                            />
-                            {uploadingFeaturedApp ? (
-                              <>
-                                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l3 3" />
-                                </svg>
-                                Subiendo...
-                              </>
-                            ) : (
-                              <>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4-4 4 4m-4-4v9" />
-                                </svg>
-                                Reemplazar App
-                              </>
-                            )}
-                          </label>
-                          <p className="text-xs text-slate-500">Recomendado 4:5.</p>
-                        </div>
-                        {motelForm.featuredPhotoApp && (
-                          <div className="mt-3">
-                            <img
-                              src={normalizeLocalUrl(motelForm.featuredPhotoApp) || ''}
-                              alt="Preview app"
-                              className="w-full aspect-[4/5] object-cover rounded-lg border border-slate-200"
-                              onError={(e) => {
-                                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f1f5f9" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <FeaturedPhotoFields
+                    form={motelForm}
+                    uploadingAuto={uploadingFeatured}
+                    uploadingWeb={uploadingFeaturedWeb}
+                    uploadingApp={uploadingFeaturedApp}
+                    onChange={setMotelForm}
+                    onAutoUpload={handleFeaturedFileChange}
+                    onVariantUpload={handleFeaturedVariantFileChange}
+                  />
                   <div className="flex items-center">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -2609,67 +1388,7 @@ export default function MotelDetailPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
-                  Ubicación
-                </h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">País</label>
-                    <select
-                      value={motelForm.country}
-                      onChange={(e) => setMotelForm({ ...motelForm, country: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white"
-                    >
-                      {countryOptions.map((country) => (
-                        <option key={country} value={country}>
-                          {country}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Ciudad</label>
-                    <input
-                      type="text"
-                      value={motelForm.city}
-                      onChange={(e) => setMotelForm({ ...motelForm, city: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Barrio</label>
-                    <input
-                      type="text"
-                      value={motelForm.neighborhood}
-                      onChange={(e) => setMotelForm({ ...motelForm, neighborhood: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Dirección</label>
-                    <input
-                      type="text"
-                      value={motelForm.address}
-                      onChange={(e) => setMotelForm({ ...motelForm, address: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Link o iframe de Google Maps (ubicación exacta)</label>
-                    <input
-                      type="text"
-                      value={motelForm.mapUrl}
-                      onChange={(e) => setMotelForm({ ...motelForm, mapUrl: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                      placeholder="https://maps.google.com/..."
-                    />
-                    <p className="mt-2 text-xs text-slate-500">
-                      Al guardar, el sistema obtiene de aquí las coordenadas usadas por la web y las apps.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <MotelLocationFields form={motelForm} onChange={setMotelForm} />
 
               <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                 <button
@@ -2694,190 +1413,12 @@ export default function MotelDetailPage() {
       {activeTab === 'commercial' && (
         <div className="space-y-6">
           {!editingCommercial ? (
-            <>
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
-                  Contactos administrativos
-                </h3>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Contacto administrativo</p>
-                    <p className="text-slate-900 font-medium">{motel.adminContactName || '-'}</p>
-                    <p className="text-sm text-slate-600 mt-1">
-                      Teléfono: {motel.adminContactPhone || '-'}
-                    </p>
-                    <p className="text-sm text-slate-600">
-                      Correo: {motel.adminContactEmail || '-'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Contacto operativo</p>
-                    <p className="text-slate-900 font-medium">{motel.operationsContactName || '-'}</p>
-                    <p className="text-sm text-slate-600 mt-1">
-                      Teléfono: {motel.operationsContactPhone || '-'}
-                    </p>
-                    <p className="text-sm text-slate-600">
-                      Correo: {motel.operationsContactEmail || '-'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
-                  Facturación y estado
-                </h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Plan</label>
-                    <p className="mt-1 text-slate-900">{motel.plan || 'BASIC'}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Próxima facturación</label>
-                    <p className="mt-1 text-slate-900">
-                      {motel.nextBillingAt ? new Date(motel.nextBillingAt).toLocaleDateString('es-AR') : '-'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Estado</label>
-                    <p className="mt-1 font-semibold">
-                      {motel.status === 'PENDING'
-                        ? 'Pendiente'
-                        : motel.status === 'APPROVED'
-                        ? 'Aprobado'
-                        : 'Rechazado'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Habilitado</label>
-                    <p className="mt-1 font-semibold">{motel.isActive ? 'Sí' : 'No'}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase">Destacado</label>
-                    <div className="mt-1">
-                      {motel.isFeatured ? (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-semibold">
-                          ⭐ Destacado en app
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 text-sm">No destacado</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex">
-                <button
-                  onClick={() => setEditingCommercial(true)}
-                  className="inline-flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-lg hover:bg-purple-700 font-medium transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  Editar configuración
-                </button>
-              </div>
-            </>
+            <CommercialSummary motel={motel} onEdit={() => setEditingCommercial(true)} />
           ) : (
             <form onSubmit={handleUpdateMotel} className="space-y-6">
               <DirtyBanner visible={motelFormDirty} />
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
-                  Contactos
-                </h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-700">Contacto administrativo</label>
-                    <input
-                      type="text"
-                      value={motelForm.adminContactName}
-                      onChange={(e) => setMotelForm({ ...motelForm, adminContactName: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                      placeholder="Nombre"
-                    />
-                    <input
-                      type="text"
-                      value={motelForm.adminContactPhone}
-                      onChange={(e) => setMotelForm({ ...motelForm, adminContactPhone: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                      placeholder="Teléfono"
-                    />
-                    <input
-                      type="email"
-                      value={motelForm.adminContactEmail}
-                      onChange={(e) => setMotelForm({ ...motelForm, adminContactEmail: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                      placeholder="Correo"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-700">Contacto operativo</label>
-                    <input
-                      type="text"
-                      value={motelForm.operationsContactName}
-                      onChange={(e) => setMotelForm({ ...motelForm, operationsContactName: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                      placeholder="Nombre"
-                    />
-                    <input
-                      type="text"
-                      value={motelForm.operationsContactPhone}
-                      onChange={(e) => setMotelForm({ ...motelForm, operationsContactPhone: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                      placeholder="Teléfono"
-                    />
-                    <input
-                      type="email"
-                      value={motelForm.operationsContactEmail}
-                      onChange={(e) => setMotelForm({ ...motelForm, operationsContactEmail: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                      placeholder="Correo"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
-                  Plan y estado
-                </h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Próxima facturación</label>
-                    <input
-                      type="datetime-local"
-                      value={motelForm.nextBillingAt}
-                      onChange={(e) => setMotelForm({ ...motelForm, nextBillingAt: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    />
-                  </div>
-                  <div className="flex items-center">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={motelForm.isFeatured}
-                        onChange={(e) => setMotelForm({ ...motelForm, isFeatured: e.target.checked })}
-                        className="rounded text-purple-600 focus:ring-purple-600"
-                      />
-                      <span className="text-sm font-medium text-slate-700">Destacado</span>
-                    </label>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Habilitado</label>
-                    <select
-                      value={motelForm.isActive.toString()}
-                      onChange={(e) =>
-                        setMotelForm({ ...motelForm, isActive: e.target.value === 'true' })
-                      }
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    >
-                      <option value="true">Habilitado</option>
-                      <option value="false">Deshabilitado</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
+              <CommercialContactFields form={motelForm} onChange={setMotelForm} />
+              <CommercialPlanFields form={motelForm} onChange={setMotelForm} />
 
               <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                 <button
@@ -2920,676 +1461,35 @@ export default function MotelDetailPage() {
 
           {showRoomForm && (
             <div ref={roomFormRef} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  {editingRoomId ? 'Editar Habitación' : 'Nueva Habitación'}
-                </h3>
-                <button
-                  onClick={() => {
-                    setShowRoomForm(false);
-                    setEditingRoomId(null);
-                    setRoomForm({
-                      name: '',
-                      description: '',
-                      price1h: '',
-                      price1_5h: '',
-                      price2h: '',
-                      price3h: '',
-                      price12h: '',
-                      price24h: '',
-                      priceNight: '',
-                      maxPersons: '',
-                      hasJacuzzi: false,
-                      isFeatured: false,
-                      amenityIds: []
-                    });
-                    setWeekdayRates(emptyDayRate());
-                    setWeekendRates(emptyDayRate());
-                  }}
-                  className="text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <DirtyBanner visible={roomFormDirty} />
-              <form onSubmit={handleSaveRoom} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Nombre *</label>
-                  <input
-                    type="text"
-                    value={roomForm.name}
-                    onChange={(e) => setRoomForm({ ...roomForm, name: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    placeholder="Ej: Suite Romántica"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Descripción</label>
-                  <textarea
-                    value={roomForm.description}
-                    onChange={(e) => setRoomForm({ ...roomForm, description: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    rows={2}
-                    placeholder="Descripción opcional de la habitación"
-                  />
-                </div>
-
-                {/* Precios por tiempo */}
-                <div className="border-t border-slate-200 pt-4">
-                  <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Precios por Tiempo
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1.5">1h</label>
-                      <input
-                        type="number"
-                        value={roomForm.price1h}
-                        onChange={(e) => setRoomForm({ ...roomForm, price1h: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                        placeholder="Gs."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1.5">1.5h</label>
-                      <input
-                        type="number"
-                        value={roomForm.price1_5h}
-                        onChange={(e) => setRoomForm({ ...roomForm, price1_5h: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                        placeholder="Gs."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1.5">2h</label>
-                      <input
-                        type="number"
-                        value={roomForm.price2h}
-                        onChange={(e) => setRoomForm({ ...roomForm, price2h: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                        placeholder="Gs."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1.5">3h</label>
-                      <input
-                        type="number"
-                        value={roomForm.price3h}
-                        onChange={(e) => setRoomForm({ ...roomForm, price3h: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                        placeholder="Gs."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1.5">12h</label>
-                      <input
-                        type="number"
-                        value={roomForm.price12h}
-                        onChange={(e) => setRoomForm({ ...roomForm, price12h: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                        placeholder="Gs."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1.5">24h</label>
-                      <input
-                        type="number"
-                        value={roomForm.price24h}
-                        onChange={(e) => setRoomForm({ ...roomForm, price24h: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                        placeholder="Gs."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1.5">Dormida</label>
-                      <input
-                        type="number"
-                        value={roomForm.priceNight}
-                        onChange={(e) => setRoomForm({ ...roomForm, priceNight: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                        placeholder="Gs."
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Precios por Día de Semana */}
-                <div className="border-t border-slate-200 pt-4">
-                  <h4 className="text-sm font-semibold text-slate-900 mb-1 flex items-center gap-2">
-                    <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Precios por Día (opcional)
-                  </h4>
-                  <p className="text-xs text-slate-500 mb-3">Dejá vacío para usar los precios base. Si se llenan, sobreescriben los precios base según el día.</p>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {/* Semana (Dom–Jue) */}
-                    <div className="border border-blue-100 rounded-lg p-3 bg-blue-50/40">
-                      <p className="text-xs font-semibold text-blue-700 mb-2 uppercase tracking-wide">Dom – Jue (Semana)</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(['price1h','price1_5h','price2h','price3h','price12h','price24h','priceNight'] as const).map((field) => (
-                          <div key={field}>
-                            <label className="block text-xs text-slate-500 mb-1">
-                              {field === 'price1h' ? '1h' : field === 'price1_5h' ? '1.5h' : field === 'price2h' ? '2h' : field === 'price3h' ? '3h' : field === 'price12h' ? '12h' : field === 'price24h' ? '24h' : 'Dormida'}
-                            </label>
-                            <input
-                              type="number"
-                              value={weekdayRates[field]}
-                              onChange={(e) => setWeekdayRates({ ...weekdayRates, [field]: e.target.value })}
-                              className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                              placeholder="Gs."
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    {/* Fin de Semana (Vie–Sáb) */}
-                    <div className="border border-orange-100 rounded-lg p-3 bg-orange-50/40">
-                      <p className="text-xs font-semibold text-orange-700 mb-2 uppercase tracking-wide">Vie – Sáb (Fin de semana)</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(['price1h','price1_5h','price2h','price3h','price12h','price24h','priceNight'] as const).map((field) => (
-                          <div key={field}>
-                            <label className="block text-xs text-slate-500 mb-1">
-                              {field === 'price1h' ? '1h' : field === 'price1_5h' ? '1.5h' : field === 'price2h' ? '2h' : field === 'price3h' ? '3h' : field === 'price12h' ? '12h' : field === 'price24h' ? '24h' : 'Dormida'}
-                            </label>
-                            <input
-                              type="number"
-                              value={weekendRates[field]}
-                              onChange={(e) => setWeekendRates({ ...weekendRates, [field]: e.target.value })}
-                              className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-transparent"
-                              placeholder="Gs."
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Características */}
-                <div className="border-t border-slate-200 pt-4">
-                  <h4 className="text-sm font-semibold text-slate-900 mb-3">Características</h4>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Capacidad Máxima
-                      </label>
-                      <input
-                        type="number"
-                        value={roomForm.maxPersons}
-                        onChange={(e) => setRoomForm({ ...roomForm, maxPersons: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                        placeholder="Número de personas"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-4 mt-4">
-                    <label className="inline-flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={roomForm.hasJacuzzi}
-                        onChange={(e) => setRoomForm({ ...roomForm, hasJacuzzi: e.target.checked })}
-                        className="rounded text-purple-600 focus:ring-purple-600"
-                      />
-                      <span className="text-sm text-slate-700">🛁 Jacuzzi</span>
-                    </label>
-                    <label className="inline-flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={roomForm.isFeatured}
-                        onChange={(e) => setRoomForm({ ...roomForm, isFeatured: e.target.checked })}
-                        className="rounded text-purple-600 focus:ring-purple-600"
-                      />
-                      <span className="text-sm text-slate-700">⭐ Destacada</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Amenities */}
-                <div className="border-t border-slate-200 pt-4">
-                  <label className="block text-sm font-semibold text-slate-900 mb-3">Amenities</label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {amenities.map((amenity) => (
-                      <label key={amenity.id} className="inline-flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={roomForm.amenityIds.includes(amenity.id)}
-                          onChange={() => toggleAmenity(amenity.id)}
-                          className="rounded text-purple-600 focus:ring-purple-600"
-                        />
-                        <span className="text-sm text-slate-700">{amenity.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowRoomForm(false);
-                      setEditingRoomId(null);
-                      setRoomForm({
-                        name: '',
-                        description: '',
-                        price1h: '',
-                        price1_5h: '',
-                        price2h: '',
-                        price3h: '',
-                        price12h: '',
-                        price24h: '',
-                        priceNight: '',
-                        maxPersons: '',
-                        hasJacuzzi: false,
-                        isFeatured: false,
-                        amenityIds: []
-                      });
-                      setWeekdayRates(emptyDayRate());
-                      setWeekendRates(emptyDayRate());
-                    }}
-                    className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors shadow-sm shadow-purple-200"
-                  >
-                    {editingRoomId ? 'Actualizar Habitación' : 'Crear Habitación'}
-                  </button>
-                </div>
-              </form>
+              <RoomEditorForm
+                editing={Boolean(editingRoomId)}
+                dirty={roomFormDirty}
+                form={roomForm}
+                amenities={amenities}
+                weekdayRates={weekdayRates}
+                weekendRates={weekendRates}
+                onFormChange={setRoomForm}
+                onWeekdayChange={setWeekdayRates}
+                onWeekendChange={setWeekendRates}
+                onCancel={closeRoomForm}
+                onSubmit={handleSaveRoom}
+              />
             </div>
           )}
 
-          <div className="space-y-4">
-            {rooms.length === 0 ? (
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-4xl text-slate-300">🛏️</span>
-                  <p className="text-slate-500 font-medium">No hay habitaciones registradas</p>
-                  <p className="text-sm text-slate-400">Creá la primera habitación usando el botón de arriba</p>
-                </div>
-              </div>
-            ) : (
-              rooms.map((room, roomIndex) => (
-                <div
-                  key={room.id}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.effectAllowed = 'move';
-                    setDraggedRoomId(room.id);
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    if (room.id !== draggedRoomId) setDragOverRoomId(room.id);
-                  }}
-                  onDragLeave={() => setDragOverRoomId(null)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (!draggedRoomId || draggedRoomId === room.id) return;
-                    const sorted = [...rooms].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-                    const fromIdx = sorted.findIndex((r) => r.id === draggedRoomId);
-                    const toIdx = sorted.findIndex((r) => r.id === room.id);
-                    const reordered = [...sorted];
-                    const [moved] = reordered.splice(fromIdx, 1);
-                    reordered.splice(toIdx, 0, moved);
-                    handleReorderRooms(reordered);
-                    setDraggedRoomId(null);
-                    setDragOverRoomId(null);
-                  }}
-                  onDragEnd={() => {
-                    setDraggedRoomId(null);
-                    setDragOverRoomId(null);
-                  }}
-                  className={[
-                    'bg-white rounded-xl border shadow-sm p-6 transition-all cursor-grab active:cursor-grabbing',
-                    draggedRoomId === room.id ? 'opacity-50 scale-[0.98]' : '',
-                    dragOverRoomId === room.id && draggedRoomId !== room.id ? 'ring-2 ring-purple-400 border-purple-300' : 'border-slate-200 hover:border-purple-200',
-                  ].join(' ')}
-                >
-                  {/* Parte superior: Nombre + Badges */}
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4 pb-4 border-b border-slate-200">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <svg className="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                        </svg>
-                        <h3 className="text-lg font-semibold text-slate-900">{room.name}</h3>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {room.isFeatured && (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-semibold">
-                            ⭐ Destacada
-                          </span>
-                        )}
-                        {room.hasJacuzzi && (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full font-semibold">
-                            🛁 Jacuzzi
-                          </span>
-                        )}
-                        {room.maxPersons && (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-slate-100 text-slate-700 rounded-full font-semibold">
-                            👥 Hasta {room.maxPersons} {room.maxPersons === 1 ? 'persona' : 'personas'}
-                          </span>
-                        )}
-                      </div>
-                      {room.description && (
-                        <p className="text-sm text-slate-600 mt-3">{room.description}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="inline-flex overflow-hidden rounded-lg border border-slate-200 bg-white" aria-label={`Ordenar ${room.name}`}>
-                        <button
-                          type="button"
-                          disabled={roomIndex === 0}
-                          onClick={() => {
-                            if (roomIndex === 0) return;
-                            const reordered = [...rooms];
-                            [reordered[roomIndex - 1], reordered[roomIndex]] = [reordered[roomIndex], reordered[roomIndex - 1]];
-                            handleReorderRooms(reordered);
-                          }}
-                          className="inline-flex h-8 w-8 items-center justify-center border-r border-slate-200 text-slate-600 hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-30"
-                          title="Mover habitación hacia arriba"
-                          aria-label="Mover habitación hacia arriba"
-                        >
-                          ↑
-                        </button>
-                        <button
-                          type="button"
-                          disabled={roomIndex === rooms.length - 1}
-                          onClick={() => {
-                            if (roomIndex === rooms.length - 1) return;
-                            const reordered = [...rooms];
-                            [reordered[roomIndex], reordered[roomIndex + 1]] = [reordered[roomIndex + 1], reordered[roomIndex]];
-                            handleReorderRooms(reordered);
-                          }}
-                          className="inline-flex h-8 w-8 items-center justify-center text-slate-600 hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-30"
-                          title="Mover habitación hacia abajo"
-                          aria-label="Mover habitación hacia abajo"
-                        >
-                          ↓
-                        </button>
-                      </div>
-                      <button
-                        onClick={() => handleEditRoom(room)}
-                        className="inline-flex items-center rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
-                      >
-                        Editar
-                      </button>
-                      <details className="relative">
-                        <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
-                          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
-                          </svg>
-                        </summary>
-                        <div className="absolute right-0 mt-2 w-32 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
-                          <button
-                            onClick={() => handleDeleteRoom(room.id)}
-                            className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </details>
-                    </div>
-                  </div>
-
-                  {/* Parte media: Precios */}
-                  <div className="mb-4">
-                    <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Precios</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {room.price1h && (
-                        <div className="bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-lg">
-                          <div className="text-xs text-slate-500 mb-0.5">1 h</div>
-                          <div className="font-semibold text-slate-900">Gs. {formatPrice(room.price1h)}</div>
-                        </div>
-                      )}
-                      {room.price1_5h && (
-                        <div className="bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-lg">
-                          <div className="text-xs text-slate-500 mb-0.5">1.5 h</div>
-                          <div className="font-semibold text-slate-900">Gs. {formatPrice(room.price1_5h)}</div>
-                        </div>
-                      )}
-                      {room.price2h && (
-                        <div className="bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-lg">
-                          <div className="text-xs text-slate-500 mb-0.5">2 h</div>
-                          <div className="font-semibold text-slate-900">Gs. {formatPrice(room.price2h)}</div>
-                        </div>
-                      )}
-                      {room.price3h && (
-                        <div className="bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-lg">
-                          <div className="text-xs text-slate-500 mb-0.5">3 h</div>
-                          <div className="font-semibold text-slate-900">Gs. {formatPrice(room.price3h)}</div>
-                        </div>
-                      )}
-                      {room.price12h && (
-                        <div className="bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-lg">
-                          <div className="text-xs text-slate-500 mb-0.5">12 h</div>
-                          <div className="font-semibold text-slate-900">Gs. {formatPrice(room.price12h)}</div>
-                        </div>
-                      )}
-                      {room.price24h && (
-                        <div className="bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-lg">
-                          <div className="text-xs text-slate-500 mb-0.5">24 h</div>
-                          <div className="font-semibold text-slate-900">Gs. {formatPrice(room.price24h)}</div>
-                        </div>
-                      )}
-                      {room.priceNight && (
-                        <div className="bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-lg">
-                          <div className="text-xs text-slate-500 mb-0.5">Dormida</div>
-                          <div className="font-semibold text-slate-900">Gs. {formatPrice(room.priceNight)}</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Parte inferior: Amenities */}
-                  {(room.amenities?.length ?? 0) > 0 && (
-                    <div className="pt-4 border-t border-slate-200">
-                      <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Amenities</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {(room.amenities ?? []).map((a) => {
-                          const iconMap = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>;
-                          const IconComponent = a.amenity.icon ? iconMap[a.amenity.icon] : undefined;
-                          return (
-                            <span
-                              key={a.amenity.id}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-slate-100 text-slate-700 rounded-full font-medium"
-                            >
-                              {IconComponent && <IconComponent size={14} />}
-                              {a.amenity.name}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Fotos de la habitación */}
-                  <div className="pt-4 border-t border-slate-200">
-                    <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Fotos</h4>
-                    <p className="text-xs text-slate-500 mb-3">
-                      Límite por plan ({getPlanLabel(motel.plan)}): Básico 1 · Gold 3 · Diamond ilimitadas.
-                      <span className="ml-2">
-                        Esta habitación tiene {(room.roomPhotos?.length ?? 0)}/{formatLimit(roomPhotoLimit)}.
-                      </span>
-                    </p>
-                    <div className="space-y-3">
-                      {(room.roomPhotos?.length ?? 0) > 0 && (
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
-                          {(room.roomPhotos ?? [])
-                            .sort((a, b) => a.order - b.order)
-                            .map((photo, index) => (
-                            <div
-                              key={photo.id}
-                              draggable
-                              onDragStart={(e) => {
-                                setDraggedPhotoId(photo.id);
-                                e.dataTransfer.effectAllowed = 'move';
-                              }}
-                              onDragOver={(e) => {
-                                e.preventDefault();
-                                e.dataTransfer.dropEffect = 'move';
-                                setDragOverPhotoId(photo.id);
-                              }}
-                              onDragLeave={() => {
-                                setDragOverPhotoId(null);
-                              }}
-                              onDrop={(e) => {
-                                e.preventDefault();
-                                if (!draggedPhotoId || draggedPhotoId === photo.id) return;
-
-                                const photos = [...(room.roomPhotos ?? [])].sort((a, b) => a.order - b.order);
-                                const draggedIndex = photos.findIndex(p => p.id === draggedPhotoId);
-                                const targetIndex = photos.findIndex(p => p.id === photo.id);
-
-                                const [draggedItem] = photos.splice(draggedIndex, 1);
-                                photos.splice(targetIndex, 0, draggedItem);
-
-                                handleReorderRoomPhotos(room.id, photos);
-                                setDraggedPhotoId(null);
-                                setDragOverPhotoId(null);
-                              }}
-                              onDragEnd={() => {
-                                setDraggedPhotoId(null);
-                                setDragOverPhotoId(null);
-                              }}
-                              className={`relative group cursor-move transition-all ${
-                                draggedPhotoId === photo.id ? 'opacity-50 scale-95' : ''
-                              } ${
-                                dragOverPhotoId === photo.id && draggedPhotoId !== photo.id
-                                  ? 'ring-2 ring-purple-600 scale-105'
-                                  : ''
-                              }`}
-                            >
-                              <img
-                                src={normalizeLocalUrl(photo.url) || ''}
-                                alt="Room photo"
-                                className="w-full h-32 object-cover rounded-lg border border-slate-200 pointer-events-none"
-                                onError={(e) => {
-                                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="150"%3E%3Crect fill="%23f1f5f9" width="200" height="150"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8" font-size="12"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
-                                }}
-                              />
-                              <div className="absolute top-2 left-2 bg-slate-900 bg-opacity-70 text-white px-2 py-1 rounded text-xs font-semibold">
-                                {index + 1}
-                              </div>
-                              <div className="absolute top-2 right-2 flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  disabled={index === 0}
-                                  onClick={() => {
-                                    if (index === 0) return;
-                                    const photos = [...(room.roomPhotos ?? [])].sort((a, b) => a.order - b.order);
-                                    [photos[index - 1], photos[index]] = [photos[index], photos[index - 1]];
-                                    handleReorderRoomPhotos(room.id, photos);
-                                  }}
-                                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-40"
-                                  title="Mover foto hacia la izquierda"
-                                  aria-label="Mover foto hacia la izquierda"
-                                >
-                                  ←
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={index === (room.roomPhotos?.length ?? 0) - 1}
-                                  onClick={() => {
-                                    if (index === (room.roomPhotos?.length ?? 0) - 1) return;
-                                    const photos = [...(room.roomPhotos ?? [])].sort((a, b) => a.order - b.order);
-                                    [photos[index], photos[index + 1]] = [photos[index + 1], photos[index]];
-                                    handleReorderRoomPhotos(room.id, photos);
-                                  }}
-                                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-40"
-                                  title="Mover foto hacia la derecha"
-                                  aria-label="Mover foto hacia la derecha"
-                                >
-                                  →
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteRoomPhoto(photo.id)}
-                                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white shadow transition-colors hover:bg-red-700"
-                                  title="Eliminar foto"
-                                  aria-label="Eliminar foto"
-                                >
-                                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                              </div>
-                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div className="bg-slate-900 bg-opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-medium">
-                                  Arrastrá para reordenar
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex flex-wrap gap-2">
-                        <input
-                          type="text"
-                          id={`photo-url-${room.id}`}
-                          placeholder="URL de la foto"
-                          className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                        />
-                        <button
-                          onClick={() => {
-                            const input = document.getElementById(`photo-url-${room.id}`) as HTMLInputElement;
-                            if (input?.value) {
-                              handleAddRoomPhoto(room.id, input.value);
-                              input.value = '';
-                            }
-                          }}
-                          className="inline-flex items-center gap-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm font-medium transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                          Agregar Foto
-                        </button>
-                        <label
-                          className={`inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg cursor-pointer text-sm font-medium hover:bg-slate-200 transition ${
-                            uploadingRoomId === room.id ? 'opacity-70 cursor-not-allowed' : ''
-                          }`}
-                        >
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(event) => handleRoomPhotoFileChange(room.id, event)}
-                            disabled={uploadingRoomId === room.id}
-                          />
-                          {uploadingRoomId === room.id ? (
-                            <>
-                              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l3 3" />
-                              </svg>
-                              Subiendo...
-                            </>
-                          ) : (
-                            <>
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4-4 4 4m-4-4v9" />
-                              </svg>
-                              Subir archivo
-                            </>
-                          )}
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          <RoomList
+            rooms={rooms}
+            planLabel={getPlanLabel(motel.plan)}
+            photoLimit={formatLimit(roomPhotoLimit)}
+            uploadingRoomId={uploadingRoomId}
+            onReorder={handleReorderRooms}
+            onEdit={handleEditRoom}
+            onDelete={handleDeleteRoom}
+            onAddPhoto={handleAddRoomPhoto}
+            onUploadPhoto={handleRoomPhotoFileChange}
+            onReorderPhotos={handleReorderRoomPhotos}
+            onDeletePhoto={handleDeleteRoomPhoto}
+          />
         </div>
       )}
 
@@ -3610,140 +1510,27 @@ export default function MotelDetailPage() {
             </div>
           )}
 
-          {/* Formulario de nueva categoría */}
-          {showCategoryForm && (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-slate-900">Nueva Categoría</h3>
-                <button
-                  onClick={() => {
-                    setShowCategoryForm(false);
-                    setCategoryForm({ title: '', sortOrder: 0 });
-                  }}
-                  className="text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <DirtyBanner visible={categoryFormDirty} />
-              <form onSubmit={handleSaveCategory} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Título *
-                  </label>
-                  <input
-                    type="text"
-                    value={categoryForm.title}
-                    onChange={(e) => setCategoryForm({ ...categoryForm, title: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    placeholder="Ej: Bebidas, Comidas, etc."
-                    required
-                  />
-                </div>
-                <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCategoryForm(false);
-                      setCategoryForm({ title: '', sortOrder: 0 });
-                    }}
-                    className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors shadow-sm shadow-purple-200"
-                  >
-                    Crear Categoría
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Formulario de nuevo item */}
-          {showItemForm && (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-slate-900">Nuevo Item</h3>
-                <button
-                  onClick={() => {
-                    setShowItemForm(false);
-                    setItemCategoryId(null);
-                    setItemForm({ name: '', price: '', description: '' });
-                  }}
-                  className="text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <DirtyBanner visible={itemFormDirty} />
-              <form onSubmit={handleSaveItem} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Nombre *
-                  </label>
-                  <input
-                    type="text"
-                    value={itemForm.name}
-                    onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    placeholder="Ej: Coca-Cola, Hamburguesa"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Precio *
-                  </label>
-                  <input
-                    type="number"
-                    value={itemForm.price}
-                    onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    placeholder="Gs."
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Descripción <span className="text-slate-400">(opcional)</span>
-                  </label>
-                  <textarea
-                    value={itemForm.description}
-                    onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                    rows={3}
-                    placeholder="Descripción del item"
-                  />
-                </div>
-                <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowItemForm(false);
-                      setItemCategoryId(null);
-                      setItemForm({ name: '', price: '', description: '' });
-                    }}
-                    className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors shadow-sm shadow-purple-200"
-                  >
-                    Crear Item
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
+          <MenuForms
+            showCategoryForm={showCategoryForm}
+            showItemForm={showItemForm}
+            categoryForm={categoryForm}
+            itemForm={itemForm}
+            categoryFormDirty={categoryFormDirty}
+            itemFormDirty={itemFormDirty}
+            onCategoryChange={setCategoryForm}
+            onItemChange={setItemForm}
+            onSaveCategory={handleSaveCategory}
+            onSaveItem={handleSaveItem}
+            onCancelCategory={() => {
+              setShowCategoryForm(false);
+              setCategoryForm({ title: '', sortOrder: 0 });
+            }}
+            onCancelItem={() => {
+              setShowItemForm(false);
+              setItemCategoryId(null);
+              setItemForm({ name: '', price: '', description: '' });
+            }}
+          />
 
           {/* Lista de categorías */}
           <div className="space-y-4">
@@ -3757,146 +1544,30 @@ export default function MotelDetailPage() {
               </div>
             ) : (
               menuCategories.map((category) => (
-                <div key={category.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4 pb-4 border-b border-slate-200">
-                    <h3 className="text-lg font-semibold text-slate-900">{category.title}</h3>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          setItemCategoryId(category.id);
-                          setShowItemForm(true);
-                        }}
-                        className="inline-flex items-center gap-1 rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        Agregar Item
-                      </button>
-                      <details className="relative">
-                        <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
-                          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
-                          </svg>
-                        </summary>
-                        <div className="absolute right-0 mt-2 w-40 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
-                          <button
-                            onClick={() => handleDeleteCategory(category.id)}
-                            className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
-                          >
-                            Eliminar Categoría
-                          </button>
-                        </div>
-                      </details>
-                    </div>
-                  </div>
-                  {(category.items?.length ?? 0) === 0 ? (
-                    <p className="text-slate-400 text-sm italic">No hay items en esta categoría</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {(category.items ?? []).map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 py-3 border-b border-slate-100 last:border-b-0"
-                        >
-                          <div className="flex-1">
-                            <p className="font-medium text-slate-900">{item.name}</p>
-                            {item.description && (
-                              <p className="text-sm text-slate-600 mt-1">{item.description}</p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold text-slate-900">Gs. {formatPrice(item.price)}</p>
-                            <details className="relative">
-                              <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
-                                <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                  <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
-                                </svg>
-                              </summary>
-                              <div className="absolute right-0 mt-2 w-32 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
-                                <button
-                                  onClick={() => handleDeleteItem(item.id)}
-                                  className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
-                                >
-                                  Eliminar
-                                </button>
-                              </div>
-                            </details>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <MenuCategoryCard
+                  key={category.id}
+                  category={category}
+                  onAddItem={(categoryId) => {
+                    setItemCategoryId(categoryId);
+                    setShowItemForm(true);
+                  }}
+                  onDeleteCategory={handleDeleteCategory}
+                  onDeleteItem={handleDeleteItem}
+                />
               ))
             )}
           </div>
         </div>
       )}
       {activeTab === 'reviews' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Reseñas</h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Promedio: {motel.ratingAvg?.toFixed(1) ?? '—'} ⭐ · {motel.ratingCount ?? 0} reseñas
-              </p>
-            </div>
-            <button
-              onClick={fetchReviews}
-              className="text-xs text-slate-500 hover:text-purple-600 transition-colors"
-            >
-              Actualizar
-            </button>
-          </div>
-
-          {reviewsLoading ? (
-            <div className="text-center py-12 text-slate-400">Cargando reseñas...</div>
-          ) : reviews.length === 0 ? (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
-              <span className="text-4xl text-slate-300">⭐</span>
-              <p className="mt-3 text-slate-500 font-medium">Sin reseñas todavía</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {reviews.map((review) => (
-                <div key={review.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-yellow-400 text-sm">{'★'.repeat(review.score)}{'☆'.repeat(5 - review.score)}</span>
-                        <span className="text-xs font-semibold text-slate-700">{review.score}/5</span>
-                        {review.isVerified && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">Verificada</span>
-                        )}
-                        {review.isAnonymous && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-600 font-medium">Anónima</span>
-                        )}
-                      </div>
-                      {review.comment && (
-                        <p className="text-sm text-slate-700 mt-1">{review.comment}</p>
-                      )}
-                      <p className="text-xs text-slate-400 mt-2">
-                        {review.isAnonymous ? 'Usuario anónimo' : (review.user?.name || review.user?.email || 'Usuario')}
-                        {' · '}
-                        {new Date(review.createdAt).toLocaleDateString('es-PY', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleDeleteReview(review.id)}
-                      className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                      title="Eliminar reseña"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <ReviewsPanel
+          ratingAvg={motel.ratingAvg}
+          ratingCount={motel.ratingCount}
+          reviews={reviews}
+          loading={reviewsLoading}
+          onRefresh={fetchReviews}
+          onDelete={handleDeleteReview}
+        />
       )}
 
       <ConfirmModal

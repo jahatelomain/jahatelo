@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import DirtyBanner from '@/components/admin/DirtyBanner';
+import { getErrorMessage } from '@/lib/errors';
 
 const placements = [
   { value: 'POPUP_HOME', label: 'Popup Home' },
@@ -153,8 +154,8 @@ export default function NewAdvertisementPage() {
       const url = await uploadFileToS3(file);
       setForm((prev) => ({ ...prev, imageUrl: url }));
       toast.success('Imagen subida correctamente');
-    } catch (error: any) {
-      toast.error(error.message || 'Error al subir imagen');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Error al subir imagen'));
     } finally {
       setUploadingImage(false);
     }
@@ -186,8 +187,8 @@ export default function NewAdvertisementPage() {
         largeImageUrl: prev.largeImageUrl || webUrl,
       }));
       toast.success('Imagen de popup procesada correctamente');
-    } catch (error: any) {
-      toast.error(error.message || 'Error al subir imagen');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Error al subir imagen'));
     } finally {
       setUploadingPopupImage(false);
       event.target.value = '';
@@ -219,8 +220,8 @@ export default function NewAdvertisementPage() {
         largeImageUrl: prev.largeImageUrl || url,
       }));
       toast.success('Imagen actualizada correctamente');
-    } catch (error: any) {
-      toast.error(error.message || 'Error al subir imagen');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Error al subir imagen'));
     } finally {
       setUploading(false);
       event.target.value = '';
@@ -271,8 +272,8 @@ export default function NewAdvertisementPage() {
       toast.success('Anuncio creado');
       router.push('/admin/banners');
       router.refresh();
-    } catch (error: any) {
-      toast.error(error.message || 'Error al crear anuncio');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Error al crear anuncio'));
     } finally {
       setSaving(false);
     }

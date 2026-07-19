@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { type Prisma, AnalyticsEventType } from '@prisma/client';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { AdminAnalyticsQuerySchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
     startDate.setDate(startDate.getDate() - days);
 
     // Construir filtro de eventos
-    const eventFilter: any = {
+    const eventFilter: Prisma.MotelAnalyticsWhereInput = {
       timestamp: {
         gte: startDate,
       },
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (eventType) {
-      eventFilter.eventType = eventType;
+      eventFilter.eventType = eventType as AnalyticsEventType;
     }
 
     // Obtener eventos del período

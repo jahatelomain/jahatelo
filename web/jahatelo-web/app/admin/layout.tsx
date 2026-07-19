@@ -40,8 +40,8 @@ export default function AdminLayout({
         const response = await fetch('/api/auth/me', { cache: 'no-store' });
         const data = await response.json();
         if (!mounted) return;
-        const module = getModuleFromPath(pathname);
-        if (module && data.user && !hasModuleAccess(data.user, module)) {
+        const adminModule = getModuleFromPath(pathname);
+        if (adminModule && data.user && !hasModuleAccess(data.user, adminModule)) {
           setUser(data.user);
           setLoading(false);
           router.push('/admin');
@@ -219,9 +219,9 @@ export default function AdminLayout({
   // Filtrar navegación según el rol del usuario
   const filterNavItem = (item: NavItem) => {
     if (!user?.role) return false;
-    const module = getModuleFromPath(item.href);
+    const adminModule = getModuleFromPath(item.href);
     return item.roles.includes(user.role as 'SUPERADMIN' | 'MOTEL_ADMIN') &&
-           hasModuleAccess(user, module || 'dashboard');
+           hasModuleAccess(user, adminModule || 'dashboard');
   };
 
   const filteredNavStructure: NavElement[] = navStructure

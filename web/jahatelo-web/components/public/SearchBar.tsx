@@ -4,10 +4,17 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
 
+type SearchSuggestion = {
+  type: 'motel' | 'city' | 'neighborhood' | string;
+  label: string;
+  slug?: string;
+  subtitle?: string;
+};
+
 export default function SearchBar() {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [loading, setLoading] = useState(false);
@@ -29,8 +36,8 @@ export default function SearchBar() {
         setNoResults(false);
         const res = await fetch(`/api/search/suggestions?q=${encodeURIComponent(debouncedQuery)}`);
         if (!res.ok) throw new Error('Error');
-        const data = await res.json();
-        const nextSuggestions = data.suggestions || [];
+        const data: unknown = await res.json();
+        const nextSuggestions = isSuggestionResponse(data) ? data.suggestions : [];
         setSuggestions(nextSuggestions);
         setNoResults(nextSuggestions.length === 0);
         setOpen(true);
@@ -55,7 +62,7 @@ export default function SearchBar() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const handleSelect = (item: any) => {
+  const handleSelect = (item: SearchSuggestion) => {
     setOpen(false);
     if (item.type === 'motel') {
       router.push(`/motels/${item.slug}`);
@@ -140,4 +147,9 @@ export default function SearchBar() {
       )}
     </div>
   );
+}
+
+function isSuggestionResponse(value: unknown): value is { suggestions: SearchSuggestion[] } {
+  return typeof value === 'object' && value !== null &&
+    Array.isArray((value as { suggestions?: unknown }).suggestions);
 }

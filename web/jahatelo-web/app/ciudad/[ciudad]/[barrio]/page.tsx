@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { Metadata } from 'next';
 import prisma from '@/lib/prisma';
 import MotelCard from '@/components/public/MotelCard';
@@ -132,24 +133,24 @@ export default async function NeighborhoodPage({ params }: Props) {
           <nav className="mb-8">
             <ol className="flex items-center space-x-2 text-sm text-gray-600">
               <li>
-                <a href="/" className="hover:text-purple-600 transition-colors">
+                <Link href="/" className="hover:text-purple-600 transition-colors">
                   Inicio
-                </a>
+                </Link>
               </li>
               <li>/</li>
               <li>
-                <a href="/search" className="hover:text-purple-600 transition-colors">
+                <Link href="/search" className="hover:text-purple-600 transition-colors">
                   Ciudades
-                </a>
+                </Link>
               </li>
               <li>/</li>
               <li>
-                <a
+                <Link
                   href={`/ciudad/${ciudad}`}
                   className="hover:text-purple-600 transition-colors"
                 >
                   {cityName}
-                </a>
+                </Link>
               </li>
               <li>/</li>
               <li className="text-purple-600 font-medium">{neighborhoodName}</li>

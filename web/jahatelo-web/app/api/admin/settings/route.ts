@@ -12,6 +12,7 @@ import { z } from 'zod';
  */
 export async function GET(request: NextRequest) {
   try {
+    void request;
     const cookieStore = await cookies();
     const token = cookieStore.get('auth_token')?.value;
 
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Convertir a un objeto key-value para facilitar el uso
-    const settingsMap: Record<string, any> = {};
+    const settingsMap: Record<string, { value: string | null; category: string; description: string | null }> = {};
     settings.forEach((setting) => {
       settingsMap[setting.key] = {
         value: setting.value,
@@ -122,7 +123,7 @@ export async function PATCH(request: NextRequest) {
       ],
     });
 
-    const settingsMap: Record<string, any> = {};
+    const settingsMap: Record<string, { value: string | null; category: string; description: string | null }> = {};
     settings.forEach((setting) => {
       settingsMap[setting.key] = {
         value: setting.value,

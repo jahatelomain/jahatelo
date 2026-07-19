@@ -1,7 +1,8 @@
 import MotelCard from '@/components/public/MotelCard';
 import SectionWrapper from '@/components/public/SectionWrapper';
+import type { MotelCardProps } from '@/components/public/MotelCard';
 
-export default function RecentMotels({ motels }: { motels: any[] }) {
+export default function RecentMotels({ motels }: { motels: MotelCardProps['motel'][] }) {
   if (!motels || motels.length === 0) return null;
 
   return (

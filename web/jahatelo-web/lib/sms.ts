@@ -1,4 +1,4 @@
-import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
+import { SNSClient, PublishCommand, type MessageAttributeValue } from '@aws-sdk/client-sns';
 
 type SmsSendResult = { ok: boolean; error?: string };
 
@@ -21,7 +21,7 @@ export async function sendSms(phone: string, message: string): Promise<SmsSendRe
     credentials: { accessKeyId, secretAccessKey },
   });
 
-  const messageAttributes: Record<string, any> = {
+  const messageAttributes: Record<string, MessageAttributeValue> = {
     'AWS.SNS.SMS.SMSType': { DataType: 'String', StringValue: smsType },
   };
   if (senderId) {
@@ -31,8 +31,8 @@ export async function sendSms(phone: string, message: string): Promise<SmsSendRe
   try {
     await client.send(new PublishCommand({ PhoneNumber: phone, Message: message, MessageAttributes: messageAttributes }));
     return { ok: true };
-  } catch (error: any) {
-    return { ok: false, error: error?.message || 'Error al enviar SMS' };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Error al enviar SMS' };
   }
 }
 
@@ -58,7 +58,7 @@ export async function sendSmsOtp(phone: string, code: string): Promise<SmsSendRe
     credentials: { accessKeyId, secretAccessKey },
   });
 
-  const messageAttributes: Record<string, any> = {
+  const messageAttributes: Record<string, MessageAttributeValue> = {
     'AWS.SNS.SMS.SMSType': {
       DataType: 'String',
       StringValue: smsType,
@@ -81,8 +81,8 @@ export async function sendSmsOtp(phone: string, code: string): Promise<SmsSendRe
       })
     );
     return { ok: true };
-  } catch (error: any) {
-    const errorDetail = error?.message || 'Error al enviar SMS';
+  } catch (error) {
+    const errorDetail = error instanceof Error ? error.message : 'Error al enviar SMS';
     return { ok: false, error: errorDetail };
   }
 }
