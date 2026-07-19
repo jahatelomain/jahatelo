@@ -1,11 +1,12 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { formatPrice } from '../../services/motelsApi';
 import { getAmenityIconConfig } from '../../constants/amenityIcons';
 import { COLORS } from '../../constants/theme';
 import * as Haptics from 'expo-haptics';
 import { shareRoom } from '../../utils/share';
+import RoomPhotoGallery from '../../components/motelDetail/RoomPhotoGallery';
 
 // Duraciones a mostrar en el desglose de precios
 const DURATIONS = [
@@ -49,7 +50,7 @@ function PriceRow({ prices }) {
   );
 }
 
-function RoomCard({ room, motel }) {
+function RoomCard({ room, motel, onPhotoGestureStart, onPhotoGestureEnd }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const tooltipTimer = useRef(null);
 
@@ -106,23 +107,12 @@ function RoomCard({ room, motel }) {
       )}
 
       {/* Fotos de la habitación */}
-      {room.photos && room.photos.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.photosScroll}
-          contentContainerStyle={styles.photosScrollContent}
-        >
-          {room.photos.map((photo, index) => (
-            <Image
-              key={index}
-              source={{ uri: photo }}
-              style={styles.roomPhoto}
-              resizeMode="cover"
-            />
-          ))}
-        </ScrollView>
-      )}
+      <RoomPhotoGallery
+        photos={room.photos || []}
+        roomName={room.name}
+        onHorizontalGestureStart={onPhotoGestureStart}
+        onHorizontalGestureEnd={onPhotoGestureEnd}
+      />
 
       {/* Precios */}
       {hasDiff ? (
@@ -200,7 +190,11 @@ function RoomCard({ room, motel }) {
   );
 }
 
-export default function RoomsTab({ route }) {
+export default function RoomsTab({
+  route,
+  onChildHorizontalGestureStart,
+  onChildHorizontalGestureEnd,
+}) {
   const { motel } = route.params || {};
 
   if (!motel || !motel.rooms || motel.rooms.length === 0) {
@@ -214,7 +208,13 @@ export default function RoomsTab({ route }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {motel.rooms.map((room) => (
-        <RoomCard key={room.id} room={room} motel={motel} />
+        <RoomCard
+          key={room.id}
+          room={room}
+          motel={motel}
+          onPhotoGestureStart={onChildHorizontalGestureStart}
+          onPhotoGestureEnd={onChildHorizontalGestureEnd}
+        />
       ))}
     </ScrollView>
   );
@@ -358,20 +358,6 @@ const styles = StyleSheet.create({
     color: '#555',
     fontStyle: 'italic',
     lineHeight: 18,
-  },
-  photosScroll: {
-    marginTop: 12,
-    marginBottom: 0,
-  },
-  photosScrollContent: {
-    paddingRight: 8,
-  },
-  roomPhoto: {
-    width: 200,
-    height: 150,
-    borderRadius: 8,
-    marginRight: 8,
-    backgroundColor: '#E0E0E0',
   },
   emptyContainer: {
     flex: 1,

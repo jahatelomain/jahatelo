@@ -32,7 +32,6 @@ type Motel = {
   _count?: {
     photos: number;
     rooms: number;
-    motelAmenities: number;
   };
 };
 

@@ -7,6 +7,13 @@ import * as LucideIcons from 'lucide-react';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import DirtyBanner from '@/components/admin/DirtyBanner';
 import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
+import {
+  extractLatLngFromMapUrl,
+  getResponseError,
+  normalizeMapUrl,
+  normalizeOptionalText,
+  normalizeUploadUrl,
+} from '@/components/admin/motel-detail/formUtils';
 
 type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -476,137 +483,6 @@ export default function MotelDetailPage() {
       console.error('Error fetching current user:', error);
       setCurrentUser(null);
     }
-  };
-
-  const getFieldLabel = (field: string) => {
-    const labels: Record<string, string> = {
-      name: 'Nombre',
-      description: 'Descripcion',
-      country: 'Pais',
-      city: 'Ciudad',
-      neighborhood: 'Barrio',
-      address: 'Direccion',
-      mapUrl: 'URL de mapa',
-      latitude: 'Latitud',
-      longitude: 'Longitud',
-      phone: 'Telefono',
-      whatsapp: 'WhatsApp',
-      website: 'Sitio web',
-      instagram: 'Instagram',
-      contactName: 'Contacto usuarios',
-      contactEmail: 'Correo usuarios',
-      contactPhone: 'Telefono usuarios',
-      adminContactName: 'Contacto administrativo',
-      adminContactEmail: 'Correo administrativo',
-      adminContactPhone: 'Telefono administrativo',
-      operationsContactName: 'Contacto operativo',
-      operationsContactEmail: 'Correo operativo',
-      operationsContactPhone: 'Telefono operativo',
-      featuredPhoto: 'URL foto principal',
-      featuredPhotoWeb: 'URL foto principal (Web)',
-      featuredPhotoApp: 'URL foto principal (App)',
-      nextBillingAt: 'Proxima facturacion',
-      status: 'Estado',
-      isActive: 'Habilitado',
-    };
-    return labels[field] || field;
-  };
-
-  const getResponseError = async (res: Response, fallback: string) => {
-    try {
-      const data = await res.json();
-      if (Array.isArray(data?.details) && data.details.length > 0) {
-        const messages = data.details
-          .map((detail: { field?: string; message?: string }) => {
-            const field = detail?.field ? getFieldLabel(detail.field) : 'Campo';
-            const message = detail?.message || 'Dato invalido';
-            return `${field}: ${message}`;
-          })
-          .join('\n');
-        const base = (data?.error as string) || (data?.message as string) || 'Datos invalidos';
-        return `${base}:\n${messages}`;
-      }
-      if (data?.error) return data.error as string;
-      if (data?.message) return data.message as string;
-    } catch (error) {
-      console.error('Error parsing response:', error);
-    }
-    return fallback;
-  };
-
-  const normalizeOptionalText = (value: string) => {
-    const trimmed = value.trim();
-    return trimmed === '' ? null : trimmed;
-  };
-
-  const normalizeUploadUrl = (value: string | null) => {
-    if (!value) return null;
-    const trimmed = value.trim();
-    if (trimmed === '') return null;
-    // Ya es ruta relativa — ok
-    if (trimmed.startsWith('/uploads/')) return trimmed;
-    // localhost / red local → convertir a ruta relativa para portabilidad
-    const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|192\.168\.\d+\.\d+)(:\d+)?\//.test(trimmed);
-    if (isLocal) {
-      const match = trimmed.match(/\/uploads\/.+$/);
-      if (match) return match[0];
-    }
-    // URL externa (S3, CDN, etc.) → conservar completa
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
-    return normalizeLocalUrl(trimmed);
-  };
-
-  const normalizeMapUrl = (value: string) => {
-    const trimmed = value.trim();
-    if (trimmed === '') return null;
-    if (!trimmed.toLowerCase().startsWith('<iframe')) return trimmed;
-    const match = trimmed.match(/src=["']([^"']+)["']/i);
-    return match?.[1] || trimmed;
-  };
-
-  const extractLatLngFromMapUrl = (value: string | null) => {
-    if (!value) return null;
-    const decoded = decodeURIComponent(value);
-    const patterns: Array<{ regex: RegExp; getCoords: (match: RegExpMatchArray) => [string, string] }> = [
-      {
-        regex: /!3d(-?\d+(?:\.\d+)?)!2d(-?\d+(?:\.\d+)?)/,
-        getCoords: (match) => [match[1], match[2]],
-      },
-      {
-        regex: /!2d(-?\d+(?:\.\d+)?)!3d(-?\d+(?:\.\d+)?)/,
-        getCoords: (match) => [match[2], match[1]],
-      },
-      {
-        regex: /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
-        getCoords: (match) => [match[1], match[2]],
-      },
-      {
-        regex: /[?&]q=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
-        getCoords: (match) => [match[1], match[2]],
-      },
-      {
-        regex: /[?&]query=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
-        getCoords: (match) => [match[1], match[2]],
-      },
-      {
-        regex: /[?&]ll=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
-        getCoords: (match) => [match[1], match[2]],
-      },
-    ];
-
-    for (const { regex, getCoords } of patterns) {
-      const match = decoded.match(regex);
-      if (match) {
-        const [latRaw, lngRaw] = getCoords(match);
-        const latitude = Number.parseFloat(latRaw);
-        const longitude = Number.parseFloat(lngRaw);
-        if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
-          return { latitude, longitude };
-        }
-      }
-    }
-
-    return null;
   };
 
   const buildPromoPayload = (form: ReturnType<typeof createInitialPromoForm>) => ({
@@ -1233,17 +1109,12 @@ export default function MotelDetailPage() {
     } : prev);
 
     try {
-      // Actualizar el orden de todas las fotos en batch
-      const updates = orderedPhotos.map((photo, index) =>
-        fetch(`/api/admin/room-photos/${photo.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ order: index }),
-        })
-      );
-
-      const responses = await Promise.all(updates);
-      if (responses.some((response) => !response.ok)) {
+      const response = await fetch('/api/admin/room-photos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomTypeId: roomId, photoIds: orderedPhotos.map((photo) => photo.id) }),
+      });
+      if (!response.ok) {
         throw new Error('No se pudo guardar el orden de todas las fotos');
       }
       setSaveStatus('success');
@@ -1288,16 +1159,12 @@ export default function MotelDetailPage() {
     const orderedPhotos = photos.map((photo, index) => ({ ...photo, order: index }));
     setMotel((prev) => prev ? { ...prev, photos: orderedPhotos } : prev);
     try {
-      const responses = await Promise.all(
-        orderedPhotos.map((photo, index) =>
-          fetch(`/api/admin/motel-photos/${photo.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ order: index }),
-          })
-        )
-      );
-      if (responses.some((response) => !response.ok)) {
+      const response = await fetch('/api/admin/motel-photos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motelId: motel.id, photoIds: orderedPhotos.map((photo) => photo.id) }),
+      });
+      if (!response.ok) {
         throw new Error('No se pudo guardar el orden de todas las fotos');
       }
     } catch (error) {

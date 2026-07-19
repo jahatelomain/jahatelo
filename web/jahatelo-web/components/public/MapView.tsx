@@ -55,9 +55,10 @@ export default function MapView() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchMapData() {
       try {
-        const response = await fetch('/api/mobile/motels/map');
+        const response = await fetch('/api/mobile/motels/map', { signal: controller.signal });
         const data = await response.json();
 
         if (data.success) {
@@ -66,14 +67,16 @@ export default function MapView() {
           setError(data.error || 'Error al cargar los datos');
         }
       } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         console.error('Error fetching map data:', err);
         setError('Error de conexión. Verifica tu internet.');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     fetchMapData();
+    return () => controller.abort();
   }, []);
 
   if (loading) {

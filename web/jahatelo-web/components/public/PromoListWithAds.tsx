@@ -6,20 +6,10 @@ import Link from 'next/link';
 import AdInlineCard from '@/components/public/AdInlineCard';
 import { useAdvertisements } from '@/hooks/useAdvertisements';
 import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
+import type { PublicMotelListItem } from '@/lib/domain/motels/publicListItem';
 
-const getActivePromo = (promos: any[] = []) => {
-  const now = new Date();
-  return promos.find((promo) => {
-    if (!promo?.isActive) return false;
-    if (promo.validFrom && new Date(promo.validFrom) > now) return false;
-    if (promo.validUntil && new Date(promo.validUntil) < now) return false;
-    return true;
-  });
-};
-
-const PromoCard = ({ motel }: { motel: any }) => {
-  const promo = getActivePromo(motel.promos || []);
-  const promoImageUrl = promo?.imageUrl || null;
+const PromoCard = ({ motel }: { motel: PublicMotelListItem }) => {
+  const promoImageUrl = motel.promoImageUrl;
   const [imgError, setImgError] = useState(false);
   const showImage = promoImageUrl && !imgError;
 
@@ -32,7 +22,7 @@ const PromoCard = ({ motel }: { motel: any }) => {
         {showImage ? (
           <Image
             src={promoImageUrl}
-            alt={promo?.title || motel.name}
+            alt={motel.promoTitle || motel.name}
             fill
             quality={85}
             className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -56,20 +46,20 @@ const PromoCard = ({ motel }: { motel: any }) => {
       </div>
       <div className="p-5">
         <h3 className="font-bold text-lg text-white mb-1 group-hover:text-purple-300 transition-colors">
-          {promo?.title || 'Promoción especial'}
+          {motel.promoTitle || 'Promoción especial'}
         </h3>
         <p className="text-sm text-purple-300/70 mb-2">
           {motel.name}
         </p>
-        {promo?.description && (
-          <p className="text-sm text-purple-200/50 line-clamp-2">{promo.description}</p>
+        {motel.promoDescription && (
+          <p className="text-sm text-purple-200/50 line-clamp-2">{motel.promoDescription}</p>
         )}
       </div>
     </Link>
   );
 };
 
-export default function PromoListWithAds({ motels }: { motels: any[] }) {
+export default function PromoListWithAds({ motels }: { motels: PublicMotelListItem[] }) {
   const { ads, loading } = useAdvertisements('LIST_INLINE');
   const activeAds = loading ? [] : ads;
   let adIndex = 0;

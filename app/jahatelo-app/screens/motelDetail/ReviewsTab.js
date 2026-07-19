@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,145 +12,27 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { COLORS } from '../../constants/theme';
-import { getApiRoot } from '../../services/apiBaseUrl';
-
-const API_URL = getApiRoot();
-const PAGE_SIZE = 10;
+import useReviews from '../../hooks/useReviews';
 
 export default function ReviewsTab({ route, navigation }) {
   const { motel } = route.params || {};
   const { isAuthenticated, token, user } = useAuth();
-  const [reviews, setReviews] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [userCanReview, setUserCanReview] = useState(true);
-  const [cooldownMessage, setCooldownMessage] = useState('');
-
-  useEffect(() => {
-    if (motel?.id) {
-      loadReviews(0, true);
-      checkUserCanReview();
-    }
-  }, [motel?.id, isAuthenticated]);
-
-  const loadReviews = useCallback(async (offset = 0, replace = false) => {
-    try {
-      if (offset === 0) {
-        setLoading(true);
-      } else {
-        setLoadingMore(true);
-      }
-
-      const response = await fetch(
-        `${API_URL}/api/mobile/reviews?motelId=${motel.id}&limit=${PAGE_SIZE}&offset=${offset}`
-      );
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.error('Error: respuesta no es JSON', { status: response.status, contentType });
-        return;
-      }
-
-      const data = await response.json();
-
-      if (response.ok) {
-        const incoming = data.reviews || [];
-        setReviews(prev => replace ? incoming : [...prev, ...incoming]);
-        setTotal(data.meta?.total ?? 0);
-      } else {
-        console.error('Error al cargar reseñas:', data.error || 'Error desconocido');
-      }
-    } catch (error) {
-      console.error('Error al cargar reseñas:', error);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, [motel?.id]);
-
-  const handleLoadMore = () => {
-    if (loadingMore || reviews.length >= total) return;
-    loadReviews(reviews.length, false);
-  };
-
-  const checkUserCanReview = async () => {
-    if (!isAuthenticated || !token) {
-      setUserCanReview(false);
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${API_URL}/api/mobile/reviews/can-review?motelId=${motel.id}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.error('Error: respuesta no es JSON en can-review', { status: response.status, contentType });
-        setUserCanReview(false);
-        return;
-      }
-
-      const data = await response.json();
-
-      if (response.status === 429) {
-        setUserCanReview(false);
-        setCooldownMessage(data.error || 'Debes esperar antes de dejar otra reseña');
-      } else if (response.ok) {
-        setUserCanReview(true);
-        setCooldownMessage('');
-      } else {
-        setUserCanReview(false);
-        console.error('Error al verificar si puede reseñar:', data.error);
-      }
-    } catch (error) {
-      console.error('Error al verificar si puede reseñar:', error);
-      setUserCanReview(false);
-    }
-  };
-
-  const handleDeleteReview = useCallback(async (reviewId) => {
-    Alert.alert(
-      'Eliminar reseña',
-      '¿Estás seguro de que querés eliminar tu reseña?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const response = await fetch(`${API_URL}/api/mobile/reviews?id=${reviewId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` },
-              });
-              if (response.ok) {
-                setReviews(prev => prev.filter(r => r.id !== reviewId));
-                setTotal(prev => Math.max(0, prev - 1));
-                await checkUserCanReview();
-              } else {
-                const data = await response.json();
-                Alert.alert('Error', data.error || 'No se pudo eliminar la reseña');
-              }
-            } catch {
-              Alert.alert('Error', 'Error de conexión');
-            }
-          },
-        },
-      ]
-    );
-  }, [token]);
+  const {
+    reviews,
+    total,
+    loading,
+    loadingMore,
+    submitting,
+    userCanReview,
+    cooldownMessage,
+    loadMore: handleLoadMore,
+    deleteReview: handleDeleteReview,
+    submitReview,
+  } = useReviews({ motelId: motel?.id, isAuthenticated, token });
 
   const handleSubmitReview = async () => {
     if (!isAuthenticated) {
@@ -175,49 +57,12 @@ export default function ReviewsTab({ route, navigation }) {
       return;
     }
 
-    try {
-      setSubmitting(true);
-      const response = await fetch(`${API_URL}/api/mobile/reviews`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          motelId: motel.id,
-          score: rating,
-          comment: comment.trim(),
-          isAnonymous,
-        }),
-      });
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.error('Error: respuesta no es JSON al enviar reseña', { status: response.status, contentType });
-        Alert.alert('Error', 'Hubo un problema al enviar tu reseña. Por favor intenta de nuevo.');
-        return;
-      }
-
-      const data = await response.json();
-
-      if (response.status === 429) {
-        Alert.alert('Espera un momento', data.error || 'Debes esperar antes de dejar otra reseña');
-      } else if (response.ok) {
-        Alert.alert('¡Gracias!', 'Tu reseña ha sido publicada exitosamente');
-        setShowReviewForm(false);
-        setRating(0);
-        setComment('');
-        setIsAnonymous(false);
-        await loadReviews(0, true);
-        await checkUserCanReview();
-      } else {
-        Alert.alert('Error', data.error || 'No se pudo publicar la reseña');
-      }
-    } catch (error) {
-      console.error('Error al enviar reseña:', error);
-      Alert.alert('Error', 'No se pudo enviar la reseña. Intenta de nuevo.');
-    } finally {
-      setSubmitting(false);
+    const submitted = await submitReview({ rating, comment, isAnonymous });
+    if (submitted) {
+      setShowReviewForm(false);
+      setRating(0);
+      setComment('');
+      setIsAnonymous(false);
     }
   };
 
@@ -399,7 +244,7 @@ export default function ReviewsTab({ route, navigation }) {
               Reseñas ({reviews.length}{hasMore ? ` de ${total}` : ''})
             </Text>
             {reviews.map((review) => {
-              const isOwn = user?.id && review.user?.id === user.id;
+              const isOwn = Boolean(review.isOwn || (user?.id && review.user?.id === user.id));
               return (
                 <View key={review.id} style={styles.reviewItem}>
                   <View style={styles.reviewHeader}>

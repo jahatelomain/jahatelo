@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
@@ -13,6 +13,22 @@ export default function RoomPhotoGallery({ images, roomName }: RoomPhotoGalleryP
   const safeImages = useMemo(() => images.filter((image) => Boolean(image.url)), [images]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+
+  const beginPhotoSwipe = (event: React.TouchEvent) => {
+    event.stopPropagation();
+    touchStartX.current = event.touches[0]?.clientX ?? null;
+  };
+
+  const endPhotoSwipe = (event: React.TouchEvent) => {
+    event.stopPropagation();
+    if (touchStartX.current === null) return;
+    const dx = (event.changedTouches[0]?.clientX ?? touchStartX.current) - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 45 || safeImages.length < 2) return;
+    if (dx < 0) next();
+    else previous();
+  };
 
   const previous = useCallback(() => {
     setActiveIndex((index) => (index - 1 + safeImages.length) % safeImages.length);
@@ -41,7 +57,11 @@ export default function RoomPhotoGallery({ images, roomName }: RoomPhotoGalleryP
   return (
     <>
       <div className="md:w-1/3 bg-gray-100 p-2">
-        <div className="relative h-64 md:h-80 overflow-hidden rounded-md bg-gray-200 group">
+        <div
+          className="relative h-64 overflow-hidden rounded-md bg-gray-200 group md:h-80"
+          onTouchStart={beginPhotoSwipe}
+          onTouchEnd={endPhotoSwipe}
+        >
           <button
             type="button"
             onClick={() => setLightboxOpen(true)}
@@ -82,7 +102,7 @@ export default function RoomPhotoGallery({ images, roomName }: RoomPhotoGalleryP
         </div>
 
         {hasMultipleImages && (
-          <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-1" onTouchStart={(event) => event.stopPropagation()} onTouchEnd={(event) => event.stopPropagation()}>
             {safeImages.map((image, index) => (
               <button
                 type="button"
@@ -107,6 +127,8 @@ export default function RoomPhotoGallery({ images, roomName }: RoomPhotoGalleryP
           aria-modal="true"
           aria-label={`Galería de ${roomName}`}
           onClick={() => setLightboxOpen(false)}
+          onTouchStart={beginPhotoSwipe}
+          onTouchEnd={endPhotoSwipe}
         >
           <div className="relative h-[85vh] w-full max-w-6xl" onClick={(event) => event.stopPropagation()}>
             <Image

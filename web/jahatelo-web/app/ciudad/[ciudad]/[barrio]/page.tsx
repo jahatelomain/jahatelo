@@ -173,11 +173,28 @@ export default async function NeighborhoodPage({ params }: Props) {
               <MotelCard
                 key={motel.id}
                 motel={{
-                  ...motel,
-                  ratingAvg: motel.ratingAvg ?? 0,
-                  ratingCount: motel.ratingCount ?? 0,
-                  isFeatured: false,
+                  id: motel.id,
+                  slug: motel.slug,
+                  name: motel.name,
+                  description: motel.description,
+                  city: motel.city,
+                  neighborhood: motel.neighborhood,
+                  address: motel.address,
+                  location: motel.latitude && motel.longitude ? { lat: motel.latitude, lng: motel.longitude } : null,
+                  rating: { average: motel.ratingAvg ?? 0, count: motel.ratingCount ?? 0 },
+                  isFeatured: motel.isFeatured,
+                  hasPromo: false,
+                  tienePromo: false,
+                  startingPrice: null,
+                  amenities: [],
+                  thumbnail: motel.thumbnail,
+                  photos: [],
                   featuredPhoto: motel.thumbnail,
+                  promoImageUrl: null,
+                  promoTitle: null,
+                  promoDescription: null,
+                  plan: motel.plan,
+                  updatedAt: motel.updatedAt.toISOString(),
                 }}
               />
             ))}

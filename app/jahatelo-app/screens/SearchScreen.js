@@ -46,6 +46,8 @@ export default function SearchScreen({ route }) {
 
   const debounceTimerRef = useRef(null);
   const suggestionsTimerRef = useRef(null);
+  const resultsAbortRef = useRef(null);
+  const suggestionsAbortRef = useRef(null);
 
   // Cargar anuncios de lista
   const { ads: listAds, trackAdEvent } = useAdvertisements('LIST_INLINE');
@@ -82,10 +84,14 @@ export default function SearchScreen({ route }) {
 
   // Función para cargar resultados
   const loadResults = async (query, amenity) => {
+    resultsAbortRef.current?.abort();
+    const controller = new AbortController();
+    resultsAbortRef.current = controller;
     try {
       setLoading(true);
       setError(null);
-      const data = await searchAndFilterMotels(query, amenity);
+      const data = await searchAndFilterMotels(query, amenity, { signal: controller.signal });
+      if (controller.signal.aborted) return;
       setResults(data);
 
       // Prefetch de los primeros 5 resultados en background
@@ -97,10 +103,11 @@ export default function SearchScreen({ route }) {
         }, 300);
       }
     } catch (err) {
+      if (err?.name === 'AbortError') return;
       console.error('Error al buscar moteles:', err);
       setError(err.message || 'Error al buscar');
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   };
 
@@ -119,19 +126,28 @@ export default function SearchScreen({ route }) {
       return;
     }
     suggestionsTimerRef.current = setTimeout(async () => {
+      suggestionsAbortRef.current?.abort();
+      const controller = new AbortController();
+      suggestionsAbortRef.current = controller;
       try {
         const base = getApiRoot().replace('/api/mobile', '');
-        const res = await fetch(`${base}/api/search/suggestions?q=${encodeURIComponent(searchQuery.trim())}`);
+        const res = await fetch(`${base}/api/search/suggestions?q=${encodeURIComponent(searchQuery.trim())}`, {
+          signal: controller.signal,
+        });
         if (res.ok) {
           const data = await res.json();
           setSuggestions(data.suggestions || []);
           setShowSuggestions((data.suggestions || []).length > 0);
         }
-      } catch {
+      } catch (error) {
+        if (error?.name === 'AbortError') return;
         // ignorar errores de suggestions
       }
     }, 300);
-    return () => { if (suggestionsTimerRef.current) clearTimeout(suggestionsTimerRef.current); };
+    return () => {
+      if (suggestionsTimerRef.current) clearTimeout(suggestionsTimerRef.current);
+      suggestionsAbortRef.current?.abort();
+    };
   }, [searchQuery, isFocused]);
 
   // Effect con debounce para búsqueda
@@ -151,6 +167,7 @@ export default function SearchScreen({ route }) {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
+      resultsAbortRef.current?.abort();
     };
   }, [searchQuery, selectedAmenity]);
 

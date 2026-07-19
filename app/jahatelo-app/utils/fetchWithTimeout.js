@@ -62,6 +62,9 @@ export async function fetchWithTimeout(url, options = {}, retryCount = 0) {
     debugLog(`❌ [FETCH] Error:`, error);
 
     if (error?.name === 'AbortError') {
+      // Cancelación intencional del caller (por ejemplo, una búsqueda reemplazada)
+      // no es un timeout y no debe reintentarse.
+      if (options.signal?.aborted) throw error;
       // Timeout - reintentar si quedan intentos
       if (retryCount < MAX_RETRIES) {
         debugLog(`🔄 [FETCH] Timeout - reintentando (${retryCount + 1}/${MAX_RETRIES})...`);

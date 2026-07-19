@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
@@ -17,11 +16,14 @@ import * as LucideIcons from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { generateBreadcrumbSchema, generateMotelSchema } from '@/lib/seo';
 import Tabs from '@/components/public/Tabs';
-import { headers } from 'next/headers';
+import { getPublicMotelDetail } from '@/lib/domain/motels/getMotelDetail';
 import { normalizeLocalUploadPath } from '@/lib/normalizeLocalUrl';
 import { getCurrentDayGroup, getEffectivePrices } from '@/app/api/mobile/mappers';
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
+const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+const formatScheduleTime = (value: string | null) => value?.slice(0, 5) || '--:--';
 
 interface MotelDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -82,50 +84,7 @@ export async function generateMetadata({ params }: MotelDetailPageProps): Promis
 export default async function MotelDetailPage({ params }: MotelDetailPageProps) {
   const { slug } = await params;
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
-  const headersList = await headers();
-  const host = headersList.get('x-forwarded-host') || headersList.get('host');
-  const protocol = headersList.get('x-forwarded-proto') || 'http';
-  const baseUrl = host ? `${protocol}://${host}` : 'http://localhost:3000';
-
-  let motel = await prisma.motel.findUnique({
-    where: { slug },
-    include: {
-      photos: {
-        orderBy: { order: 'asc' },
-      },
-      promos: {
-        where: { isActive: true },
-        orderBy: { createdAt: 'desc' },
-      },
-      rooms: {
-        where: { isActive: true },
-        include: {
-          amenities: {
-            include: {
-              amenity: true,
-            },
-          },
-          roomPhotos: {
-            orderBy: { order: 'asc' },
-          },
-          dayRates: true,
-        },
-        orderBy: [
-          { order: 'asc' },
-          { isFeatured: 'desc' },
-          { name: 'asc' },
-        ],
-      },
-      menuCategories: {
-        include: {
-          items: {
-            orderBy: { name: 'asc' },
-          },
-        },
-        orderBy: { order: 'asc' },
-      },
-    },
-  });
+  let motel = await getPublicMotelDetail(slug);
 
   if (!motel || motel.status !== 'APPROVED' || !motel.isActive || motel.plan === 'FREE') {
     notFound();
@@ -189,7 +148,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
       }
     }
   }
-  const motelAmenitiesFromRooms = Array.from(amenityAggMap.values());
+  const roomAmenitiesSummary = Array.from(amenityAggMap.values());
 
   // Build tabs dynamically
   const tabs = [];
@@ -209,12 +168,32 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
             </div>
           )}
 
+          {motel.schedules.length > 0 && (
+            <div className="mb-8">
+              <h3 className="mb-3 text-xl font-semibold text-gray-900">Horarios</h3>
+              <div className="divide-y divide-gray-100 rounded-lg border border-gray-200">
+                {motel.schedules.map((schedule) => (
+                  <div key={schedule.dayOfWeek} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
+                    <span className="font-medium text-gray-700">{DAY_NAMES[schedule.dayOfWeek]}</span>
+                    <span className="text-gray-600">
+                      {schedule.isClosed
+                        ? 'Cerrado'
+                        : schedule.is24Hours
+                          ? 'Abierto 24 horas'
+                          : `${formatScheduleTime(schedule.openTime)} - ${formatScheduleTime(schedule.closeTime)}`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Amenities derived from rooms */}
-          {motelAmenitiesFromRooms.length > 0 && (
+          {roomAmenitiesSummary.length > 0 && (
             <div className="mb-8">
               <h3 className="text-xl font-semibold text-gray-900 mb-3">Servicios e instalaciones</h3>
               <div className="flex flex-wrap gap-3">
-                {motelAmenitiesFromRooms.map((amenity) => (
+                {roomAmenitiesSummary.map((amenity) => (
                   <div
                     key={amenity.id}
                     title={amenity.name}
@@ -503,7 +482,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
   tabs.push({
     id: 'reviews',
     label: 'Reseñas',
-    content: <ReviewsSection motelId={motel.id} />,
+    content: <ReviewsSection motelId={motel.id} motelSlug={motel.slug} />,
   });
 
   const motelSchema = generateMotelSchema({

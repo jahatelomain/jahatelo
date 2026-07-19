@@ -17,17 +17,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const queryResult = z
       .object({
-        type: z.enum(['ROOM', 'MOTEL', 'BOTH']).optional(),
         search: z.string().max(100).optional(),
       })
       .safeParse({
-        type: searchParams.get('type') || undefined,
         search: searchParams.get('search') || undefined,
       });
     if (!queryResult.success) {
       return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
-    const { type, search: searchQuery } = queryResult.data;
+    const { search: searchQuery } = queryResult.data;
     const paginationResult = AdminPaginationSchema.safeParse({
       page: searchParams.get('page') || undefined,
       limit: searchParams.get('limit') || undefined,
@@ -41,7 +39,6 @@ export async function GET(request: NextRequest) {
 
     const searchFilter = searchQuery?.trim();
     const where: Prisma.AmenityWhereInput = {
-      ...(type ? { type } : {}),
       ...(searchFilter
         ? { name: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } }
         : {}),
@@ -112,7 +109,6 @@ export async function POST(request: NextRequest) {
     const amenity = await prisma.amenity.create({
       data: {
         name: validated.name,
-        type: validated.type || null,
         icon: validated.icon || null,
         description: validated.description || null,
       },

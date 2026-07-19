@@ -223,7 +223,7 @@ const mapMenuCategory = (apiCategory) => {
  * @param {boolean} useCache - Si debe intentar usar el caché (default: true)
  * @returns {Promise<Array>} Array de moteles
  */
-export const fetchMotels = async (params = {}, useCache = true) => {
+export const fetchMotels = async (params = {}, useCache = true, requestOptions = {}) => {
   const baseUrl = getApiBaseUrl();
   const queryParams = new URLSearchParams();
 
@@ -233,6 +233,7 @@ export const fetchMotels = async (params = {}, useCache = true) => {
   if (params.neighborhood) queryParams.append('neighborhood', params.neighborhood);
   if (params.amenity) queryParams.append('amenity', params.amenity);
   if (params.featured !== undefined) queryParams.append('featured', params.featured);
+  if (params.promos !== undefined) queryParams.append('promos', params.promos);
   if (params.ids) queryParams.append('ids', params.ids);
   if (params.page) queryParams.append('page', params.page);
   if (params.limit) queryParams.append('limit', params.limit);
@@ -255,7 +256,7 @@ export const fetchMotels = async (params = {}, useCache = true) => {
   }
 
   try {
-    const response = await fetchJson(url);
+    const response = await fetchJson(url, requestOptions);
     const motels = response.data.map(mapMotelSummary);
     const serverUpdatedAt = response.meta?.latestUpdatedAt ?? null;
 
@@ -386,12 +387,12 @@ export const fetchMotelBySlug = async (slugOrId, useCache = true) => {
  * @param {string} amenity - Amenity a filtrar
  * @returns {Promise<Array>} Array de moteles que cumplen criterios
  */
-export const searchAndFilterMotels = async (query, amenity) => {
+export const searchAndFilterMotels = async (query, amenity, requestOptions = {}) => {
   const params = {};
   if (query) params.search = query;
   if (amenity) params.amenity = amenity;
 
-  return fetchMotels(params);
+  return fetchMotels(params, false, requestOptions);
 };
 
 /**

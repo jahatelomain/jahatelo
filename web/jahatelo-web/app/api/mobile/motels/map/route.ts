@@ -16,6 +16,7 @@ export const revalidate = 60; // Cache por 60 segundos
  */
 export async function GET() {
   try {
+    const now = new Date();
     const headersList = await headers();
     const host = headersList.get('x-forwarded-host') || headersList.get('host');
     const protocol = headersList.get('x-forwarded-proto') || 'http';
@@ -33,6 +34,8 @@ export async function GET() {
         id: true,
         name: true,
         slug: true,
+        city: true,
+        neighborhood: true,
         latitude: true,
         longitude: true,
         plan: true,
@@ -41,7 +44,13 @@ export async function GET() {
         featuredPhotoWeb: true,
         featuredPhotoApp: true,
         promos: {
-          where: { isActive: true },
+          where: {
+            isActive: true,
+            AND: [
+              { OR: [{ validFrom: null }, { validFrom: { lte: now } }] },
+              { OR: [{ validUntil: null }, { validUntil: { gte: now } }] },
+            ],
+          },
           select: { id: true },
           take: 1,
         },
@@ -56,11 +65,15 @@ export async function GET() {
           id: m.id,
           name: m.name,
           slug: m.slug,
+          city: m.city,
+          neighborhood: m.neighborhood,
           latitude: m.latitude!,
           longitude: m.longitude!,
           plan: m.plan,
           isFeatured: m.isFeatured,
           featuredPhoto: normalizeLocalUrl(m.featuredPhotoApp ?? m.featuredPhotoWeb ?? m.featuredPhoto ?? null, baseUrl),
+          featuredPhotoWeb: normalizeLocalUrl(m.featuredPhotoWeb ?? m.featuredPhoto ?? m.featuredPhotoApp ?? null, baseUrl),
+          featuredPhotoApp: normalizeLocalUrl(m.featuredPhotoApp ?? m.featuredPhoto ?? m.featuredPhotoWeb ?? null, baseUrl),
           hasPromo: m.promos.length > 0,
         })),
       },

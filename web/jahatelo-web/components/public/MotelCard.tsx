@@ -9,38 +9,40 @@ import FavoriteButtonClient from '@/components/public/FavoriteButtonClient';
 import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
 import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
 import type { CSSProperties } from 'react';
+import type { PublicMotelListItem } from '@/lib/domain/motels/publicListItem';
 
 interface MotelCardProps {
-  motel: {
+  motel: (PublicMotelListItem | {
     id: string;
     name: string;
     slug: string;
     city: string;
     neighborhood: string;
-    description?: string | null;
     isFeatured: boolean;
-    ratingAvg: number;
-    ratingCount: number;
+    ratingAvg?: number | null;
+    ratingCount?: number | null;
     featuredPhoto?: string | null;
     featuredPhotoWeb?: string | null;
-    photos?: { url: string; kind: string }[];
-    rooms?: {
+    photos?: Array<{ url: string; kind?: string }>;
+    rooms?: Array<{
       price1h?: number | null;
       price2h?: number | null;
       price12h?: number | null;
-      amenities?: { amenity: { name: string; icon?: string | null } }[];
-    }[];
+      amenities?: Array<{ amenity: { name: string; icon?: string | null } }>;
+    }>;
     plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
+  }) & {
     distanceKm?: number;
   };
 }
 
 export default function MotelCard({ motel }: MotelCardProps) {
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
-  const facadePhoto = motel.photos?.find((p) => p.kind === 'FACADE');
-  const firstPhoto = motel.photos?.[0];
-  const realPhotoUrl =
-    motel.featuredPhotoWeb || motel.featuredPhoto || facadePhoto?.url || firstPhoto?.url || null;
+  const isCanonical = 'rating' in motel;
+  const legacyPhotos = !isCanonical ? motel.photos ?? [] : [];
+  const realPhotoUrl = isCanonical
+    ? motel.thumbnail || motel.featuredPhoto || motel.photos[0] || null
+    : motel.featuredPhotoWeb || motel.featuredPhoto || legacyPhotos[0]?.url || null;
   const [imageFailed, setImageFailed] = useState(false);
   const photoUrl = imageFailed ? null : realPhotoUrl;
   const isPlaceholder = !photoUrl;
@@ -50,25 +52,24 @@ export default function MotelCard({ motel }: MotelCardProps) {
     trackMotelView(motel.id, 'LIST');
   };
 
-  // Get minimum price from rooms
-  const prices = motel.rooms?.flatMap((r) => [r.price1h, r.price2h, r.price12h].filter((p) => p !== null && p !== undefined)) ?? [];
-  const minPrice = prices.length > 0 ? Math.min(...(prices as number[])) : null;
+  const legacyPrices = !isCanonical
+    ? (motel.rooms ?? []).flatMap((room) => [room.price1h, room.price2h, room.price12h]).filter((price): price is number => typeof price === 'number')
+    : [];
+  const minPrice = isCanonical
+    ? motel.startingPrice
+    : legacyPrices.length > 0 ? Math.min(...legacyPrices) : null;
 
   // Safe rating average
-  const safeRating = motel.ratingAvg || 0;
-  const hasReviews = motel.ratingCount > 0;
+  const safeRating = (isCanonical ? motel.rating.average : motel.ratingAvg) || 0;
+  const ratingCount = (isCanonical ? motel.rating.count : motel.ratingCount) || 0;
+  const hasReviews = ratingCount > 0;
 
   // Get first 3 amenities aggregated from rooms
-  const amenityMap = new Map<string, { name: string; icon?: string | null }>();
-  for (const room of motel.rooms ?? []) {
-    for (const ra of room.amenities ?? []) {
-      const amenity = ra?.amenity;
-      if (amenity?.name && !amenityMap.has(amenity.name)) {
-        amenityMap.set(amenity.name, amenity);
-      }
-    }
-  }
-  const topAmenities = Array.from(amenityMap.values()).slice(0, 3);
+  const topAmenities = isCanonical
+    ? motel.amenities.slice(0, 3)
+    : Array.from(new Map(
+        (motel.rooms ?? []).flatMap((room) => room.amenities ?? []).map(({ amenity }) => [amenity.name, amenity]),
+      ).values()).slice(0, 3);
   const isDisabled = motel.plan === 'FREE';
   const isDiamond = motel.plan === 'DIAMOND';
   const isGold = motel.plan === 'GOLD';
@@ -153,7 +154,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
                   </span>
                 </div>
                 <span className="text-xs text-gray-400">
-                  ({motel.ratingCount} {motel.ratingCount === 1 ? 'reseña' : 'reseñas'})
+                  ({ratingCount} {ratingCount === 1 ? 'reseña' : 'reseñas'})
                 </span>
               </>
             ) : (

@@ -16,7 +16,7 @@ export default function FavoriteButtonClient({
   size = 'medium',
   variant = 'icon',
 }: FavoriteButtonClientProps) {
-  const { isFavorite, toggleFavorite } = useFavorites(false);
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   return (
     <FavoriteButton

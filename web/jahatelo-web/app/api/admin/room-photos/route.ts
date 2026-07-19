@@ -13,6 +13,46 @@ const getRoomPhotoLimit = (plan?: string | null) => {
   return 1;
 };
 
+const ReorderRoomPhotosSchema = z.object({
+  roomTypeId: z.string().min(1),
+  photoIds: z.array(z.string().min(1)).min(1),
+});
+
+export async function PATCH(request: Request) {
+  try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
+    if (access.error) return access.error;
+
+    const parsed = ReorderRoomPhotosSchema.safeParse(sanitizeObject(await request.json()));
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Datos inválidos', details: parsed.error.issues }, { status: 400 });
+    }
+    const { roomTypeId, photoIds } = parsed.data;
+    const room = await prisma.roomType.findUnique({ where: { id: roomTypeId }, select: { motelId: true } });
+    if (!room) return NextResponse.json({ error: 'Habitación no encontrada' }, { status: 404 });
+    if (access.user?.role === 'MOTEL_ADMIN' && room.motelId !== access.user.motelId) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
+
+    const photos = await prisma.roomPhoto.findMany({
+      where: { id: { in: photoIds }, roomTypeId },
+      select: { id: true },
+    });
+    if (photos.length !== photoIds.length) {
+      return NextResponse.json({ error: 'Algunas fotos no pertenecen a la habitación' }, { status: 400 });
+    }
+
+    await prisma.$transaction(photoIds.map((id, order) =>
+      prisma.roomPhoto.update({ where: { id }, data: { order } })
+    ));
+    await touchMotel(room.motelId);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error reordering room photos:', error);
+    return NextResponse.json({ error: 'Error al reordenar fotos' }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
