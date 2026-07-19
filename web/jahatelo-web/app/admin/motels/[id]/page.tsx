@@ -72,8 +72,6 @@ type RoomType = {
   name: string;
   description: string | null;
   order?: number;
-  basePrice: number | null;
-  priceLabel: string | null;
   price1h: number | null;
   price1_5h: number | null;
   price2h: number | null;
@@ -83,7 +81,6 @@ type RoomType = {
   priceNight: number | null;
   maxPersons: number | null;
   hasJacuzzi: boolean;
-  hasPrivateGarage: boolean;
   isFeatured: boolean;
   isActive: boolean;
   amenities: Array<{
@@ -219,8 +216,6 @@ export default function MotelDetailPage() {
   const [roomForm, setRoomForm] = useState({
     name: '',
     description: '',
-    basePrice: '',
-    priceLabel: '',
     price1h: '',
     price1_5h: '',
     price2h: '',
@@ -230,7 +225,6 @@ export default function MotelDetailPage() {
     priceNight: '',
     maxPersons: '',
     hasJacuzzi: false,
-    hasPrivateGarage: false,
     isFeatured: false,
     amenityIds: [] as string[],
   });
@@ -284,6 +278,7 @@ export default function MotelDetailPage() {
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [draggedRoomId, setDraggedRoomId] = useState<string | null>(null);
   const [dragOverRoomId, setDragOverRoomId] = useState<string | null>(null);
+  const [roomOrderIds, setRoomOrderIds] = useState<string[]>([]);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -414,6 +409,7 @@ export default function MotelDetailPage() {
         return;
       }
       setMotel(data);
+      setRoomOrderIds((data.rooms ?? []).map((room: RoomType) => room.id));
       setMotelForm({
         name: data.name,
         description: data.description || '',
@@ -766,7 +762,7 @@ export default function MotelDetailPage() {
     const method = editingRoomId ? 'PATCH' : 'POST';
 
     // Convert empty strings to null for numeric fields so Zod coercion doesn't fail
-    const numericFields = ['basePrice', 'price1h', 'price1_5h', 'price2h', 'price3h', 'price12h', 'price24h', 'priceNight', 'maxPersons'] as const;
+    const numericFields = ['price1h', 'price1_5h', 'price2h', 'price3h', 'price12h', 'price24h', 'priceNight', 'maxPersons'] as const;
     const normalizedForm = { ...roomForm } as Record<string, unknown>;
     numericFields.forEach((f) => {
       if (normalizedForm[f] === '') normalizedForm[f] = null;
@@ -808,8 +804,6 @@ export default function MotelDetailPage() {
         setRoomForm({
           name: '',
           description: '',
-          basePrice: '',
-          priceLabel: '',
           price1h: '',
           price1_5h: '',
           price2h: '',
@@ -819,7 +813,6 @@ export default function MotelDetailPage() {
           priceNight: '',
           maxPersons: '',
           hasJacuzzi: false,
-          hasPrivateGarage: false,
           isFeatured: false,
           amenityIds: []
         });
@@ -841,8 +834,6 @@ export default function MotelDetailPage() {
     setRoomForm({
       name: room.name,
       description: room.description || '',
-      basePrice: room.basePrice?.toString() || '',
-      priceLabel: room.priceLabel || '',
       price1h: room.price1h?.toString() || '',
       price1_5h: room.price1_5h?.toString() || '',
       price2h: room.price2h?.toString() || '',
@@ -852,7 +843,6 @@ export default function MotelDetailPage() {
       priceNight: room.priceNight?.toString() || '',
       maxPersons: room.maxPersons?.toString() || '',
       hasJacuzzi: room.hasJacuzzi || false,
-      hasPrivateGarage: room.hasPrivateGarage || false,
       isFeatured: room.isFeatured || false,
       amenityIds: (room.amenities ?? []).map((a) => a.amenity.id),
     });
@@ -1207,12 +1197,14 @@ export default function MotelDetailPage() {
   const handleReorderRooms = async (orderedRooms: RoomType[]) => {
     if (!motel) return;
     const previousRooms = motel.rooms ?? [];
+    const previousOrderIds = roomOrderIds;
     // La vista ordena por `room.order`; por eso también hay que actualizar ese
     // campo localmente y no sólo la posición dentro del array.
     const roomsWithUpdatedOrder = orderedRooms.map((room, index) => ({
       ...room,
       order: index,
     }));
+    setRoomOrderIds(roomsWithUpdatedOrder.map((room) => room.id));
     setMotel((prev) => prev ? { ...prev, rooms: roomsWithUpdatedOrder } : prev);
     try {
       const response = await fetch('/api/admin/rooms/reorder', {
@@ -1231,6 +1223,7 @@ export default function MotelDetailPage() {
     } catch (error) {
       console.error('Error reordering rooms:', error);
       // Restaurar inmediatamente el orden anterior si el guardado falla.
+      setRoomOrderIds(previousOrderIds);
       setMotel((prev) => prev ? { ...prev, rooms: previousRooms } : prev);
       alert('No se pudo guardar el nuevo orden de las habitaciones. Intentá nuevamente.');
     }
@@ -1429,9 +1422,17 @@ export default function MotelDetailPage() {
   }
 
   // Constantes seguras para evitar errores de undefined
-  const rooms = [...(motel.rooms ?? [])].sort(
-    (a, b) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name)
-  );
+  const roomOrderIndex = new Map(roomOrderIds.map((roomId, index) => [roomId, index]));
+  const rooms = [...(motel.rooms ?? [])].sort((a, b) => {
+    const visualOrderA = roomOrderIndex.get(a.id);
+    const visualOrderB = roomOrderIndex.get(b.id);
+    if (visualOrderA !== undefined && visualOrderB !== undefined) {
+      return visualOrderA - visualOrderB;
+    }
+    if (visualOrderA !== undefined) return -1;
+    if (visualOrderB !== undefined) return 1;
+    return (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name);
+  });
   const menuCategories = motel.menuCategories ?? [];
   const activePromosCount = promos.filter((promo) => promo.isActive).length;
 
@@ -2930,8 +2931,6 @@ export default function MotelDetailPage() {
                     setRoomForm({
                       name: '',
                       description: '',
-                      basePrice: '',
-                      priceLabel: '',
                       price1h: '',
                       price1_5h: '',
                       price2h: '',
@@ -2941,7 +2940,6 @@ export default function MotelDetailPage() {
                       priceNight: '',
                       maxPersons: '',
                       hasJacuzzi: false,
-                      hasPrivateGarage: false,
                       isFeatured: false,
                       amenityIds: []
                     });
@@ -3049,7 +3047,7 @@ export default function MotelDetailPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1.5">Noche</label>
+                      <label className="block text-xs font-medium text-slate-600 mb-1.5">Dormida</label>
                       <input
                         type="number"
                         value={roomForm.priceNight}
@@ -3078,7 +3076,7 @@ export default function MotelDetailPage() {
                         {(['price1h','price1_5h','price2h','price3h','price12h','price24h','priceNight'] as const).map((field) => (
                           <div key={field}>
                             <label className="block text-xs text-slate-500 mb-1">
-                              {field === 'price1h' ? '1h' : field === 'price1_5h' ? '1.5h' : field === 'price2h' ? '2h' : field === 'price3h' ? '3h' : field === 'price12h' ? '12h' : field === 'price24h' ? '24h' : 'Noche'}
+                              {field === 'price1h' ? '1h' : field === 'price1_5h' ? '1.5h' : field === 'price2h' ? '2h' : field === 'price3h' ? '3h' : field === 'price12h' ? '12h' : field === 'price24h' ? '24h' : 'Dormida'}
                             </label>
                             <input
                               type="number"
@@ -3098,7 +3096,7 @@ export default function MotelDetailPage() {
                         {(['price1h','price1_5h','price2h','price3h','price12h','price24h','priceNight'] as const).map((field) => (
                           <div key={field}>
                             <label className="block text-xs text-slate-500 mb-1">
-                              {field === 'price1h' ? '1h' : field === 'price1_5h' ? '1.5h' : field === 'price2h' ? '2h' : field === 'price3h' ? '3h' : field === 'price12h' ? '12h' : field === 'price24h' ? '24h' : 'Noche'}
+                              {field === 'price1h' ? '1h' : field === 'price1_5h' ? '1.5h' : field === 'price2h' ? '2h' : field === 'price3h' ? '3h' : field === 'price12h' ? '12h' : field === 'price24h' ? '24h' : 'Dormida'}
                             </label>
                             <input
                               type="number"
@@ -3144,15 +3142,6 @@ export default function MotelDetailPage() {
                     <label className="inline-flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={roomForm.hasPrivateGarage}
-                        onChange={(e) => setRoomForm({ ...roomForm, hasPrivateGarage: e.target.checked })}
-                        className="rounded text-purple-600 focus:ring-purple-600"
-                      />
-                      <span className="text-sm text-slate-700">🚗 Garaje Privado</span>
-                    </label>
-                    <label className="inline-flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
                         checked={roomForm.isFeatured}
                         onChange={(e) => setRoomForm({ ...roomForm, isFeatured: e.target.checked })}
                         className="rounded text-purple-600 focus:ring-purple-600"
@@ -3180,38 +3169,6 @@ export default function MotelDetailPage() {
                   </div>
                 </div>
 
-                {/* Compatibilidad legacy */}
-                <details className="border-t border-slate-200 pt-4">
-                  <summary className="text-xs font-medium text-slate-500 cursor-pointer uppercase tracking-wide">
-                    Campos Legacy (compatibilidad)
-                  </summary>
-                  <div className="grid md:grid-cols-2 gap-4 mt-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-600 mb-2">
-                        Precio Base
-                      </label>
-                      <input
-                        type="number"
-                        value={roomForm.basePrice}
-                        onChange={(e) => setRoomForm({ ...roomForm, basePrice: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-600 mb-2">
-                        Etiqueta Precio
-                      </label>
-                      <input
-                        type="text"
-                        value={roomForm.priceLabel}
-                        onChange={(e) => setRoomForm({ ...roomForm, priceLabel: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                        placeholder="ej. por 3 horas"
-                      />
-                    </div>
-                  </div>
-                </details>
-
                 <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   <button
                     type="button"
@@ -3221,8 +3178,6 @@ export default function MotelDetailPage() {
                       setRoomForm({
                         name: '',
                         description: '',
-                        basePrice: '',
-                        priceLabel: '',
                         price1h: '',
                         price1_5h: '',
                         price2h: '',
@@ -3232,7 +3187,6 @@ export default function MotelDetailPage() {
                         priceNight: '',
                         maxPersons: '',
                         hasJacuzzi: false,
-                        hasPrivateGarage: false,
                         isFeatured: false,
                         amenityIds: []
                       });
@@ -3319,11 +3273,6 @@ export default function MotelDetailPage() {
                         {room.hasJacuzzi && (
                           <span className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full font-semibold">
                             🛁 Jacuzzi
-                          </span>
-                        )}
-                        {room.hasPrivateGarage && (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-emerald-100 text-emerald-700 rounded-full font-semibold">
-                            🚗 Garage privado
                           </span>
                         )}
                         {room.maxPersons && (
@@ -3435,14 +3384,8 @@ export default function MotelDetailPage() {
                       )}
                       {room.priceNight && (
                         <div className="bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-lg">
-                          <div className="text-xs text-slate-500 mb-0.5">Noche</div>
+                          <div className="text-xs text-slate-500 mb-0.5">Dormida</div>
                           <div className="font-semibold text-slate-900">Gs. {formatPrice(room.priceNight)}</div>
-                        </div>
-                      )}
-                      {room.basePrice && (
-                        <div className="bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-lg">
-                          <div className="text-xs text-slate-500 mb-0.5">Base{room.priceLabel ? ` (${room.priceLabel})` : ''}</div>
-                          <div className="font-semibold text-slate-700">Gs. {formatPrice(room.basePrice)}</div>
                         </div>
                       )}
                     </div>

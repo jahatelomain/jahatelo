@@ -232,16 +232,11 @@ model RoomType {
   // Características
   maxPersons        Int?
   hasJacuzzi        Boolean       @default(false)
-  hasPrivateGarage  Boolean       @default(false)
   isFeatured        Boolean       @default(false)
   isActive          Boolean       @default(true)
 
   // Orden de aparición entre habitaciones del motel
   order             Int           @default(0)
-
-  // Legacy (mantener compatibilidad)
-  basePrice         Int?
-  priceLabel        String?
 
   createdAt         DateTime      @default(now())
   updatedAt         DateTime?     @updatedAt

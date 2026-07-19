@@ -24,7 +24,6 @@ import { mixAdvertisements } from '../utils/mixAdvertisements';
 // Filtros rápidos por amenities comunes
 const QUICK_FILTERS = [
   'Jacuzzi',
-  'Garage privado',
   'Room service',
   'WiFi gratis',
   'A/C',

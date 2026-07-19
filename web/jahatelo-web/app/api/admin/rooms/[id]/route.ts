@@ -47,8 +47,6 @@ export async function PATCH(
         ...(validated.name !== undefined && { name: validated.name }),
         ...(validated.description !== undefined && { description: validated.description }),
         ...(validated.order !== undefined && { order: validated.order }),
-        ...(validated.basePrice !== undefined && { basePrice: validated.basePrice ?? null }),
-        ...(validated.priceLabel !== undefined && { priceLabel: validated.priceLabel ?? null }),
         ...(validated.price1h !== undefined && { price1h: validated.price1h ?? null }),
         ...(validated.price1_5h !== undefined && { price1_5h: validated.price1_5h ?? null }),
         ...(validated.price2h !== undefined && { price2h: validated.price2h ?? null }),
@@ -58,7 +56,6 @@ export async function PATCH(
         ...(validated.priceNight !== undefined && { priceNight: validated.priceNight ?? null }),
         ...(validated.maxPersons !== undefined && { maxPersons: validated.maxPersons ?? null }),
         ...(validated.hasJacuzzi !== undefined && { hasJacuzzi: validated.hasJacuzzi }),
-        ...(validated.hasPrivateGarage !== undefined && { hasPrivateGarage: validated.hasPrivateGarage }),
         ...(validated.isFeatured !== undefined && { isFeatured: validated.isFeatured }),
         ...(validated.isActive !== undefined && { isActive: validated.isActive }),
         amenities: validated.amenityIds !== undefined

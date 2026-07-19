@@ -187,15 +187,12 @@ const mapRoom = (apiRoom) => {
     id: apiRoom.id,
     name: apiRoom.name,
     description: apiRoom.description,
-    basePrice: apiRoom.basePrice || 0,
-    priceLabel: apiRoom.priceLabel || null,
     prices: apiRoom.prices || {},
     dayRates: apiRoom.dayRates || [],
     amenities: normalizeAmenityList(apiRoom.amenities),
     photos: apiRoom.photos || [],
     maxPersons: apiRoom.maxPersons,
     hasJacuzzi: apiRoom.hasJacuzzi || false,
-    hasPrivateGarage: apiRoom.hasPrivateGarage || false,
     isFeatured: apiRoom.isFeatured || false,
   };
 };

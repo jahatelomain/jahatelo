@@ -20,7 +20,6 @@ export const AMENITY_ICONS = [
   { value: 'Armchair', label: 'Sala de estar', category: 'bedroom' },
   { value: 'Sofa', label: 'Sofá', category: 'bedroom' },
 
-  { value: 'Car', label: 'Garaje privado', category: 'parking' },
   { value: 'ParkingCircle', label: 'Estacionamiento', category: 'parking' },
 
   { value: 'Coffee', label: 'Cafetera/Minibar', category: 'food' },

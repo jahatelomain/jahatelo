@@ -36,8 +36,6 @@ export async function POST(request: NextRequest) {
         name: validated.name,
         order: nextOrder,
         description: validated.description ?? null,
-        basePrice: validated.basePrice ?? null,
-        priceLabel: validated.priceLabel ?? null,
         price1h: validated.price1h ?? null,
         price1_5h: validated.price1_5h ?? null,
         price2h: validated.price2h ?? null,
@@ -47,7 +45,6 @@ export async function POST(request: NextRequest) {
         priceNight: validated.priceNight ?? null,
         maxPersons: validated.maxPersons ?? null,
         hasJacuzzi: validated.hasJacuzzi ?? false,
-        hasPrivateGarage: validated.hasPrivateGarage ?? false,
         isFeatured: validated.isFeatured ?? false,
         isActive: true,
         amenities: validated.amenityIds && validated.amenityIds.length > 0
