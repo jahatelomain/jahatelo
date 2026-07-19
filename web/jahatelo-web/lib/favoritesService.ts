@@ -80,7 +80,7 @@ export const syncFavoritesWithBackend = async (): Promise<void> => {
   try {
     // Agregar cada favorito local al backend
     for (const motelId of localFavorites) {
-      await fetch('/api/favorites', {
+      await fetch('/api/mobile/favorites', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

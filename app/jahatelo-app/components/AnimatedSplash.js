@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     height: 338,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 0,
   },
   logo: {
     width: 338,
@@ -124,6 +124,7 @@ const styles = StyleSheet.create({
   textContainer: {
     width: 220,
     height: 66,
+    marginTop: -30,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -13,11 +13,11 @@ export async function GET(request: NextRequest) {
 
     const amenities = await prisma.amenity.findMany({
       where: {
-        motelAmenities: {
+        roomAmenities: {
           some: {
-            motel: {
-              status: 'APPROVED',
+            roomType: {
               isActive: true,
+              motel: { status: 'APPROVED', isActive: true },
             },
           },
         },

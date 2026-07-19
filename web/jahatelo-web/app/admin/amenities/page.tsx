@@ -14,7 +14,6 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 type Amenity = {
   id: string;
   name: string;
-  type: string | null;
   icon: string | null;
   _count: {
     roomAmenities: number;
@@ -47,12 +46,11 @@ export default function AmenitiesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement | null>(null);
   const [formDirty, setFormDirty] = useState(false);
-  const [formData, setFormData] = useState({ name: '', type: '', icon: '' });
+  const [formData, setFormData] = useState({ name: '', icon: '' });
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('ALL');
   const pageSize = 20;
   const hasMore = amenities.length < totalItems;
   const filtersKeyRef = useRef('');
@@ -68,7 +66,6 @@ export default function AmenitiesPage() {
       const params = new URLSearchParams();
       params.set('page', String(page));
       params.set('limit', String(pageSize));
-      if (typeFilter !== 'ALL') params.set('type', typeFilter);
       if (debouncedSearchQuery.trim()) params.set('search', debouncedSearchQuery.trim());
       const res = await fetch(`/api/admin/amenities?${params.toString()}`);
       const data = await res.json();
@@ -99,7 +96,7 @@ export default function AmenitiesPage() {
 
   useEffect(() => {
     if (!currentUser) return;
-    const nextKey = `${typeFilter}|${debouncedSearchQuery.trim()}`;
+    const nextKey = debouncedSearchQuery.trim();
     if (filtersKeyRef.current !== nextKey) {
       filtersKeyRef.current = nextKey;
       if (page !== 1) {
@@ -110,7 +107,7 @@ export default function AmenitiesPage() {
     const isLoadingMore = page > 1;
     fetchAmenities(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, typeFilter, debouncedSearchQuery, currentUser]);
+  }, [page, debouncedSearchQuery, currentUser]);
 
   const { sentinelRef } = useInfiniteScroll({
     loading: loadingMore,
@@ -165,7 +162,7 @@ export default function AmenitiesPage() {
 
   const handleEdit = (amenity: Amenity) => {
     setEditingId(amenity.id);
-    setFormData({ name: amenity.name, type: amenity.type || '', icon: amenity.icon || '' });
+    setFormData({ name: amenity.name, icon: amenity.icon || '' });
     setShowForm(true);
     setFormDirty(false);
     window.requestAnimationFrame(() => {
@@ -205,18 +202,8 @@ export default function AmenitiesPage() {
   const handleCancel = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormData({ name: '', type: '', icon: '' });
+    setFormData({ name: '', icon: '' });
     setFormDirty(false);
-  };
-
-  const getTypeLabel = (type: string | null) => {
-    if (!type) return null;
-    const labels: Record<string, string> = {
-      'ROOM': 'Habitación',
-      'MOTEL': 'Motel',
-      'BOTH': 'Ambos',
-    };
-    return labels[type] || type;
   };
 
   if (loading) {
@@ -256,7 +243,7 @@ export default function AmenitiesPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Amenities</h1>
-          <p className="text-sm text-slate-600 mt-1">Gestioná los amenities disponibles para moteles y habitaciones</p>
+          <p className="text-sm text-slate-600 mt-1">Gestioná los amenities disponibles para las habitaciones</p>
         </div>
         {!showForm && (
           <button
@@ -289,7 +276,7 @@ export default function AmenitiesPage() {
           </div>
           <DirtyBanner visible={formDirty} />
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
+            <div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Nombre *
@@ -305,24 +292,6 @@ export default function AmenitiesPage() {
                   placeholder="Ej: WiFi, Aire acondicionado"
                   required
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Tipo <span className="text-slate-400">(opcional)</span>
-                </label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => {
-                    setFormData({ ...formData, type: e.target.value });
-                    setFormDirty(true);
-                  }}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white"
-                >
-                  <option value="">Sin especificar</option>
-                  <option value="ROOM">Habitación</option>
-                  <option value="MOTEL">Motel</option>
-                  <option value="BOTH">Ambos</option>
-                </select>
               </div>
             </div>
             <div>
@@ -435,77 +404,16 @@ export default function AmenitiesPage() {
           </div>
         </div>
 
-        {/* Filtros tipo pill */}
-        <div className="space-y-3">
-          {/* Tipo */}
-          <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Tipo</p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setTypeFilter('ALL')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  typeFilter === 'ALL'
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
-                    : 'bg-white text-slate-700 border border-slate-300 hover:border-purple-300'
-                }`}
-              >
-                Todos <span className="ml-1 opacity-75">({amenities.length})</span>
-              </button>
-              <button
-                onClick={() => setTypeFilter('ROOM')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  typeFilter === 'ROOM'
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                    : 'bg-white text-slate-700 border border-slate-300 hover:border-blue-300'
-                }`}
-              >
-                Habitación <span className="ml-1 opacity-75">({amenities.filter((a) => a.type === 'ROOM').length})</span>
-              </button>
-              <button
-                onClick={() => setTypeFilter('MOTEL')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  typeFilter === 'MOTEL'
-                    ? 'bg-green-600 text-white shadow-md shadow-green-200'
-                    : 'bg-white text-slate-700 border border-slate-300 hover:border-green-300'
-                }`}
-              >
-                Motel <span className="ml-1 opacity-75">({amenities.filter((a) => a.type === 'MOTEL').length})</span>
-              </button>
-              <button
-                onClick={() => setTypeFilter('BOTH')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  typeFilter === 'BOTH'
-                    ? 'bg-amber-600 text-white shadow-md shadow-amber-200'
-                    : 'bg-white text-slate-700 border border-slate-300 hover:border-amber-300'
-                }`}
-              >
-                Ambos <span className="ml-1 opacity-75">({amenities.filter((a) => a.type === 'BOTH').length})</span>
-              </button>
-              <button
-                onClick={() => setTypeFilter('NULL')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  typeFilter === 'NULL'
-                    ? 'bg-slate-600 text-white shadow-md shadow-slate-200'
-                    : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400'
-                }`}
-              >
-                Sin especificar <span className="ml-1 opacity-75">({amenities.filter((a) => !a.type).length})</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* Resultados */}
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
           <p className="text-sm text-slate-600">
             Mostrando <span className="font-semibold text-slate-900">{amenities.length}</span> de{' '}
             <span className="font-semibold text-slate-900">{totalItems}</span> amenities
           </p>
-          {(searchQuery || typeFilter !== 'ALL') && (
+          {searchQuery && (
             <button
               onClick={() => {
                 setSearchQuery('');
-                setTypeFilter('ALL');
               }}
               className="text-sm text-purple-600 hover:text-purple-700 font-medium"
             >
@@ -527,9 +435,6 @@ export default function AmenitiesPage() {
                 Ícono
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Tipo
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Uso
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -540,16 +445,16 @@ export default function AmenitiesPage() {
           <tbody className="bg-white divide-y divide-slate-200">
             {amenities.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center">
+                <td colSpan={4} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-4xl text-slate-300">✨</span>
                     <p className="text-slate-500 font-medium">
-                      {searchQuery || typeFilter !== 'ALL'
+                      {searchQuery
                         ? 'No se encontraron amenities con estos filtros'
                         : 'No hay amenities registrados'}
                     </p>
                     <p className="text-sm text-slate-400">
-                      {searchQuery || typeFilter !== 'ALL'
+                      {searchQuery
                         ? 'Intentá con otros criterios de búsqueda'
                         : 'Creá el primero usando el botón de arriba'}
                     </p>
@@ -578,15 +483,6 @@ export default function AmenitiesPage() {
                           </div>
                         ) : (
                           <span className="text-slate-400 text-xs">Sin ícono</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {amenity.type ? (
-                          <span className="px-3 py-1 text-xs font-medium bg-purple-50 text-purple-700 rounded-full">
-                            {getTypeLabel(amenity.type)}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 text-sm">Sin especificar</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">

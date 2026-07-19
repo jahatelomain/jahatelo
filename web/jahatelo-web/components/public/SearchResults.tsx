@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
 import MotelCard from './MotelCard';
+import type { PublicMotelListItem, PublicMotelListResponse } from '@/lib/domain/motels/publicListItem';
 
 // Haversine formula – same as app's utils/location.js
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -36,29 +37,7 @@ interface SearchResultsProps {
   };
 }
 
-interface Motel {
-  id: string;
-  slug: string;
-  name: string;
-  city: string;
-  neighborhood: string;
-  description: string | null;
-  featuredPhoto: string | null;
-  featuredPhotoWeb?: string | null;
-  featuredPhotoApp?: string | null;
-  isFeatured: boolean;
-  ratingAvg: number;
-  ratingCount: number;
-  photos: Array<{ url: string; kind: string }>;
-  rooms: Array<{
-    price1h: number | null;
-    price2h: number | null;
-    price12h: number | null;
-    amenities?: Array<{ amenity: { id: string; name: string; icon: string | null } }>;
-  }>;
-  plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
-  latitude?: number | null;
-  longitude?: number | null;
+interface Motel extends PublicMotelListItem {
   distanceKm?: number;
 }
 
@@ -92,14 +71,10 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     const fetchCities = async () => {
       setCitiesLoading(true);
       try {
-        const response = await fetch('/api/motels');
-        const data = await response.json();
-        const cityList: string[] = (data || [])
-          .map((motel: { city?: string | null }) => motel.city)
-          .filter((city: string | null): city is string => Boolean(city && city.trim().length > 0));
-
-        const uniqueCities = Array.from(new Set(cityList)).sort((a, b) => a.localeCompare(b));
-        setCities(uniqueCities);
+        const response = await fetch('/api/mobile/cities');
+        if (!response.ok) throw new Error('No se pudieron cargar las ciudades');
+        const data: { cities?: Array<{ name: string }> } = await response.json();
+        setCities((data.cities || []).map(({ name }) => name));
       } catch (error) {
         console.error('Error fetching cities:', error);
         setCities([]);
@@ -132,36 +107,35 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
 
   // Fetch motels when search params change
   useEffect(() => {
+    const controller = new AbortController();
     const fetchMotels = async () => {
       setLoading(true);
       try {
         const params = new URLSearchParams();
         if (debouncedSearchQuery) params.set('search', debouncedSearchQuery);
         if (selectedCity) params.set('city', selectedCity);
-        if (onlyPromos) params.set('promos', '1');
-        if (onlyFeatured) params.set('featured', '1');
-        if (selectedAmenity) params.set('amenities', selectedAmenity);
+        if (onlyPromos) params.set('promos', 'true');
+        if (onlyFeatured) params.set('featured', 'true');
+        if (selectedAmenity) params.set('amenity', selectedAmenity);
+        params.set('limit', '50');
 
-        const response = await fetch(`/api/motels/search?${params.toString()}`);
-        const data = await response.json();
-        // Sanitize photos to ensure kind is always a string
-        const sanitized = (data.motels || []).map((motel: Motel) => ({
-          ...motel,
-          photos: (motel.photos || []).map((photo) => ({
-            url: photo.url,
-            kind: photo.kind ?? 'OTHER',
-          })),
-        }));
-        setMotels(sanitized);
+        const response = await fetch(`/api/mobile/motels?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error('No se pudieron cargar los moteles');
+        const data: PublicMotelListResponse = await response.json();
+        setMotels(data.data || []);
       } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
         console.error('Error fetching motels:', error);
         setMotels([]);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     fetchMotels();
+    return () => controller.abort();
   }, [debouncedSearchQuery, selectedCity, onlyPromos, onlyFeatured, selectedAmenity]);
 
   // Update URL when search params change
@@ -238,10 +212,10 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
   const displayedMotels = useMemo(() => {
     if (!nearbyEnabled || !userLocation) return motels;
     const withDist = motels
-      .filter((m) => m.latitude != null && m.longitude != null)
+      .filter((m) => m.location != null)
       .map((m) => ({
         ...m,
-        distanceKm: Math.round(calculateDistance(userLocation.lat, userLocation.lng, m.latitude!, m.longitude!) * 10) / 10,
+        distanceKm: Math.round(calculateDistance(userLocation.lat, userLocation.lng, m.location!.lat, m.location!.lng) * 10) / 10,
       }));
     const filtered = nearbyRadius === null ? withDist : withDist.filter((m) => m.distanceKm! <= nearbyRadius);
     return filtered.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
@@ -413,7 +387,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
           <span className="text-sm font-medium text-gray-700">Filtros activos:</span>
           {searchQuery && (
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
-              <span>"{searchQuery}"</span>
+              <span>{`“${searchQuery}”`}</span>
               <button onClick={() => setSearchQuery('')} className="hover:text-purple-900">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

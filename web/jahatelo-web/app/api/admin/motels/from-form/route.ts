@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         const amenity = await prisma.amenity.upsert({
           where: { name: amenityName.trim() },
           update: {},
-          create: { name: amenityName.trim(), type: 'ROOM' },
+          create: { name: amenityName.trim() },
           select: { id: true },
         });
         amenityIds.push(amenity.id);

@@ -336,3 +336,7 @@ body {
   -webkit-text-fill-color: transparent;
   animation: gradient-shift 15s ease infinite;
 }
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateX(4px); }
+  to { opacity: 1; transform: translateX(0); }
+}

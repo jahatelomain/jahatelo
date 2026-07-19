@@ -32,7 +32,6 @@ export async function GET(
         _count: {
           select: {
             roomAmenities: true,
-            motelAmenities: true,
           },
         },
       },
@@ -103,7 +102,6 @@ export async function PATCH(
       where: { id: idResult.data },
       data: {
         name: validated.name,
-        type: validated.type || null,
         icon: validated.icon || null,
         description: validated.description || null,
       },
@@ -149,7 +147,7 @@ export async function DELETE(
       where: { id: idResult.data },
       include: {
         _count: {
-          select: { motelAmenities: true, roomAmenities: true },
+          select: { roomAmenities: true },
         },
       },
     });
@@ -164,7 +162,6 @@ export async function DELETE(
     // La transacción evita estados parciales: o se eliminan todas las
     // asociaciones y el amenity, o no se elimina nada.
     await prisma.$transaction([
-      prisma.motelAmenity.deleteMany({ where: { amenityId: idResult.data } }),
       prisma.roomAmenity.deleteMany({ where: { amenityId: idResult.data } }),
       prisma.amenity.delete({ where: { id: idResult.data } }),
     ]);
@@ -176,7 +173,6 @@ export async function DELETE(
       entityId: idResult.data,
       metadata: {
         name: amenity.name,
-        removedMotelAssociations: amenity._count.motelAmenities,
         removedRoomAssociations: amenity._count.roomAmenities,
       },
     });
@@ -184,7 +180,6 @@ export async function DELETE(
     return NextResponse.json({
       success: true,
       removedAssociations: {
-        motels: amenity._count.motelAmenities,
         rooms: amenity._count.roomAmenities,
       },
     });
