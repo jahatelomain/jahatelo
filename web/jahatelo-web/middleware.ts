@@ -285,7 +285,11 @@ export async function middleware(request: NextRequest) {
   }
 
   // 4. Rate Limiting para API pública (no admin)
-  if (pathname.startsWith('/api/') && !pathname.startsWith('/api/admin/')) {
+  if (
+    pathname.startsWith('/api/') &&
+    !pathname.startsWith('/api/admin/') &&
+    !pathname.startsWith('/api/upload')
+  ) {
     if (process.env.E2E_MODE === '1') {
       return NextResponse.next();
     }
@@ -379,9 +383,14 @@ export async function middleware(request: NextRequest) {
     }
 
     if (user.role === 'MOTEL_ADMIN') {
-      // MOTEL_ADMIN solo puede acceder a rutas de su propio motel
-      // Por ahora permitimos acceso general al admin
-      // TODO: Implementar validación por motelId en rutas específicas
+      // La creación de nuevos moteles está reservada al SUPERADMIN.
+      if (pathname === '/admin/motels/new') {
+        return user.motelId
+          ? NextResponse.redirect(new URL(`/admin/motels/${user.motelId}`, request.url))
+          : NextResponse.redirect(new URL('/admin', request.url));
+      }
+
+      // El aislamiento por motel se valida también dentro de cada API.
       return NextResponse.next();
     }
 

@@ -11,7 +11,7 @@ type ScheduledNotification = {
   body: string;
   category: string;
   type: string;
-  data?: any;
+  data?: Record<string, unknown> | null;
   scheduledFor: string;
   sent: boolean;
   sentAt: string | null;
@@ -50,8 +50,8 @@ export default function NotificationDetailPage() {
         }
         const data = await res.json();
         setNotification(data.notification || null);
-      } catch (error: any) {
-        toast.error(error.message || 'Error al cargar notificación');
+      } catch (error: unknown) {
+        toast.error(error instanceof Error ? error.message : 'Error al cargar notificación');
       } finally {
         setLoading(false);
       }

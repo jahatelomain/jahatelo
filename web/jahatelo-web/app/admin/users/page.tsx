@@ -7,6 +7,7 @@ import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import SearchableSelect from '@/components/admin/SearchableSelect';
 
 type UserRole = 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
 
@@ -784,19 +785,13 @@ export default function UsersPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Motel *
                   </label>
-                  <select
+                  <SearchableSelect
                     value={createForm.motelId}
-                    onChange={(e) => setCreateForm({ ...createForm, motelId: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    onChange={(motelId) => setCreateForm({ ...createForm, motelId })}
+                    placeholder="Buscar motel..."
+                    options={motels.map((motel) => ({ value: motel.id, label: motel.name, searchText: motel.slug }))}
                     required
-                  >
-                    <option value="">Selecciona un motel</option>
-                    {motels.map((motel) => (
-                      <option key={motel.id} value={motel.id}>
-                        {motel.name}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
               )}
               <div>
@@ -909,19 +904,13 @@ export default function UsersPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Motel *
                   </label>
-                  <select
+                  <SearchableSelect
                     value={editForm.motelId}
-                    onChange={(e) => setEditForm({ ...editForm, motelId: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    onChange={(motelId) => setEditForm({ ...editForm, motelId })}
+                    placeholder="Buscar motel..."
+                    options={motels.map((motel) => ({ value: motel.id, label: motel.name, searchText: motel.slug }))}
                     required
-                  >
-                    <option value="">Selecciona un motel</option>
-                    {motels.map((motel) => (
-                      <option key={motel.id} value={motel.id}>
-                        {motel.name}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
               )}
               <div>

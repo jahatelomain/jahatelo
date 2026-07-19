@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatGuaranies } from '@/lib/formatCurrency';
 
 interface Motel {
   id: string;
@@ -100,7 +101,7 @@ export default function MisFavoritosPage() {
 
   const formatPrice = (price?: number) => {
     if (!price) return 'Consultar';
-    return `${price.toLocaleString('es-PY')} Gs.`;
+    return formatGuaranies(price);
   };
 
   if (authLoading || !isAuthenticated) {

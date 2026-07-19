@@ -8,6 +8,9 @@ import ConfirmModal from '@/components/admin/ConfirmModal';
 import DirtyBanner from '@/components/admin/DirtyBanner';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { BadgeCheck, Pencil, Power, Ticket, Trash2 } from 'lucide-react';
+import SearchableSelect from '@/components/admin/SearchableSelect';
+import { getErrorMessage } from '@/lib/errors';
 
 type Motel = {
   id: string;
@@ -54,10 +57,26 @@ type CurrentUser = {
   role: 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
 };
 
+type PromoPayload = {
+  motelId: string;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  validFrom: string | null;
+  validUntil: string | null;
+  isActive: boolean;
+  isGlobal: boolean;
+  hasPromoCode: boolean;
+  codeRepeatRule: string | null;
+  codeLimit: number | null;
+  codeLimitPeriod: string | null;
+};
+
 export default function PromosAdminPage() {
   const router = useRouter();
   const [promos, setPromos] = useState<Promo[]>([]);
   const [motels, setMotels] = useState<Motel[]>([]);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -343,7 +362,7 @@ export default function PromosAdminPage() {
       const url = editingId ? `/api/admin/promos/${editingId}` : '/api/admin/promos';
       const method = editingId ? 'PATCH' : 'POST';
 
-      const payload: any = {
+      const payload: PromoPayload = {
         motelId: formData.motelId,
         title: formData.title,
         description: formData.description || null,
@@ -353,6 +372,9 @@ export default function PromosAdminPage() {
         isActive: formData.isActive,
         isGlobal: formData.isGlobal,
         hasPromoCode: formData.hasPromoCode,
+        codeRepeatRule: null,
+        codeLimit: null,
+        codeLimitPeriod: null,
       };
 
       if (formData.hasPromoCode) {
@@ -379,8 +401,8 @@ export default function PromosAdminPage() {
       toast.success(editingId ? 'Promoción actualizada' : 'Promoción creada');
       fetchPromos();
       handleCancel();
-    } catch (error: any) {
-      toast.error(error.message || 'Error al guardar promoción');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Error al guardar promoción'));
     }
   };
 
@@ -417,18 +439,27 @@ export default function PromosAdminPage() {
       cancelText: 'Cancelar',
       danger: true,
       onConfirm: async () => {
+        if (deletingIds.has(id)) return;
+        setDeletingIds((current) => new Set(current).add(id));
         try {
           const res = await fetch(`/api/admin/promos/${id}`, { method: 'DELETE' });
-          if (!res.ok) throw new Error('Error al eliminar');
+          const data = await res.json().catch(() => null);
+          if (!res.ok) throw new Error(data?.error || 'Error al eliminar');
+          setPromos((current) => current.filter((promo) => promo.id !== id));
           toast.success('Promoción eliminada');
           if (expandedCodesPromoId === id) {
             setExpandedCodesPromoId(null);
             setCodes([]);
           }
-          fetchPromos();
-        } catch (error: any) {
-          toast.error(error.message || 'Error al eliminar promoción');
+          void fetchPromos();
+        } catch (error: unknown) {
+          toast.error(getErrorMessage(error, 'Error al eliminar promoción'));
         } finally {
+          setDeletingIds((current) => {
+            const next = new Set(current);
+            next.delete(id);
+            return next;
+          });
           setConfirmAction(null);
         }
       },
@@ -446,8 +477,8 @@ export default function PromosAdminPage() {
       if (!res.ok) throw new Error('Error al actualizar');
       toast.success(`Promoción ${!promo.isActive ? 'activada' : 'desactivada'}`);
       fetchPromos();
-    } catch (error: any) {
-      toast.error(error.message || 'Error al actualizar estado');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Error al actualizar estado'));
     }
   };
 
@@ -531,8 +562,8 @@ export default function PromosAdminPage() {
       const data = await res.json();
       setFormData((prev) => ({ ...prev, imageUrl: data.url }));
       toast.success('Imagen subida correctamente');
-    } catch (error: any) {
-      toast.error(error.message || 'Error al subir imagen');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Error al subir imagen'));
     } finally {
       setUploadingImage(false);
     }
@@ -652,7 +683,7 @@ export default function PromosAdminPage() {
           </div>
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as any)}
+            onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
             className="border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
           >
             <option value="ALL">Todos los estados</option>
@@ -661,7 +692,7 @@ export default function PromosAdminPage() {
           </select>
           <select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value as any)}
+            onChange={(e) => setFilterType(e.target.value as typeof filterType)}
             className="border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
           >
             <option value="ALL">Todos los tipos</option>
@@ -702,20 +733,14 @@ export default function PromosAdminPage() {
               {/* Motel */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Motel *</label>
-                <select
+                <SearchableSelect
                   value={formData.motelId}
-                  onChange={(e) => setFormData({ ...formData, motelId: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  onChange={(motelId) => setFormData({ ...formData, motelId })}
+                  options={motels.map((motel) => ({ value: motel.id, label: `${motel.name} - ${motel.city}`, searchText: `${motel.name} ${motel.city}` }))}
+                  placeholder="Escribí para buscar un motel"
                   required
                   disabled={editingId !== null}
-                >
-                  <option value="">Seleccionar motel</option>
-                  {motels.map((motel) => (
-                    <option key={motel.id} value={motel.id}>
-                      {motel.name} - {motel.city}
-                    </option>
-                  ))}
-                </select>
+                />
                 {editingId && (
                   <p className="text-xs text-slate-500 mt-1">No se puede cambiar el motel al editar</p>
                 )}
@@ -926,7 +951,7 @@ export default function PromosAdminPage() {
 
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                     <p className="text-xs text-amber-800">
-                      <strong>Ejemplo:</strong> Regla "Una vez por semana" + límite "50 por mes" significa que cada usuario puede reclamar un código por semana, y la promo acepta máximo 50 cupones por mes en total.
+                      <strong>Ejemplo:</strong> Regla &quot;Una vez por semana&quot; + límite &quot;50 por mes&quot; significa que cada usuario puede reclamar un código por semana, y la promo acepta máximo 50 cupones por mes en total.
                     </p>
                   </div>
                 </div>
@@ -1121,51 +1146,42 @@ export default function PromosAdminPage() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleEdit(promo)}
-                            className="inline-flex items-center gap-1 rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-purple-600 text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
+                            title="Editar promoción"
+                            aria-label="Editar promoción"
                           >
-                            Editar
+                            <Pencil size={16} />
                           </button>
                           {promo.hasPromoCode && (
                             <button
                               onClick={() => handleToggleCodes(promo.id)}
-                              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                              className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
                                 expandedCodesPromoId === promo.id
                                   ? 'bg-amber-100 border-amber-300 text-amber-800'
                                   : 'border-slate-200 bg-white text-slate-600 hover:border-amber-300 hover:text-amber-700'
                               }`}
+                              title="Ver códigos"
+                              aria-label="Ver códigos"
                             >
-                              Códigos
+                              <Ticket size={16} />
                             </button>
                           )}
                           {promo.hasPromoCode && (
                             <button
                               onClick={() => handleOpenRedeem(promo.id)}
-                              className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-white px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-50 transition-colors"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-green-200 bg-white text-green-700 hover:bg-green-50 transition-colors"
+                              title="Canjear código"
+                              aria-label="Canjear código"
                             >
-                              Canjear
+                              <BadgeCheck size={16} />
                             </button>
                           )}
-                          <details className="relative">
-                            <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
-                              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
-                              </svg>
-                            </summary>
-                            <div className="absolute right-0 mt-2 w-44 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
-                              <button
-                                onClick={() => handleToggleActive(promo)}
-                                className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                              >
-                                {promo.isActive ? 'Desactivar' : 'Activar'}
-                              </button>
-                              <button
-                                onClick={() => handleDelete(promo.id)}
-                                className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
-                              >
-                                Eliminar
-                              </button>
-                            </div>
-                          </details>
+                          <button onClick={() => handleToggleActive(promo)} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:border-purple-200 hover:text-purple-700" title={promo.isActive ? 'Desactivar promoción' : 'Activar promoción'} aria-label={promo.isActive ? 'Desactivar promoción' : 'Activar promoción'}>
+                            <Power size={16} />
+                          </button>
+                          <button disabled={deletingIds.has(promo.id)} onClick={() => handleDelete(promo.id)} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 bg-white text-red-600 hover:bg-red-50 disabled:opacity-40" title="Eliminar promoción" aria-label="Eliminar promoción">
+                            <Trash2 size={16} />
+                          </button>
                         </div>
                       </td>
                     </tr>

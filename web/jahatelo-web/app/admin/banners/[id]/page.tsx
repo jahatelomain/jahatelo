@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import DirtyBanner from '@/components/admin/DirtyBanner';
+import { getErrorMessage } from '@/lib/errors';
 
 const placements = [
   { value: 'POPUP_HOME', label: 'Popup Home' },
@@ -203,8 +204,8 @@ export default function EditAdvertisementPage() {
       setForm((prev) => ({ ...prev, imageUrl: url }));
 
       toast.success('Imagen subida correctamente');
-    } catch (error: any) {
-      toast.error(error.message || 'Error al subir imagen');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Error al subir imagen'));
     } finally {
       setUploadingImage(false);
     }
@@ -236,8 +237,8 @@ export default function EditAdvertisementPage() {
         largeImageUrl: prev.largeImageUrl || webUrl,
       }));
       toast.success('Imagen de popup procesada correctamente');
-    } catch (error: any) {
-      toast.error(error.message || 'Error al subir imagen');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Error al subir imagen'));
     } finally {
       setUploadingPopupImage(false);
       event.target.value = '';
@@ -269,8 +270,8 @@ export default function EditAdvertisementPage() {
         largeImageUrl: prev.largeImageUrl || url,
       }));
       toast.success('Imagen actualizada correctamente');
-    } catch (error: any) {
-      toast.error(error.message || 'Error al subir imagen');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Error al subir imagen'));
     } finally {
       setUploading(false);
       event.target.value = '';
@@ -305,8 +306,8 @@ export default function EditAdvertisementPage() {
       toast.success('Anuncio actualizado');
       router.push('/admin/banners');
       router.refresh();
-    } catch (error: any) {
-      toast.error(error.message || 'Error al actualizar anuncio');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Error al actualizar anuncio'));
     } finally {
       setSaving(false);
     }

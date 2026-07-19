@@ -40,7 +40,7 @@ export async function GET() {
         email: dbUser?.email || user.email,
         motelId: dbUser?.motelId || user.motelId,
         modulePermissions: dbUser?.modulePermissions ?? user.modulePermissions ?? [],
-        isEmailVerified: dbUser?.isEmailVerified ?? (user as any).isEmailVerified ?? false,
+        isEmailVerified: dbUser?.isEmailVerified ?? false,
       },
     }, { status: 200 });
   } catch (error) {

@@ -1,18 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 
 type TabId = 'varios';
-
-interface Settings {
-  age_gate_enabled?: {
-    value: string;
-    category: string;
-    description?: string;
-  };
-}
 
 export default function ConfiguracionPage() {
   const router = useRouter();
@@ -20,15 +12,9 @@ export default function ConfiguracionPage() {
   const [activeTab, setActiveTab] = useState<TabId>('varios');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState<Settings>({});
   const [ageGateEnabled, setAgeGateEnabled] = useState(false);
 
-  useEffect(() => {
-    checkAccess();
-    fetchSettings();
-  }, []);
-
-  const checkAccess = async () => {
+  const checkAccess = useCallback(async () => {
     try {
       const response = await fetch('/api/auth/me');
       const data = await response.json();
@@ -41,15 +27,13 @@ export default function ConfiguracionPage() {
       console.error('Error checking access:', error);
       router.push('/admin');
     }
-  };
+  }, [router]);
 
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/settings');
       if (response.ok) {
         const data = await response.json();
-        setSettings(data.settings || {});
-
         // Cargar el valor de age_gate_enabled
         const ageGateValue = data.settings?.age_gate_enabled?.value;
         setAgeGateEnabled(ageGateValue === 'true');
@@ -62,7 +46,12 @@ export default function ConfiguracionPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    void checkAccess();
+    void fetchSettings();
+  }, [checkAccess, fetchSettings]);
 
   const handleSaveSettings = async () => {
     setSaving(true);

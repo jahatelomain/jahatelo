@@ -5,6 +5,7 @@ import { UploadFormSchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import { requireAdminAccess } from '@/lib/adminAccess';
 
 export const runtime = 'nodejs';
 
@@ -17,6 +18,9 @@ function createObjectKey(filename?: string | null) {
 
 export async function POST(request: Request) {
   try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
+    if (access.error) return access.error;
+
     const isDev = process.env.NODE_ENV === 'development';
 
     // Validate AWS env vars

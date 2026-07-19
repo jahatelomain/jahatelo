@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import DirtyBanner from '@/components/admin/DirtyBanner';
+import SearchableSelect from '@/components/admin/SearchableSelect';
 
 type ScheduledNotification = {
   id: string;
@@ -13,7 +14,7 @@ type ScheduledNotification = {
   body: string;
   category: string;
   type: string;
-  data?: any;
+  data?: Record<string, unknown>;
   scheduledFor: string;
   sent: boolean;
   sentAt: string | null;
@@ -30,6 +31,21 @@ type MotelOption = {
   id: string;
   name: string;
 };
+
+type NotificationPayload = {
+  title: string;
+  body: string;
+  category: string;
+  type: string;
+  sendNow: boolean;
+  scheduledFor?: string;
+  targetRole?: string;
+  targetMotelId?: string;
+  data?: Record<string, unknown>;
+};
+
+const getErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error ? error.message : fallback;
 
 type CurrentUser = {
   id: string;
@@ -100,8 +116,8 @@ export default function NotificationsAdminPage() {
         if (!res.ok) {
           throw new Error('Error al cargar moteles');
         }
-        const data = await res.json();
-        setMotels((data.motels || []).map((m: any) => ({ id: m.id, name: m.name })));
+        const data = await res.json() as { motels?: MotelOption[] };
+        setMotels((data.motels || []).map((motel) => ({ id: motel.id, name: motel.name })));
       } catch (error) {
         console.error('Error:', error);
         toast.error('Error al cargar moteles');
@@ -128,16 +144,16 @@ export default function NotificationsAdminPage() {
     try {
       const res = await fetch('/api/notifications/schedule');
       if (!res.ok) throw new Error('Error al cargar notificaciones');
-      const data = await res.json();
+      const data = await res.json() as { notifications?: ScheduledNotification[] };
       const notifications = data.notifications || [];
 
       console.log('📥 Notificaciones recibidas:', notifications.length);
       if (notifications.length > 0) {
-        const sample = notifications.slice(0, 3).map((n: any) => ({ id: n.id, title: n.title }));
+        const sample = notifications.slice(0, 3).map((notification) => ({ id: notification.id, title: notification.title }));
         console.log('📋 Muestra de notificaciones:', sample);
       }
 
-      const invalidNotifications = notifications.filter((n: any) => !n.id);
+      const invalidNotifications = notifications.filter((notification) => !notification.id);
       if (invalidNotifications.length > 0) {
         console.error('Notificaciones sin ID:', invalidNotifications);
       }
@@ -184,8 +200,8 @@ export default function NotificationsAdminPage() {
         prev.map((cfg) => (cfg.key === key ? { ...cfg, enabled: newEnabled } : cfg))
       );
       toast.success(newEnabled ? 'Notificación automática activada' : 'Notificación automática desactivada');
-    } catch (error: any) {
-      toast.error(error.message || 'Error al actualizar configuración');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Error al actualizar configuración'));
     } finally {
       setTogglingKey(null);
     }
@@ -218,7 +234,7 @@ export default function NotificationsAdminPage() {
     setSending(true);
 
     try {
-      const payload: any = {
+      const payload: NotificationPayload = {
         title: formData.title,
         body: formData.body,
         category: formData.category,
@@ -264,8 +280,8 @@ export default function NotificationsAdminPage() {
 
       fetchNotifications();
       handleCancel();
-    } catch (error: any) {
-      toast.error(error.message || 'Error al procesar notificación');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Error al procesar notificación'));
     } finally {
       setSending(false);
     }
@@ -474,7 +490,7 @@ export default function NotificationsAdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <select
                 value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value as any)}
+                onChange={(e) => setFilterCategory(e.target.value as typeof filterCategory)}
                 className="border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               >
                 <option value="ALL">Todas las categorías</option>
@@ -485,7 +501,7 @@ export default function NotificationsAdminPage() {
 
               <select
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as any)}
+                onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
                 className="border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               >
                 <option value="ALL">Todos los estados</option>
@@ -679,21 +695,13 @@ export default function NotificationsAdminPage() {
                       <label className="block text-sm font-medium text-slate-700 mb-2">
                         Selecciona un motel
                       </label>
-                      <select
+                      <SearchableSelect
                         value={formData.targetMotelId}
-                        onChange={(e) => setFormData({ ...formData, targetMotelId: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        onChange={(targetMotelId) => setFormData({ ...formData, targetMotelId })}
+                        placeholder={loadingMotels ? 'Cargando moteles...' : 'Buscar motel...'}
                         disabled={loadingMotels}
-                      >
-                        <option value="">
-                          {loadingMotels ? 'Cargando moteles...' : 'Seleccionar motel'}
-                        </option>
-                        {motels.map((motel) => (
-                          <option key={motel.id} value={motel.id}>
-                            {motel.name}
-                          </option>
-                        ))}
-                      </select>
+                        options={motels.map((motel) => ({ value: motel.id, label: motel.name }))}
+                      />
                     </div>
                   )}
                 </div>

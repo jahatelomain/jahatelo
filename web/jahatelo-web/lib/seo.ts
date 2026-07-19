@@ -18,7 +18,7 @@ type MotelSchemaInput = {
 };
 
 export function generateMotelSchema(motel: MotelSchemaInput) {
-  const schema: Record<string, any> = {
+  const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'LodgingBusiness',
     '@id': motel.url ? `${motel.url}#business` : undefined,

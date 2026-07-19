@@ -70,11 +70,6 @@ export default function MotelFilters({
     router.push('/search');
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateFilter('search', searchValue);
-  };
-
   const toggleAmenity = (amenityId: string) => {
     const newSelectedAmenities = selectedAmenities.includes(amenityId)
       ? selectedAmenities.filter(id => id !== amenityId)

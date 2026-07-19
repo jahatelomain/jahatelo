@@ -11,6 +11,7 @@ import Animated, {
   interpolate,
   Extrapolate,
 } from 'react-native-reanimated';
+import { hasMotelPlanGlow } from '../constants/motelPlans';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.75;
@@ -65,6 +66,7 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
   const resolvedImageUrl = imageFailed ? null : imageUrl;
   const imageSource = resolvedImageUrl ? { uri: resolvedImageUrl } : fallbackPattern;
   const isPlaceholder = !resolvedImageUrl;
+  const hasPlanGlow = hasMotelPlanGlow(motel?.plan);
 
   const handleShare = (e) => {
     e?.stopPropagation();
@@ -99,49 +101,59 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
     };
   });
 
+  const card = (
+    <TouchableOpacity activeOpacity={0.9} onPress={() => onPress?.(motel)}>
+      <ImageBackground
+        source={imageSource}
+        style={styles.card}
+        imageStyle={[styles.cardImage, isPlaceholder && styles.placeholderImage]}
+        onError={() => setImageFailed(true)}
+      >
+        <View style={styles.promoBadge}>
+          <Ionicons name={badgeIconName} size={14} color={COLORS.white} />
+          <Text style={styles.promoBadgeText}>{badgeLabel}</Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.shareButton}
+          onPress={handleShare}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="share-social-outline" size={18} color={COLORS.white} />
+        </TouchableOpacity>
+
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.8)']}
+          style={styles.gradient}
+        >
+          <View style={styles.cardContent}>
+            <Text style={styles.cardTitle} numberOfLines={2}>
+              {motel.nombre}
+            </Text>
+            <View style={styles.locationRow}>
+              <Ionicons name="location-outline" size={14} color={COLORS.white} />
+              <Text style={styles.cardLocation} numberOfLines={1}>
+                {motel.barrio || motel.ciudad}
+              </Text>
+            </View>
+          </View>
+        </LinearGradient>
+      </ImageBackground>
+    </TouchableOpacity>
+  );
+
   return (
     <Animated.View style={[styles.cardWrapper, animatedStyle]}>
-      <TouchableOpacity activeOpacity={0.9} onPress={() => onPress?.(motel)}>
-        <ImageBackground
-          source={imageSource}
-          style={styles.card}
-          imageStyle={[styles.cardImage, isPlaceholder && styles.placeholderImage]}
-          onError={() => setImageFailed(true)}
+      {hasPlanGlow ? (
+        <LinearGradient
+          colors={['#22D3EE', '#BAE6FD', '#0EA5E9', '#7DD3FC']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.planGlowFrame}
         >
-          {/* Badge de Promoción */}
-          <View style={styles.promoBadge}>
-            <Ionicons name={badgeIconName} size={14} color={COLORS.white} />
-            <Text style={styles.promoBadgeText}>{badgeLabel}</Text>
-          </View>
-
-          {/* Botón Compartir */}
-          <TouchableOpacity
-            style={styles.shareButton}
-            onPress={handleShare}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="share-social-outline" size={18} color={COLORS.white} />
-          </TouchableOpacity>
-
-          {/* Gradiente overlay */}
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.8)']}
-            style={styles.gradient}
-          >
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle} numberOfLines={2}>
-                {motel.nombre}
-              </Text>
-              <View style={styles.locationRow}>
-                <Ionicons name="location-outline" size={14} color={COLORS.white} />
-                <Text style={styles.cardLocation} numberOfLines={1}>
-                  {motel.barrio || motel.ciudad}
-                </Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </ImageBackground>
-      </TouchableOpacity>
+          <View style={styles.planGlowInner}>{card}</View>
+        </LinearGradient>
+      ) : card}
     </Animated.View>
   );
 };
@@ -358,6 +370,22 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     marginRight: SPACING,
+  },
+  planGlowFrame: {
+    padding: 2,
+    borderRadius: 22,
+    shadowColor: '#22D3EE',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
+    overflow: 'visible',
+  },
+  planGlowInner: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
   },
   card: {
     width: CARD_WIDTH,

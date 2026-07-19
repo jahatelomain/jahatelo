@@ -21,7 +21,7 @@ Sentry.init({
   debug: process.env.NODE_ENV === 'development',
 
   // No enviar errores en desarrollo
-  beforeSend(event, hint) {
+  beforeSend(event) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Sentry Event:', event);
       return null;

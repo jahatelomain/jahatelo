@@ -8,7 +8,6 @@ import {
   loadDraft,
   deleteDraft,
   getAllDrafts,
-  hasDrafts,
   type MotelDraft
 } from '@/lib/utils/offline-storage';
 import { extractCoordinatesFromGoogleMapsUrl, formatCoordinates } from '@/lib/utils/coordinates';
@@ -25,7 +24,7 @@ export default function MotelCaptureForm({ onSuccess }: MotelCaptureFormProps) {
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [availableDrafts, setAvailableDrafts] = useState<MotelDraft[]>([]);
 
-  const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<MotelDraft>({
+  const { register, control, handleSubmit, watch, reset, formState: { errors } } = useForm<MotelDraft>({
     defaultValues: {
       rooms: [{ name: '', pricePerHour: '', additionalPrice: '', description: '', amenities: [], otherAmenity: '' }],
       promos: [],
@@ -84,11 +83,7 @@ export default function MotelCaptureForm({ onSuccess }: MotelCaptureFormProps) {
   const restoreDraft = (draftId: string) => {
     const draft = loadDraft(draftId);
     if (draft) {
-      Object.keys(draft).forEach((key) => {
-        if (key !== 'id' && key !== 'savedAt') {
-          setValue(key as any, draft[key as keyof typeof draft] as any);
-        }
-      });
+      reset(draft);
       setCurrentDraftId(draftId);
       setShowDraftsList(false);
     }
@@ -145,9 +140,9 @@ export default function MotelCaptureForm({ onSuccess }: MotelCaptureFormProps) {
       }
 
       alert(result.message);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error:', error);
-      alert(error.message || 'Error al crear motel');
+      alert(error instanceof Error ? error.message : 'Error al crear motel');
     } finally {
       setIsSubmitting(false);
     }

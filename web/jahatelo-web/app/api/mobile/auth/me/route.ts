@@ -123,7 +123,7 @@ export async function PATCH(request: NextRequest) {
         ...(profilePhoto !== undefined && { profilePhoto }),
         ...(pushToken !== undefined && { pushToken }),
         ...(deviceInfo !== undefined && {
-          deviceInfo: deviceInfo === null ? Prisma.JsonNull : deviceInfo,
+          deviceInfo: deviceInfo === null ? Prisma.JsonNull : deviceInfo as Prisma.InputJsonValue,
         }),
       },
       include: {

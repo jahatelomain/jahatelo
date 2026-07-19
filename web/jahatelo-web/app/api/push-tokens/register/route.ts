@@ -87,7 +87,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: 'Datos inválidos',
-          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })),
+          details: error.issues.map((e) => ({ field: e.path.join('.'), message: e.message })),
         },
         { status: 400 }
       );
@@ -125,7 +125,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json(
         {
           error: 'Datos inválidos',
-          details: error.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })),
+          details: error.issues.map((e) => ({ field: e.path.join('.'), message: e.message })),
         },
         { status: 400 }
       );

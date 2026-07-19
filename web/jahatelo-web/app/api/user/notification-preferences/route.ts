@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { sanitizeObject } from '@/lib/sanitize';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
+import type { Prisma } from '@prisma/client';
 
 const UserIdSchema = z.string().min(1).max(100);
 
@@ -128,9 +129,9 @@ export async function PUT(request: NextRequest) {
       'notifyNewProspects',
       'notifyPaymentReminders',
       'notifyMotelApprovals',
-    ];
+    ] as const satisfies readonly (keyof Prisma.UserNotificationPreferencesUncheckedCreateInput)[];
 
-    const filteredData: any = {};
+    const filteredData: Partial<Prisma.UserNotificationPreferencesUncheckedCreateInput> = {};
     for (const field of validFields) {
       if (field in preferencesData && typeof preferencesData[field] === 'boolean') {
         filteredData[field] = preferencesData[field];

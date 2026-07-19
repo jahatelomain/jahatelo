@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         return { success: false, error: data.error || 'Error al iniciar sesión', needsVerification: data.needsVerification };
       }
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Error de conexión' };
     }
   };
@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         return { success: false, error: data.error || 'Error al iniciar sesión con Google' };
       }
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Error de conexión' };
     }
   };
@@ -121,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         return { success: false, error: data.error || 'Error al registrarse' };
       }
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Error de conexión' };
     }
   };

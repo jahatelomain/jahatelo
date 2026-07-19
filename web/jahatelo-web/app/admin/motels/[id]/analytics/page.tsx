@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import Link from 'next/link';
 
@@ -36,7 +36,6 @@ interface AnalyticsData {
 }
 
 export default function MotelAnalyticsPage() {
-  const router = useRouter();
   const params = useParams();
   const toast = useToast();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
@@ -50,13 +49,7 @@ export default function MotelAnalyticsPage() {
     MAP: 'Pantalla de Mapa',
   };
 
-  useEffect(() => {
-    if (params?.id) {
-      fetchAnalytics(params.id as string, period);
-    }
-  }, [params?.id, period]);
-
-  const fetchAnalytics = async (id: string, periodDays: string) => {
+  const fetchAnalytics = useCallback(async (id: string, periodDays: string) => {
     try {
       setLoading(true);
       const response = await fetch(`/api/admin/motels/${id}/analytics?period=${periodDays}`);
@@ -72,7 +65,13 @@ export default function MotelAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    if (params?.id) {
+      void fetchAnalytics(params.id as string, period);
+    }
+  }, [fetchAnalytics, params?.id, period]);
 
   if (loading) {
     return (

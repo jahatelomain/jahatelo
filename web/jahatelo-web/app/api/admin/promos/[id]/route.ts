@@ -96,7 +96,9 @@ export async function DELETE(
       select: { id: true, motelId: true, title: true },
     });
     if (!promo) {
-      return NextResponse.json({ error: 'Promo no encontrada' }, { status: 404 });
+      // DELETE idempotente: un reintento de red o doble confirmación no debe
+      // convertir una eliminación ya completada en un error para el usuario.
+      return NextResponse.json({ success: true, alreadyDeleted: true });
     }
     if (access.user?.role === 'MOTEL_ADMIN' && promo.motelId !== access.user.motelId) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });

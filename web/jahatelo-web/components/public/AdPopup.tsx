@@ -10,7 +10,7 @@ const STORAGE_KEY = 'ad_popup_last_seen';
 export default function AdPopup() {
   const { ads } = useAdvertisements('POPUP_HOME');
   const [open, setOpen] = useState(false);
-  const [imageReady, setImageReady] = useState(false);
+  const [loadedAdId, setLoadedAdId] = useState<string | null>(null);
 
   const ad = useMemo(() => ads[0], [ads]);
   const imageUrl = ad?.largeImageUrlWeb || ad?.largeImageUrl || ad?.imageUrl || '/motel-placeholder.png';
@@ -20,20 +20,18 @@ export default function AdPopup() {
     const today = new Date().toISOString().slice(0, 10);
     const lastSeen = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
     if (lastSeen === today) return;
-    setOpen(false);
-    setImageReady(false);
     let active = true;
     const img = new window.Image();
     img.onload = () => {
       if (!active) return;
-      setImageReady(true);
+      setLoadedAdId(ad.id);
       setOpen(true);
       localStorage.setItem(STORAGE_KEY, today);
       trackAdEvent({ advertisementId: ad.id, eventType: 'VIEW', source: 'POPUP_HOME' });
     };
     img.onerror = () => {
       if (!active) return;
-      setImageReady(true);
+      setLoadedAdId(ad.id);
       setOpen(true);
       localStorage.setItem(STORAGE_KEY, today);
       trackAdEvent({ advertisementId: ad.id, eventType: 'VIEW', source: 'POPUP_HOME' });
@@ -44,7 +42,7 @@ export default function AdPopup() {
     };
   }, [ad, imageUrl]);
 
-  if (!ad || !open || !imageReady) return null;
+  if (!ad || !open || loadedAdId !== ad.id) return null;
 
   return (
     <div

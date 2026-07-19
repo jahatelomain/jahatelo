@@ -10,6 +10,7 @@ import Animated, {
   interpolate,
   Easing,
 } from 'react-native-reanimated';
+import { hasMotelPlanGlow } from '../constants/motelPlans';
 
 const COLORS = {
   white: '#FFFFFF',
@@ -20,7 +21,7 @@ const COLORS = {
 
 export default function MotelCardSmall({ motel, onPress }) {
   // isDiamond con null safety — debe estar antes de los hooks
-  const isDiamond = motel?.plan === 'DIAMOND';
+  const isDiamond = hasMotelPlanGlow(motel?.plan);
 
   // Todos los hooks ANTES del early return
   const diamondOrbit = useSharedValue(0);

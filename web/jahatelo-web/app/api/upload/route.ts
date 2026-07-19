@@ -5,6 +5,8 @@ import { UploadFormSchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import { requireAdminAccess } from '@/lib/adminAccess';
+import type { AdminModule } from '@/lib/adminModules';
 
 export const runtime = 'nodejs';
 
@@ -49,6 +51,18 @@ export async function POST(request: Request) {
     const validated = UploadFormSchema.parse({
       folder: typeof folder === 'string' ? folder : undefined,
     });
+    const uploadModule: AdminModule =
+      validated.folder === 'advertisements'
+        ? 'banners'
+        : validated.folder === 'promos'
+          ? 'promos'
+          : 'motels';
+    const allowedRoles =
+      uploadModule === 'banners'
+        ? (['SUPERADMIN'] as const)
+        : (['SUPERADMIN', 'MOTEL_ADMIN'] as const);
+    const access = await requireAdminAccess(request, [...allowedRoles], uploadModule);
+    if (access.error) return access.error;
 
     if (!(file instanceof Blob)) {
       return NextResponse.json(

@@ -11,6 +11,7 @@ import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
 import ShareButton from '@/components/public/ShareButton';
 import ReviewsSection from '@/components/public/ReviewsSection';
 import PriceTable from '@/components/public/PriceTable';
+import { formatGuaranies } from '@/lib/formatCurrency';
 import JsonLd from '@/components/JsonLd';
 import * as LucideIcons from 'lucide-react';
 import { prisma } from '@/lib/prisma';
@@ -179,7 +180,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                       {schedule.isClosed
                         ? 'Cerrado'
                         : schedule.is24Hours
-                          ? 'Abierto 24 horas'
+                          ? 'Abierto 24h'
                           : `${formatScheduleTime(schedule.openTime)} - ${formatScheduleTime(schedule.closeTime)}`}
                     </span>
                   </div>
@@ -191,7 +192,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           {/* Amenities derived from rooms */}
           {roomAmenitiesSummary.length > 0 && (
             <div className="mb-8">
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Servicios e instalaciones</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Amenities</h3>
               <div className="flex flex-wrap gap-3">
                 {roomAmenitiesSummary.map((amenity) => (
                   <div
@@ -307,13 +308,6 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                       <div className={`p-6 ${roomPhotos.length > 0 ? 'md:w-2/3' : 'w-full'}`}>
                         <div className="flex items-start justify-between mb-3">
                           <h4 className="text-xl font-bold text-gray-900">{room.name}</h4>
-                          <div className="flex gap-2">
-                            {room.isFeatured && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
-                                Destacada
-                              </span>
-                            )}
-                          </div>
                         </div>
 
                         {room.description && (
@@ -340,7 +334,6 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                         {/* Room Amenities */}
                         {room.amenities.some((ra) => Boolean(ra?.amenity?.name)) && (
                           <div className="mb-4">
-                            <p className="text-sm font-semibold text-gray-700 mb-2">Comodidades:</p>
                             <div className="flex flex-wrap gap-2">
                               {room.amenities.filter((ra) => Boolean(ra?.amenity?.name)).map((ra) => (
                                 <span
@@ -364,13 +357,12 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                         )}
 
                         {/* Prices */}
-                        {prices.length > 0 && (
+                        {prices.length > 0 ? (
                           <div className="border-t border-gray-200 pt-4">
                             <div className="flex items-center gap-2 mb-2">
-                              <p className="text-sm font-semibold text-gray-700">Precios:</p>
                               {hasWeekendRates && (
                                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isWeekend ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
-                                  {isWeekend ? 'Fin de semana' : 'Días de semana'}
+                                  {isWeekend ? 'Fin de semana' : 'Entre semana'}
                                 </span>
                               )}
                             </div>
@@ -378,23 +370,11 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                               prices={prices.map((price) => ({
                                 label: price.label,
                                 price: Number(price.value),
-                                hours:
-                                  price.label === '1h'
-                                    ? 1
-                                    : price.label === '1.5h'
-                                      ? 1.5
-                                      : price.label === '2h'
-                                        ? 2
-                                        : price.label === '3h'
-                                          ? 3
-                                          : price.label === '12h'
-                                            ? 12
-                                            : price.label === '24h'
-                                              ? 24
-                                              : 8,
                               }))}
                             />
                           </div>
+                        ) : (
+                          <div className="border-t border-gray-200 pt-4 font-bold text-gray-900">CONSULTAR</div>
                         )}
                       </div>
                     </div>
@@ -448,7 +428,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                             <div className="flex items-start justify-between mb-1">
                               <h4 className="font-semibold text-gray-900">{item.name}</h4>
                               <span className="text-lg font-bold text-purple-600 ml-2">
-                                ${item.price.toLocaleString()}
+                                {formatGuaranies(item.price)}
                               </span>
                             </div>
                             {item.description && (
@@ -459,7 +439,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-500">No hay ítems en esta categoría.</p>
+                    <p className="text-gray-500">Sin items en esta categoría</p>
                   )}
                 </div>
               ))}

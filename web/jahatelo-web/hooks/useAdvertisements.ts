@@ -47,7 +47,7 @@ export function useAdvertisements(placement: string) {
     } finally {
       setLoading(false);
     }
-  }, [placement]);
+  }, [placement, e2eMode]);
 
   useEffect(() => {
     fetchAds();
