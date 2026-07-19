@@ -1206,15 +1206,21 @@ export default function MotelDetailPage() {
 
   const handleReorderRooms = async (orderedRooms: RoomType[]) => {
     if (!motel) return;
-    // Actualizar UI optimistamente
-    setMotel((prev) => prev ? { ...prev, rooms: orderedRooms } : prev);
+    const previousRooms = motel.rooms ?? [];
+    // La vista ordena por `room.order`; por eso también hay que actualizar ese
+    // campo localmente y no sólo la posición dentro del array.
+    const roomsWithUpdatedOrder = orderedRooms.map((room, index) => ({
+      ...room,
+      order: index,
+    }));
+    setMotel((prev) => prev ? { ...prev, rooms: roomsWithUpdatedOrder } : prev);
     try {
       const response = await fetch('/api/admin/rooms/reorder', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           motelId: motel.id,
-          roomIds: orderedRooms.map((r) => r.id),
+          roomIds: roomsWithUpdatedOrder.map((room) => room.id),
         }),
       });
       if (!response.ok) {
@@ -1224,7 +1230,9 @@ export default function MotelDetailPage() {
       setTimeout(() => setSaveStatus('idle'), 2500);
     } catch (error) {
       console.error('Error reordering rooms:', error);
-      fetchMotel();
+      // Restaurar inmediatamente el orden anterior si el guardado falla.
+      setMotel((prev) => prev ? { ...prev, rooms: previousRooms } : prev);
+      alert('No se pudo guardar el nuevo orden de las habitaciones. Intentá nuevamente.');
     }
   };
 
