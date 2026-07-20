@@ -52,6 +52,26 @@ export const extractLatLngFromMapUrl = (value: string | null) => {
   return null;
 };
 
+/**
+ * Convierte un src de Google Maps Embed en un enlace que puede abrirse fuera
+ * de un iframe. Google rechaza abrir directamente las URLs `/maps/embed`.
+ */
+export const getGoogleMapsExternalUrl = (value: string | null, fallbackQuery = '') => {
+  if (!value) return null;
+
+  const coordinates = extractLatLngFromMapUrl(value);
+  if (coordinates) {
+    return `https://www.google.com/maps/search/?api=1&query=${coordinates.latitude},${coordinates.longitude}`;
+  }
+
+  const isEmbedUrl = /google\.[^/]+\/maps\/embed|\/maps\/embed/i.test(value);
+  if (isEmbedUrl && fallbackQuery.trim()) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fallbackQuery.trim())}`;
+  }
+
+  return isEmbedUrl ? null : value;
+};
+
 export const getResponseError = async (response: Response, fallback: string) => {
   try {
     const data = await response.json();

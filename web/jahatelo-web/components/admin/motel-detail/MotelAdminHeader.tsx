@@ -1,6 +1,7 @@
 import { Image as ImageIcon, MapPin, MessageCircle, Phone, Trash2 } from 'lucide-react';
 import type { Motel, MotelStatus } from './types';
 import AdminImage from './AdminImage';
+import { getGoogleMapsExternalUrl } from './formUtils';
 
 type Props = {
   motel: Motel;
@@ -25,6 +26,7 @@ export default function MotelAdminHeader({
 }: Props) {
   const whatsappLink = motel.whatsapp ? `https://wa.me/${motel.whatsapp.replace(/\D/g, '')}` : '';
   const phoneLink = motel.phone ? `tel:${motel.phone}` : '';
+  const mapsLink = getGoogleMapsExternalUrl(motel.mapUrl, [motel.address, motel.city].filter(Boolean).join(', '));
   const ratingAvg = typeof motel.ratingAvg === 'number' ? motel.ratingAvg : 0;
   const ratingCount = typeof motel.ratingCount === 'number' ? motel.ratingCount : 0;
 
@@ -94,8 +96,8 @@ export default function MotelAdminHeader({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {motel.mapUrl && (
-              <a href={motel.mapUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-purple-200 hover:text-purple-700 transition-colors">
+            {mapsLink && (
+              <a href={mapsLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-purple-200 hover:text-purple-700 transition-colors">
                 <MapPin className="w-3.5 h-3.5" /> Ver mapa
               </a>
             )}
