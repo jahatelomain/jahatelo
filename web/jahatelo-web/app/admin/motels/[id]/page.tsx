@@ -8,6 +8,7 @@ import DirtyBanner from '@/components/admin/DirtyBanner';
 import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
 import {
   extractLatLngFromMapUrl,
+  getGoogleMapsExternalUrl,
   getResponseError,
   normalizeMapUrl,
   normalizeOptionalText,
@@ -1138,6 +1139,7 @@ export default function MotelDetailPage() {
 
   const featuredPhotoWeb = normalizeLocalUrl(motel.featuredPhotoWeb || motel.featuredPhoto || null);
   const featuredPhotoApp = normalizeLocalUrl(motel.featuredPhotoApp || motel.featuredPhoto || null);
+  const mapsLink = getGoogleMapsExternalUrl(motel.mapUrl, [motel.address, motel.city].filter(Boolean).join(', '));
 
   const promoLimit = getPlanPromoLimit(motel.plan);
   const roomPhotoLimit = getPlanRoomPhotoLimit(motel.plan);
@@ -1271,8 +1273,6 @@ export default function MotelDetailPage() {
                     <dt className="text-xs font-medium text-slate-500 uppercase">Ciudad</dt>
                     <dd className="mt-1 text-sm text-slate-900">{motel.city}</dd>
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                  </div>
                   <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                     <dt className="text-xs font-medium text-slate-500 uppercase">Dirección</dt>
                     <dd className="mt-1 text-sm text-slate-900">{motel.address}</dd>
@@ -1281,9 +1281,9 @@ export default function MotelDetailPage() {
                     <dt className="text-xs font-medium text-slate-500 uppercase">URL de Mapa</dt>
                     <div className="mt-1 flex items-center gap-3">
                       <p className="text-sm text-slate-900 truncate flex-1">{motel.mapUrl || '-'}</p>
-                      {motel.mapUrl && (
+                      {mapsLink && (
                         <a
-                          href={motel.mapUrl}
+                          href={mapsLink}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-sm text-purple-600 hover:text-purple-700 font-medium"
