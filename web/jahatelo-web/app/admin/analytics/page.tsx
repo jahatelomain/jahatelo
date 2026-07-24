@@ -45,6 +45,7 @@ interface Motel {
 interface CurrentUser {
   id: string;
   role: 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
+  motelId?: string | null;
 }
 
 export default function GlobalAnalyticsPage() {
@@ -80,11 +81,16 @@ export default function GlobalAnalyticsPage() {
       const response = await fetch('/api/auth/me');
       const data = await response.json();
 
-      if (!data.user || data.user.role !== 'SUPERADMIN') {
+      if (!data.user || !['SUPERADMIN', 'MOTEL_ADMIN'].includes(data.user.role)) {
+        router.push('/admin');
+        return;
+      }
+      if (data.user.role === 'MOTEL_ADMIN' && !data.user.motelId) {
         router.push('/admin');
         return;
       }
       setCurrentUser(data.user);
+      if (data.user.role === 'MOTEL_ADMIN') setSelectedMotelId(data.user.motelId);
     } catch (error) {
       console.error('Error checking access:', error);
       router.push('/admin');
@@ -92,7 +98,7 @@ export default function GlobalAnalyticsPage() {
   };
 
   const fetchMotels = async () => {
-    if (!currentUser) return;
+    if (!currentUser || currentUser.role !== 'SUPERADMIN') return;
     try {
       const response = await fetch('/api/admin/motels');
       if (response.ok) {
@@ -183,7 +189,7 @@ export default function GlobalAnalyticsPage() {
 
           {/* Filtros + Exportar */}
           <div className="flex flex-wrap gap-3">
-            <a
+            {currentUser?.role === 'SUPERADMIN' && <a
               href="/api/admin/export?type=analytics"
               download
               className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium flex items-center gap-2 shadow-sm text-sm"
@@ -192,9 +198,9 @@ export default function GlobalAnalyticsPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               Exportar CSV
-            </a>
+            </a>}
             {/* Selector de Motel */}
-            <div className="min-w-64">
+            {currentUser?.role === 'SUPERADMIN' && <div className="min-w-64">
               <SearchableSelect
               value={selectedMotelId}
               onChange={setSelectedMotelId}
@@ -204,7 +210,7 @@ export default function GlobalAnalyticsPage() {
                 ...motels.map((motel) => ({ value: motel.id, label: motel.name })),
               ]}
               />
-            </div>
+            </div>}
 
             {/* Selector de período */}
             <select

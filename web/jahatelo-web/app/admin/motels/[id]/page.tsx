@@ -212,10 +212,16 @@ export default function MotelDetailPage() {
   const fetchAmenities = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/amenities');
+      if (!res.ok) {
+        setAmenities([]);
+        console.error('Error fetching amenities:', res.status);
+        return;
+      }
       const data = await res.json();
-      setAmenities(data);
+      setAmenities(Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : []);
     } catch (error) {
       console.error('Error fetching amenities:', error);
+      setAmenities([]);
     }
   }, []);
 
@@ -1502,6 +1508,7 @@ export default function MotelDetailPage() {
           loading={reviewsLoading}
           onRefresh={fetchReviews}
           onDelete={handleDeleteReview}
+          canModerate={currentUser?.role === 'SUPERADMIN'}
         />
       )}
 

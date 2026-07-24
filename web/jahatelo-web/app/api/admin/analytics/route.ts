@@ -12,7 +12,7 @@ import { z } from 'zod';
  */
 export async function GET(request: NextRequest) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'analytics');
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
     if (access.error) return access.error;
 
     // Obtener parámetros de consulta
@@ -27,7 +27,11 @@ export async function GET(request: NextRequest) {
     if (!queryResult.success) {
       return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
-    const { period, motelId, source, deviceType, eventType } = queryResult.data;
+    const { period, motelId: requestedMotelId, source, deviceType, eventType } = queryResult.data;
+    const motelId = access.user?.role === 'MOTEL_ADMIN' ? access.user.motelId : requestedMotelId;
+    if (access.user?.role === 'MOTEL_ADMIN' && !motelId) {
+      return NextResponse.json({ error: 'El usuario no tiene un motel asignado' }, { status: 403 });
+    }
     const days = period || 30;
 
     // Calcular fecha de inicio

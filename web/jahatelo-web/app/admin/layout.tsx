@@ -135,6 +135,8 @@ export default function AdminLayout({
     if (pathname.startsWith('/admin/banners')) return 'Banners Publicitarios';
     if (pathname.startsWith('/admin/audit')) return 'Auditoría';
     if (pathname.startsWith('/admin/inbox')) return 'Inbox';
+    if (pathname.startsWith('/admin/motel-settings')) return 'Preferencias de alertas';
+    if (pathname.startsWith('/admin/motel-team')) return 'Equipo del motel';
     if (pathname.startsWith('/admin/configuracion')) return 'Ajustes Generales';
     return 'Admin';
   };
@@ -169,11 +171,13 @@ export default function AdminLayout({
       collapsible: true,
       items: [
         { href: '/admin/prospects', label: 'Prospects', roles: ['SUPERADMIN'] },
-        { href: '/admin/analytics', label: 'Analytics moteles', roles: ['SUPERADMIN'] },
+        { href: '/admin/analytics', label: 'Analytics', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
         { href: '/admin/analytics/visitors', label: 'Visitantes', roles: ['SUPERADMIN'] },
       ],
     },
     { href: '/admin/financiero', label: 'Financiero', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
+    { href: '/admin/motel-settings', label: 'Preferencias de alertas', roles: ['MOTEL_ADMIN'] },
+    { href: '/admin/motel-team', label: 'Equipo del motel', roles: ['MOTEL_ADMIN'] },
     {
       section: 'Publicidad',
       collapsible: true,
@@ -207,7 +211,11 @@ export default function AdminLayout({
     if (path.startsWith('/admin/roles')) return 'configuracion';
     if (path.startsWith('/admin/prospects')) return 'prospects';
     if (path.startsWith('/admin/financiero')) return 'financiero';
-    if (path.startsWith('/admin/analytics')) return 'analytics';
+    if (path.startsWith('/admin/motel-settings')) return 'motels';
+    if (path.startsWith('/admin/motel-team')) return 'motels';
+    // Para motel admin, Analytics se limita en API a su propio motel y usa el
+    // permiso operativo de Moteles. Superadmin conserva acceso total.
+    if (path.startsWith('/admin/analytics')) return 'motels';
     if (path.startsWith('/admin/notifications')) return 'notifications';
     if (path.startsWith('/admin/banners')) return 'banners';
     if (path.startsWith('/admin/audit')) return 'audit';
