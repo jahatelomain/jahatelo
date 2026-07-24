@@ -11,7 +11,9 @@ import { z } from 'zod';
 // GET all amenities
 export async function GET(request: NextRequest) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'amenities');
+    // Los administradores de motel necesitan consultar este catálogo para
+    // asignar amenities a sus habitaciones, pero no pueden modificarlo.
+    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
     if (access.error) return access.error;
 
     const { searchParams } = new URL(request.url);

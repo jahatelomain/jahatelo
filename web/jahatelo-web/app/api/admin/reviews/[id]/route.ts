@@ -10,7 +10,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'motels');
     if (access.error) return access.error;
 
     const { id } = await params;
@@ -26,10 +26,6 @@ export async function DELETE(
 
     if (!review) {
       return NextResponse.json({ error: 'Reseña no encontrada' }, { status: 404 });
-    }
-
-    if (access.user?.role === 'MOTEL_ADMIN' && review.motelId !== access.user.motelId) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
     await prisma.review.delete({ where: { id: idResult.data } });
