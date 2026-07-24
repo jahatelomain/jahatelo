@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { verifyToken } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { requireAdminAccess } from '@/lib/adminAccess';
 import { SettingsUpdateSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
@@ -12,25 +11,8 @@ import { z } from 'zod';
  */
 export async function GET(request: NextRequest) {
   try {
-    void request;
-    const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { error: 'No autenticado' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyToken(token);
-
-    if (!user || user.role !== 'SUPERADMIN') {
-      return NextResponse.json(
-        { error: 'No autorizado. Solo SUPERADMIN puede acceder.' },
-        { status: 403 }
-      );
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'configuracion');
+    if (access.error) return access.error;
 
     // Obtener todas las configuraciones
     const settings = await prisma.settings.findMany({
@@ -71,24 +53,8 @@ export async function GET(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { error: 'No autenticado' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyToken(token);
-
-    if (!user || user.role !== 'SUPERADMIN') {
-      return NextResponse.json(
-        { error: 'No autorizado. Solo SUPERADMIN puede modificar configuraciones.' },
-        { status: 403 }
-      );
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'configuracion');
+    if (access.error) return access.error;
 
     const body = await request.json();
     const sanitized = sanitizeObject(body);

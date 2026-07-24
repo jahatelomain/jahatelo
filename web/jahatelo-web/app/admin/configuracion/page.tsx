@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
+import AccessProfilesPanel from '@/components/admin/AccessProfilesPanel';
 
-type TabId = 'varios';
+type TabId = 'varios' | 'perfiles';
 
 export default function ConfiguracionPage() {
   const router = useRouter();
@@ -110,7 +111,16 @@ export default function ConfiguracionPage() {
           >
             Varios
           </button>
-          {/* Agregar más tabs aquí en el futuro */}
+          <button
+            onClick={() => setActiveTab('perfiles')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              activeTab === 'perfiles'
+                ? 'border-purple-600 text-purple-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+            }`}
+          >
+            Perfiles de acceso
+          </button>
         </nav>
       </div>
 
@@ -195,6 +205,8 @@ export default function ConfiguracionPage() {
           </div>
         </div>
       )}
+
+      {activeTab === 'perfiles' && <AccessProfilesPanel />}
     </div>
   );
 }

@@ -96,10 +96,6 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     featuredPhoto: normalizeLocalUploadPath(motel.featuredPhoto),
     featuredPhotoWeb: normalizeLocalUploadPath(motel.featuredPhotoWeb),
     featuredPhotoApp: normalizeLocalUploadPath(motel.featuredPhotoApp),
-    photos: motel.photos.map((photo) => ({
-      ...photo,
-      url: normalizeLocalUploadPath(photo.url) || photo.url,
-    })),
     promos: motel.promos.map((promo) => ({
       ...promo,
       imageUrl: normalizeLocalUploadPath(promo.imageUrl),
@@ -124,14 +120,10 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
 
   // Get main photo
   const featuredPhotoWeb = motel.featuredPhotoWeb || motel.featuredPhoto || null;
-  const facadePhoto = motel.photos.find((p) => p.kind === 'FACADE');
-  const mainPhoto =
-    facadePhoto || motel.photos[0] || (featuredPhotoWeb ? { url: featuredPhotoWeb } : undefined);
   const heroPhotoUrl =
     featuredPhotoWeb ||
     motel.featuredPhotoApp ||
     motel.featuredPhoto ||
-    mainPhoto?.url ||
     null;
 
   // Safe rating
@@ -462,7 +454,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
   const motelSchema = generateMotelSchema({
     name: motel.name,
     description: motel.description,
-    image: mainPhoto?.url,
+    image: heroPhotoUrl || undefined,
     address: motel.address,
     city: motel.city,
     country: motel.country,

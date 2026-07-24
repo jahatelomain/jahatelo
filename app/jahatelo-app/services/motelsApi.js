@@ -28,24 +28,6 @@ const debugLog = (...args) => {
 const fetchJson = fetchWithTimeout;
 
 /**
- * Normaliza una lista de fotos provenientes del backend para que siempre sean strings (URLs)
- */
-const normalizePhotoList = (photos = []) => {
-  if (!Array.isArray(photos)) return [];
-
-  return photos
-    .map((photo) => {
-      if (!photo) return null;
-      if (typeof photo === 'string') return photo;
-      if (typeof photo === 'object') {
-        return photo.url || photo.photoUrl || null;
-      }
-      return null;
-    })
-    .filter(Boolean);
-};
-
-/**
  * Descarta amenities eliminados o incompletos que el API pueda devolver como null.
  * Conserva tanto el formato string legado como los objetos con nombre.
  */
@@ -59,46 +41,18 @@ const normalizeAmenityList = (amenities = []) => {
 };
 
 /**
- * Garantiza que un objeto motel tenga siempre fotos/thumbnail en formato string
+ * Garantiza que la portada configurada del motel sea una URL utilizable.
  */
-const normalizeMotelPhotos = (motel = {}) => {
+const normalizeMotelPresentation = (motel = {}) => {
   if (!motel) return motel;
-
-  const normalizedPhotos = normalizePhotoList(motel.photos);
-  const normalizedAllPhotos = normalizePhotoList(motel.allPhotos);
-  const featured =
-    motel.featuredPhotoApp
-      ? [motel.featuredPhotoApp]
-      : motel.featuredPhotoWeb
-        ? [motel.featuredPhotoWeb]
-        : motel.featuredPhoto
-          ? [motel.featuredPhoto]
-          : [];
-
-  const buildUniqueList = (lists) => {
-    const merged = lists.flat().filter(Boolean);
-    return Array.from(new Set(merged));
-  };
-
-  let effectivePhotos = buildUniqueList([featured, normalizedPhotos]);
-  if (effectivePhotos.length === 0) {
-    effectivePhotos = buildUniqueList([featured, normalizedAllPhotos]);
-  }
-
-  let effectiveAllPhotos = buildUniqueList([featured, normalizedAllPhotos]);
-  if (effectiveAllPhotos.length === 0) {
-    effectiveAllPhotos = buildUniqueList([featured, normalizedPhotos]);
-  }
 
   const normalizedThumbnail =
     typeof motel.thumbnail === 'string'
       ? motel.thumbnail
-      : motel.thumbnail?.url || motel.thumbnail?.photoUrl || effectivePhotos[0] || effectiveAllPhotos[0] || null;
+      : motel.thumbnail?.url || motel.thumbnail?.photoUrl || motel.featuredPhotoApp || motel.featuredPhotoWeb || motel.featuredPhoto || null;
 
   return {
     ...motel,
-    photos: effectivePhotos,
-    allPhotos: effectiveAllPhotos,
     thumbnail: normalizedThumbnail,
   };
 };
@@ -115,21 +69,14 @@ const mapMotelSummary = (apiMotel) => {
   const latitude = lat !== null ? parseFloat(lat) : null;
   const longitude = lng !== null ? parseFloat(lng) : null;
 
-  // Normalizar fotos: siempre una lista de strings para reutilizar en la app
-  let normalizedPhotos = normalizePhotoList(apiMotel.photos);
-  if (normalizedPhotos.length === 0 && Array.isArray(apiMotel.allPhotos)) {
-    normalizedPhotos = normalizePhotoList(apiMotel.allPhotos).slice(0, 3);
-  }
-
   const thumbnail =
     apiMotel.thumbnail ||
     apiMotel.featuredPhotoApp ||
     apiMotel.featuredPhotoWeb ||
     apiMotel.featuredPhoto ||
-    normalizedPhotos[0] ||
     null;
 
-  return normalizeMotelPhotos({
+  return normalizeMotelPresentation({
     id: apiMotel.id,
     slug: apiMotel.slug,
     nombre: apiMotel.name,
@@ -151,7 +98,6 @@ const mapMotelSummary = (apiMotel) => {
     location: (latitude !== null && longitude !== null)
       ? { lat: latitude, lng: longitude }
       : null,
-    photos: normalizedPhotos,
     thumbnail,
     featuredPhotoApp: apiMotel.featuredPhotoApp || null,
     featuredPhotoWeb: apiMotel.featuredPhotoWeb || null,
@@ -164,7 +110,7 @@ const mapMotelSummary = (apiMotel) => {
 const mapMotelDetail = (apiMotel) => {
   const summary = mapMotelSummary(apiMotel);
 
-  return normalizeMotelPhotos({
+  return normalizeMotelPresentation({
     ...summary,
     address: apiMotel.address || null,
     description: apiMotel.description || null,
@@ -172,7 +118,6 @@ const mapMotelDetail = (apiMotel) => {
     schedules: apiMotel.schedules || [],
     rooms: apiMotel.rooms?.filter(Boolean).map(mapRoom) || [],
     menu: apiMotel.menu?.map(mapMenuCategory) || [],
-    allPhotos: normalizePhotoList(apiMotel.allPhotos || apiMotel.photos),
     hasPhotos: apiMotel.hasPhotos || false,
     promos: apiMotel.promos || [],
   });
@@ -336,14 +281,14 @@ export const fetchMotelBySlug = async (slugOrId, useCache = true) => {
   if (cacheEnabled) {
     if (cachedItem) {
       debugLog('✅ Usando detalle del caché:', slugOrId);
-      return normalizeMotelPhotos(cachedItem.motel);
+      return normalizeMotelPresentation(cachedItem.motel);
     }
   }
 
   try {
     const apiMotel = await fetchJson(url);
     const motelDetail = mapMotelDetail(apiMotel);
-    const normalizedDetail = normalizeMotelPhotos(motelDetail);
+    const normalizedDetail = normalizeMotelPresentation(motelDetail);
     // updatedAt viene del servidor en la respuesta del detalle
     const serverUpdatedAt = apiMotel.updatedAt ?? null;
 
@@ -369,7 +314,7 @@ export const fetchMotelBySlug = async (slugOrId, useCache = true) => {
     debugLog(`⚠️ Error al obtener motel ${slugOrId}, intentando caché...`);
     if (cachedItem) {
       debugLog(`✅ Usando detalle de motel del caché (offline): ${slugOrId}`);
-      return normalizeMotelPhotos(cachedItem.motel);
+      return normalizeMotelPresentation(cachedItem.motel);
     }
     throw error;
   }

@@ -8,6 +8,7 @@ import ConfirmModal from '@/components/admin/ConfirmModal';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import SearchableSelect from '@/components/admin/SearchableSelect';
+import { KeyRound, Pencil, Power, Trash2 } from 'lucide-react';
 
 type UserRole = 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
 
@@ -25,8 +26,17 @@ interface User {
   isActive: boolean;
   motelId?: string | null;
   modulePermissions?: string[];
+  accessProfile?: AccessProfile | null;
   createdAt: string;
   motel?: Motel | null;
+}
+
+interface AccessProfile {
+  id: string;
+  key: string;
+  name: string;
+  baseRole: UserRole;
+  isActive: boolean;
 }
 
 interface CurrentUser {
@@ -48,6 +58,7 @@ export default function UsersPage() {
   const toast = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [motels, setMotels] = useState<Motel[]>([]);
+  const [accessProfiles, setAccessProfiles] = useState<AccessProfile[]>([]);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -80,7 +91,7 @@ export default function UsersPage() {
     name: '',
     role: 'USER' as UserRole,
     motelId: '',
-    modulePermissions: [] as string[],
+    accessProfileId: '',
   });
 
   // Form state para editar
@@ -89,20 +100,8 @@ export default function UsersPage() {
     role: 'USER' as UserRole,
     motelId: '',
     isActive: true,
-    modulePermissions: [] as string[],
+    accessProfileId: '',
   });
-
-  const moduleOptions = [
-    { value: 'dashboard', label: 'Dashboard' },
-    { value: 'motels', label: 'Moteles' },
-    { value: 'promos', label: 'Promos' },
-    { value: 'amenities', label: 'Amenities' },
-    { value: 'users', label: 'Usuarios' },
-    { value: 'prospects', label: 'Prospects' },
-    { value: 'financiero', label: 'Financiero' },
-    { value: 'analytics', label: 'Analytics' },
-    { value: 'audit', label: 'Auditoría' },
-  ];
 
   useEffect(() => {
     checkAccess();
@@ -183,6 +182,18 @@ export default function UsersPage() {
     }
   };
 
+  const fetchAccessProfiles = async () => {
+    if (!currentUser || currentUser.role !== 'SUPERADMIN') return;
+    try {
+      const response = await fetch('/api/admin/access-profiles');
+      if (response.ok) {
+        setAccessProfiles(await response.json());
+      }
+    } catch (error) {
+      console.error('Error fetching access profiles:', error);
+    }
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -200,7 +211,7 @@ export default function UsersPage() {
           `Usuario creado. Contraseña temporal: ${data.temporaryPassword}`
         );
         setShowCreateModal(false);
-        setCreateForm({ email: '', name: '', role: 'USER', motelId: '', modulePermissions: [] });
+        setCreateForm({ email: '', name: '', role: 'USER', motelId: '', accessProfileId: '' });
         fetchUsers();
       } else {
         toast.error(data.error || 'Error al crear usuario');
@@ -342,7 +353,7 @@ export default function UsersPage() {
       role: user.role,
       motelId: user.motelId || '',
       isActive: user.isActive,
-      modulePermissions: user.modulePermissions || [],
+      accessProfileId: user.accessProfile?.id || '',
     });
     setShowEditModal(true);
   };
@@ -384,6 +395,7 @@ export default function UsersPage() {
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'SUPERADMIN') return;
     fetchMotels();
+    fetchAccessProfiles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
@@ -605,6 +617,9 @@ export default function UsersPage() {
                   Rol
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
+                  Perfil
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
                   Motel
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
@@ -618,7 +633,7 @@ export default function UsersPage() {
             <tbody className="divide-y divide-slate-100">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <span className="text-4xl text-slate-300">🔍</span>
                       <p className="text-slate-500 font-medium">
@@ -639,6 +654,9 @@ export default function UsersPage() {
                   <tr key={user.id} className="hover:bg-slate-50 transition">
                     <td className="px-4 py-3">
                       <div className="font-medium text-slate-900">{user.name}</div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-600">
+                      {user.accessProfile?.name || 'Sin perfil'}
                     </td>
                     <td className="px-4 py-3 text-slate-600 text-sm">{user.email}</td>
                     <td className="px-4 py-3">
@@ -666,40 +684,10 @@ export default function UsersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap items-center justify-end gap-2">
-                        <button
-                          onClick={() => openEditModal(user)}
-                          className="inline-flex items-center rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
-                          title="Editar"
-                        >
-                          Editar
-                        </button>
-                        <details className="relative">
-                          <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
-                            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
-                            </svg>
-                          </summary>
-                          <div className="absolute right-0 mt-2 w-48 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
-                            <button
-                              onClick={() => handleResetPassword(user.id)}
-                              className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                            >
-                              Resetear contraseña
-                            </button>
-                            <button
-                              onClick={() => handleToggleActive(user.id, user.isActive)}
-                              className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                            >
-                              {user.isActive ? 'Desactivar' : 'Activar'}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                        </details>
+                        <button onClick={() => openEditModal(user)} className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-purple-600 text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors" title="Editar usuario" aria-label="Editar usuario"><Pencil size={16} /></button>
+                        <button onClick={() => handleResetPassword(user.id)} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:border-purple-200 hover:text-purple-700 transition-colors" title="Resetear contraseña" aria-label="Resetear contraseña"><KeyRound size={16} /></button>
+                        <button onClick={() => handleToggleActive(user.id, user.isActive)} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:border-purple-200 hover:text-purple-700 transition-colors" title={user.isActive ? 'Desactivar usuario' : 'Activar usuario'} aria-label={user.isActive ? 'Desactivar usuario' : 'Activar usuario'}><Power size={16} /></button>
+                        <button onClick={() => handleDeleteUser(user.id)} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 bg-white text-red-600 hover:bg-red-50 transition-colors" title="Eliminar usuario" aria-label="Eliminar usuario"><Trash2 size={16} /></button>
                       </div>
                     </td>
                   </tr>
@@ -767,11 +755,7 @@ export default function UsersPage() {
                   value={createForm.role}
                   onChange={(e) => {
                     const nextRole = e.target.value as UserRole;
-                    const defaultModules =
-                      nextRole === 'MOTEL_ADMIN' && createForm.modulePermissions.length === 0
-                        ? ['dashboard', 'motels']
-                        : createForm.modulePermissions;
-                    setCreateForm({ ...createForm, role: nextRole, modulePermissions: defaultModules });
+                    setCreateForm({ ...createForm, role: nextRole, accessProfileId: '' });
                   }}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 >
@@ -796,29 +780,19 @@ export default function UsersPage() {
               )}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Permisos por módulo
+                  Perfil de acceso
                 </label>
-                <p className="text-xs text-slate-500 mb-2">
-                  Si no elegís ninguno, SUPERADMIN mantiene acceso total.
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {moduleOptions.map((module) => (
-                    <label key={module.value} className="flex items-center gap-2 text-sm text-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={createForm.modulePermissions.includes(module.value)}
-                        onChange={(e) => {
-                          const next = e.target.checked
-                            ? [...createForm.modulePermissions, module.value]
-                            : createForm.modulePermissions.filter((value) => value !== module.value);
-                          setCreateForm({ ...createForm, modulePermissions: next });
-                        }}
-                        className="rounded border-slate-300 text-purple-600 focus:ring-purple-600"
-                      />
-                      {module.label}
-                    </label>
-                  ))}
-                </div>
+                <select
+                  value={createForm.accessProfileId}
+                  onChange={(e) => setCreateForm({ ...createForm, accessProfileId: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                >
+                  <option value="">Perfil predeterminado del rol</option>
+                  {accessProfiles
+                    .filter((profile) => profile.isActive && profile.baseRole === createForm.role)
+                    .map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
+                </select>
+                <p className="mt-1 text-xs text-slate-500">Los permisos se definen y reutilizan desde Configuración → Perfiles de acceso.</p>
               </div>
               <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-200">
                 <button
@@ -830,7 +804,7 @@ export default function UsersPage() {
                       name: '',
                       role: 'USER',
                       motelId: '',
-                      modulePermissions: [],
+                      accessProfileId: '',
                     });
                   }}
                   className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition"
@@ -886,11 +860,7 @@ export default function UsersPage() {
                   value={editForm.role}
                   onChange={(e) => {
                     const nextRole = e.target.value as UserRole;
-                    const defaultModules =
-                      nextRole === 'MOTEL_ADMIN' && editForm.modulePermissions.length === 0
-                        ? ['dashboard', 'motels']
-                        : editForm.modulePermissions;
-                    setEditForm({ ...editForm, role: nextRole, modulePermissions: defaultModules });
+                    setEditForm({ ...editForm, role: nextRole, accessProfileId: '' });
                   }}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 >
@@ -915,29 +885,19 @@ export default function UsersPage() {
               )}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Permisos por módulo
+                  Perfil de acceso
                 </label>
-                <p className="text-xs text-slate-500 mb-2">
-                  Si no elegís ninguno, SUPERADMIN mantiene acceso total.
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {moduleOptions.map((module) => (
-                    <label key={module.value} className="flex items-center gap-2 text-sm text-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={editForm.modulePermissions.includes(module.value)}
-                        onChange={(e) => {
-                          const next = e.target.checked
-                            ? [...editForm.modulePermissions, module.value]
-                            : editForm.modulePermissions.filter((value) => value !== module.value);
-                          setEditForm({ ...editForm, modulePermissions: next });
-                        }}
-                        className="rounded border-slate-300 text-purple-600 focus:ring-purple-600"
-                      />
-                      {module.label}
-                    </label>
-                  ))}
-                </div>
+                <select
+                  value={editForm.accessProfileId}
+                  onChange={(e) => setEditForm({ ...editForm, accessProfileId: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                >
+                  <option value="">Perfil predeterminado del rol</option>
+                  {accessProfiles
+                    .filter((profile) => profile.isActive && profile.baseRole === editForm.role)
+                    .map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
+                </select>
+                <p className="mt-1 text-xs text-slate-500">Los permisos se administran desde Configuración → Perfiles de acceso.</p>
               </div>
               <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-200">
                 <button

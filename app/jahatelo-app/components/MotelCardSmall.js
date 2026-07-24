@@ -68,7 +68,7 @@ export default function MotelCardSmall({ motel, onPress }) {
   if (!motel) return null;
 
   const fallbackPattern = require('../assets/motel-placeholder.png');
-  const image = motel.photos?.[0] || motel.thumbnail || null;
+  const image = motel.thumbnail || null;
   const imageSource = image ? { uri: image } : fallbackPattern;
   const isPlaceholder = !image;
   const ratingText =

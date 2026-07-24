@@ -100,7 +100,6 @@ export async function GET(request: NextRequest) {
           featuredPhotoApp: true,
           _count: {
             select: {
-              photos: true,
               rooms: true,
             },
           },

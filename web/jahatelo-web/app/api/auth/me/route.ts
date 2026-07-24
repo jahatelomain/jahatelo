@@ -24,6 +24,7 @@ export async function GET() {
       where: { id: user.id },
       select: {
         modulePermissions: true,
+        accessProfile: { select: { isActive: true, permissions: { select: { module: true, actions: true } } } },
         role: true,
         name: true,
         email: true,
@@ -39,7 +40,9 @@ export async function GET() {
         name: dbUser?.name || user.name,
         email: dbUser?.email || user.email,
         motelId: dbUser?.motelId || user.motelId,
-        modulePermissions: dbUser?.modulePermissions ?? user.modulePermissions ?? [],
+        modulePermissions: dbUser?.accessProfile?.isActive
+          ? dbUser.accessProfile.permissions.filter((permission) => permission.actions.includes('VIEW')).map((permission) => permission.module)
+          : dbUser?.modulePermissions ?? user.modulePermissions ?? [],
         isEmailVerified: dbUser?.isEmailVerified ?? false,
       },
     }, { status: 200 });

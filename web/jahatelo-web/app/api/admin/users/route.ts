@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
         isActive: true,
         motelId: true,
         modulePermissions: true,
+        accessProfile: { select: { id: true, key: true, name: true, baseRole: true, isActive: true } },
         createdAt: true,
         updatedAt: true,
         motel: {
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const validated = AdminUserCreateSchema.parse(sanitized);
-    const { email, name, role, motelId, password, modulePermissions } = validated;
+    const { email, name, role, motelId, password, modulePermissions, accessProfileId } = validated;
 
     // Si es MOTEL_ADMIN, motelId es requerido
     if (role === 'MOTEL_ADMIN' && !motelId) {
@@ -172,6 +173,20 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    }
+
+    const defaultProfileKey = role === 'SUPERADMIN' ? 'superadmin' : role === 'MOTEL_ADMIN' ? 'motel_admin' : 'user';
+    const accessProfile = await prisma.accessProfile.findFirst({
+      where: accessProfileId ? { id: accessProfileId, isActive: true } : { key: defaultProfileKey, isActive: true },
+    });
+    if (!accessProfile) {
+      return NextResponse.json({ error: 'No se encontró un perfil activo compatible para el usuario' }, { status: 400 });
+    }
+    if (accessProfileId && !accessProfile) {
+      return NextResponse.json({ error: 'El perfil seleccionado no existe o está inactivo' }, { status: 400 });
+    }
+    if (accessProfile && accessProfile.baseRole !== role) {
+      return NextResponse.json({ error: 'El perfil no es compatible con el rol seleccionado' }, { status: 400 });
     }
 
     // Verificar si el email ya existe
@@ -212,6 +227,7 @@ export async function POST(request: NextRequest) {
         role,
         motelId: role === 'MOTEL_ADMIN' ? motelId : null,
         modulePermissions: modulePermissions ?? [],
+        accessProfileId: accessProfile.id,
         passwordHash,
         isActive: true,
       },
@@ -223,6 +239,7 @@ export async function POST(request: NextRequest) {
         isActive: true,
         motelId: true,
         modulePermissions: true,
+        accessProfile: { select: { id: true, key: true, name: true, baseRole: true, isActive: true } },
         createdAt: true,
         motel: {
           select: {
@@ -239,7 +256,8 @@ export async function POST(request: NextRequest) {
       action: 'CREATE',
       entityType: 'User',
       entityId: newUser.id,
-      metadata: { email: newUser.email, role: newUser.role },
+      module: 'users',
+      metadata: { email: newUser.email, role: newUser.role, accessProfileId: newUser.accessProfile?.id ?? null },
     });
 
     return NextResponse.json({

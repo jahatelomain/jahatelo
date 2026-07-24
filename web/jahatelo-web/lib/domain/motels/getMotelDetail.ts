@@ -12,7 +12,6 @@ export async function getPublicMotelDetail(slugOrId: string) {
       plan: { not: 'FREE' },
     },
     include: {
-      photos: { orderBy: { order: 'asc' } },
       rooms: {
         where: { isActive: true },
         orderBy: [{ order: 'asc' }, { isFeatured: 'desc' }, { name: 'asc' }],

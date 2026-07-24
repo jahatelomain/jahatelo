@@ -1,4 +1,4 @@
-import { Motel, RoomType, Photo, Amenity, RoomAmenity, Promo, RoomPhoto, RoomDayRate, DayGroup } from '@prisma/client';
+import { Motel, RoomType, Amenity, RoomAmenity, Promo, RoomPhoto, RoomDayRate, DayGroup } from '@prisma/client';
 
 type RoomPricingInfo = Pick<
   RoomType,
@@ -72,13 +72,11 @@ type RoomWithRelations = RoomType & {
 
 // Base type for list items - accepts both pricing info and full room data
 type MotelForList = Motel & {
-  photos: Photo[];
   rooms?: (RoomForList | RoomWithRelations)[];
   promos?: Promo[];
 };
 
 type MotelWithRelations = Motel & {
-  photos: Photo[];
   rooms?: RoomWithRelations[];
   promos?: Promo[];
 };
@@ -111,39 +109,10 @@ export function getStartingPrice(rooms?: (RoomPricingInfo | RoomWithRelations)[]
 }
 
 /**
- * Obtiene el thumbnail (featuredPhoto > primera foto FACADE > primera foto disponible)
+ * Obtiene la portada configurada del motel.
  */
-export function getThumbnail(photos: Photo[], featuredPhoto?: string | null): string | null {
-  // Prioridad 1: featuredPhoto
-  if (featuredPhoto) return featuredPhoto;
-
-  // Prioridad 2: primera foto FACADE
-  if (!photos || photos.length === 0) return null;
-
-  const facadePhoto = photos.find((p) => p.kind === 'FACADE');
-  if (facadePhoto) return facadePhoto.url;
-
-  // Prioridad 3: primera foto disponible
-  return photos[0]?.url || null;
-}
-
-/**
- * Obtiene hasta 3 URLs de fotos para el listado
- */
-export function getListPhotos(photos: Photo[], featuredPhoto?: string | null): string[] {
-  const urls = (photos || []).map((p) => p.url).filter(Boolean);
-  const unique = new Set<string>();
-  if (featuredPhoto) unique.add(featuredPhoto);
-  urls.slice(0, 3).forEach((url) => unique.add(url));
-  return Array.from(unique);
-}
-
-export function getAllPhotos(photos: Photo[], featuredPhoto?: string | null): string[] {
-  const urls = (photos || []).map((p) => p.url).filter(Boolean);
-  const unique = new Set<string>();
-  if (featuredPhoto) unique.add(featuredPhoto);
-  urls.forEach((url) => unique.add(url));
-  return Array.from(unique);
+export function getThumbnail(featuredPhoto?: string | null): string | null {
+  return featuredPhoto || null;
 }
 
 const getPreferredFeaturedPhoto = (motel: Motel) => {
@@ -235,8 +204,7 @@ export function mapMotelToListItem(motel: MotelForList) {
       }
       return Array.from(map.values());
     })(),
-    thumbnail: getThumbnail(motel.photos, getPreferredFeaturedPhoto(motel)),
-    photos: getListPhotos(motel.photos, getPreferredFeaturedPhoto(motel)),
+    thumbnail: getThumbnail(getPreferredFeaturedPhoto(motel)),
     featuredPhoto: getPreferredFeaturedPhoto(motel),
     // Incluir datos de la primera promo activa para el carrusel
     // ?v=updatedAt fuerza al cache nativo de React Native a recargar cuando cambia la imagen
@@ -300,8 +268,6 @@ export function mapMotelToDetail(
 
   return {
     ...listItem,
-    photos: getListPhotos(motel.photos, getPreferredFeaturedPhoto(motel)),
-    allPhotos: getAllPhotos(motel.photos, getPreferredFeaturedPhoto(motel)),
     promos:
       motel.promos
         ?.filter((promo) => promo.isActive)
@@ -337,7 +303,6 @@ export function mapMotelToDetail(
       })) || [],
     rooms: motel.rooms?.filter((r) => r.isActive).map(mapRoomForMobile) || [],
     hasPhotos:
-      motel.photos.length > 0 ||
       Boolean(motel.featuredPhotoApp || motel.featuredPhotoWeb || motel.featuredPhoto),
   };
 }

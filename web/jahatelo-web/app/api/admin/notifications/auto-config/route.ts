@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { verifyToken } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { requireAdminAccess } from '@/lib/adminAccess';
 
 const DEFAULT_CONFIGS = [
   {
@@ -28,20 +27,10 @@ const DEFAULT_CONFIGS = [
  * GET /api/admin/notifications/auto-config
  * Lista todos los AutoNotificationConfig. Solo SUPERADMIN.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-
-    if (!user || user.role !== 'SUPERADMIN') {
-      return NextResponse.json({ error: 'No autorizado. Solo SUPERADMIN.' }, { status: 403 });
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'notifications');
+    if (access.error) return access.error;
 
     // Upsert de defaults para asegurar que existan todos los registros
     await Promise.all(
@@ -78,18 +67,8 @@ export async function GET() {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-
-    if (!user || user.role !== 'SUPERADMIN') {
-      return NextResponse.json({ error: 'No autorizado. Solo SUPERADMIN.' }, { status: 403 });
-    }
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'notifications');
+    if (access.error) return access.error;
 
     const body = await request.json();
     const { key, enabled } = body;
@@ -107,7 +86,7 @@ export async function PUT(request: NextRequest) {
       where: { key },
       data: {
         enabled,
-        updatedBy: user.id,
+        updatedBy: access.user?.id,
       },
     });
 

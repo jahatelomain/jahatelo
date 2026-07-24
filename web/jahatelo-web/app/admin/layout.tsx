@@ -127,7 +127,7 @@ export default function AdminLayout({
     if (pathname.startsWith('/admin/motels')) return 'Moteles';
     if (pathname.startsWith('/admin/amenities')) return 'Amenities';
     if (pathname.startsWith('/admin/users')) return 'Usuarios';
-    if (pathname.startsWith('/admin/roles')) return 'Roles y Permisos';
+    if (pathname.startsWith('/admin/roles')) return 'Perfiles de acceso';
     if (pathname.startsWith('/admin/prospects')) return 'Prospects';
     if (pathname.startsWith('/admin/financiero')) return 'Financiero';
     if (pathname.startsWith('/admin/analytics')) return 'Analytics';
@@ -188,7 +188,6 @@ export default function AdminLayout({
       collapsible: true,
       items: [
         { href: '/admin/users', label: 'Usuarios', roles: ['SUPERADMIN'] },
-        { href: '/admin/roles', label: 'Roles y Permisos', roles: ['SUPERADMIN'] },
         { href: '/admin/audit', label: 'Auditoría', roles: ['SUPERADMIN'] },
         { href: '/admin/configuracion', label: 'Ajustes Generales', roles: ['SUPERADMIN'] },
       ],
@@ -205,7 +204,7 @@ export default function AdminLayout({
     if (path.startsWith('/admin/promos')) return 'promos';
     if (path.startsWith('/admin/amenities')) return 'amenities';
     if (path.startsWith('/admin/users')) return 'users';
-    if (path.startsWith('/admin/roles')) return 'roles';
+    if (path.startsWith('/admin/roles')) return 'configuracion';
     if (path.startsWith('/admin/prospects')) return 'prospects';
     if (path.startsWith('/admin/financiero')) return 'financiero';
     if (path.startsWith('/admin/analytics')) return 'analytics';

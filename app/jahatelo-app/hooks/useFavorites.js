@@ -219,7 +219,6 @@ export const FavoritesProvider = ({ children }) => {
               tienePromo: motel.tienePromo || false,
               isFeatured: motel.isFeatured || false,
               thumbnail: motel.thumbnail || null,
-              photos: motel.photos || [],
               distanciaKm: motel.distanciaKm || null,
               plan: motel.plan || 'BASIC',
             };
@@ -268,7 +267,6 @@ export const FavoritesProvider = ({ children }) => {
           tienePromo: motel.tienePromo || false,
           isFeatured: motel.isFeatured || false,
           thumbnail: motel.thumbnail || null,
-          photos: motel.photos || [],
           distanciaKm: motel.distanciaKm || null,
           plan: motel.plan || 'BASIC',
         };

@@ -143,7 +143,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
 
           /* ── SLIDE DE MOTEL ── */
           const motel = item.data as Motel;
-          const realPhotoUrl = motel.thumbnail || motel.featuredPhoto || motel.photos[0] || null;
+          const realPhotoUrl = motel.thumbnail || motel.featuredPhoto || null;
           const photoUrl = failedImages[motel.id] ? null : realPhotoUrl;
           const isPlaceholder = !photoUrl;
 

@@ -29,7 +29,7 @@ export async function PATCH(
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const validated = AdminUserUpdateSchema.parse(sanitized);
-    const { name, role, motelId, isActive, resetPassword, modulePermissions } = validated;
+    const { name, role, motelId, isActive, resetPassword, modulePermissions, accessProfileId } = validated;
 
     // Verificar que el usuario existe
     const existingUser = await prisma.user.findUnique({
@@ -51,6 +51,7 @@ export async function PATCH(
       isActive?: boolean;
       passwordHash?: string;
       modulePermissions?: string[];
+      accessProfileId?: string | null;
     } = {};
 
     if (name !== undefined) updateData.name = name;
@@ -118,6 +119,29 @@ export async function PATCH(
       updateData.modulePermissions = modulePermissions;
     }
 
+    if (accessProfileId !== undefined) {
+      if (!accessProfileId) {
+        updateData.accessProfileId = null;
+      } else {
+        const accessProfile = await prisma.accessProfile.findFirst({ where: { id: accessProfileId, isActive: true } });
+        if (!accessProfile) {
+          return NextResponse.json({ error: 'El perfil seleccionado no existe o está inactivo' }, { status: 400 });
+        }
+        const targetRole = role ?? existingUser.role;
+        if (accessProfile.baseRole !== targetRole) {
+          return NextResponse.json({ error: 'El perfil no es compatible con el rol seleccionado' }, { status: 400 });
+        }
+        updateData.accessProfileId = accessProfile.id;
+      }
+    } else if (role !== undefined && role !== existingUser.role) {
+      const defaultProfileKey = role === 'SUPERADMIN' ? 'superadmin' : role === 'MOTEL_ADMIN' ? 'motel_admin' : 'user';
+      const defaultProfile = await prisma.accessProfile.findFirst({ where: { key: defaultProfileKey, isActive: true } });
+      if (!defaultProfile) {
+        return NextResponse.json({ error: 'No se encontró un perfil activo compatible para el rol seleccionado' }, { status: 400 });
+      }
+      updateData.accessProfileId = defaultProfile.id;
+    }
+
     let temporaryPassword: string | undefined;
 
     // Si se solicita reset de password
@@ -138,6 +162,7 @@ export async function PATCH(
         isActive: true,
         motelId: true,
         modulePermissions: true,
+        accessProfile: { select: { id: true, key: true, name: true, baseRole: true, isActive: true } },
         updatedAt: true,
         motel: {
           select: {
@@ -154,7 +179,8 @@ export async function PATCH(
       action: 'UPDATE',
       entityType: 'User',
       entityId: updatedUser.id,
-      metadata: { role: updatedUser.role, isActive: updatedUser.isActive },
+      module: 'users',
+      metadata: { role: updatedUser.role, isActive: updatedUser.isActive, accessProfileId: updatedUser.accessProfile?.id ?? null },
     });
 
     const response: {

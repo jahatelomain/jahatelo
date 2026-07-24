@@ -100,7 +100,6 @@ export type Motel = {
   updatedAt?: string;
   rooms?: RoomType[];
   menuCategories?: MenuCategory[];
-  photos?: Array<{ id: string; url: string; order: number }>;
 };
 
 export type Amenity = {

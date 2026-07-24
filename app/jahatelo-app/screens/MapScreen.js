@@ -15,6 +15,7 @@ import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
+import { isMotelPlanDisabled, normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
 import { useNavigation } from '@react-navigation/native';
 import { getApiRoot } from '../services/apiBaseUrl';
 import { useOnlineRetry } from '../hooks/useOnlineRetry';
@@ -149,13 +150,13 @@ ClusterMarker.displayName = 'ClusterMarker';
 
 // ===== CUSTOM MARKER (individual) =====
 const CustomMarker = React.memo(({ motel, onPress }) => {
-  const isDisabled = motel.plan === 'FREE';
+  const plan = normalizeMotelPlan(motel.plan);
+  const isDisabled = isMotelPlanDisabled(plan);
   const [tracksChanges, setTracksChanges] = useState(IS_ANDROID);
-  const plan = motel.plan || 'BASIC';
   const planZIndex = getPlanZIndex(plan);
 
-  const isGold = plan === 'GOLD';
-  const isDiamond = plan === 'DIAMOND';
+  const isGold = plan === MOTEL_PLANS.GOLD;
+  const isDiamond = plan === MOTEL_PLANS.DIAMOND;
   const sizeMultiplier = isDiamond ? 1.3 : isGold ? 1.15 : 1;
   const pinSize = Math.round(36 * sizeMultiplier);
   const bounceAnim = useRef(new Animated.Value(0)).current;
@@ -454,7 +455,7 @@ export default function MapScreen() {
   };
 
   const handleMarkerPress = useCallback((motel) => {
-    if (motel.plan === 'FREE') return;
+    if (isMotelPlanDisabled(motel.plan)) return;
     navigation.navigate('MotelDetail', {
       motelSlug: motel.slug,
       motelId: motel.id,

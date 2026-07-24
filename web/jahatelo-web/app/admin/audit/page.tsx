@@ -11,6 +11,10 @@ type AuditLog = {
   entityId?: string | null;
   createdAt: string;
   metadata?: Record<string, unknown> | null;
+  module?: string | null;
+  method?: string | null;
+  path?: string | null;
+  statusCode?: number | null;
   user?: {
     id: string;
     name?: string | null;
@@ -176,7 +180,7 @@ export default function AuditPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">Auditoría</h1>
-        <p className="text-sm text-slate-600 mt-1">Últimos cambios registrados</p>
+        <p className="text-sm text-slate-600 mt-1">Accesos, cambios y acciones administrativas registrados por usuario.</p>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
@@ -192,6 +196,8 @@ export default function AuditPage() {
               <option value="CREATE">Crear</option>
               <option value="UPDATE">Actualizar</option>
               <option value="DELETE">Eliminar</option>
+              <option value="ACCESS">Acceso autorizado</option>
+              <option value="ACCESS_DENIED">Acceso denegado</option>
             </select>
           </div>
           <div>
@@ -285,6 +291,9 @@ export default function AuditPage() {
                 Entidad
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Contexto
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 ID
               </th>
             </tr>
@@ -292,7 +301,7 @@ export default function AuditPage() {
           <tbody className="bg-white divide-y divide-slate-200">
             {logs.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
                   Sin registros de auditoría.
                 </td>
               </tr>
@@ -310,6 +319,11 @@ export default function AuditPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                     {log.entityType}
+                  </td>
+                  <td className="px-6 py-4 text-xs text-slate-500">
+                    {log.path ? (
+                      <div><span className="font-medium text-slate-700">{log.method}</span> {log.path}<br />{log.module && <span>Módulo: {log.module}</span>}{log.statusCode && <span> · {log.statusCode}</span>}</div>
+                    ) : (log.module ? `Módulo: ${log.module}` : '—')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                     {(() => {
