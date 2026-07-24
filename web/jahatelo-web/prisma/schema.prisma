@@ -21,17 +21,19 @@ enum MotelStatus {
   REJECTED
 }
 
-enum PhotoKind {
-  FACADE
-  ROOM
-  FOOD
-  OTHER
-}
-
 enum UserRole {
   SUPERADMIN
   MOTEL_ADMIN
   USER
+}
+
+enum PermissionAction {
+  VIEW
+  CREATE
+  UPDATE
+  DELETE
+  EXPORT
+  MANAGE
 }
 
 enum ProspectStatus {
@@ -176,7 +178,6 @@ model Motel {
   // Relations
   rooms            RoomType[]
   menuCategories   MenuCategory[]
-  photos           Photo[]
   reviews          Review[]
   schedules        Schedule[]
   paymentMethods   PaymentMethod[]
@@ -296,21 +297,6 @@ model RoomAmenity {
   @@unique([roomTypeId, amenityId])
 }
 
-// ============================================
-// PHOTOS
-// ============================================
-
-model Photo {
-  id          String     @id @default(cuid())
-  url         String
-  kind        PhotoKind  @default(OTHER)
-  order       Int        @default(0)
-  motel       Motel?     @relation(fields: [motelId], references: [id], onDelete: Cascade)
-  motelId     String?
-  createdAt   DateTime?  @default(now())
-  updatedAt   DateTime?  @updatedAt
-}
-
 // Room Photo (galería de fotos de habitación)
 model RoomPhoto {
   id          String    @id @default(cuid())
@@ -414,6 +400,8 @@ model User {
   role         UserRole   @default(USER)
   isActive     Boolean    @default(true)
   modulePermissions String[] @default([])
+  accessProfile     AccessProfile? @relation(fields: [accessProfileId], references: [id], onDelete: SetNull)
+  accessProfileId   String?
 
   // Campos para usuarios móviles
   phone        String?
@@ -442,6 +430,38 @@ model User {
 
   @@index([email])
   @@index([provider, providerId])
+  @@index([accessProfileId])
+}
+
+// Perfiles configurables. Los roles del enum se conservan como clasificación
+// y compatibilidad; el perfil define los permisos efectivos por módulo.
+model AccessProfile {
+  id          String              @id @default(cuid())
+  key         String              @unique
+  name        String
+  description String?
+  isSystem    Boolean             @default(false)
+  baseRole    UserRole
+  isActive    Boolean             @default(true)
+  permissions AccessProfilePermission[]
+  users       User[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([baseRole, isActive])
+}
+
+model AccessProfilePermission {
+  id        String             @id @default(cuid())
+  profile   AccessProfile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId String
+  module    String
+  actions   PermissionAction[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@unique([profileId, module])
+  @@index([module])
 }
 
 // ============================================
@@ -456,6 +476,15 @@ model AuditLog {
   entityType String
   entityId   String?
   metadata   Json?
+  module     String?
+  method     String?
+  path       String?
+  statusCode Int?
+  ipAddress  String?
+  userAgent  String?
+  requestId  String?
+  before     Json?
+  after      Json?
   createdAt  DateTime @default(now())
 
   @@index([userId, createdAt])

@@ -70,8 +70,6 @@ export async function GET(request: NextRequest) {
         status: 'APPROVED',
       },
       include: {
-        photos: { orderBy: { order: 'asc' as const }, take: 3 },
-
         rooms: {
           where: { isActive: true },
           select: {
@@ -106,13 +104,7 @@ export async function GET(request: NextRequest) {
       .map((motel) => {
         const featuredPhoto =
           motel.featuredPhotoApp || motel.featuredPhotoWeb || motel.featuredPhoto || null;
-        const thumbnail = featuredPhoto || motel.photos[0]?.url || null;
-        const photos = Array.from(
-          new Set([
-            ...(featuredPhoto ? [featuredPhoto] : []),
-            ...motel.photos.map((p) => p.url),
-          ])
-        ).slice(0, 3);
+        const thumbnail = featuredPhoto;
 
         const allPrices = motel.rooms
           .filter((r) => r.isActive)
@@ -144,7 +136,6 @@ export async function GET(request: NextRequest) {
           tienePromo: motel.promos.some((p) => p.isActive),
           isFeatured: motel.isFeatured,
           thumbnail,
-          photos,
           plan: motel.plan,
         };
       });

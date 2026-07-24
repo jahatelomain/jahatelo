@@ -386,6 +386,7 @@ export const AdminUserCreateSchema = z.object({
   role: z.enum(['SUPERADMIN', 'MOTEL_ADMIN', 'USER']),
   motelId: IdSchema.optional().nullable(),
   password: z.string().min(8).max(100).optional(),
+  accessProfileId: z.preprocess((value) => value === '' ? null : value, IdSchema.optional().nullable()),
   modulePermissions: z.array(z.string().max(50)).optional(),
 });
 
@@ -395,6 +396,7 @@ export const AdminUserUpdateSchema = z.object({
   motelId: IdSchema.optional().nullable(),
   isActive: z.boolean().optional(),
   resetPassword: z.boolean().optional(),
+  accessProfileId: z.preprocess((value) => value === '' ? null : value, IdSchema.optional().nullable()),
   modulePermissions: z.array(z.string().max(50)).optional(),
 });
 

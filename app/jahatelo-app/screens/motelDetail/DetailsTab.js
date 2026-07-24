@@ -26,6 +26,9 @@ export default function DetailsTab({ route }) {
   };
 
   const hasLocation = motel.location && motel.location.lat && motel.location.lng;
+  const locationLabel = [motel.address, motel.ciudad || motel.city]
+    .filter(Boolean)
+    .join(', ');
 
   const amenitiesList = (Array.isArray(motel.amenities) ? motel.amenities : [])
     .filter(Boolean)
@@ -49,17 +52,10 @@ export default function DetailsTab({ route }) {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Información básica */}
       <View style={styles.section}>
-        <View style={styles.infoRow}>
-          <Ionicons name="location-outline" size={16} color="#666" />
-          <Text style={styles.infoText}>
-            {motel.ciudad}
-          </Text>
-        </View>
-
-        {!!motel.address && (
+        {!!locationLabel && (
           <View style={styles.infoRow}>
             <Ionicons name="navigate-outline" size={16} color="#666" />
-            <Text style={styles.infoText}>{motel.address}</Text>
+            <Text style={styles.infoText}>{locationLabel}</Text>
           </View>
         )}
 

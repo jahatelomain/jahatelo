@@ -617,7 +617,7 @@ export default function MotelCaptureForm({ onSuccess }: MotelCaptureFormProps) {
                 className="mt-1 w-5 h-5"
               />
               <div>
-                <p className="font-bold text-lg">PLAN DIAMOND 💎 - Gs. 1.100.000/mes</p>
+                <p className="font-bold text-lg">PLAN DIAMOND 💎 - Gs. 1.320.000/mes</p>
                 <p className="text-sm text-gray-600">Fotos ilimitadas • Promociones ilimitadas • +30% visibilidad • Soporte 24/7</p>
               </div>
             </label>

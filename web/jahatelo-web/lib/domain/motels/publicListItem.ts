@@ -13,7 +13,6 @@ export type PublicMotelListItem = {
   startingPrice: number | null;
   amenities: Array<{ name: string; icon: string | null }>;
   thumbnail: string | null;
-  photos: string[];
   featuredPhoto: string | null;
   promoImageUrl: string | null;
   promoTitle: string | null;

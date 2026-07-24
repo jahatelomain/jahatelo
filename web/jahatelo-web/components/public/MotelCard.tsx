@@ -19,12 +19,12 @@ export interface MotelCardProps {
     name: string;
     slug: string;
     city: string;
+    address?: string;
     isFeatured: boolean;
     ratingAvg?: number | null;
     ratingCount?: number | null;
     featuredPhoto?: string | null;
     featuredPhotoWeb?: string | null;
-    photos?: Array<{ url: string; kind?: string }>;
     rooms?: Array<{
       price1h?: number | null;
       price2h?: number | null;
@@ -40,10 +40,9 @@ export interface MotelCardProps {
 export default function MotelCard({ motel }: MotelCardProps) {
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
   const isCanonical = 'rating' in motel;
-  const legacyPhotos = !isCanonical ? motel.photos ?? [] : [];
   const realPhotoUrl = isCanonical
-    ? motel.thumbnail || motel.featuredPhoto || motel.photos[0] || null
-    : motel.featuredPhotoWeb || motel.featuredPhoto || legacyPhotos[0]?.url || null;
+    ? motel.thumbnail || motel.featuredPhoto || null
+    : motel.featuredPhotoWeb || motel.featuredPhoto || null;
   const [imageFailed, setImageFailed] = useState(false);
   const photoUrl = imageFailed ? null : realPhotoUrl;
   const isPlaceholder = !photoUrl;
@@ -75,6 +74,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
   const isDisabled = isMotelPlanDisabled(normalizedPlan);
   const isDiamond = hasMotelPlanGlow(normalizedPlan);
   const isGold = normalizedPlan === 'GOLD';
+  const locationLabel = [motel.address, motel.city].filter(Boolean).join(', ') || 'Sin ubicación';
 
   const cardInner = (
     <div
@@ -131,7 +131,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
             {motel.name}
           </h3>
           <p className="text-sm text-gray-500 mb-3">
-            {motel.city || 'Sin ciudad'}
+            {locationLabel}
             {motel.distanceKm !== undefined && (
               <span className="ml-2 inline-flex items-center gap-1 text-purple-600 font-medium">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

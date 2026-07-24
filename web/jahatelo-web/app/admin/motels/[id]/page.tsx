@@ -44,7 +44,6 @@ import ReviewsPanel from '@/components/admin/motel-detail/ReviewsPanel';
 import MotelAdminHeader from '@/components/admin/motel-detail/MotelAdminHeader';
 import MenuCategoryCard from '@/components/admin/motel-detail/MenuCategoryCard';
 import MenuForms from '@/components/admin/motel-detail/MenuForms';
-import MotelPhotoGalleryCard from '@/components/admin/motel-detail/MotelPhotoGalleryCard';
 import MotelLocationFields from '@/components/admin/motel-detail/MotelLocationFields';
 import CommercialContactFields from '@/components/admin/motel-detail/CommercialContactFields';
 import CommercialPlanFields from '@/components/admin/motel-detail/CommercialPlanFields';
@@ -862,63 +861,6 @@ export default function MotelDetailPage() {
     }
   };
 
-  const handleAddMotelPhoto = async (url: string) => {
-    if (!motel) return;
-    try {
-      const res = await fetch('/api/admin/motel-photos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ motelId: motel.id, url }),
-      });
-      if (!res.ok) throw new Error('Failed');
-      await fetchMotel();
-    } catch (error) {
-      console.error('Error adding motel photo:', error);
-      toast.error('Error al agregar foto');
-    }
-  };
-
-  const handleDeleteMotelPhoto = (photoId: string) => {
-    setConfirmAction({
-      title: 'Eliminar foto',
-      message: '¿Eliminar esta foto? Esta acción no se puede deshacer.',
-      confirmText: 'Eliminar',
-      danger: true,
-      onConfirm: async () => {
-        try {
-          const res = await fetch(`/api/admin/motel-photos/${photoId}`, { method: 'DELETE' });
-          if (!res.ok) throw new Error('Failed');
-          setMotel((prev) => prev ? { ...prev, photos: (prev.photos ?? []).filter((photo) => photo.id !== photoId) } : prev);
-        } catch (error) {
-          console.error('Error deleting motel photo:', error);
-          toast.error('Error al eliminar foto');
-        } finally {
-          setConfirmAction(null);
-        }
-      },
-    });
-  };
-
-  const handleReorderMotelPhotos = async (photos: Array<{ id: string; url: string; order: number }>) => {
-    if (!motel) return;
-    const orderedPhotos = photos.map((photo, index) => ({ ...photo, order: index }));
-    setMotel((prev) => prev ? { ...prev, photos: orderedPhotos } : prev);
-    try {
-      const response = await fetch('/api/admin/motel-photos', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ motelId: motel.id, photoIds: orderedPhotos.map((photo) => photo.id) }),
-      });
-      if (!response.ok) {
-        throw new Error('No se pudo guardar el orden de todas las fotos');
-      }
-    } catch (error) {
-      console.error('Error reordering motel photos:', error);
-      fetchMotel();
-      toast.error('Error al reordenar las fotos del motel');
-    }
-  };
-
   const fetchReviews = useCallback(async () => {
     if (!id) return;
     setReviewsLoading(true);
@@ -1298,8 +1240,6 @@ export default function MotelDetailPage() {
                   </div>
                 </dl>
               </div>
-
-              <MotelPhotoGalleryCard motelName={motel.name} photos={motel.photos ?? []} onReorder={handleReorderMotelPhotos} onDelete={handleDeleteMotelPhoto} onUpload={async (file) => handleAddMotelPhoto(await uploadFileToS3(file))} />
 
               <div className="flex justify-start">
                 <button

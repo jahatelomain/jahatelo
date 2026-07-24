@@ -14,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../constants/theme';
+import { normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
 import PromosTab from './motelDetail/PromosTab';
 import DetailsTab from './motelDetail/DetailsTab';
 import RoomsTab from './motelDetail/RoomsTab';
@@ -216,8 +217,6 @@ export default function MotelDetailScreen({ route, navigation }) {
   const mainPhoto =
     motel.thumbnail ||
     motel.featuredPhoto ||
-    motel.photos?.[0] ||
-    motel.allPhotos?.[0] ||
     null;
   const mainPhotoUrl =
     typeof mainPhoto === 'string'
@@ -227,6 +226,7 @@ export default function MotelDetailScreen({ route, navigation }) {
   const isPlaceholder = !mainPhotoUrl || mainPhotoError;
 
   const photoHeight = 240 + insets.top;
+  const plan = normalizeMotelPlan(motel.plan);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -254,13 +254,13 @@ export default function MotelDetailScreen({ route, navigation }) {
               <Text style={styles.badgeText}>PROMO</Text>
             </View>
           )}
-          {motel.plan === 'DIAMOND' && (
+          {plan === MOTEL_PLANS.DIAMOND && (
             <View style={styles.platinumBadge}>
               <Ionicons name="diamond" size={10} color="#FFFFFF" />
               <Text style={styles.badgeText}>DIAMOND</Text>
             </View>
           )}
-          {motel.plan === 'GOLD' && (
+          {plan === MOTEL_PLANS.GOLD && (
             <View style={styles.premiumBadge}>
               <Ionicons name="star" size={10} color="#FFFFFF" />
               <Text style={styles.badgeText}>GOLD</Text>

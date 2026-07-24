@@ -137,7 +137,6 @@ export default async function CityPage({ params }: Props) {
                   startingPrice: null,
                   amenities: [],
                   thumbnail: motel.thumbnail,
-                  photos: [],
                   featuredPhoto: motel.thumbnail,
                   promoImageUrl: null,
                   promoTitle: null,

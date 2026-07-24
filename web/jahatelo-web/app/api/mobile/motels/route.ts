@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma, type Motel } from '@prisma/client';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
-import { normalizeLocalUrl, normalizeLocalUrls } from '@/lib/normalizeLocalUrl';
+import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
 import { MobileMotelsQuerySchema } from '@/lib/validations/schemas';
 import { mapMotelToListItem } from '../mappers';
 
@@ -11,7 +11,6 @@ const ACCENT_FROM = 'áéíóúñÁÉÍÓÚÑäëïöüÄËÏÖÜàèìòùÀÈ�
 const ACCENT_TO = 'aeiounAEIOUNaeiouAEIOUaeiouAEIOUaeiouAEIOU';
 
 const include = {
-  photos: { orderBy: { order: 'asc' as const } },
   rooms: {
     where: { isActive: true },
     select: {
@@ -167,7 +166,6 @@ export async function GET(request: NextRequest) {
       thumbnail: normalizeLocalUrl(motel.thumbnail, baseUrl),
       featuredPhoto: normalizeLocalUrl(motel.featuredPhoto, baseUrl),
       promoImageUrl: normalizeLocalUrl(motel.promoImageUrl, baseUrl),
-      photos: normalizeLocalUrls(motel.photos, baseUrl) || [],
     }));
 
     const latestUpdatedAt = motels.reduce((latest, motel) => {

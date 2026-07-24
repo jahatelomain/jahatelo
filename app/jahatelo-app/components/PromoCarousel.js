@@ -49,7 +49,6 @@ const getMotelImageUrl = (motel) => {
     motel.photoUrl,
     motel.imageUrl,
     motel.imagen,
-    motel.photos?.[0],
     motel.fotos?.[0],
   ];
   for (const candidate of candidates) {

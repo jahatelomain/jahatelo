@@ -89,21 +89,10 @@ export async function GET(
       []
     );
 
-    const photos = await safeFetch(
-      'photos',
-      () =>
-        prisma.photo.findMany({
-          where: { motelId: idResult.data },
-          orderBy: { order: 'asc' },
-        }),
-      []
-    );
-
     return NextResponse.json({
       ...motel,
       rooms,
       menuCategories,
-      photos,
     });
   } catch (error) {
     console.error('Error fetching motel:', error);

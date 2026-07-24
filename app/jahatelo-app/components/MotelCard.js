@@ -18,7 +18,7 @@ import { useFavorites } from '../hooks/useFavorites';
 import { prefetchMotelDetails } from '../services/prefetchService';
 import { getAmenityIconConfig } from '../constants/amenityIcons';
 import { COLORS } from '../constants/theme';
-import { hasMotelPlanGlow, isMotelPlanDisabled } from '../constants/motelPlans';
+import { hasMotelPlanGlow, isMotelPlanDisabled, normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
 import { trackFavoriteAdd, trackFavoriteRemove } from '../services/analyticsService';
 import { shareMotel } from '../utils/share';
 
@@ -28,6 +28,7 @@ function MotelCardComponent({ motel, onPress }) {
   // Derivadas de motel con null safety — deben estar antes de los hooks
   const isDisabled = isMotelPlanDisabled(motel?.plan);
   const isDiamond = hasMotelPlanGlow(motel?.plan);
+  const plan = normalizeMotelPlan(motel?.plan);
 
   // Valores animados para la card
   const scale = useSharedValue(1);
@@ -160,7 +161,7 @@ function MotelCardComponent({ motel, onPress }) {
 
   const handlePress = () => {
     // No permitir navegación si es plan FREE
-    if (motel.plan === 'FREE') {
+    if (isDisabled) {
       return;
     }
 
@@ -173,7 +174,7 @@ function MotelCardComponent({ motel, onPress }) {
 
   const handlePressIn = () => {
     // No animar si es plan FREE
-    if (motel.plan === 'FREE') {
+    if (isDisabled) {
       return;
     }
 
@@ -189,7 +190,7 @@ function MotelCardComponent({ motel, onPress }) {
 
   const handlePressOut = () => {
     // No animar si es plan FREE
-    if (motel.plan === 'FREE') {
+    if (isDisabled) {
       return;
     }
 
@@ -256,13 +257,13 @@ function MotelCardComponent({ motel, onPress }) {
                 <Text style={styles.promoText}>PROMO</Text>
               </Animated.View>
             )}
-            {motel.plan === 'DIAMOND' && (
+            {plan === MOTEL_PLANS.DIAMOND && (
               <View style={styles.platinumBadge}>
                 <Ionicons name="diamond" size={10} color="#FFFFFF" />
                 <Text style={styles.platinumText}>DIAMOND</Text>
               </View>
             )}
-            {motel.plan === 'GOLD' && (
+            {plan === MOTEL_PLANS.GOLD && (
               <View style={styles.premiumBadge}>
                 <Ionicons name="star" size={10} color="#FFFFFF" />
                 <Text style={styles.premiumText}>GOLD</Text>
