@@ -1113,7 +1113,6 @@ export default function MotelDetailPage() {
 
       <MotelAdminTabs
         activeTab={activeTab}
-        motelId={id}
         roomCount={rooms.length}
         promoCount={promos.length}
         menuCategoryCount={menuCategories.length}
