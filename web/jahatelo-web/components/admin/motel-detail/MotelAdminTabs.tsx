@@ -1,9 +1,9 @@
-import Link from 'next/link';
 import type { MotelAdminTab } from './types';
 
 type Props = {
   activeTab: MotelAdminTab;
-  motelId: string;
+  /** Compatibilidad con consumidores existentes; la pestaña de Analytics ya no se renderiza aquí. */
+  motelId?: string;
   roomCount: number;
   promoCount: number;
   menuCategoryCount: number;
@@ -20,7 +20,6 @@ const tabClassName = (active: boolean) =>
 
 export default function MotelAdminTabs({
   activeTab,
-  motelId,
   roomCount,
   promoCount,
   menuCategoryCount,
@@ -44,12 +43,6 @@ export default function MotelAdminTabs({
       <button onClick={() => onChange('reviews')} className={tabClassName(activeTab === 'reviews')}>
         Reseñas <span className="ml-1 opacity-70">({reviewCount})</span>
       </button>
-      <Link
-        href={`/admin/motels/${motelId}/analytics`}
-        className="px-5 py-3 font-medium text-sm text-slate-500 hover:text-slate-700 transition-colors"
-      >
-        Analytics
-      </Link>
     </div>
   );
 }
