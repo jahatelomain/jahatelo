@@ -277,6 +277,7 @@ export function mapMotelToDetail(
           description: promo.description,
           imageUrl: promo.imageUrl,
           isGlobal: promo.isGlobal,
+          hasPromoCode: promo.hasPromoCode,
           validFrom: promo.validFrom,
           validUntil: promo.validUntil,
         })) || [],

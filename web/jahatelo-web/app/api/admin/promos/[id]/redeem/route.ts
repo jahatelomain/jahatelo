@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { RedeemPromoCodeSchema } from '@/lib/validations/schemas';
+import { logAuditEvent } from '@/lib/audit';
 
 // POST /api/admin/promos/[id]/redeem
 export async function POST(
@@ -74,13 +75,18 @@ export async function POST(
     }
 
     // Confirm: mark as USED irreversibly
-    await prisma.promoCode.update({
-      where: { id: promoCode.id },
-      data: {
-        status: 'USED',
-        redeemedAt: now,
-        redeemedBy: access.user?.id ?? null,
-      },
+    const redeemed = await prisma.promoCode.updateMany({
+      where: { id: promoCode.id, status: 'PENDING' },
+      data: { status: 'USED', redeemedAt: now, redeemedBy: access.user?.id ?? null },
+    });
+    if (redeemed.count !== 1) return NextResponse.json({ valid: false, reason: 'ALREADY_USED' });
+
+    await logAuditEvent({
+      userId: access.user?.id,
+      action: 'REDEEM',
+      entityType: 'PromoCode',
+      entityId: promoCode.id,
+      metadata: { promoId, motelId: promoCode.promo.motelId, code },
     });
 
     return NextResponse.json({ valid: true, confirmed: true });

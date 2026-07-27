@@ -25,7 +25,11 @@ interface ClaimResult {
   promoTitle: string;
   promoDescription: string | null;
   promoImageUrl: string | null;
+  promoValidUntil: Date | string | null;
 }
+
+const formatClaimExpiry = (value: ClaimResult['promoValidUntil']) =>
+  value ? ` · válido hasta ${new Date(value).toLocaleDateString('es-PY')}` : '';
 
 export default function PromosTab({ promos }: PromosTabProps) {
   const [claimedCodes, setClaimedCodes] = useState<Record<string, ClaimResult>>({});
@@ -123,11 +127,11 @@ export default function PromosTab({ promos }: PromosTabProps) {
               <div className="mt-2">
                 {claimedCodes[promo.id] ? (
                   <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
-                    <p className="text-xs text-purple-600 font-medium mb-1">Tu código de descuento</p>
+                    <p className="text-xs text-purple-600 font-medium mb-1">Tu código de promoción</p>
                     <p className="text-3xl font-bold font-mono tracking-widest text-purple-800 mb-2">
                       {claimedCodes[promo.id].code}
                     </p>
-                    <p className="text-xs text-gray-600">Mostrá este código al llegar al motel</p>
+                    <p className="text-xs text-gray-600">Mostrá este código al llegar al motel{formatClaimExpiry(claimedCodes[promo.id].promoValidUntil)}</p>
                   </div>
                 ) : (
                   <>

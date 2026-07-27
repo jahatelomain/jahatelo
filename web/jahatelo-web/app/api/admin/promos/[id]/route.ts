@@ -104,6 +104,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
+    const codeCount = await prisma.promoCode.count({ where: { promoId: promo.id } });
+    if (codeCount > 0) {
+      return NextResponse.json(
+        { error: 'No se puede eliminar una promoción con códigos emitidos. Desactivala para conservar su historial.' },
+        { status: 409 },
+      );
+    }
+
     await prisma.promo.delete({ where: { id: idResult.data } });
 
     await touchMotel(promo.motelId);
