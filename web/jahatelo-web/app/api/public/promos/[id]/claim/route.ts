@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { ClaimPromoCodeSchema } from '@/lib/validations/schemas';
+import { logAuditEvent } from '@/lib/audit';
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
@@ -50,7 +51,7 @@ export async function POST(
     }
 
     const now = new Date();
-    if (promo.validUntil && new Date(promo.validUntil) < now) {
+    if ((promo.validFrom && new Date(promo.validFrom) > now) || (promo.validUntil && new Date(promo.validUntil) < now)) {
       return NextResponse.json({ error: 'Esta promoción ya no está vigente' }, { status: 404 });
     }
 
@@ -68,6 +69,7 @@ export async function POST(
         promoTitle: promo.title,
         promoDescription: promo.description,
         promoImageUrl: promo.imageUrl,
+        promoValidUntil: promo.validUntil,
       });
     }
 
@@ -139,11 +141,19 @@ export async function POST(
       data: { promoId, code, deviceId, status: 'PENDING' },
     });
 
+    await logAuditEvent({
+      action: 'CLAIM',
+      entityType: 'PromoCode',
+      entityId: promoCode.id,
+      metadata: { promoId, deviceId: deviceId.slice(0, 8), code: promoCode.code },
+    });
+
     return NextResponse.json({
       code: promoCode.code,
       promoTitle: promo.title,
       promoDescription: promo.description,
       promoImageUrl: promo.imageUrl,
+      promoValidUntil: promo.validUntil,
     });
   } catch (error) {
     console.error('Error claiming promo code:', error);

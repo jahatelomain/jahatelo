@@ -13,6 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../constants/theme';
+import { getApiRoot } from '../services/apiBaseUrl';
+import { getOrCreateDeviceId } from '../services/analyticsService';
 
 const CLAIMED_CODES_KEY = 'jahatelo_claimed_promo_codes';
 
@@ -24,8 +26,26 @@ export default function PromoHistoryScreen({ navigation }) {
     try {
       const raw = await AsyncStorage.getItem(CLAIMED_CODES_KEY);
       const map = raw ? JSON.parse(raw) : {};
-      // Convertir mapa { promoId: codeData } a array
-      const list = Object.entries(map).map(([promoId, data]) => ({ promoId, ...data }));
+      const deviceId = await getOrCreateDeviceId();
+      const response = await fetch(`${getApiRoot()}/api/public/promo-codes?deviceId=${encodeURIComponent(deviceId)}`);
+      const payload = response.ok ? await response.json() : { codes: [] };
+      const remote = Array.isArray(payload.codes) ? payload.codes : [];
+      const synced = remote.map((entry) => ({
+        promoId: entry.promoId,
+        code: entry.code,
+        title: entry.promo?.title || map[entry.promoId]?.title || 'Promoción',
+        description: entry.promo?.description || map[entry.promoId]?.description || null,
+        validUntil: entry.promo?.validUntil || map[entry.promoId]?.validUntil || null,
+        status: entry.status,
+        redeemedAt: entry.redeemedAt || null,
+        createdAt: entry.createdAt,
+      }));
+      const remoteIds = new Set(synced.map((entry) => entry.promoId));
+      const localOnly = Object.entries(map)
+        .filter(([promoId]) => !remoteIds.has(promoId))
+        .map(([promoId, data]) => ({ promoId, ...data }));
+      const list = [...synced, ...localOnly];
+      await AsyncStorage.setItem(CLAIMED_CODES_KEY, JSON.stringify(Object.fromEntries(list.map((entry) => [entry.promoId, entry]))));
       setCodes(list);
     } catch {
       setCodes([]);
@@ -77,6 +97,7 @@ export default function PromoHistoryScreen({ navigation }) {
         <View style={styles.cardInfo}>
           <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
           <Text style={styles.cardCode}>{item.code}</Text>
+          <Text style={[styles.status, item.status === 'USED' ? styles.statusUsed : styles.statusPending]}>{item.status === 'USED' ? 'Canjeado' : 'Pendiente de canje'}</Text>
         </View>
       </View>
       <TouchableOpacity
@@ -131,11 +152,11 @@ export default function PromoHistoryScreen({ navigation }) {
             {selectedCode?.description ? (
               <Text style={styles.modalDescription}>{selectedCode.description}</Text>
             ) : null}
-            <Text style={styles.modalCodeLabel}>Tu código de descuento</Text>
+            <Text style={styles.modalCodeLabel}>Tu código de promoción</Text>
             <View style={styles.codeBox}>
               <Text style={styles.codeText}>{selectedCode?.code}</Text>
             </View>
-            <Text style={styles.codeHint}>Mostrá este código al llegar al motel</Text>
+            <Text style={styles.codeHint}>{selectedCode?.status === 'USED' ? 'Este código ya fue canjeado.' : `Mostrá este código al llegar al motel${selectedCode?.validUntil ? ` · válido hasta ${new Date(selectedCode.validUntil).toLocaleDateString('es-PY')}` : ''}`}</Text>
             <TouchableOpacity
               style={styles.copyBtn}
               onPress={() => { handleCopy(selectedCode?.code); setSelectedCode(null); }}
@@ -221,6 +242,17 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     fontFamily: 'monospace',
   },
+  status: {
+    marginTop: 4,
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  statusPending: { backgroundColor: '#FEF3C7', color: '#92400E' },
+  statusUsed: { backgroundColor: '#DCFCE7', color: '#166534' },
   deleteBtn: {
     padding: 4,
     marginLeft: 12,

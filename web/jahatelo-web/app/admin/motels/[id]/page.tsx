@@ -309,6 +309,8 @@ export default function MotelDetailPage() {
           const res = await fetch(`/api/admin/promos/${promoId}`, { method: 'DELETE' });
           if (res.ok) {
             fetchPromos();
+          } else {
+            toast.error(await getResponseError(res, 'No se pudo eliminar la promo'));
           }
         } catch (error) {
           console.error('Error deleting promo:', error);
@@ -317,6 +319,19 @@ export default function MotelDetailPage() {
         }
       },
     });
+  };
+
+  const handleTogglePromoActive = async (promo: Promo) => {
+    try {
+      const res = await fetch(`/api/admin/promos/${promo.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isActive: !promo.isActive }),
+      });
+      if (!res.ok) throw new Error(await getResponseError(res, 'No se pudo actualizar la promo'));
+      toast.success(promo.isActive ? 'Promo desactivada; su historial se conserva.' : 'Promo reactivada.');
+      fetchPromos();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo actualizar la promo');
+    }
   };
 
   const handleEditPromo = (promo: Promo) => {
@@ -1176,7 +1191,7 @@ export default function MotelDetailPage() {
               </div>
             ) : (
               promos.map((promo) => (
-                <PromoCard key={promo.id} promo={promo} superAdmin={currentUser?.role === 'SUPERADMIN'} menuOpen={openPromoMenuId === promo.id} onEdit={handleEditPromo} onDelete={handleDeletePromo} onMenuChange={setOpenPromoMenuId}>
+                <PromoCard key={promo.id} promo={promo} superAdmin={currentUser?.role === 'SUPERADMIN'} menuOpen={openPromoMenuId === promo.id} onEdit={handleEditPromo} onDelete={handleDeletePromo} onToggleActive={handleTogglePromoActive} onMenuChange={setOpenPromoMenuId}>
 
                     {promo.hasPromoCode && (
                       <PromoCodePanel

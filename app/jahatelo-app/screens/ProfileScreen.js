@@ -217,13 +217,11 @@ export default function ProfileScreen() {
               title="Notificaciones y sonido"
               onPress={() => navigation.navigate('NotificationPreferences')}
             />
-            {isAuthenticated && (
-              <OptionRow
-                icon="ticket-outline"
-                title="Mis códigos de promo"
-                onPress={() => navigation.navigate('PromoHistory')}
-              />
-            )}
+            <OptionRow
+              icon="ticket-outline"
+              title="Mis códigos de promo"
+              onPress={() => navigation.navigate('PromoHistory')}
+            />
           </View>
         </View>
 

@@ -77,6 +77,8 @@ export default function PromosTab({ route }) {
         title: data.promoTitle || promo.title,
         description: data.promoDescription || promo.description,
         imageUrl: data.promoImageUrl || promo.imageUrl,
+        validUntil: data.promoValidUntil || promo.validUntil || null,
+        status: 'PENDING',
       };
       // Persistir localmente
       await saveClaimedCode(promo.id, codeData);
@@ -184,11 +186,11 @@ export default function PromosTab({ route }) {
             {codeModal?.description ? (
               <Text style={styles.modalDescription}>{codeModal.description}</Text>
             ) : null}
-            <Text style={styles.modalCodeLabel}>Tu código de descuento</Text>
+            <Text style={styles.modalCodeLabel}>Tu código de promoción</Text>
             <View style={styles.codeBox}>
               <Text style={styles.codeText}>{codeModal?.code}</Text>
             </View>
-            <Text style={styles.codeHint}>Mostrá este código al llegar al motel</Text>
+            <Text style={styles.codeHint}>Mostrá este código al llegar al motel{codeModal?.validUntil ? ` · válido hasta ${new Date(codeModal.validUntil).toLocaleDateString('es-PY')}` : ''}</Text>
             <TouchableOpacity style={styles.copyBtn} onPress={handleCopy} activeOpacity={0.8}>
               <Text style={styles.copyBtnText}>Copiar código</Text>
             </TouchableOpacity>

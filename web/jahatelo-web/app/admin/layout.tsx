@@ -131,6 +131,7 @@ export default function AdminLayout({
     if (pathname.startsWith('/admin/prospects')) return 'Prospects';
     if (pathname.startsWith('/admin/financiero')) return 'Financiero';
     if (pathname.startsWith('/admin/analytics')) return 'Analytics';
+    if (pathname.startsWith('/admin/canjear-codigo')) return 'Canjear código';
     if (pathname.startsWith('/admin/notifications')) return 'Notificaciones Masivas';
     if (pathname.startsWith('/admin/banners')) return 'Banners Publicitarios';
     if (pathname.startsWith('/admin/audit')) return 'Auditoría';
@@ -181,6 +182,9 @@ export default function AdminLayout({
             { href: '/admin/analytics/visitors', label: 'Visitantes', roles: ['SUPERADMIN'] },
           ],
         },
+    ...(user?.role === 'MOTEL_ADMIN'
+      ? [{ href: '/admin/canjear-codigo', label: 'Canjear código', roles: ['MOTEL_ADMIN'] } as NavItem]
+      : []),
     { href: '/admin/financiero', label: 'Financiero', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
     {
       section: 'Publicidad',
@@ -218,6 +222,7 @@ export default function AdminLayout({
     // Para motel admin, Analytics se limita en API a su propio motel y usa el
     // permiso operativo de Moteles. Superadmin conserva acceso total.
     if (path.startsWith('/admin/analytics')) return 'motels';
+    if (path.startsWith('/admin/canjear-codigo')) return 'motels';
     if (path.startsWith('/admin/notifications')) return 'notifications';
     if (path.startsWith('/admin/banners')) return 'banners';
     if (path.startsWith('/admin/audit')) return 'audit';
