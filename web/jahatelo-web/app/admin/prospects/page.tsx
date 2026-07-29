@@ -6,6 +6,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { FileText, MoreHorizontal, Trash2 } from 'lucide-react';
 
 type ProspectStatus = 'NEW' | 'CONTACTED' | 'IN_NEGOTIATION' | 'WON' | 'LOST';
 type ProspectChannel = 'WEB' | 'APP' | 'MANUAL';
@@ -421,19 +422,20 @@ export default function ProspectsPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <button
                           onClick={() => handleOpenNotes(prospect)}
-                          className="inline-flex items-center rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
                           title="Agregar/Ver notas"
+                          aria-label="Agregar o ver notas"
                         >
-                          Notas
+                          <FileText size={15} />
                         </button>
                         <div className="relative">
                           <button
                             onClick={() => setOpenMenuId(openMenuId === prospect.id ? null : prospect.id)}
                             className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200"
+                            title="Más acciones"
+                            aria-label="Más acciones"
                           >
-                            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
-                            </svg>
+                            <MoreHorizontal size={16} />
                           </button>
                           {openMenuId === prospect.id && (
                             <>
@@ -441,12 +443,14 @@ export default function ProspectsPage() {
                                 className="fixed inset-0 z-40"
                                 onClick={() => setOpenMenuId(null)}
                               />
-                              <div className="absolute right-0 mt-2 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-50">
+                              <div className="absolute right-0 mt-2 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg z-50">
                                 <button
                                   onClick={() => { handleDelete(prospect.id); setOpenMenuId(null); }}
-                                  className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50 rounded-lg"
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-600 hover:bg-red-50"
+                                  title="Eliminar prospect"
+                                  aria-label="Eliminar prospect"
                                 >
-                                  Eliminar
+                                  <Trash2 size={15} />
                                 </button>
                               </div>
                             </>

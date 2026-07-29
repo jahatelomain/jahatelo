@@ -1,20 +1,18 @@
 import {
-  hasMotelPlanGlow,
-  isMotelPlanDisabled,
+  getMotelAnalyticsAccess,
   normalizeMotelPlan,
 } from '@/lib/domain/motels/planPresentation';
 
-describe('motel plan presentation', () => {
-  it('applies glow only to Diamond motels', () => {
-    expect(hasMotelPlanGlow('DIAMOND')).toBe(true);
-    expect(hasMotelPlanGlow('diamond')).toBe(true);
-    expect(hasMotelPlanGlow('GOLD')).toBe(false);
-    expect(hasMotelPlanGlow('BASIC')).toBe(false);
-    expect(hasMotelPlanGlow('FREE')).toBe(false);
+describe('planPresentation', () => {
+  it('normaliza los planes de motel conocidos', () => {
+    expect(normalizeMotelPlan('gold')).toBe('GOLD');
+    expect(normalizeMotelPlan(null)).toBe('BASIC');
   });
 
-  it('normalizes missing plans safely and keeps FREE disabled', () => {
-    expect(normalizeMotelPlan(null)).toBe('BASIC');
-    expect(isMotelPlanDisabled('FREE')).toBe(true);
+  it('define Analytics según el plan comercial', () => {
+    expect(getMotelAnalyticsAccess('FREE')).toBe('NONE');
+    expect(getMotelAnalyticsAccess('BASIC')).toBe('SUMMARY');
+    expect(getMotelAnalyticsAccess('GOLD')).toBe('FULL');
+    expect(getMotelAnalyticsAccess('DIAMOND')).toBe('FULL');
   });
 });

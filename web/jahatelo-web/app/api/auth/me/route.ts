@@ -29,6 +29,7 @@ export async function GET() {
         name: true,
         email: true,
         motelId: true,
+        motel: { select: { plan: true } },
         isEmailVerified: true,
       },
     });
@@ -40,6 +41,7 @@ export async function GET() {
         name: dbUser?.name || user.name,
         email: dbUser?.email || user.email,
         motelId: dbUser?.motelId || user.motelId,
+        motelPlan: dbUser?.motel?.plan,
         modulePermissions: dbUser?.accessProfile?.isActive
           ? dbUser.accessProfile.permissions.filter((permission) => permission.actions.includes('VIEW')).map((permission) => permission.module)
           : dbUser?.modulePermissions ?? user.modulePermissions ?? [],

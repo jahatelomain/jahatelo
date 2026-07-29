@@ -13,6 +13,7 @@ export interface UserPayload extends JWTPayload {
   email: string;
   role: 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
   motelId?: string;
+  motelPlan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND';
   name?: string;
   modulePermissions?: string[];
 }

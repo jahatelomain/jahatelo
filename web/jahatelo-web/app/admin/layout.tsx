@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { UserPayload } from '@/lib/auth';
 import { hasModuleAccess } from '@/lib/adminModules';
+import { getMotelAnalyticsAccess } from '@/lib/domain/motels/planPresentation';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { Toaster } from 'sonner';
 
@@ -154,7 +155,7 @@ export default function AdminLayout({
 
   type NavElement = NavItem | NavSection;
 
-  const navStructure: NavElement[] = [
+  const navStructure: Array<NavElement | null> = [
     { href: '/admin', label: 'Dashboard', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
     user?.role === 'MOTEL_ADMIN' && user.motelId
       ? {
@@ -171,8 +172,10 @@ export default function AdminLayout({
             { href: '/admin/promos', label: 'Promos', roles: ['SUPERADMIN'] },
           ],
         },
-    user?.role === 'MOTEL_ADMIN'
+    user?.role === 'MOTEL_ADMIN' && getMotelAnalyticsAccess(user.motelPlan) !== 'NONE'
       ? { href: '/admin/analytics', label: 'Analytics', roles: ['MOTEL_ADMIN'] }
+      : user?.role === 'MOTEL_ADMIN'
+        ? null
       : {
           section: 'Comercial',
           collapsible: true,
@@ -240,6 +243,7 @@ export default function AdminLayout({
   };
 
   const filteredNavStructure: NavElement[] = navStructure
+    .filter((element): element is NavElement => element !== null)
     .map((element) => {
       if (isNavSection(element)) {
         const filteredItems = element.items.filter(filterNavItem);
