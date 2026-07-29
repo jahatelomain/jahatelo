@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Pencil, ShieldCheck, X } from 'lucide-react';
+import { Plus, Pencil, Power, ShieldCheck, X } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 
 const MODULES = [
@@ -141,8 +141,8 @@ export default function AccessProfilesPanel() {
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-              <button onClick={() => openEdit(profile)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:border-purple-200 hover:text-purple-700"><Pencil size={15} />Editar</button>
-              <button onClick={() => void toggleActive(profile)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:border-purple-200 hover:text-purple-700">{profile.isActive ? 'Desactivar' : 'Activar'}</button>
+              <button onClick={() => openEdit(profile)} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-700 hover:border-purple-200 hover:text-purple-700" title="Editar perfil" aria-label="Editar perfil"><Pencil size={15} /></button>
+              <button onClick={() => void toggleActive(profile)} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-700 hover:border-purple-200 hover:text-purple-700" title={profile.isActive ? 'Desactivar perfil' : 'Activar perfil'} aria-label={profile.isActive ? 'Desactivar perfil' : 'Activar perfil'}><Power size={15} /></button>
             </div>
           </article>
         ))}

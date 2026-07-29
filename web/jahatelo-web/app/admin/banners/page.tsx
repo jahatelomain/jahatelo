@@ -7,6 +7,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { BarChart3, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 
 const placementLabels: Record<string, string> = {
   POPUP_HOME: 'Popup Home',
@@ -246,27 +247,31 @@ export default function AdvertisementsAdminPage() {
                         <Link
                           href={`/admin/banners/${ad.id}`}
                           className="inline-flex items-center rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
+                          title="Editar banner"
+                          aria-label="Editar banner"
                         >
-                          Editar
+                          <Pencil size={15} />
                         </Link>
                         <details className="relative">
-                          <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
-                            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
-                            </svg>
+                          <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer" title="Más acciones" aria-label="Más acciones">
+                            <MoreHorizontal size={16} />
                           </summary>
-                          <div className="absolute right-0 mt-2 w-44 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
+                          <div className="absolute right-0 mt-2 flex gap-1 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg z-10">
                             <Link
                               href={`/admin/banners/${ad.id}/analytics`}
-                              className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-purple-50 hover:text-purple-700"
+                              title="Ver analytics"
+                              aria-label="Ver analytics"
                             >
-                              Ver Analytics
+                              <BarChart3 size={15} />
                             </Link>
                             <button
                               onClick={() => handleDelete(ad.id)}
-                              className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-600 hover:bg-red-50"
+                              title="Eliminar banner"
+                              aria-label="Eliminar banner"
                             >
-                              Eliminar
+                              <Trash2 size={15} />
                             </button>
                           </div>
                         </details>

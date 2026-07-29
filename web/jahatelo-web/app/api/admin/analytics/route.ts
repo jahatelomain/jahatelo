@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { type Prisma, AnalyticsEventType } from '@prisma/client';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { AdminAnalyticsQuerySchema } from '@/lib/validations/schemas';
+import { getMotelAnalyticsAccess } from '@/lib/domain/motels/planPresentation';
 import { z } from 'zod';
 
 /**
@@ -32,7 +33,38 @@ export async function GET(request: NextRequest) {
     if (access.user?.role === 'MOTEL_ADMIN' && !motelId) {
       return NextResponse.json({ error: 'El usuario no tiene un motel asignado' }, { status: 403 });
     }
-    const days = period || 30;
+    let analyticsAccess: 'FULL' | 'SUMMARY' = 'FULL';
+    let motelInfo: { id: string; name: string } | null = null;
+
+    if (motelId) {
+      const motel = await prisma.motel.findUnique({
+        where: { id: motelId },
+        select: { id: true, name: true, plan: true },
+      });
+
+      if (!motel) {
+        return NextResponse.json({ error: 'Motel no encontrado' }, { status: 404 });
+      }
+
+      motelInfo = { id: motel.id, name: motel.name };
+
+      // El plan restringe solo al propio motel. Superadmin conserva la visión
+      // global y las herramientas necesarias para administrar la plataforma.
+      if (access.user?.role === 'MOTEL_ADMIN') {
+        const planAccess = getMotelAnalyticsAccess(motel.plan);
+        if (planAccess === 'NONE') {
+          return NextResponse.json(
+            { error: 'Analytics no está incluido en el plan FREE', code: 'ANALYTICS_PLAN_REQUIRED' },
+            { status: 403 }
+          );
+        }
+        analyticsAccess = planAccess;
+      }
+    }
+
+    // BASIC recibe un resumen mensual sin filtros, desglose ni historial.
+    // La misma regla se aplica en API para impedir que se evada desde la URL.
+    const days = analyticsAccess === 'SUMMARY' ? 30 : period || 30;
 
     // Calcular fecha de inicio
     const startDate = new Date();
@@ -47,31 +79,18 @@ export async function GET(request: NextRequest) {
 
     // Si se especifica motelId, filtrar por ese motel
     if (motelId) {
-      // Verificar que el motel existe
-      const motel = await prisma.motel.findUnique({
-        where: { id: motelId },
-        select: { id: true, name: true },
-      });
-
-      if (!motel) {
-        return NextResponse.json(
-          { error: 'Motel no encontrado' },
-          { status: 404 }
-        );
-      }
-
       eventFilter.motelId = motelId;
     }
 
-    if (source) {
+    if (analyticsAccess === 'FULL' && source) {
       eventFilter.source = source;
     }
 
-    if (deviceType) {
+    if (analyticsAccess === 'FULL' && deviceType) {
       eventFilter.deviceType = deviceType;
     }
 
-    if (eventType) {
+    if (analyticsAccess === 'FULL' && eventType) {
       eventFilter.eventType = eventType as AnalyticsEventType;
     }
 
@@ -82,16 +101,6 @@ export async function GET(request: NextRequest) {
         timestamp: 'desc',
       },
     });
-
-    // Obtener información de motel(es) si se filtró
-    let motelInfo = null;
-    if (motelId) {
-      const motel = await prisma.motel.findUnique({
-        where: { id: motelId },
-        select: { id: true, name: true },
-      });
-      motelInfo = motel;
-    }
 
     // Calcular métricas agregadas
     const totalViews = events.filter((e) => e.eventType === 'VIEW').length;
@@ -171,6 +180,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       motel: motelInfo,
       isGlobal: !motelId,
+      analyticsAccess,
       period: {
         days,
         startDate,
@@ -189,22 +199,22 @@ export async function GET(request: NextRequest) {
         conversionRate: Math.round(conversionRate * 100) / 100,
       },
       charts: {
-        viewsByDay: Object.entries(viewsByDay).map(([date, count]) => ({
+        viewsByDay: analyticsAccess === 'FULL' ? Object.entries(viewsByDay).map(([date, count]) => ({
           date,
           count,
-        })),
-        bySource: Object.entries(bySource).map(([source, count]) => ({
+        })) : [],
+        bySource: analyticsAccess === 'FULL' ? Object.entries(bySource).map(([source, count]) => ({
           source,
           count,
-        })),
-        byDevice: Object.entries(byDevice).map(([device, count]) => ({
+        })) : [],
+        byDevice: analyticsAccess === 'FULL' ? Object.entries(byDevice).map(([device, count]) => ({
           device,
           count,
-        })),
-        topCities,
-        topMotels,
+        })) : [],
+        topCities: analyticsAccess === 'FULL' ? topCities : [],
+        topMotels: analyticsAccess === 'FULL' ? topMotels : [],
       },
-      recentEvents: events.slice(0, 50).map((e) => ({
+      recentEvents: analyticsAccess === 'FULL' ? events.slice(0, 50).map((e) => ({
         id: e.id,
         motelId: e.motelId,
         eventType: e.eventType,
@@ -212,7 +222,7 @@ export async function GET(request: NextRequest) {
         source: e.source,
         userCity: e.userCity,
         deviceType: e.deviceType,
-      })),
+      })) : [],
     });
   } catch (error) {
     console.error('Error fetching global analytics:', error);

@@ -24,9 +24,9 @@ export default function RoomActions({ room, index, total, onMove, onEdit, onDele
         <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer" title="Más acciones" aria-label="Más acciones">
           <MoreHorizontal size={16} />
         </summary>
-        <div className="absolute right-0 mt-2 w-32 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
-          <button type="button" onClick={() => onDelete(room.id)} className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50">
-            <Trash2 size={14} /> Eliminar
+        <div className="absolute right-0 mt-2 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg z-10">
+          <button type="button" onClick={() => onDelete(room.id)} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-600 hover:bg-red-50" title="Eliminar habitación" aria-label="Eliminar habitación">
+            <Trash2 size={15} />
           </button>
         </div>
       </details>

@@ -6,6 +6,7 @@ import AnalyticsMetrics from './components/AnalyticsMetrics';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyToken } from '@/lib/auth';
+import { getMotelAnalyticsAccess } from '@/lib/domain/motels/planPresentation';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,13 +53,15 @@ export default async function AdminDashboard() {
 
     if (!motel) redirect('/admin/login');
 
+    const analyticsAccess = getMotelAnalyticsAccess(motel.plan);
+    const hasAnalytics = analyticsAccess !== 'NONE';
     const interactions = phoneClicks + whatsappClicks + mapClicks;
     const metrics = [
       { label: 'Vistas este mes', value: viewsThisMonth, icon: '👁️', hint: 'Visitas a tu perfil' },
       { label: 'Interacciones', value: interactions, icon: '✨', hint: 'Llamadas, WhatsApp y mapa' },
       { label: 'Habitaciones activas', value: `${activeRoomCount}/${roomCount}`, icon: '🛏️', hint: 'Disponibles para clientes' },
       { label: 'Calificación Jahatelo', value: reviewStats._count.score ? `${Number(reviewStats._avg.score ?? 0).toFixed(1)} ★` : '—', icon: '⭐', hint: reviewStats._count.score ? `${reviewStats._count.score} reseñas` : 'Aún no hay reseñas' },
-    ];
+    ].filter((metric) => hasAnalytics || !['Vistas este mes', 'Interacciones'].includes(metric.label));
 
     return (
       <div className="mx-auto max-w-6xl space-y-6">
@@ -68,7 +71,7 @@ export default async function AdminDashboard() {
           <p className="mt-2 max-w-2xl text-sm text-purple-100">Este es el resumen de rendimiento de tu perfil en Jahatelo durante el mes.</p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link href={`/admin/motels/${motel.id}`} className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-purple-700 transition hover:bg-purple-50">Gestionar habitaciones</Link>
-            <Link href="/admin/analytics" className="rounded-lg border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">Ver analytics detallado</Link>
+            {hasAnalytics && <Link href="/admin/analytics" className="rounded-lg border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">{analyticsAccess === 'SUMMARY' ? 'Ver resumen mensual' : 'Ver analytics detallado'}</Link>}
           </div>
         </section>
 
@@ -80,11 +83,11 @@ export default async function AdminDashboard() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-5">
-          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-3">
+          {hasAnalytics && <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-3">
             <div className="flex items-center justify-between"><div><h2 className="font-semibold text-slate-900">Acciones de clientes</h2><p className="mt-1 text-sm text-slate-500">Interés generado desde tu ficha este mes.</p></div><span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">{interactions} total</span></div>
             <div className="mt-6 grid grid-cols-3 gap-3 text-center"><div className="rounded-xl bg-slate-50 p-4"><p className="text-2xl font-bold text-slate-900">{phoneClicks}</p><p className="mt-1 text-xs text-slate-500">Llamadas</p></div><div className="rounded-xl bg-green-50 p-4"><p className="text-2xl font-bold text-green-700">{whatsappClicks}</p><p className="mt-1 text-xs text-green-700">WhatsApp</p></div><div className="rounded-xl bg-blue-50 p-4"><p className="text-2xl font-bold text-blue-700">{mapClicks}</p><p className="mt-1 text-xs text-blue-700">Mapa</p></div></div>
-          </article>
-          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2"><div className="flex items-center justify-between"><h2 className="font-semibold text-slate-900">Últimas reseñas</h2><Link href={`/admin/motels/${motel.id}?tab=reviews`} className="text-xs font-semibold text-purple-600 hover:text-purple-700">Ver todas</Link></div>{recentReviews.length === 0 ? <p className="py-8 text-center text-sm text-slate-500">Todavía no recibiste reseñas.</p> : <div className="mt-4 space-y-4">{recentReviews.map((review) => <div key={review.id} className="border-b border-slate-100 pb-3 last:border-0 last:pb-0"><p className="text-sm text-amber-500">{'★'.repeat(review.score)}{'☆'.repeat(5 - review.score)}</p>{review.comment && <p className="mt-1 line-clamp-2 text-sm text-slate-600">{review.comment}</p>}<p className="mt-1 text-xs text-slate-400">{review.isAnonymous ? 'Anónimo' : review.user?.name || 'Usuario'} · {new Date(review.createdAt).toLocaleDateString('es-PY')}</p></div>)}</div>}</article>
+          </article>}
+          <article className={`rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ${hasAnalytics ? 'lg:col-span-2' : 'lg:col-span-5'}`}><div className="flex items-center justify-between"><h2 className="font-semibold text-slate-900">Últimas reseñas</h2><Link href={`/admin/motels/${motel.id}?tab=reviews`} className="text-xs font-semibold text-purple-600 hover:text-purple-700">Ver todas</Link></div>{recentReviews.length === 0 ? <p className="py-8 text-center text-sm text-slate-500">Todavía no recibiste reseñas.</p> : <div className="mt-4 space-y-4">{recentReviews.map((review) => <div key={review.id} className="border-b border-slate-100 pb-3 last:border-0 last:pb-0"><p className="text-sm text-amber-500">{'★'.repeat(review.score)}{'☆'.repeat(5 - review.score)}</p>{review.comment && <p className="mt-1 line-clamp-2 text-sm text-slate-600">{review.comment}</p>}<p className="mt-1 text-xs text-slate-400">{review.isAnonymous ? 'Anónimo' : review.user?.name || 'Usuario'} · {new Date(review.createdAt).toLocaleDateString('es-PY')}</p></div>)}</div>}</article>
         </section>
       </div>
     );

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { IdSchema, MotelAnalyticsQuerySchema } from '@/lib/validations/schemas';
 import { resolveAnalyticsEnvironment } from '@/lib/analyticsEnvironment';
+import { getMotelAnalyticsAccess } from '@/lib/domain/motels/planPresentation';
 import { z } from 'zod';
 
 /**
@@ -28,7 +29,7 @@ export async function GET(
     // Verificar que el motel existe
     const motel = await prisma.motel.findUnique({
       where: { id: idResult.data },
-      select: { id: true, name: true },
+      select: { id: true, name: true, plan: true },
     });
 
     if (!motel) {
@@ -46,6 +47,14 @@ export async function GET(
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
+    const planAccess = isMotelOwner ? getMotelAnalyticsAccess(motel.plan) : 'FULL';
+    if (planAccess === 'NONE') {
+      return NextResponse.json(
+        { error: 'Analytics no está incluido en el plan FREE', code: 'ANALYTICS_PLAN_REQUIRED' },
+        { status: 403 }
+      );
+    }
+
     // Obtener parámetros de consulta
     const { searchParams } = new URL(request.url);
     const queryResult = MotelAnalyticsQuerySchema.safeParse({
@@ -54,7 +63,7 @@ export async function GET(
     if (!queryResult.success) {
       return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
-    const days = queryResult.data.period || 30;
+    const days = planAccess === 'SUMMARY' ? 30 : queryResult.data.period || 30;
 
     // Calcular fecha de inicio
     const startDate = new Date();
@@ -134,6 +143,7 @@ export async function GET(
         id: motel.id,
         name: motel.name,
       },
+      analyticsAccess: planAccess,
       period: {
         days,
         startDate,
@@ -153,28 +163,28 @@ export async function GET(
         conversionRate: Math.round(conversionRate * 100) / 100,
       },
       charts: {
-        viewsByDay: Object.entries(viewsByDay).map(([date, count]) => ({
+        viewsByDay: planAccess === 'FULL' ? Object.entries(viewsByDay).map(([date, count]) => ({
           date,
           count,
-        })),
-        bySource: Object.entries(bySource).map(([source, count]) => ({
+        })) : [],
+        bySource: planAccess === 'FULL' ? Object.entries(bySource).map(([source, count]) => ({
           source,
           count,
-        })),
-        byDevice: Object.entries(byDevice).map(([device, count]) => ({
+        })) : [],
+        byDevice: planAccess === 'FULL' ? Object.entries(byDevice).map(([device, count]) => ({
           device,
           count,
-        })),
-        topCities,
+        })) : [],
+        topCities: planAccess === 'FULL' ? topCities : [],
       },
-      recentEvents: events.slice(0, 50).map((e) => ({
+      recentEvents: planAccess === 'FULL' ? events.slice(0, 50).map((e) => ({
         id: e.id,
         eventType: e.eventType,
         timestamp: e.timestamp,
         source: e.source,
         userCity: e.userCity,
         deviceType: e.deviceType,
-      })),
+      })) : [],
     });
   } catch (error) {
     console.error('Error fetching motel analytics:', error);

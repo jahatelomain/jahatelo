@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as LucideIcons from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { AMENITY_ICONS, ICON_CATEGORIES } from '@/lib/amenityIcons';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
@@ -497,22 +498,24 @@ export default function AmenitiesPage() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleEdit(amenity)}
-                            className="inline-flex items-center gap-1 rounded-full bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 text-white shadow-sm shadow-purple-200 hover:bg-purple-700 transition-colors"
+                            title="Editar amenity"
+                            aria-label="Editar amenity"
                           >
-                            Editar
+                            <Pencil size={15} />
                           </button>
                           <details className="relative">
-                            <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer">
-                              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
-                              </svg>
+                            <summary className="list-none inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200 cursor-pointer" title="Más acciones" aria-label="Más acciones">
+                              <MoreHorizontal size={16} />
                             </summary>
-                            <div className="absolute right-0 mt-2 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-10">
+                            <div className="absolute right-0 mt-2 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg z-10">
                               <button
                                 onClick={() => handleDelete(amenity.id, amenity.name)}
-                                className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-600 hover:bg-red-50"
+                                title="Eliminar amenity"
+                                aria-label="Eliminar amenity"
                               >
-                                Eliminar
+                                <Trash2 size={15} />
                               </button>
                             </div>
                           </details>

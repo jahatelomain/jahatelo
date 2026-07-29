@@ -11,6 +11,7 @@ interface AnalyticsData {
     name: string;
   } | null;
   isGlobal: boolean;
+  analyticsAccess: 'SUMMARY' | 'FULL';
   period: {
     days: number;
     startDate: string;
@@ -46,6 +47,7 @@ interface CurrentUser {
   id: string;
   role: 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
   motelId?: string | null;
+  motelPlan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND';
 }
 
 export default function GlobalAnalyticsPage() {
@@ -137,6 +139,9 @@ export default function GlobalAnalyticsPage() {
       if (response.ok) {
         const data = await response.json();
         setAnalytics(data);
+      } else if (response.status === 403) {
+        toast?.showToast('Analytics no está incluido en el plan de este motel', 'error');
+        router.replace('/admin');
       } else {
         toast?.showToast('Error al cargar estadísticas', 'error');
       }
@@ -170,6 +175,8 @@ export default function GlobalAnalyticsPage() {
       </div>
     );
   }
+
+  const isSummary = analytics.analyticsAccess === 'SUMMARY';
 
   return (
     <div className="space-y-6">
@@ -213,7 +220,7 @@ export default function GlobalAnalyticsPage() {
             </div>}
 
             {/* Selector de período */}
-            <select
+            {!isSummary && <select
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
               className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
@@ -221,9 +228,9 @@ export default function GlobalAnalyticsPage() {
               <option value="7">Últimos 7 días</option>
               <option value="30">Últimos 30 días</option>
               <option value="90">Últimos 90 días</option>
-            </select>
+            </select>}
 
-            <select
+            {!isSummary && <select
               value={eventTypeFilter}
               onChange={(e) => setEventTypeFilter(e.target.value)}
               className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
@@ -236,9 +243,9 @@ export default function GlobalAnalyticsPage() {
               <option value="CLICK_WEBSITE">Click Web</option>
               <option value="FAVORITE_ADD">Favorito agregado</option>
               <option value="FAVORITE_REMOVE">Favorito removido</option>
-            </select>
+            </select>}
 
-            <select
+            {!isSummary && <select
               value={sourceFilter}
               onChange={(e) => setSourceFilter(e.target.value)}
               className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
@@ -249,9 +256,9 @@ export default function GlobalAnalyticsPage() {
               <option value="SEARCH">Pantalla de Búsqueda</option>
               <option value="DETAIL">Pantalla de Detalles</option>
               <option value="MAP">Pantalla de Mapa</option>
-            </select>
+            </select>}
 
-            <select
+            {!isSummary && <select
               value={deviceFilter}
               onChange={(e) => setDeviceFilter(e.target.value)}
               className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
@@ -259,7 +266,7 @@ export default function GlobalAnalyticsPage() {
               <option value="">Todos los dispositivos</option>
               <option value="WEB">Web</option>
               <option value="MOBILE">Móvil</option>
-            </select>
+            </select>}
           </div>
         </div>
       </div>
@@ -295,7 +302,7 @@ export default function GlobalAnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        {!isSummary && <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-600 mb-1">Tasa de Conversión</p>
@@ -307,9 +314,9 @@ export default function GlobalAnalyticsPage() {
               </svg>
             </div>
           </div>
-        </div>
+        </div>}
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        {!isSummary && <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-600 mb-1">Favoritos Netos</p>
@@ -321,9 +328,10 @@ export default function GlobalAnalyticsPage() {
               </svg>
             </div>
           </div>
-        </div>
+        </div>}
       </div>
 
+      {!isSummary && <>
       {/* Desglose de Clicks */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
@@ -442,6 +450,13 @@ export default function GlobalAnalyticsPage() {
             : 'Estas métricas muestran el rendimiento del motel seleccionado. Selecciona "Todos los moteles" para ver estadísticas globales.'}
         </p>
       </div>
+      </>}
+
+      {isSummary && (
+        <div className="rounded-xl border border-purple-200 bg-purple-50 p-4 text-sm text-purple-800">
+          <strong>Resumen mensual incluido en BASIC.</strong> Actualizá a Gold o Diamond para acceder a períodos, filtros y desgloses avanzados.
+        </div>
+      )}
     </div>
   );
 }
