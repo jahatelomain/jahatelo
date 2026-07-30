@@ -1,7 +1,7 @@
 /* global describe, expect, it */
 import {
   hasMotelPlanGlow,
-  isMotelPlanDisabled,
+  isMotelPlanMuted,
   normalizeMotelPlan,
 } from '../motelPlans';
 
@@ -14,8 +14,8 @@ describe('motel plan presentation', () => {
     expect(hasMotelPlanGlow('FREE')).toBe(false);
   });
 
-  it('uses BASIC as the safe fallback and keeps FREE disabled', () => {
+  it('uses BASIC as the safe fallback and presents FREE as muted', () => {
     expect(normalizeMotelPlan()).toBe('BASIC');
-    expect(isMotelPlanDisabled('FREE')).toBe(true);
+    expect(isMotelPlanMuted('FREE')).toBe(true);
   });
 });

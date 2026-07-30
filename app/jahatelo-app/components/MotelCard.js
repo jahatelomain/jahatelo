@@ -18,7 +18,7 @@ import { useFavorites } from '../hooks/useFavorites';
 import { prefetchMotelDetails } from '../services/prefetchService';
 import { getAmenityIconConfig } from '../constants/amenityIcons';
 import { COLORS } from '../constants/theme';
-import { hasMotelPlanGlow, isMotelPlanDisabled, normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
+import { hasMotelPlanGlow, isMotelPlanMuted, normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
 import { trackFavoriteAdd, trackFavoriteRemove } from '../services/analyticsService';
 import { shareMotel } from '../utils/share';
 
@@ -26,7 +26,7 @@ function MotelCardComponent({ motel, onPress }) {
   const { isFavorite, toggleFavorite } = useFavorites();
 
   // Derivadas de motel con null safety — deben estar antes de los hooks
-  const isDisabled = isMotelPlanDisabled(motel?.plan);
+  const isMuted = isMotelPlanMuted(motel?.plan);
   const isDiamond = hasMotelPlanGlow(motel?.plan);
   const plan = normalizeMotelPlan(motel?.plan);
 
@@ -187,7 +187,7 @@ function MotelCardComponent({ motel, onPress }) {
   };
 
   const cardBody = (
-    <Animated.View style={[styles.card, animatedCardStyle, isDisabled && styles.disabledCard, isDiamond && styles.cardNoMargin]}>
+    <Animated.View style={[styles.card, animatedCardStyle, isMuted && styles.disabledCard, isDiamond && styles.cardNoMargin]}>
       {/* Header con nombre y favorito */}
       <View style={styles.cardHeader}>
         <View style={styles.headerLeft}>
@@ -288,7 +288,6 @@ function MotelCardComponent({ motel, onPress }) {
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      disabled={isDisabled}
     >
       {isDiamond ? (
         <LinearGradient
