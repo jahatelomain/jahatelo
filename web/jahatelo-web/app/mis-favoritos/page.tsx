@@ -6,6 +6,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatGuaranies } from '@/lib/formatCurrency';
+import Navbar from '@/components/public/Navbar';
+import Footer from '@/components/public/Footer';
 
 interface Motel {
   id: string;
@@ -105,14 +107,19 @@ export default function MisFavoritosPage() {
 
   if (authLoading || !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-purple-600">Cargando...</div>
-      </div>
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-purple-600">Cargando...</div>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-white">
         <div className="max-w-6xl mx-auto px-4 py-12">
@@ -278,6 +285,8 @@ export default function MisFavoritosPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+      <Footer />
+    </>
   );
 }

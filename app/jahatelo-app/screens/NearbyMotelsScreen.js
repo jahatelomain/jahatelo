@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -37,14 +38,11 @@ export default function NearbyMotelsScreen({ navigation }) {
   const [motels, setMotels] = useState([]);
   const [allMotels, setAllMotels] = useState([]); // Todos los moteles sin filtrar
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [selectedRadius, setSelectedRadius] = useState(10); // Radio por defecto 10km
   const [showRadiusModal, setShowRadiusModal] = useState(false);
-
-  useEffect(() => {
-    loadNearbyMotels();
-  }, []);
 
   // Filtrar moteles cuando cambie el radio seleccionado
   useEffect(() => {
@@ -53,9 +51,9 @@ export default function NearbyMotelsScreen({ navigation }) {
     }
   }, [selectedRadius]);
 
-  const loadNearbyMotels = async () => {
+  const loadNearbyMotels = useCallback(async ({ initial = true } = {}) => {
     try {
-      setLoading(true);
+      if (initial) setLoading(true);
       setError(null);
 
       // Solicitar permisos de ubicación
@@ -63,7 +61,6 @@ export default function NearbyMotelsScreen({ navigation }) {
 
       if (status !== 'granted') {
         setError('Necesitamos acceso a tu ubicación para encontrar moteles cercanos.');
-        setLoading(false);
         return;
       }
 
@@ -90,9 +87,22 @@ export default function NearbyMotelsScreen({ navigation }) {
       debugLog('❌ Error al obtener moteles cercanos:', err);
       setError('No pudimos obtener tu ubicación. Verifica que el GPS esté activado.');
     } finally {
-      setLoading(false);
+      if (initial) setLoading(false);
     }
-  };
+  }, [selectedRadius]);
+
+  useEffect(() => {
+    loadNearbyMotels();
+  }, [loadNearbyMotels]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadNearbyMotels({ initial: false });
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadNearbyMotels]);
 
   const filterMotelsByRadius = (radius, motelsToFilter = allMotels, location = userLocation) => {
     if (!location) return;
@@ -245,6 +255,7 @@ export default function NearbyMotelsScreen({ navigation }) {
             />
           )}
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>

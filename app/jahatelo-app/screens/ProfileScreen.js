@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Image, Linking } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Image, Linking, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +21,7 @@ export default function ProfileScreen() {
   const [recentViewsCount, setRecentViewsCount] = useState(0);
   const [lastSyncDate, setLastSyncDate] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Cargar información del caché al montar
   useEffect(() => {
@@ -44,6 +45,15 @@ export default function ProfileScreen() {
       console.error('Error loading cache info:', error);
     }
   };
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadCacheInfo();
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   const handleRegisterMotel = () => {
     navigation.navigate('RegisterMotel');
@@ -138,7 +148,11 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />}
+      >
         {/* Header Section */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>

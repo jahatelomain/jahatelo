@@ -1,6 +1,7 @@
 'use client';
 
 import FavoriteButton from '@/components/public/FavoriteButton';
+import { useCallback, useEffect, useState } from 'react';
 import { useFavorites } from '@/hooks/useFavorites';
 
 type FavoriteButtonClientProps = {
@@ -17,12 +18,29 @@ export default function FavoriteButtonClient({
   variant = 'icon',
 }: FavoriteButtonClientProps) {
   const { isFavorite, toggleFavorite } = useFavorites();
+  const serverFavorite = isFavorite(motelId);
+  const [favorite, setFavorite] = useState(serverFavorite);
+
+  useEffect(() => {
+    setFavorite(serverFavorite);
+  }, [serverFavorite]);
+
+  const handleToggle = useCallback(async () => {
+    const previousValue = favorite;
+    setFavorite(!previousValue);
+
+    const success = await toggleFavorite(motelId, source);
+    if (!success) {
+      setFavorite(previousValue);
+    }
+    return success;
+  }, [favorite, motelId, source, toggleFavorite]);
 
   return (
     <FavoriteButton
       motelId={motelId}
-      isFavorite={isFavorite(motelId)}
-      onToggle={() => toggleFavorite(motelId, source)}
+      isFavorite={favorite}
+      onToggle={handleToggle}
       source={source}
       size={size}
       variant={variant}

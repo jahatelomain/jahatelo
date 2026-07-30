@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Clipboard,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../../constants/theme';
@@ -37,7 +38,7 @@ async function saveClaimedCode(promoId, codeData) {
   }
 }
 
-export default function PromosTab({ route }) {
+export default function PromosTab({ route, refreshing, onRefresh, embedded = false }) {
   const { motel } = route.params || {};
   const promos = motel?.promos || [];
 
@@ -99,19 +100,42 @@ export default function PromosTab({ route }) {
   };
 
   if (!promos.length) {
+    const EmptyContainer = embedded ? View : ScrollView;
     return (
-      <View style={styles.emptyState}>
+      <EmptyContainer
+        style={embedded ? styles.emptyState : undefined}
+        {...(!embedded && {
+          contentContainerStyle: styles.emptyState,
+          refreshControl: <RefreshControl refreshing={Boolean(refreshing)} onRefresh={onRefresh} colors={[COLORS.primary]} />,
+        })}
+      >
         <Text style={styles.emptyTitle}>Sin promociones activas</Text>
         <Text style={styles.emptySubtitle}>
           Cuando este motel publique una promo, la vas a ver acá.
         </Text>
-      </View>
+      </EmptyContainer>
     );
   }
 
+  const Container = embedded ? View : ScrollView;
+
   return (
     <>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Container
+        style={embedded ? styles.content : styles.container}
+        {...(!embedded && {
+          contentContainerStyle: styles.content,
+          refreshControl: (
+            <RefreshControl
+              refreshing={Boolean(refreshing)}
+              onRefresh={async () => {
+                await Promise.all([loadClaimedCodes().then(setClaimedCodes), onRefresh?.()]);
+              }}
+              colors={[COLORS.primary]}
+            />
+          ),
+        })}
+      >
         {promos.map((promo) => {
           const alreadyClaimed = !!claimedCodes[promo.id];
           return (
@@ -173,7 +197,7 @@ export default function PromosTab({ route }) {
             </View>
           );
         })}
-      </ScrollView>
+      </Container>
 
       {/* Modal de código */}
       <Modal visible={!!codeModal} transparent animationType="fade" onRequestClose={() => setCodeModal(null)}>

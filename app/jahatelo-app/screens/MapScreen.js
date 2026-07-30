@@ -455,7 +455,6 @@ export default function MapScreen() {
   };
 
   const handleMarkerPress = useCallback((motel) => {
-    if (isMotelPlanDisabled(motel.plan)) return;
     navigation.navigate('MotelDetail', {
       motelSlug: motel.slug,
       motelId: motel.id,

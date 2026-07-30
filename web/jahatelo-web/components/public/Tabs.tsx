@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Tab {
   id: string;
@@ -14,43 +13,49 @@ interface TabsProps {
   defaultTab?: string;
 }
 
+/**
+ * Índice navegable de secciones continuas para el detalle público de un motel.
+ * Las pestañas no intercambian contenido: posicionan el scroll en su sección.
+ */
 export default function Tabs({ tabs, defaultTab }: TabsProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const tabFromQuery = searchParams.get('tab');
-  const initialTab = tabFromQuery && tabs.some((tab) => tab.id === tabFromQuery)
-    ? tabFromQuery
-    : (defaultTab || tabs[0]?.id);
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeTab, setActiveTab] = useState(defaultTab || tabs[0]?.id);
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
-  // Escuchar cambios en hash
+  const scrollToTab = useCallback((tabId: string, behavior: ScrollBehavior = 'smooth') => {
+    sectionRefs.current[tabId]?.scrollIntoView({ behavior, block: 'start' });
+    setActiveTab(tabId);
+    window.history.replaceState(null, '', `#${tabId}`);
+  }, []);
+
   useEffect(() => {
-    const applyHash = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (!hash) return;
-      const match = tabs.find((tab) => tab.id === hash);
-      if (match) {
-        setActiveTab(match.id);
+    const scrollToHash = () => {
+      const tabId = window.location.hash.slice(1);
+      if (tabs.some((tab) => tab.id === tabId)) {
+        window.requestAnimationFrame(() => scrollToTab(tabId, 'auto'));
       }
     };
 
-    const frame = window.requestAnimationFrame(applyHash);
-    window.addEventListener('hashchange', applyHash);
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener('hashchange', applyHash);
-    };
+    scrollToHash();
+    window.addEventListener('hashchange', scrollToHash);
+    return () => window.removeEventListener('hashchange', scrollToHash);
+  }, [scrollToTab, tabs]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) setActiveTab(visible.target.id);
+      },
+      { rootMargin: '-22% 0px -62% 0px', threshold: [0.01, 0.25, 0.5] },
+    );
+
+    const sections = Object.values(sectionRefs.current).filter(Boolean) as HTMLElement[];
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
   }, [tabs]);
-
-  const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
-
-    // Actualizar URL con query param
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('tab', tabId);
-    router.push(`?${params.toString()}`, { scroll: false });
-  };
 
   const handleTouchStart = (event: React.TouchEvent) => {
     const touch = event.touches[0];
@@ -67,20 +72,17 @@ export default function Tabs({ tabs, defaultTab }: TabsProps) {
 
     const activeIndex = tabs.findIndex((tab) => tab.id === activeTab);
     const nextIndex = Math.max(0, Math.min(tabs.length - 1, activeIndex + (dx < 0 ? 1 : -1)));
-    if (nextIndex !== activeIndex) handleTabChange(tabs[nextIndex].id);
+    if (nextIndex !== activeIndex) scrollToTab(tabs[nextIndex].id);
   };
-
-  const activeTabContent = tabs.find((tab) => tab.id === activeTab)?.content;
 
   return (
     <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-      {/* Tab Headers */}
-      <div className="border-b border-gray-200">
-        <nav className="flex gap-8 overflow-x-auto">
+      <div className="sticky top-20 z-30 -mx-6 border-b border-gray-200 bg-white/95 px-6 backdrop-blur-md">
+        <nav className="flex gap-8 overflow-x-auto" aria-label="Secciones del motel">
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
+              onClick={() => scrollToTab(tab.id)}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'border-purple-600 text-purple-600'
@@ -93,9 +95,20 @@ export default function Tabs({ tabs, defaultTab }: TabsProps) {
         </nav>
       </div>
 
-      {/* Tab Content */}
-      <div key={activeTab} className="animate-[tabFadeIn_360ms_ease-out] py-6">
-        {activeTabContent}
+      <div className="pt-2">
+        {tabs.map((tab) => (
+          <section
+            key={tab.id}
+            id={tab.id}
+            ref={(element) => { sectionRefs.current[tab.id] = element; }}
+            className="scroll-mt-40 border-b border-gray-100 py-8 last:border-b-0"
+          >
+            <h2 className="mb-5 text-sm font-extrabold uppercase tracking-[0.12em] text-slate-900">
+              {tab.label}
+            </h2>
+            {tab.content}
+          </section>
+        ))}
       </div>
     </div>
   );

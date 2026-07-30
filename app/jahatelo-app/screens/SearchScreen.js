@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,6 +36,7 @@ export default function SearchScreen({ route }) {
   const [selectedAmenity, setSelectedAmenity] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [selectedAd, setSelectedAd] = useState(null);
   const [showAdDetailModal, setShowAdDetailModal] = useState(false);
@@ -109,6 +110,15 @@ export default function SearchScreen({ route }) {
       if (!controller.signal.aborted) setLoading(false);
     }
   };
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadResults(searchQuery, selectedAmenity);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [searchQuery, selectedAmenity]);
 
   useEffect(() => {
     if (route?.params?.initialQuery !== undefined) {
@@ -415,6 +425,7 @@ export default function SearchScreen({ route }) {
             initialNumToRender={10}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#FF2E93']} />}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig.current}
             ListEmptyComponent={
