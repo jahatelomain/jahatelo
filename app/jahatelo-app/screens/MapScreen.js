@@ -15,7 +15,7 @@ import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
-import { isMotelPlanDisabled, normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
+import { isMotelPlanMuted, normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
 import { useNavigation } from '@react-navigation/native';
 import { getApiRoot } from '../services/apiBaseUrl';
 import { useOnlineRetry } from '../hooks/useOnlineRetry';
@@ -151,7 +151,7 @@ ClusterMarker.displayName = 'ClusterMarker';
 // ===== CUSTOM MARKER (individual) =====
 const CustomMarker = React.memo(({ motel, onPress }) => {
   const plan = normalizeMotelPlan(motel.plan);
-  const isDisabled = isMotelPlanDisabled(plan);
+  const isMuted = isMotelPlanMuted(plan);
   const [tracksChanges, setTracksChanges] = useState(IS_ANDROID);
   const planZIndex = getPlanZIndex(plan);
 
@@ -162,14 +162,14 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const pinStyle = [
     styles.markerPin,
-    isDisabled && styles.disabledMarker,
+    isMuted && styles.disabledMarker,
     isGold && styles.goldMarker,
     isDiamond && styles.diamondMarker,
     { width: pinSize, height: pinSize, borderRadius: Math.round(pinSize / 2) },
   ];
   const labelContainerStyle = [
     styles.iosLabelContainer,
-    isDisabled && styles.disabledLabel,
+    isMuted && styles.disabledLabel,
     isGold && styles.goldLabel,
     isDiamond && styles.diamondLabel,
     {
@@ -185,7 +185,7 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
   ];
   const calloutStyle = [
     styles.calloutContainer,
-    isDisabled && styles.disabledCallout,
+    isMuted && styles.disabledCallout,
     isGold && styles.goldCallout,
     isDiamond && styles.diamondCallout,
     { padding: Math.round(12 * sizeMultiplier) },

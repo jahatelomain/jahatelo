@@ -12,4 +12,6 @@ export const normalizeMotelPlan = (plan) => {
 
 export const hasMotelPlanGlow = (plan) => normalizeMotelPlan(plan) === MOTEL_PLANS.DIAMOND;
 
-export const isMotelPlanDisabled = (plan) => normalizeMotelPlan(plan) === MOTEL_PLANS.FREE;
+// FREE sigue visible, pero se presenta con menor énfasis comercial. No implica
+// que el motel sea inaccesible: la navegación debe permanecer habilitada.
+export const isMotelPlanMuted = (plan) => normalizeMotelPlan(plan) === MOTEL_PLANS.FREE;
