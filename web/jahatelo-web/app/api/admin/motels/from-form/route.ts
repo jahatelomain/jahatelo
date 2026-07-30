@@ -2,39 +2,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
-import { extractCoordinatesFromGoogleMapsUrl } from '@/lib/utils/coordinates';
+import { extractCoordinatesFromGoogleMapsUrl, normalizeGoogleMapsUrl } from '@/lib/utils/coordinates';
 
 const RoomFormSchema = z.object({
   name: z.string().min(1),
-  pricePerHour: z.string().min(1),
   description: z.string().optional(),
-  amenities: z.array(z.string()).default([]),
-  otherAmenity: z.string().optional(),
-});
-
-const PromoFormSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().optional(),
-  validUntil: z.string().optional(),
+  price1h: z.union([z.string(), z.number()]).optional().nullable(),
+  price1_5h: z.union([z.string(), z.number()]).optional().nullable(),
+  price2h: z.union([z.string(), z.number()]).optional().nullable(),
+  price3h: z.union([z.string(), z.number()]).optional().nullable(),
+  price12h: z.union([z.string(), z.number()]).optional().nullable(),
+  price24h: z.union([z.string(), z.number()]).optional().nullable(),
+  priceNight: z.union([z.string(), z.number()]).optional().nullable(),
+  amenityIds: z.array(z.string()).default([]),
 });
 
 const MotelFormSchema = z.object({
   name: z.string().min(1),
-  contactName: z.string().min(1),
-  phone: z.string().min(1),
+  contactName: z.string().optional(),
+  phone: z.string().optional(),
   whatsapp: z.string().optional(),
   instagram: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
-  address: z.string().min(1),
-  city: z.string().min(1),
-  googleMapsUrl: z.string().url(),
-  description: z.string().min(10),
-  rooms: z.array(RoomFormSchema).min(1),
-  promos: z.array(PromoFormSchema).optional(),
-  plan: z.enum(['BASIC', 'GOLD', 'DIAMOND']).optional().default('BASIC'),
-  paymentMethod: z.enum(['transfer', 'card']).optional(),
-  ruc: z.string().optional(),
-  businessName: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  googleMapsUrl: z.preprocess(
+    (value) => typeof value === 'string' && value.trim() ? normalizeGoogleMapsUrl(value) : undefined,
+    z.string().url().optional(),
+  ),
+  description: z.string().optional(),
+  rooms: z.array(RoomFormSchema).default([]),
+  plan: z.enum(['FREE', 'BASIC', 'GOLD', 'DIAMOND']).default('FREE'),
 });
 
 function generateSlug(name: string): string {
@@ -47,8 +45,9 @@ function generateSlug(name: string): string {
     .slice(0, 80);
 }
 
-function parseMoney(raw: string): number | null {
-  const parsed = Number(raw.replace(/[^\d]/g, ''));
+function parseMoney(raw: string | number | null | undefined): number | null {
+  if (raw === null || raw === undefined || raw === '') return null;
+  const parsed = Number(String(raw).replace(/[^\d]/g, ''));
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
@@ -60,12 +59,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = MotelFormSchema.parse(body);
 
-    const coordinates = extractCoordinatesFromGoogleMapsUrl(validated.googleMapsUrl);
-    if (!coordinates) {
-      return NextResponse.json(
-        { error: 'No se pudieron extraer coordenadas del link de Google Maps' },
-        { status: 400 }
-      );
+    const coordinates = validated.googleMapsUrl
+      ? extractCoordinatesFromGoogleMapsUrl(validated.googleMapsUrl)
+      : null;
+
+    const requestedAmenityIds = [...new Set(validated.rooms.flatMap((room) => room.amenityIds))];
+    if (requestedAmenityIds.length) {
+      const registeredAmenities = await prisma.amenity.count({ where: { id: { in: requestedAmenityIds } } });
+      if (registeredAmenities !== requestedAmenityIds.length) {
+        return NextResponse.json({ error: 'Uno o más amenities no existen en el catálogo.' }, { status: 400 });
+      }
     }
 
     const baseSlug = generateSlug(validated.name);
@@ -80,48 +83,40 @@ export async function POST(request: NextRequest) {
       data: {
         name: validated.name,
         slug,
-        description: validated.description,
-        address: validated.address,
-        city: validated.city,
-        mapUrl: validated.googleMapsUrl,
-        latitude: coordinates.lat,
-        longitude: coordinates.lng,
-        phone: validated.phone,
+        description: validated.description?.trim() || null,
+        address: validated.address?.trim() || '',
+        city: validated.city?.trim() || '',
+        mapUrl: validated.googleMapsUrl || null,
+        latitude: coordinates?.lat ?? null,
+        longitude: coordinates?.lng ?? null,
+        phone: validated.phone?.trim() || null,
         whatsapp: validated.whatsapp || null,
         instagram: validated.instagram || null,
-        contactName: validated.contactName,
+        contactName: validated.contactName?.trim() || null,
         contactEmail: validated.email || null,
-        contactPhone: validated.phone,
+        contactPhone: validated.phone?.trim() || null,
         plan: validated.plan,
         status: 'PENDING',
         isActive: false,
         isFeatured: validated.plan === 'GOLD' || validated.plan === 'DIAMOND',
-        paymentType: validated.paymentMethod === 'transfer' ? 'TRANSFER' : validated.paymentMethod === 'card' ? 'DIRECT_DEBIT' : null,
-        billingCompanyName: validated.businessName || null,
-        billingTaxId: validated.ruc || null,
       },
     });
 
     for (const room of validated.rooms) {
-      const amenityNames = [...room.amenities, room.otherAmenity].filter(Boolean) as string[];
-      const amenityIds: string[] = [];
-
-      for (const amenityName of amenityNames) {
-        const amenity = await prisma.amenity.upsert({
-          where: { name: amenityName.trim() },
-          update: {},
-          create: { name: amenityName.trim() },
-          select: { id: true },
-        });
-        amenityIds.push(amenity.id);
-      }
+      const amenityIds = [...new Set(room.amenityIds)];
 
       await prisma.roomType.create({
         data: {
           motelId: motel.id,
           name: room.name,
           description: room.description || null,
-          price1h: parseMoney(room.pricePerHour),
+          price1h: parseMoney(room.price1h),
+          price1_5h: parseMoney(room.price1_5h),
+          price2h: parseMoney(room.price2h),
+          price3h: parseMoney(room.price3h),
+          price12h: parseMoney(room.price12h),
+          price24h: parseMoney(room.price24h),
+          priceNight: parseMoney(room.priceNight),
           isActive: true,
           amenities: amenityIds.length
             ? {
@@ -130,20 +125,6 @@ export async function POST(request: NextRequest) {
             : undefined,
         },
       });
-    }
-
-    if (validated.promos?.length) {
-      for (const promo of validated.promos) {
-        await prisma.promo.create({
-          data: {
-            motelId: motel.id,
-            title: promo.title,
-            description: promo.description || null,
-            validUntil: promo.validUntil ? new Date(promo.validUntil) : null,
-            isActive: true,
-          },
-        });
-      }
     }
 
     return NextResponse.json({
