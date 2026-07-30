@@ -15,6 +15,17 @@ export interface Coordinates {
 }
 
 /**
+ * Admite tanto una URL de Maps como el iframe copiado desde Google y devuelve
+ * la URL que debe persistirse. El iframe completo no es una URL válida para
+ * validadores HTTP, pero su atributo src sí lo es.
+ */
+export function normalizeGoogleMapsUrl(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed.toLowerCase().startsWith('<iframe')) return trimmed;
+  return trimmed.match(/src=["']([^"']+)["']/i)?.[1] || trimmed;
+}
+
+/**
  * Extrae coordenadas de una URL de Google Maps
  * @param url - URL de Google Maps (cualquier formato)
  * @returns Objeto con lat y lng, o null si no se pueden extraer
@@ -25,8 +36,10 @@ export function extractCoordinatesFromGoogleMapsUrl(url: string): Coordinates | 
   }
 
   try {
+    const normalizedUrl = normalizeGoogleMapsUrl(url);
+
     // Formato 1: ?q=-25.2637,-57.5759
-    const coordsMatch1 = url.match(/[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    const coordsMatch1 = normalizedUrl.match(/[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
     if (coordsMatch1) {
       const lat = parseFloat(coordsMatch1[1]);
       const lng = parseFloat(coordsMatch1[2]);
@@ -36,7 +49,7 @@ export function extractCoordinatesFromGoogleMapsUrl(url: string): Coordinates | 
     }
 
     // Formato 2: @-25.2637,-57.5759,15z o @-25.2637,-57.5759
-    const coordsMatch2 = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)(?:,\d+\.?\d*z)?/);
+    const coordsMatch2 = normalizedUrl.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)(?:,\d+\.?\d*z)?/);
     if (coordsMatch2) {
       const lat = parseFloat(coordsMatch2[1]);
       const lng = parseFloat(coordsMatch2[2]);
@@ -46,7 +59,7 @@ export function extractCoordinatesFromGoogleMapsUrl(url: string): Coordinates | 
     }
 
     // Formato 3: /place/Name/@-25.2637,-57.5759
-    const coordsMatch3 = url.match(/\/place\/[^/]+\/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    const coordsMatch3 = normalizedUrl.match(/\/place\/[^/]+\/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
     if (coordsMatch3) {
       const lat = parseFloat(coordsMatch3[1]);
       const lng = parseFloat(coordsMatch3[2]);
@@ -56,10 +69,20 @@ export function extractCoordinatesFromGoogleMapsUrl(url: string): Coordinates | 
     }
 
     // Formato 4: ll=-25.2637,-57.5759 (algunos links antiguos)
-    const coordsMatch4 = url.match(/[?&]ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    const coordsMatch4 = normalizedUrl.match(/[?&]ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
     if (coordsMatch4) {
       const lat = parseFloat(coordsMatch4[1]);
       const lng = parseFloat(coordsMatch4[2]);
+      if (isValidCoordinate(lat, lng)) {
+        return { lat, lng };
+      }
+    }
+
+    // Formato 5: Google Maps Embed usa !2d(longitud)!3d(latitud).
+    const embedMatch = normalizedUrl.match(/!2d(-?\d+\.?\d*)!3d(-?\d+\.?\d*)/);
+    if (embedMatch) {
+      const lng = parseFloat(embedMatch[1]);
+      const lat = parseFloat(embedMatch[2]);
       if (isValidCoordinate(lat, lng)) {
         return { lat, lng };
       }
