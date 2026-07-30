@@ -78,7 +78,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
 
   const cardInner = (
     <div
-      className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[360px] h-full flex flex-col ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-default' : 'cursor-pointer'} ${isDiamond ? 'border-transparent' : ''}`}
+      className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[360px] h-full flex flex-col ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-pointer' : 'cursor-pointer'} ${isDiamond ? 'border-transparent' : ''}`}
     >
         {/* Image */}
         <div
@@ -266,5 +266,5 @@ export default function MotelCard({ motel }: MotelCardProps) {
     cardInner
   );
 
-  return isDisabled ? cardContent : <Link href={`/motels/${motel.slug}`} onClick={handleClick}>{cardContent}</Link>;
+  return <Link href={`/motels/${motel.slug}`} onClick={handleClick}>{cardContent}</Link>;
 }

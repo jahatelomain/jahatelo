@@ -167,8 +167,9 @@ function getFirstActivePromo(promos?: Promo[]) {
  * Mapea un Motel con relaciones al formato de listado para mobile
  */
 export function mapMotelToListItem(motel: MotelForList) {
-  const hasPromotions = hasActivePromos(motel.promos);
-  const firstPromo = getFirstActivePromo(motel.promos);
+  const isFreePlan = motel.plan === 'FREE';
+  const hasPromotions = !isFreePlan && hasActivePromos(motel.promos);
+  const firstPromo = isFreePlan ? null : getFirstActivePromo(motel.promos);
 
   return {
     id: motel.id,
@@ -182,14 +183,14 @@ export function mapMotelToListItem(motel: MotelForList) {
         ? { lat: motel.latitude, lng: motel.longitude }
         : null,
     rating: {
-      average: motel.ratingAvg,
-      count: motel.ratingCount,
+      average: isFreePlan ? 0 : motel.ratingAvg,
+      count: isFreePlan ? 0 : motel.ratingCount,
     },
     isFeatured: motel.isFeatured,
     hasPromo: hasPromotions,
     tienePromo: hasPromotions,
-    startingPrice: getStartingPrice(motel.rooms),
-    amenities: (() => {
+    startingPrice: isFreePlan ? null : getStartingPrice(motel.rooms),
+    amenities: isFreePlan ? [] : (() => {
       // Aggregate unique amenities from all active room amenities
       const map = new Map<string, { name: string; icon: string | null }>();
       for (const room of motel.rooms || []) {
@@ -265,10 +266,11 @@ export function mapMotelToDetail(
   }
 ) {
   const listItem = mapMotelToListItem(motel);
+  const isFreePlan = motel.plan === 'FREE';
 
   return {
     ...listItem,
-    promos:
+    promos: isFreePlan ? [] :
       motel.promos
         ?.filter((promo) => promo.isActive)
         .map((promo) => ({
@@ -290,7 +292,7 @@ export function mapMotelToDetail(
     plan: motel.plan,
     nextBillingAt: motel.nextBillingAt,
     schedules: motel.schedules || [],
-    menu:
+    menu: isFreePlan ? [] :
       motel.menuCategories?.map((cat) => ({
         id: cat.id,
         name: cat.name,
@@ -302,7 +304,7 @@ export function mapMotelToDetail(
           photoUrl: item.photoUrl,
         })),
       })) || [],
-    rooms: motel.rooms?.filter((r) => r.isActive).map(mapRoomForMobile) || [],
+    rooms: isFreePlan ? [] : motel.rooms?.filter((r) => r.isActive).map(mapRoomForMobile) || [],
     hasPhotos:
       Boolean(motel.featuredPhotoApp || motel.featuredPhotoWeb || motel.featuredPhoto),
   };

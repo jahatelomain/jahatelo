@@ -15,6 +15,10 @@ export const hasMotelPlanGlow = (plan: string | null | undefined) =>
 export const isMotelPlanDisabled = (plan: string | null | undefined) =>
   normalizeMotelPlan(plan) === 'FREE';
 
+/** Un plan FREE se muestra públicamente, pero solo con su información base. */
+export const isFreeMotelPlan = (plan: string | null | undefined) =>
+  normalizeMotelPlan(plan) === 'FREE';
+
 /**
  * Define el nivel comercial de Analytics para el panel del motel.
  * Esta regla se reutiliza en navegación, UI y APIs: la interfaz por sí sola

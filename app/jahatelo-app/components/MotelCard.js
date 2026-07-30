@@ -160,11 +160,6 @@ function MotelCardComponent({ motel, onPress }) {
   };
 
   const handlePress = () => {
-    // No permitir navegación si es plan FREE
-    if (isDisabled) {
-      return;
-    }
-
     // Prefetch en background sin bloquear navegación
     prefetchMotelDetails([motel]);
 
@@ -173,11 +168,6 @@ function MotelCardComponent({ motel, onPress }) {
   };
 
   const handlePressIn = () => {
-    // No animar si es plan FREE
-    if (isDisabled) {
-      return;
-    }
-
     // Haptic feedback ligero
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
@@ -189,11 +179,6 @@ function MotelCardComponent({ motel, onPress }) {
   };
 
   const handlePressOut = () => {
-    // No animar si es plan FREE
-    if (isDisabled) {
-      return;
-    }
-
     scale.value = withSpring(1, {
       damping: 12,
       stiffness: 200,

@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -161,42 +162,40 @@ export default function CitySelectorScreen({ route, navigation }) {
   const useProvidedMotels = route?.params?.useProvidedMotels || mode === 'promos';
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [selectedAd, setSelectedAd] = useState(null);
   const [showAdDetailModal, setShowAdDetailModal] = useState(false);
   const { ads: listAds, loading: adsLoading, trackAdEvent } = useAdvertisements('LIST_INLINE');
 
+  const loadCities = useCallback(async ({ initial = false } = {}) => {
+    if (useProvidedMotels) {
+      if (initial) setLoading(false);
+      return;
+    }
+    try {
+      if (initial) setLoading(true);
+      setError(null);
+      setCities(await fetchCities());
+    } catch (err) {
+      setError(err?.message || 'Error al cargar ciudades');
+    } finally {
+      if (initial) setLoading(false);
+    }
+  }, [useProvidedMotels]);
+
   useEffect(() => {
-    let mounted = true;
+    loadCities({ initial: true });
+  }, [loadCities]);
 
-    const loadCities = async () => {
-      if (useProvidedMotels) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await fetchCities();
-        if (mounted) {
-          setCities(data);
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(err?.message || 'Error al cargar ciudades');
-        }
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    loadCities();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadCities();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadCities]);
 
   // Agrupar moteles por ciudad
   const citiesData = useMemo(() => {
@@ -343,6 +342,7 @@ export default function CitySelectorScreen({ route, navigation }) {
               );
             }}
             showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />}
             maxToRenderPerBatch={10}
             initialNumToRender={10}
             contentContainerStyle={styles.listContent}

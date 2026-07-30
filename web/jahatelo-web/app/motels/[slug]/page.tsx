@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: MotelDetailPageProps): Promis
     },
   });
 
-  if (!motel || motel.status !== 'APPROVED' || !motel.isActive || motel.plan === 'FREE') {
+  if (!motel || motel.status !== 'APPROVED' || !motel.isActive) {
     return { title: 'Motel no encontrado | Jahatelo' };
   }
 
@@ -86,7 +86,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
   let motel = await getPublicMotelDetail(slug);
 
-  if (!motel || motel.status !== 'APPROVED' || !motel.isActive || motel.plan === 'FREE') {
+  if (!motel || motel.status !== 'APPROVED' || !motel.isActive) {
     notFound();
     return null;
   }
@@ -150,7 +150,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     id: 'details',
     label: 'Detalles',
     content: (
-        <div>
+        <div className={motel.plan === 'FREE' ? 'opacity-45' : undefined}>
           {/* Galería removida: la imagen principal vive en el header */}
           {/* Description */}
           {motel.description && (
@@ -445,11 +445,13 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     });
   }
 
-  tabs.push({
-    id: 'reviews',
-    label: 'Reseñas',
-    content: <ReviewsSection motelId={motel.id} motelSlug={motel.slug} />,
-  });
+  if (motel.plan !== 'FREE') {
+    tabs.push({
+      id: 'reviews',
+      label: 'Reseñas',
+      content: <ReviewsSection motelId={motel.id} motelSlug={motel.slug} />,
+    });
+  }
 
   const motelSchema = generateMotelSchema({
     name: motel.name,
@@ -589,8 +591,8 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           })()}
         </div>
 
-        {/* Tabs — id="promos" enables #promos hash navigation from promo cards */}
-        <div id="promos" className="bg-white rounded-lg shadow-sm p-6">
+        {/* Índice y secciones continuas; #promos apunta a la sección correspondiente. */}
+        <div className="bg-white rounded-lg shadow-sm p-6">
           <Tabs tabs={tabs} defaultTab={tabs[0]?.id} />
         </div>
       </div>

@@ -4,12 +4,11 @@ import { prisma } from '@/lib/prisma';
 export async function getPublicMotelDetail(slugOrId: string) {
   const now = new Date();
 
-  return prisma.motel.findFirst({
+  const motel = await prisma.motel.findFirst({
     where: {
       OR: [{ slug: slugOrId }, { id: slugOrId }],
       status: 'APPROVED',
       isActive: true,
-      plan: { not: 'FREE' },
     },
     include: {
       rooms: {
@@ -38,4 +37,16 @@ export async function getPublicMotelDetail(slugOrId: string) {
       schedules: { orderBy: { dayOfWeek: 'asc' } },
     },
   });
+
+  if (!motel || motel.plan !== 'FREE') return motel;
+
+  // FREE es visible, pero no publica módulos comerciales ni contenido de habitaciones.
+  return {
+    ...motel,
+    rooms: [],
+    promos: [],
+    menuCategories: [],
+    ratingAvg: 0,
+    ratingCount: 0,
+  };
 }

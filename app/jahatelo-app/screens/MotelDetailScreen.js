@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Linking, Dimensions } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Linking, Dimensions, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fetchMotelBySlug } from '../services/motelsApi';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,9 +33,12 @@ export default function MotelDetailScreen({ route, navigation }) {
   const initialTab = route.params?.initialTab;
   const [motel, setMotel] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [mainPhotoError, setMainPhotoError] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab === 'Promos' ? 'Promos' : 'Detalles');
+  const sectionOffsets = useRef({});
+  const detailScrollRef = useRef(null);
   const { isFavorite, toggleFavorite } = useFavorites();
   const insets = useSafeAreaInsets();
 
@@ -46,7 +49,7 @@ export default function MotelDetailScreen({ route, navigation }) {
   // Priorizar slug, caer a ID si no hay slug
   const identifier = motelSlug || motelId;
 
-  const loadMotel = useCallback(async () => {
+  const loadMotel = useCallback(async ({ showLoader = true } = {}) => {
     if (!identifier) {
       setError('No se proporcionó ID o slug del motel');
       setLoading(false);
@@ -54,7 +57,7 @@ export default function MotelDetailScreen({ route, navigation }) {
     }
 
     try {
-      setLoading(true);
+      if (showLoader) setLoading(true);
       setError(null);
       // El orden de habitaciones y fotos se administra remotamente; pedir el
       // detalle actualizado al abrir, conservando el caché solo como fallback offline.
@@ -69,12 +72,21 @@ export default function MotelDetailScreen({ route, navigation }) {
       console.error('Error al cargar motel:', err);
       setError(err.message || 'Error al cargar el motel');
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   }, [identifier]);
 
   useEffect(() => {
     loadMotel();
+  }, [loadMotel]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadMotel({ showLoader: false });
+    } finally {
+      setRefreshing(false);
+    }
   }, [loadMotel]);
 
   // Handler para llamada telefónica con haptic
@@ -155,15 +167,16 @@ export default function MotelDetailScreen({ route, navigation }) {
     ],
   }));
 
+  const plan = normalizeMotelPlan(motel?.plan);
+  const isFreePlan = plan === MOTEL_PLANS.FREE;
   const availableTabs = [
     { key: 'Detalles', name: 'Detalles', component: DetailsTab },
-    ...(motel?.promos?.length ? [{ key: 'Promos', name: 'Promos', component: PromosTab }] : []),
-    ...(motel?.rooms?.length ? [{ key: 'Habitaciones', name: 'Habitaciones', component: RoomsTab }] : []),
-    ...(motel?.menu?.length ? [{ key: 'Menú', name: 'Menú', component: MenuTab }] : []),
-    { key: 'Reseñas', name: 'Reseñas', component: ReviewsTab },
+    ...(!isFreePlan && motel?.promos?.length ? [{ key: 'Promos', name: 'Promos', component: PromosTab }] : []),
+    ...(!isFreePlan && motel?.rooms?.length ? [{ key: 'Habitaciones', name: 'Habitaciones', component: RoomsTab }] : []),
+    ...(!isFreePlan && motel?.menu?.length ? [{ key: 'Menú', name: 'Menú', component: MenuTab }] : []),
+    ...(!isFreePlan ? [{ key: 'Reseñas', name: 'Reseñas', component: ReviewsTab }] : []),
   ];
   const selectedTab = availableTabs.find((tab) => tab.name === activeTab) || availableTabs[0];
-  const ActiveTabComponent = selectedTab.component;
   const {
     panHandlers: tabSwipeHandlers,
     beginChildHorizontalGesture,
@@ -171,8 +184,34 @@ export default function MotelDetailScreen({ route, navigation }) {
   } = useMotelTabsGesture({
     tabs: availableTabs,
     activeTab: selectedTab.name,
-    onTabChange: setActiveTab,
+    onTabChange: (tabName) => {
+      const offset = sectionOffsets.current[tabName];
+      if (offset !== undefined) {
+        detailScrollRef.current?.scrollTo({ y: Math.max(0, offset - 8), animated: true });
+      }
+      setActiveTab(tabName);
+    },
   });
+
+  const handleTabPress = useCallback((tabName) => {
+    const offset = sectionOffsets.current[tabName];
+    if (offset !== undefined) {
+      detailScrollRef.current?.scrollTo({ y: Math.max(0, offset - 8), animated: true });
+    }
+    setActiveTab(tabName);
+  }, []);
+
+  const handleSectionsScroll = useCallback((event) => {
+    const position = event.nativeEvent.contentOffset.y + 24;
+    const visibleTab = availableTabs.reduce((current, tab) => {
+      const offset = sectionOffsets.current[tab.name];
+      return offset !== undefined && offset <= position ? tab.name : current;
+    }, availableTabs[0]?.name);
+
+    if (visibleTab && visibleTab !== activeTab) {
+      setActiveTab(visibleTab);
+    }
+  }, [activeTab, availableTabs]);
 
   if (loading) {
     return (
@@ -226,7 +265,6 @@ export default function MotelDetailScreen({ route, navigation }) {
   const isPlaceholder = !mainPhotoUrl || mainPhotoError;
 
   const photoHeight = 240 + insets.top;
-  const plan = normalizeMotelPlan(motel.plan);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -308,22 +346,40 @@ export default function MotelDetailScreen({ route, navigation }) {
         <MotelTabBar
           tabs={availableTabs}
           activeTab={selectedTab.name}
-          onTabPress={setActiveTab}
+          onTabPress={handleTabPress}
         />
-        <View style={styles.tabContent} {...tabSwipeHandlers}>
-          <Animated.View
-            key={selectedTab.key}
-            entering={FadeIn.duration(360)}
-            style={styles.animatedTabContent}
-          >
-            <ActiveTabComponent
-              route={{ params: { motel } }}
-              navigation={navigation}
-              onChildHorizontalGestureStart={beginChildHorizontalGesture}
-              onChildHorizontalGestureEnd={endChildHorizontalGesture}
-            />
-          </Animated.View>
-        </View>
+        <ScrollView
+          ref={detailScrollRef}
+          style={styles.tabContent}
+          contentContainerStyle={styles.sectionsContent}
+          showsVerticalScrollIndicator={false}
+          onScroll={handleSectionsScroll}
+          scrollEventThrottle={16}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />}
+          {...tabSwipeHandlers}
+        >
+          {availableTabs.map((tab) => {
+            const TabComponent = tab.component;
+            return (
+              <View
+                key={tab.key}
+                onLayout={(event) => {
+                  sectionOffsets.current[tab.name] = event.nativeEvent.layout.y;
+                }}
+                style={styles.sectionContainer}
+              >
+                <Text style={styles.sectionHeading}>{tab.name.toUpperCase()}</Text>
+                <TabComponent
+                  route={{ params: { motel } }}
+                  navigation={navigation}
+                  embedded
+                  onChildHorizontalGestureStart={beginChildHorizontalGesture}
+                  onChildHorizontalGestureEnd={endChildHorizontalGesture}
+                />
+              </View>
+            );
+          })}
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -447,9 +503,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  animatedTabContent: {
-    flex: 1,
+  sectionsContent: {
+    paddingBottom: 32,
+  },
+  sectionContainer: {
     backgroundColor: '#FFFFFF',
+  },
+  sectionHeading: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 4,
   },
   errorContainer: {
     flex: 1,

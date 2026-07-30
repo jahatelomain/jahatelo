@@ -8,6 +8,7 @@ import {
   Clipboard,
   Alert,
   Modal,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +22,7 @@ const CLAIMED_CODES_KEY = 'jahatelo_claimed_promo_codes';
 export default function PromoHistoryScreen({ navigation }) {
   const [codes, setCodes] = useState([]);
   const [selectedCode, setSelectedCode] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadCodes = useCallback(async () => {
     try {
@@ -60,6 +62,15 @@ export default function PromoHistoryScreen({ navigation }) {
     Clipboard.setString(code);
     Alert.alert('¡Copiado!', 'El código fue copiado al portapapeles.');
   };
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadCodes();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadCodes]);
 
   const handleDelete = (promoId) => {
     Alert.alert(
@@ -136,6 +147,7 @@ export default function PromoHistoryScreen({ navigation }) {
           renderItem={renderItem}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />}
         />
       )}
 

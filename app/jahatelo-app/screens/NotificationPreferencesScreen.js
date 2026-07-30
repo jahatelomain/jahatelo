@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +28,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
   const { isAuthenticated, token } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [preferences, setPreferences] = useState({
     enableNotifications: true,
     enableEmail: true,
@@ -169,6 +171,15 @@ export default function NotificationPreferencesScreen({ navigation }) {
     updatePreference(key, !preferences[key]);
   };
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await (isAuthenticated ? loadPreferences() : loadLocalPreferences());
+    } finally {
+      setRefreshing(false);
+    }
+  }, [isAuthenticated, token]);
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -194,7 +205,11 @@ export default function NotificationPreferencesScreen({ navigation }) {
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />}
+      >
         {!isAuthenticated && (
           <View style={styles.infoContainer}>
             <Ionicons name="information-circle-outline" size={20} color={COLORS.textLight} />

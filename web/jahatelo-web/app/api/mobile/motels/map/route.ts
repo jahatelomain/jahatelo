@@ -72,7 +72,7 @@ export async function GET() {
           featuredPhoto: normalizeLocalUrl(m.featuredPhotoApp ?? m.featuredPhotoWeb ?? m.featuredPhoto ?? null, baseUrl),
           featuredPhotoWeb: normalizeLocalUrl(m.featuredPhotoWeb ?? m.featuredPhoto ?? m.featuredPhotoApp ?? null, baseUrl),
           featuredPhotoApp: normalizeLocalUrl(m.featuredPhotoApp ?? m.featuredPhoto ?? m.featuredPhotoWeb ?? null, baseUrl),
-          hasPromo: m.promos.length > 0,
+          hasPromo: m.plan !== 'FREE' && m.promos.length > 0,
         })),
       },
       {

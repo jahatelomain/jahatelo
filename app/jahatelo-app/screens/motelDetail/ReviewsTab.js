@@ -8,13 +8,14 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { COLORS } from '../../constants/theme';
 import useReviews from '../../hooks/useReviews';
 
-export default function ReviewsTab({ route, navigation }) {
+export default function ReviewsTab({ route, navigation, embedded = false }) {
   const { motel } = route.params || {};
   const { isAuthenticated, token, user } = useAuth();
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -25,6 +26,7 @@ export default function ReviewsTab({ route, navigation }) {
     reviews,
     total,
     loading,
+    refreshing,
     loadingMore,
     submitting,
     userCanReview,
@@ -32,6 +34,7 @@ export default function ReviewsTab({ route, navigation }) {
     loadMore: handleLoadMore,
     deleteReview: handleDeleteReview,
     submitReview,
+    refresh,
   } = useReviews({ motelId: motel?.id, isAuthenticated, token });
 
   const handleSubmitReview = async () => {
@@ -116,11 +119,17 @@ export default function ReviewsTab({ route, navigation }) {
 
   const hasMore = reviews.length < total;
 
+  const Container = embedded ? View : ScrollView;
+
   return (
-    <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+    <View style={embedded ? styles.embeddedContainer : styles.container}>
+      <Container
+        style={embedded ? styles.content : undefined}
+        {...(!embedded && {
+          contentContainerStyle: styles.content,
+          showsVerticalScrollIndicator: false,
+          refreshControl: <RefreshControl refreshing={refreshing} onRefresh={refresh} colors={[COLORS.primary]} />,
+        })}
       >
         {/* Estadísticas */}
         {motel.ratingAvg && (
@@ -313,7 +322,7 @@ export default function ReviewsTab({ route, navigation }) {
             <Text style={styles.emptySubtext}>Sé el primero en compartir tu experiencia</Text>
           </View>
         )}
-      </ScrollView>
+      </Container>
     </View>
   );
 }
@@ -321,6 +330,9 @@ export default function ReviewsTab({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.white,
+  },
+  embeddedContainer: {
     backgroundColor: COLORS.white,
   },
   content: {

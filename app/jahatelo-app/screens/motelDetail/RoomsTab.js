@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { formatPrice } from '../../services/motelsApi';
 import { getAmenityIconConfig } from '../../constants/amenityIcons';
@@ -183,19 +183,36 @@ export default function RoomsTab({
   route,
   onChildHorizontalGestureStart,
   onChildHorizontalGestureEnd,
+  refreshing,
+  onRefresh,
+  embedded = false,
 }) {
   const { motel } = route.params || {};
 
   if (!motel || !motel.rooms || motel.rooms.length === 0) {
+    const EmptyContainer = embedded ? View : ScrollView;
     return (
-      <View style={styles.emptyContainer}>
+      <EmptyContainer
+        style={embedded ? styles.emptyContainer : undefined}
+        {...(!embedded && {
+          contentContainerStyle: styles.emptyContainer,
+          refreshControl: <RefreshControl refreshing={Boolean(refreshing)} onRefresh={onRefresh} colors={[COLORS.primary]} />,
+        })}
+      >
         <Text style={styles.emptyText}>No hay habitaciones disponibles</Text>
-      </View>
+      </EmptyContainer>
     );
   }
 
+  const Container = embedded ? View : ScrollView;
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <Container
+      style={embedded ? styles.content : styles.container}
+      {...(!embedded && {
+        contentContainerStyle: styles.content,
+        refreshControl: <RefreshControl refreshing={Boolean(refreshing)} onRefresh={onRefresh} colors={[COLORS.primary]} />,
+      })}
+    >
       {motel.rooms.map((room) => (
         <RoomCard
           key={room.id}
@@ -205,7 +222,7 @@ export default function RoomsTab({
           onPhotoGestureEnd={onChildHorizontalGestureEnd}
         />
       ))}
-    </ScrollView>
+    </Container>
   );
 }
 

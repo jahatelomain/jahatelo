@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +20,7 @@ export default function FavoritesScreen() {
   const { favorites, toggleFavorite, loadFavorites } = useFavorites();
   const [favoriteMotels, setFavoriteMotels] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Recargar favoritos frescos del servidor cada vez que la pantalla se enfoca
   useFocusEffect(
@@ -100,6 +101,15 @@ export default function FavoritesScreen() {
     />
   );
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadFavorites();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadFavorites]);
+
   const animatedHeartStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: heartScale.value }],
@@ -153,6 +163,7 @@ export default function FavoritesScreen() {
         initialNumToRender={10}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />}
       />
     </SafeAreaView>
   );

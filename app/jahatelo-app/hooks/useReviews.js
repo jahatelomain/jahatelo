@@ -12,6 +12,7 @@ export default function useReviews({ motelId, isAuthenticated, token }) {
   const [reviews, setReviews] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [userCanReview, setUserCanReview] = useState(true);
@@ -101,6 +102,15 @@ export default function useReviews({ motelId, isAuthenticated, token }) {
     loadReviews(reviews.length, false);
   }, [loadReviews, loadingMore, reviews.length, total]);
 
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([loadReviews(0, true), checkUserCanReview()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [checkUserCanReview, loadReviews]);
+
   const deleteReview = useCallback((reviewId) => {
     Alert.alert(
       'Eliminar reseña',
@@ -183,10 +193,12 @@ export default function useReviews({ motelId, isAuthenticated, token }) {
     reviews,
     total,
     loading,
+    refreshing,
     loadingMore,
     submitting,
     userCanReview,
     cooldownMessage,
+    refresh,
     loadMore,
     deleteReview,
     submitReview,

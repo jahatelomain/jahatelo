@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Linking, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Linking, Modal, RefreshControl } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { formatPrice } from '../../services/motelsApi';
 import { getAmenityIconConfig } from '../../constants/amenityIcons';
 import { COLORS } from '../../constants/theme';
+import { normalizeMotelPlan, MOTEL_PLANS } from '../../constants/motelPlans';
 
-export default function DetailsTab({ route }) {
+export default function DetailsTab({ route, refreshing, onRefresh, embedded = false }) {
   const { motel } = route.params || {};
   const [showAmenitiesSheet, setShowAmenitiesSheet] = useState(false);
+  const isFreePlan = normalizeMotelPlan(motel?.plan) === MOTEL_PLANS.FREE;
 
   if (!motel) {
     return (
@@ -48,8 +50,16 @@ export default function DetailsTab({ route }) {
     return time.slice(0, 5);
   };
 
+  const Container = embedded ? View : ScrollView;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <Container
+      style={embedded ? [styles.content, isFreePlan && styles.freeContent] : [styles.container, isFreePlan && styles.freeContent]}
+      {...(!embedded && {
+        contentContainerStyle: styles.content,
+        refreshControl: <RefreshControl refreshing={Boolean(refreshing)} onRefresh={onRefresh} colors={[COLORS.primary]} />,
+      })}
+    >
       {/* Información básica */}
       <View style={styles.section}>
         {!!locationLabel && (
@@ -194,7 +204,7 @@ export default function DetailsTab({ route }) {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </Container>
   );
 }
 
@@ -205,6 +215,9 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+  },
+  freeContent: {
+    opacity: 0.45,
   },
   section: {
     marginBottom: 24,

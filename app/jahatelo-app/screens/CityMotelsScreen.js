@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,40 +27,39 @@ export default function CityMotelsScreen({ route, navigation }) {
   const [showAdDetailModal, setShowAdDetailModal] = useState(false);
   const [cityMotels, setCityMotels] = useState(motels);
   const [loading, setLoading] = useState(motels.length === 0);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
+  const loadMotels = useCallback(async ({ initial = false } = {}) => {
+    try {
+      if (initial) setLoading(true);
+      setError(null);
+      const data = await fetchMotels({ city: cityName });
+      setCityMotels(data || []);
+    } catch (err) {
+      setError(err?.message || 'Error al cargar moteles');
+    } finally {
+      if (initial) setLoading(false);
+    }
+  }, [cityName]);
+
   useEffect(() => {
-    let mounted = true;
+    if (motels.length > 0) {
+      setCityMotels(motels);
+      setLoading(false);
+      return;
+    }
+    loadMotels({ initial: true });
+  }, [loadMotels, motels]);
 
-    const loadMotels = async () => {
-      if (motels.length > 0) {
-        setCityMotels(motels);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await fetchMotels({ city: cityName });
-        if (mounted) {
-          setCityMotels(data || []);
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(err?.message || 'Error al cargar moteles');
-        }
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    loadMotels();
-
-    return () => {
-      mounted = false;
-    };
-  }, [cityName, motels]);
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadMotels();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadMotels]);
 
   // Cargar anuncios de lista
   const { ads: listAds, loading: adsLoading, trackAdEvent } = useAdvertisements('LIST_INLINE');
@@ -145,6 +145,7 @@ export default function CityMotelsScreen({ route, navigation }) {
               );
             }}
             showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatPrice } from '../../services/motelsApi';
 import { COLORS } from '../../constants/theme';
@@ -18,21 +18,35 @@ const getCategoryIcon = (title = '') => {
   return 'list';
 };
 
-export default function MenuTab({ route }) {
+export default function MenuTab({ route, refreshing, onRefresh, embedded = false }) {
   const { motel } = route.params || {};
 
   if (!motel || !motel.menu || motel.menu.length === 0) {
+    const EmptyContainer = embedded ? View : ScrollView;
     return (
-      <View style={styles.emptyContainer}>
+      <EmptyContainer
+        style={embedded ? styles.emptyContainer : undefined}
+        {...(!embedded && {
+          contentContainerStyle: styles.emptyContainer,
+          refreshControl: <RefreshControl refreshing={Boolean(refreshing)} onRefresh={onRefresh} colors={[COLORS.primary]} />,
+        })}
+      >
         <Ionicons name="restaurant-outline" size={56} color={COLORS.textLight} />
         <Text style={styles.emptyTitle}>Sin menú disponible</Text>
         <Text style={styles.emptySubtext}>Este motel no tiene menú cargado todavía</Text>
-      </View>
+      </EmptyContainer>
     );
   }
 
+  const Container = embedded ? View : ScrollView;
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <Container
+      style={embedded ? styles.content : styles.container}
+      {...(!embedded && {
+        contentContainerStyle: styles.content,
+        refreshControl: <RefreshControl refreshing={Boolean(refreshing)} onRefresh={onRefresh} colors={[COLORS.primary]} />,
+      })}
+    >
       {motel.menu.map((category) => (
         <View key={category.id} style={styles.menuCategory}>
           {/* Header de categoría */}
@@ -67,7 +81,7 @@ export default function MenuTab({ route }) {
           )}
         </View>
       ))}
-    </ScrollView>
+    </Container>
   );
 }
 
