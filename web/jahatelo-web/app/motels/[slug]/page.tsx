@@ -315,11 +315,6 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                               Hasta {room.maxPersons} {room.maxPersons === 1 ? 'persona' : 'personas'}
                             </span>
                           )}
-                          {room.hasJacuzzi && (
-                            <span className="inline-flex items-center gap-1 text-sm text-purple-600 font-medium">
-                              ♨️ Jacuzzi
-                            </span>
-                          )}
                         </div>
 
                         {/* Room Amenities */}

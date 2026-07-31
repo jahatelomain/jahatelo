@@ -613,8 +613,6 @@ export default function MotelDetailPage() {
       price24h: room.price24h?.toString() || '',
       priceNight: room.priceNight?.toString() || '',
       maxPersons: room.maxPersons?.toString() || '',
-      hasJacuzzi: room.hasJacuzzi || false,
-      isFeatured: room.isFeatured || false,
       amenityIds: (room.amenities ?? []).map((a) => a.amenity.id),
     });
     // Populate day rates
