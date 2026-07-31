@@ -1,15 +1,17 @@
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
+import MobilePageHeader from '@/components/public/MobilePageHeader';
 
 export default function SupportPage() {
   return (
     <>
       <Navbar />
+      <MobilePageHeader title="Soporte" />
       <div className="min-h-screen bg-slate-50">
         <div className="bg-gradient-to-br from-purple-600 to-purple-800">
-          <div className="container mx-auto px-4 py-14 max-w-5xl text-white">
+          <div className="container mx-auto max-w-5xl px-4 py-8 text-white md:py-14">
             <p className="text-sm uppercase tracking-widest text-purple-200">Centro de ayuda</p>
-            <h1 className="text-3xl md:text-4xl font-bold mt-2">Soporte Jahatelo</h1>
+            <h1 className="mt-2 text-2xl font-bold md:text-4xl">Soporte Jahatelo</h1>
             <p className="mt-3 text-purple-100 max-w-2xl">
               Ayuda técnica, dudas de la app y problemas de acceso. Para consultas comerciales,
               usá la página de contacto.
@@ -20,10 +22,10 @@ export default function SupportPage() {
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-12 max-w-5xl">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-              <section className="bg-white rounded-2xl shadow-sm p-6 md:p-8">
+        <div className="container mx-auto max-w-5xl px-4 py-6 md:py-12">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-8">
+            <div className="space-y-5 lg:col-span-2 lg:space-y-8">
+              <section className="rounded-2xl bg-white p-5 shadow-sm md:p-8">
                 <h2 className="text-xl font-semibold text-slate-900">Preguntas frecuentes</h2>
                 <div className="mt-5 space-y-4">
                   <div className="rounded-xl border border-slate-200 p-4">
@@ -53,7 +55,7 @@ export default function SupportPage() {
                 </div>
               </section>
 
-              <section className="bg-white rounded-2xl shadow-sm p-6 md:p-8">
+              <section className="rounded-2xl bg-white p-5 shadow-sm md:p-8">
                 <h2 className="text-xl font-semibold text-slate-900">Soporte directo</h2>
                 <p className="text-sm text-slate-600 mt-2">
                   Respondemos a la brevedad posible. Incluí modelo de teléfono y versión de la app si podés.

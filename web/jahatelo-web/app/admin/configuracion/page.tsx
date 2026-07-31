@@ -4,8 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import AccessProfilesPanel from '@/components/admin/AccessProfilesPanel';
+import LocationCatalogPanel from '@/components/admin/LocationCatalogPanel';
 
-type TabId = 'varios' | 'perfiles';
+type TabId = 'varios' | 'perfiles' | 'ubicaciones';
 
 export default function ConfiguracionPage() {
   const router = useRouter();
@@ -121,6 +122,7 @@ export default function ConfiguracionPage() {
           >
             Perfiles de acceso
           </button>
+          <button onClick={() => setActiveTab('ubicaciones')} className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'ubicaciones' ? 'border-purple-600 text-purple-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Países y ciudades</button>
         </nav>
       </div>
 
@@ -207,6 +209,7 @@ export default function ConfiguracionPage() {
       )}
 
       {activeTab === 'perfiles' && <AccessProfilesPanel />}
+      {activeTab === 'ubicaciones' && <LocationCatalogPanel />}
     </div>
   );
 }

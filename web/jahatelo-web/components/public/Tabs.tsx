@@ -77,7 +77,7 @@ export default function Tabs({ tabs, defaultTab }: TabsProps) {
 
   return (
     <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-      <div className="sticky top-20 z-30 -mx-6 border-b border-gray-200 bg-white/95 px-6 backdrop-blur-md">
+      <div className="sticky top-0 z-30 -mx-4 border-b border-gray-200 bg-white/95 px-4 backdrop-blur-md md:top-20 md:-mx-6 md:px-6">
         <nav className="flex gap-8 overflow-x-auto" aria-label="Secciones del motel">
           {tabs.map((tab) => (
             <button
@@ -101,7 +101,7 @@ export default function Tabs({ tabs, defaultTab }: TabsProps) {
             key={tab.id}
             id={tab.id}
             ref={(element) => { sectionRefs.current[tab.id] = element; }}
-            className="scroll-mt-40 border-b border-gray-100 py-8 last:border-b-0"
+            className="scroll-mt-24 border-b border-gray-100 py-6 last:border-b-0 md:scroll-mt-40 md:py-8"
           >
             <h2 className="mb-5 text-sm font-extrabold uppercase tracking-[0.12em] text-slate-900">
               {tab.label}

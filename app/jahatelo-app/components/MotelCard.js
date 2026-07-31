@@ -122,6 +122,11 @@ function MotelCardComponent({ motel, onPress }) {
   // Early return después de todos los hooks
   if (!motel) return null;
 
+  const hasDayPriceVariation =
+    motel.precioDesdeSemana > 0 &&
+    motel.precioDesdeFinDeSemana > 0 &&
+    motel.precioDesdeSemana !== motel.precioDesdeFinDeSemana;
+
   const handleFavoritePress = (e) => {
     // Prevenir que se dispare el onPress de la card
     e.stopPropagation();
@@ -231,10 +236,18 @@ function MotelCardComponent({ motel, onPress }) {
       <View style={styles.bottomRow}>
         <View style={styles.priceContainer}>
           {motel.precioDesde > 0 ? (
-            <View style={styles.priceRow}>
-              <Text style={styles.pricePrefix}>Desde</Text>
-              <Text style={styles.price}>{formatPrice(motel.precioDesde)}</Text>
-            </View>
+            hasDayPriceVariation ? (
+              <Text style={styles.dayPriceSummary} numberOfLines={1}>
+                <Text style={styles.dayPriceLabel}>S–J </Text>{formatPrice(motel.precioDesdeSemana)}
+                <Text style={styles.dayPriceSeparator}> · </Text>
+                <Text style={styles.dayPriceLabel}>V–S </Text>{formatPrice(motel.precioDesdeFinDeSemana)}
+              </Text>
+            ) : (
+              <View style={styles.priceRow}>
+                <Text style={styles.pricePrefix}>Desde</Text>
+                <Text style={styles.price}>{formatPrice(motel.precioDesde)}</Text>
+              </View>
+            )
           ) : (
             <Text style={styles.price}>Consultar</Text>
           )}
@@ -448,6 +461,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.primary,
     marginBottom: 2,
+  },
+  dayPriceSummary: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
+    maxWidth: 205,
+    marginBottom: 2,
+  },
+  dayPriceLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#777',
+  },
+  dayPriceSeparator: {
+    color: '#A855F7',
   },
   distance: {
     fontSize: 11,

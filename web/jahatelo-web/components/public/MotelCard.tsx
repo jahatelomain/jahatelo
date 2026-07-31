@@ -36,6 +36,8 @@ export interface MotelCardProps {
       amenities?: Array<{ amenity: { name: string; icon?: string | null } }>;
     }>;
     plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
+    startingPriceWeekday?: number | null;
+    startingPriceWeekend?: number | null;
   }) & {
     distanceKm?: number;
   };
@@ -64,6 +66,12 @@ export default function MotelCard({ motel }: MotelCardProps) {
   const minPrice = isCanonical
     ? motel.startingPrice
     : legacyPrices.length > 0 ? Math.min(...legacyPrices) : null;
+  const weekdayPrice = 'startingPriceWeekday' in motel ? motel.startingPriceWeekday : null;
+  const weekendPrice = 'startingPriceWeekend' in motel ? motel.startingPriceWeekend : null;
+  const hasDayPriceVariation =
+    typeof weekdayPrice === 'number' && weekdayPrice > 0 &&
+    typeof weekendPrice === 'number' && weekendPrice > 0 &&
+    weekdayPrice !== weekendPrice;
 
   // Safe rating average
   const safeRating = (isCanonical ? motel.rating.average : motel.ratingAvg) || 0;
@@ -190,7 +198,15 @@ export default function MotelCard({ motel }: MotelCardProps) {
 
           {/* Price */}
           <div className="mt-auto pt-4 border-t border-gray-100">
-            {minPrice !== null && minPrice > 0 ? (
+            {hasDayPriceVariation ? (
+              <p className="whitespace-nowrap text-sm font-bold text-purple-600">
+                <span className="text-xs font-medium text-slate-500">S–J </span>
+                {formatGuaranies(weekdayPrice)}
+                <span className="mx-1.5 text-purple-300">·</span>
+                <span className="text-xs font-medium text-slate-500">V–S </span>
+                {formatGuaranies(weekendPrice)}
+              </p>
+            ) : minPrice !== null && minPrice > 0 ? (
               <p className="text-xl font-bold text-purple-600">
                 <span className="mr-1 text-sm font-medium text-slate-500">Desde</span>
                 {formatGuaranies(minPrice)}

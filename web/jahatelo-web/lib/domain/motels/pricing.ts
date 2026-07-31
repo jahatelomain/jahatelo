@@ -44,11 +44,22 @@ export function getEffectiveRoomPrices(
 }
 
 /** Devuelve el menor precio positivo cargado entre las habitaciones activas. */
-export function getStartingRoomPrice(rooms?: RoomPriceFields[]): number | null {
+export function getStartingRoomPrice(
+  rooms?: RoomPriceFields[],
+  dayGroup = getCurrentDayGroup(),
+): number | null {
   const prices = (rooms || [])
     .filter((room) => room.isActive !== false)
-    .flatMap((room) => Object.values(getEffectiveRoomPrices(room)))
+    .flatMap((room) => Object.values(getEffectiveRoomPrices(room, dayGroup)))
     .filter((price): price is number => typeof price === 'number' && Number.isFinite(price) && price > 0);
 
   return prices.length > 0 ? Math.min(...prices) : null;
+}
+
+/** Mínimos publicados para cada tipo de día, sin alterar ninguna tarifa cargada. */
+export function getStartingRoomPricesByDay(rooms?: RoomPriceFields[]) {
+  return {
+    weekday: getStartingRoomPrice(rooms, 'WEEKDAY'),
+    weekend: getStartingRoomPrice(rooms, 'WEEKEND'),
+  };
 }

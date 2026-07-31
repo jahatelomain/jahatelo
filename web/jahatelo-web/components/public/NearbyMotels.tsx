@@ -138,7 +138,7 @@ export default function NearbyMotels() {
 
   if (locationPermission === 'pending' || loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12 lg:px-8">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
           <p className="text-gray-600">Obteniendo tu ubicación...</p>
@@ -149,8 +149,8 @@ export default function NearbyMotels() {
 
   if (locationPermission === 'denied' || error) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+      <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12 lg:px-8">
+        <div className="rounded-2xl border border-gray-200 bg-white p-7 text-center shadow-sm md:rounded-lg md:p-12">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
             <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -174,18 +174,18 @@ export default function NearbyMotels() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-5 md:px-6 md:py-8 lg:px-8">
       {/* Radius Selector */}
-      <div className="mb-8">
+      <div className="mb-5 md:mb-8">
         <label className="block text-sm font-medium text-gray-700 mb-3">
           Radio de búsqueda:
         </label>
-        <div className="flex gap-3 flex-wrap">
+        <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] md:flex-wrap md:gap-3">
           {RADIUS_OPTIONS.map((option) => (
             <button
               key={option.value}
               onClick={() => setSelectedRadius(option.value)}
-              className={`px-6 py-3 rounded-lg font-medium transition-all ${
+              className={`shrink-0 rounded-xl px-4 py-2 text-sm font-medium transition-all md:rounded-lg md:px-6 md:py-3 md:text-base ${
                 selectedRadius === option.value
                   ? 'bg-purple-600 text-white shadow-md'
                   : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-purple-300'
@@ -198,15 +198,15 @@ export default function NearbyMotels() {
       </div>
 
       {/* Results Count */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">
+      <div className="mb-4 md:mb-6">
+        <h2 className="text-lg font-bold text-gray-900 md:text-2xl">
           {nearbyMotels.length} {nearbyMotels.length === 1 ? 'motel encontrado' : 'moteles encontrados'}
           <span className="text-gray-600 font-normal"> dentro de {selectedRadius} km</span>
         </h2>
       </div>
 
       {/* Map */}
-      <div className="mb-8 h-96 rounded-2xl overflow-hidden shadow-lg border border-gray-200">
+      <div className="mb-5 h-64 overflow-hidden rounded-2xl border border-gray-200 shadow-lg md:mb-8 md:h-96">
         <GoogleMapComponent
           motels={nearbyMotels.map((motel) => ({
             id: motel.id,
@@ -226,7 +226,7 @@ export default function NearbyMotels() {
 
       {/* Results Grid */}
       {motelsLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={`nearby-skeleton-${index}`}
@@ -240,7 +240,7 @@ export default function NearbyMotels() {
           ))}
         </div>
       ) : nearbyMotels.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
           {nearbyMotels.map((motel) => (
             <div key={motel.id} className="relative">
               <MotelCard motel={{ ...motel, distanceKm: motel.distance }} />

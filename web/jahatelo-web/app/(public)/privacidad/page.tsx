@@ -1,14 +1,16 @@
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
+import MobilePageHeader from '@/components/public/MobilePageHeader';
 
 export default function PrivacyPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-slate-50 py-12">
+      <MobilePageHeader title="Privacidad" />
+      <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-0 md:py-12">
         <div className="container mx-auto px-4 max-w-4xl">
-          <div className="bg-white rounded-xl shadow-sm p-8 md:p-12">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Política de Privacidad</h1>
+          <div className="rounded-xl bg-white p-5 shadow-sm md:p-12">
+            <h1 className="mb-2 text-2xl font-bold text-slate-900 md:text-3xl">Política de Privacidad</h1>
             <p className="text-sm text-slate-600 mb-8">Última actualización: {new Date().toLocaleDateString('es-PY')}</p>
 
             <div className="prose prose-slate max-w-none space-y-6">

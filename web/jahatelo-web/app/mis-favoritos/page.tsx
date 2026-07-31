@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { formatGuaranies } from '@/lib/formatCurrency';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
+import MobilePageHeader from '@/components/public/MobilePageHeader';
 
 interface Motel {
   id: string;
@@ -120,8 +121,9 @@ export default function MisFavoritosPage() {
     <>
       <Navbar />
       <div className="min-h-screen bg-gray-50">
+      <MobilePageHeader title="Mis favoritos" subtitle={loading ? 'Cargando…' : `${favorites.length} ${favorites.length === 1 ? 'motel' : 'moteles'}`} />
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-white">
+      <div className="hidden bg-gradient-to-r from-purple-600 to-purple-800 text-white md:block">
         <div className="max-w-6xl mx-auto px-4 py-12">
           <div className="flex items-center gap-4 mb-4">
             <Link
@@ -143,7 +145,7 @@ export default function MisFavoritosPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-6xl px-4 py-5 md:py-8">
         {/* Error message */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -160,7 +162,7 @@ export default function MisFavoritosPage() {
 
         {/* Empty state */}
         {!loading && favorites.length === 0 && (
-          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+          <div className="rounded-2xl bg-white p-8 text-center shadow-sm md:rounded-xl md:p-12">
             <svg className="w-20 h-20 mx-auto text-gray-300 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
@@ -182,7 +184,7 @@ export default function MisFavoritosPage() {
 
         {/* Favorites Grid */}
         {!loading && favorites.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
             {favorites.map(favorite => {
               const motel = favorite.motel;
               if (!motel) return null;
@@ -190,7 +192,7 @@ export default function MisFavoritosPage() {
               return (
                 <div
                   key={favorite.id}
-                  className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow relative group"
+                  className="group relative overflow-hidden rounded-2xl bg-white shadow-sm transition-shadow hover:shadow-md md:rounded-xl"
                 >
                   {/* Remove button */}
                   <button
@@ -212,7 +214,7 @@ export default function MisFavoritosPage() {
 
                   <Link href={`/motels/${motel.slug}`}>
                     {/* Image */}
-                    <div className="relative h-48 bg-gray-200">
+                    <div className="relative h-36 bg-gray-200 md:h-48">
                       {motel.thumbnail ? (
                         <Image
                           src={motel.thumbnail}

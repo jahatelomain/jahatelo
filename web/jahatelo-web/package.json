@@ -15,6 +15,7 @@
     "test:e2e:headed": "playwright test --headed",
     "postinstall": "prisma generate",
     "prisma:migrate": "prisma migrate dev --skip-seed",
+    "prisma:backfill-locations": "node prisma/scripts/backfill-location-catalog.mjs",
     "prisma:studio": "prisma studio",
     "test-users:create": "node scripts/test-users.mjs create",
     "test-users:cleanup": "node scripts/test-users.mjs cleanup"

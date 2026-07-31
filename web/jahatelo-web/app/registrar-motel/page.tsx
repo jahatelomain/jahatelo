@@ -1,6 +1,7 @@
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import RegisterMotelForm from '@/components/public/RegisterMotelForm';
+import MobilePageHeader from '@/components/public/MobilePageHeader';
 
 export const metadata = {
   title: 'Registrar un motel - Jahatelo',
@@ -11,11 +12,12 @@ export default function RegistrarMotelPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gray-50 py-12">
+      <MobilePageHeader title="Registrar motel" />
+      <div className="min-h-screen bg-gray-50 px-4 py-7 md:px-0 md:py-12">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
+          <div className="mb-8 text-center md:mb-12">
+            <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full bg-purple-100 md:mb-4 md:h-16 md:w-16">
               <svg
                 className="w-8 h-8 text-purple-600"
                 fill="none"
@@ -30,10 +32,10 @@ export default function RegistrarMotelPage() {
                 />
               </svg>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+            <h1 className="mb-2 text-2xl font-bold text-gray-900 md:mb-3 md:text-4xl">
               Registrar un motel
             </h1>
-            <p className="text-lg text-gray-600 max-w-xl mx-auto">
+            <p className="mx-auto max-w-xl text-base text-gray-600 md:text-lg">
               Completá los siguientes datos y nos contactaremos en la brevedad posible.
             </p>
           </div>

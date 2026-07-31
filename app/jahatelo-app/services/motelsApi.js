@@ -83,6 +83,8 @@ const mapMotelSummary = (apiMotel) => {
     ciudad: apiMotel.city,
     distanciaKm: null, // El API no devuelve distancia por ahora
     precioDesde: apiMotel.startingPrice || 0,
+    precioDesdeSemana: apiMotel.startingPriceWeekday || 0,
+    precioDesdeFinDeSemana: apiMotel.startingPriceWeekend || 0,
     amenities: normalizeAmenityList(apiMotel.amenities),
     rating: apiMotel.rating?.average || 0,
     isFeatured: apiMotel.isFeatured || false,

@@ -3,6 +3,7 @@ import {
   getCurrentDayGroup,
   getEffectiveRoomPrices,
   getStartingRoomPrice,
+  getStartingRoomPricesByDay,
 } from '@/lib/domain/motels/pricing';
 
 type RoomPricingInfo = Pick<
@@ -134,6 +135,8 @@ export function mapMotelToListItem(motel: MotelForList) {
   const hasPromotions = !isFreePlan && hasActivePromos(motel.promos);
   const firstPromo = isFreePlan ? null : getFirstActivePromo(motel.promos);
 
+  const startingPrices = getStartingRoomPricesByDay(motel.rooms);
+
   return {
     id: motel.id,
     slug: motel.slug,
@@ -153,6 +156,8 @@ export function mapMotelToListItem(motel: MotelForList) {
     hasPromo: hasPromotions,
     tienePromo: hasPromotions,
     startingPrice: getStartingPrice(motel.rooms),
+    startingPriceWeekday: startingPrices.weekday,
+    startingPriceWeekend: startingPrices.weekend,
     amenities: (() => {
       // Aggregate unique amenities from all active room amenities
       const map = new Map<string, { name: string; icon: string | null }>();

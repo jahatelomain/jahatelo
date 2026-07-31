@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import MobilePageHeader from '@/components/public/MobilePageHeader';
 
 export default function PerfilPage() {
   const router = useRouter();
@@ -75,8 +76,9 @@ export default function PerfilPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <MobilePageHeader title="Mi perfil" />
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-white">
+      <div className="hidden bg-gradient-to-r from-purple-600 to-purple-800 text-white md:block">
         <div className="max-w-4xl mx-auto px-4 py-12">
           <div className="flex items-center gap-4 mb-4">
             <Link
@@ -106,7 +108,7 @@ export default function PerfilPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-5 md:py-8">
         <div className="grid md:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="md:col-span-2 space-y-6">

@@ -4,7 +4,8 @@ import prisma from '@/lib/prisma';
 import MotelCard from '@/components/public/MotelCard';
 import JsonLd from '@/components/JsonLd';
 import { generateCityCollectionSchema, generateBreadcrumbSchema } from '@/lib/seo';
-import { getStartingRoomPrice } from '@/lib/domain/motels/pricing';
+import { getStartingRoomPrice, getStartingRoomPricesByDay } from '@/lib/domain/motels/pricing';
+import MobilePageHeader from '@/components/public/MobilePageHeader';
 
 type Props = {
   params: Promise<{ ciudad: string }>;
@@ -120,11 +121,12 @@ export default async function CityPage({ params }: Props) {
     <>
       <JsonLd data={collectionSchema} />
       <JsonLd data={breadcrumbSchema} />
+      <MobilePageHeader title={`Moteles en ${cityName}`} subtitle={`${motels.length} ${motels.length === 1 ? 'motel disponible' : 'moteles disponibles'}`} />
 
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mx-auto max-w-7xl px-4 py-5 md:px-6 md:py-12 lg:px-8">
           {/* Header */}
-          <div className="mb-12">
+          <div className="mb-5 hidden md:block md:mb-12">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
               Moteles en {cityName}
             </h1>
@@ -134,11 +136,13 @@ export default async function CityPage({ params }: Props) {
           </div>
 
           {/* Lista de moteles */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {motels.map((motel) => (
-              <MotelCard
-                key={motel.id}
-                motel={{
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
+            {motels.map((motel) => {
+              const startingPrices = getStartingRoomPricesByDay(motel.rooms);
+              return (
+                <MotelCard
+                  key={motel.id}
+                  motel={{
                   id: motel.id,
                   slug: motel.slug,
                   name: motel.name,
@@ -151,6 +155,8 @@ export default async function CityPage({ params }: Props) {
                   hasPromo: false,
                   tienePromo: false,
                   startingPrice: getStartingRoomPrice(motel.rooms),
+                  startingPriceWeekday: startingPrices.weekday,
+                  startingPriceWeekend: startingPrices.weekend,
                   amenities: Array.from(new Map(
                     motel.rooms.flatMap((room) => room.amenities.map(({ amenity }) => [amenity.id, { name: amenity.name, icon: amenity.icon }])),
                   ).values()),
@@ -161,9 +167,10 @@ export default async function CityPage({ params }: Props) {
                   promoDescription: null,
                   plan: motel.plan,
                   updatedAt: motel.updatedAt.toISOString(),
-                }}
-              />
-            ))}
+                  }}
+                />
+              );
+            })}
           </div>
         </div>
       </div>

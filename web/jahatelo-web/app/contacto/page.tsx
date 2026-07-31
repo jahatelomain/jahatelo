@@ -5,6 +5,7 @@ import { useToast } from '@/contexts/ToastContext';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import SectionWrapper from '@/components/public/SectionWrapper';
+import MobilePageHeader from '@/components/public/MobilePageHeader';
 
 export default function ContactoPage() {
   const [contactName, setContactName] = useState('');
@@ -56,22 +57,23 @@ export default function ContactoPage() {
   return (
     <>
       <Navbar />
-      <SectionWrapper className="min-h-screen py-14 px-4 sm:px-6 lg:px-8">
+      <MobilePageHeader title="Sumá tu motel" />
+      <SectionWrapper className="min-h-screen px-4 py-8 sm:px-6 md:py-14 lg:px-8">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-12 animate-fade-up">
+          <div className="mb-8 text-center animate-fade-up md:mb-12">
             <span className="inline-block mb-4 text-xs font-semibold uppercase tracking-widest text-purple-300 bg-purple-900/40 border border-purple-700/50 px-4 py-1.5 rounded-full">
               Sumá tu motel
             </span>
-            <h1 className="text-4xl font-extrabold text-white mb-4">¿Tenés un motel?</h1>
-            <p className="text-lg text-purple-200/70">
+            <h1 className="mb-3 text-3xl font-extrabold text-white md:mb-4 md:text-4xl">¿Tenés un motel?</h1>
+            <p className="text-base text-purple-200/70 md:text-lg">
               Dejanos tus datos y te contactamos para que tu motel aparezca en Jahatelo.
             </p>
           </div>
 
           {sent ? (
             /* Estado de éxito */
-            <div className="animate-fade-up bg-white/5 border border-purple-800/40 backdrop-blur-sm rounded-2xl p-10 text-center space-y-4">
+            <div className="animate-fade-up space-y-4 rounded-2xl border border-purple-800/40 bg-white/5 p-6 text-center backdrop-blur-sm md:p-10">
               <div className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center mx-auto">
                 <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -90,7 +92,7 @@ export default function ContactoPage() {
             </div>
           ) : (
             /* Formulario */
-            <div className="animate-fade-up bg-white/5 border border-purple-800/40 backdrop-blur-sm rounded-2xl p-8 md:p-10">
+            <div className="animate-fade-up rounded-2xl border border-purple-800/40 bg-white/5 p-5 backdrop-blur-sm md:p-10">
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Nombre del motel */}
                 <div>

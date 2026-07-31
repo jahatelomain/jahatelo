@@ -11,6 +11,8 @@ import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
 import ShareButton from '@/components/public/ShareButton';
 import ReviewsSection from '@/components/public/ReviewsSection';
 import PriceTable from '@/components/public/PriceTable';
+import AmenityList from '@/components/public/AmenityList';
+import MobilePageHeader from '@/components/public/MobilePageHeader';
 import { formatGuaranies } from '@/lib/formatCurrency';
 import JsonLd from '@/components/JsonLd';
 import * as LucideIcons from 'lucide-react';
@@ -19,7 +21,7 @@ import { generateBreadcrumbSchema, generateMotelSchema } from '@/lib/seo';
 import Tabs from '@/components/public/Tabs';
 import { getPublicMotelDetail } from '@/lib/domain/motels/getMotelDetail';
 import { normalizeLocalUploadPath } from '@/lib/normalizeLocalUrl';
-import { getCurrentDayGroup, getEffectivePrices } from '@/app/api/mobile/mappers';
+import { getEffectivePrices } from '@/app/api/mobile/mappers';
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -117,6 +119,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
   };
 
   motel = normalizedMotel as typeof motel;
+  const isFreePlan = motel.plan === 'FREE';
 
   // Get main photo
   const featuredPhotoWeb = motel.featuredPhotoWeb || motel.featuredPhoto || null;
@@ -127,8 +130,8 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     null;
 
   // Safe rating
-  const safeRating = motel.ratingAvg || 0;
-  const hasReviews = motel.ratingCount > 0;
+  const safeRating = isFreePlan ? 0 : motel.ratingAvg || 0;
+  const hasReviews = !isFreePlan && motel.ratingCount > 0;
 
   // Aggregate unique amenities from all active rooms
   const amenityAggMap = new Map<string, { id: string; name: string; icon: string | null }>();
@@ -150,7 +153,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     id: 'details',
     label: 'Detalles',
     content: (
-        <div className={motel.plan === 'FREE' ? 'opacity-45' : undefined}>
+        <div className={isFreePlan ? 'opacity-45' : undefined}>
           {/* Galería removida: la imagen principal vive en el header */}
           {/* Description */}
           {motel.description && (
@@ -184,25 +187,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           {roomAmenitiesSummary.length > 0 && (
             <div className="mb-8">
               <h3 className="text-xl font-semibold text-gray-900 mb-3">Amenities</h3>
-              <div className="flex flex-wrap gap-3">
-                {roomAmenitiesSummary.map((amenity) => (
-                  <div
-                    key={amenity.id}
-                    title={amenity.name}
-                    aria-label={amenity.name}
-                    className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-purple-50 text-purple-600"
-                  >
-                    {(() => {
-                      const IconComponent = amenity.icon ? iconLibrary[amenity.icon] : undefined;
-                      return IconComponent ? (
-                        <IconComponent size={18} />
-                      ) : (
-                        <span className="text-purple-600 text-base font-semibold">•</span>
-                      );
-                    })()}
-                  </div>
-                ))}
-              </div>
+              <AmenityList amenities={roomAmenitiesSummary} />
             </div>
           )}
 
@@ -244,7 +229,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     });
 
   // Add Promos tab if there are active promos
-  if (motel.promos && motel.promos.length > 0) {
+  if (!isFreePlan && motel.promos && motel.promos.length > 0) {
     tabs.push({
       id: 'promos',
       label: 'Promos',
@@ -252,12 +237,8 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     });
   }
 
-  // Calculate current day group for prices
-  const currentDayGroup = getCurrentDayGroup();
-  const isWeekend = currentDayGroup === 'WEEKEND';
-
   // Add Rooms tab only if there are active rooms
-  if (motel.rooms && motel.rooms.length > 0) {
+  if (!isFreePlan && motel.rooms && motel.rooms.length > 0) {
     tabs.push({
       id: 'rooms',
       label: 'Habitaciones',
@@ -270,22 +251,28 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                   url: photo.url,
                   alt: `${room.name}, foto ${index + 1}`,
                 }));
-                const effectivePrices = getEffectivePrices(
-                  room as Parameters<typeof getEffectivePrices>[0],
-                  currentDayGroup
+                const roomWithRates = room as Parameters<typeof getEffectivePrices>[0];
+                const weekdayPrices = getEffectivePrices(roomWithRates, 'WEEKDAY');
+                const weekendPrices = getEffectivePrices(roomWithRates, 'WEEKEND');
+                const toPriceTableItems = (source: typeof weekdayPrices) => [
+                  { label: '1h', value: source.price1h },
+                  { label: '1.5h', value: source.price1_5h },
+                  { label: '2h', value: source.price2h },
+                  { label: '3h', value: source.price3h },
+                  { label: '12h', value: source.price12h },
+                  { label: '24h', value: source.price24h },
+                  { label: 'Dormida', value: source.priceNight },
+                ].filter((price): price is { label: string; value: number } =>
+                  typeof price.value === 'number' && price.value > 0,
                 );
-                const hasWeekendRates = (room as typeof room & { dayRates?: Array<{ dayGroup: string }> }).dayRates?.some(
-                  (dr) => dr.dayGroup === 'WEEKEND'
+                const weekdayRateItems = toPriceTableItems(weekdayPrices);
+                const weekendRateItems = toPriceTableItems(weekendPrices);
+                const hasDayPriceVariation = weekdayRateItems.some((weekdayPrice) =>
+                  weekendRateItems.some(
+                    (weekendPrice) => weekdayPrice.label === weekendPrice.label && weekdayPrice.value !== weekendPrice.value,
+                  ),
                 );
-                const prices = [
-                  { label: '1h', value: effectivePrices.price1h },
-                  { label: '1.5h', value: effectivePrices.price1_5h },
-                  { label: '2h', value: effectivePrices.price2h },
-                  { label: '3h', value: effectivePrices.price3h },
-                  { label: '12h', value: effectivePrices.price12h },
-                  { label: '24h', value: effectivePrices.price24h },
-                  { label: 'Dormida', value: effectivePrices.priceNight },
-                ].filter((p) => p.value !== null && p.value !== undefined);
+                const prices = weekdayRateItems;
 
                 return (
                   <div key={room.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -345,19 +332,20 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                         {/* Prices */}
                         {prices.length > 0 ? (
                           <div className="border-t border-gray-200 pt-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              {hasWeekendRates && (
-                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isWeekend ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
-                                  {isWeekend ? 'Fin de semana' : 'Entre semana'}
-                                </span>
-                              )}
-                            </div>
-                            <PriceTable
-                              prices={prices.map((price) => ({
-                                label: price.label,
-                                price: Number(price.value),
-                              }))}
-                            />
+                            {hasDayPriceVariation ? (
+                              <div className="grid gap-4 lg:grid-cols-2">
+                                <div>
+                                  <span className="mb-2 inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">Dom – Jue</span>
+                                  <PriceTable prices={weekdayRateItems.map(({ label, value }) => ({ label, price: value }))} />
+                                </div>
+                                <div>
+                                  <span className="mb-2 inline-flex rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">Vie – Sáb</span>
+                                  <PriceTable prices={weekendRateItems.map(({ label, value }) => ({ label, price: value }))} />
+                                </div>
+                              </div>
+                            ) : (
+                              <PriceTable prices={prices.map(({ label, value }) => ({ label, price: value }))} />
+                            )}
                           </div>
                         ) : (
                           <div className="border-t border-gray-200 pt-4 font-bold text-gray-900">CONSULTAR</div>
@@ -379,7 +367,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
   }
 
   // Add Menu tab only if there are menu categories
-  if (motel.menuCategories && motel.menuCategories.length > 0) {
+  if (!isFreePlan && motel.menuCategories && motel.menuCategories.length > 0) {
     tabs.push({
       id: 'menu',
       label: 'Menú',
@@ -440,7 +428,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     });
   }
 
-  if (motel.plan !== 'FREE') {
+  if (!isFreePlan) {
     tabs.push({
       id: 'reviews',
       label: 'Reseñas',
@@ -471,10 +459,11 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
     <>
       <JsonLd data={[motelSchema, breadcrumbSchema]} />
       <Navbar />
+      <MobilePageHeader title={motel.name} subtitle={motel.city} />
       <div className="bg-gray-50 min-h-screen">
       {/* Hero Image */}
       <div
-        className="relative h-96"
+        className="relative h-64 md:h-96"
         style={{
           ...MOTEL_PATTERN_STYLE,
           ...(heroPhotoUrl
@@ -490,7 +479,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
 
         {/* Badges */}
         <div className="absolute top-4 right-4 flex flex-col gap-2">
-          {motel.promos && motel.promos.length > 0 && (
+          {!isFreePlan && motel.promos && motel.promos.length > 0 && (
             <div className="bg-purple-600 text-white px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 shadow-lg">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
@@ -511,15 +500,15 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10 pb-16">
+      <div className="relative z-10 mx-auto -mt-8 max-w-7xl px-4 pb-8 md:-mt-20 md:px-6 md:pb-16 lg:px-8">
         {/* Header Card */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="mb-4 rounded-2xl bg-white p-4 shadow-lg md:mb-8 md:rounded-lg md:p-6">
+          <div className="mb-4 flex items-start justify-between gap-3 md:gap-4">
             <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+              <h1 className="mb-2 text-2xl font-bold text-gray-900 md:text-4xl">
                 {motel.name}
               </h1>
-              <div className="flex flex-wrap items-center gap-4 text-gray-600">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 md:gap-4 md:text-base">
                 <div className="flex items-center gap-2">
                   <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -542,7 +531,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 md:gap-3">
               <ContactButtons motelId={motel.id} phone={motel.phone} whatsapp={motel.whatsapp} />
               <FavoriteButtonClient motelId={motel.id} source="DETAIL" />
       <ShareButton title={motel.name} url={`${BASE_URL}/motels/${motel.slug}`} />
@@ -566,7 +555,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
               }
             }
             return (
-              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 md:gap-4">
                 <span>{motel.address}</span>
                 {mapsHref && (
                   <a
@@ -587,7 +576,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
         </div>
 
         {/* Índice y secciones continuas; #promos apunta a la sección correspondiente. */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="rounded-2xl bg-white p-4 shadow-sm md:rounded-lg md:p-6">
           <Tabs tabs={tabs} defaultTab={tabs[0]?.id} />
         </div>
       </div>

@@ -158,7 +158,7 @@ export default function MotelDetailPage() {
   const fetchMotel = useCallback(async () => {
     try {
       setFetchError(null);
-      const res = await fetch(`/api/admin/motels/${id}`);
+      const res = await fetch(`/api/admin/motels/${id}?fresh=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
@@ -474,7 +474,12 @@ export default function MotelDetailPage() {
       });
 
       if (res.ok) {
-        fetchMotel();
+        const updatedMotel = await res.json().catch(() => null);
+        if (updatedMotel?.mapUrl !== normalizedMapUrl) {
+          toast.error('El servidor no confirmó la nueva URL de Google Maps. No se marcó el cambio como guardado.');
+          return;
+        }
+        await fetchMotel();
         setEditingMotel(false);
         setEditingCommercial(false);
         setSaveStatus('success');
