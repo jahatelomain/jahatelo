@@ -102,7 +102,7 @@ export default function MisFavoritosPage() {
 
   const formatPrice = (price?: number) => {
     if (!price) return 'Consultar';
-    return formatGuaranies(price);
+    return `Desde ${formatGuaranies(price)}`;
   };
 
   if (authLoading || !isAuthenticated) {

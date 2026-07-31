@@ -1,4 +1,9 @@
 import { Motel, RoomType, Amenity, RoomAmenity, Promo, RoomPhoto, RoomDayRate, DayGroup } from '@prisma/client';
+import {
+  getCurrentDayGroup,
+  getEffectiveRoomPrices,
+  getStartingRoomPrice,
+} from '@/lib/domain/motels/pricing';
 
 type RoomPricingInfo = Pick<
   RoomType,
@@ -17,10 +22,7 @@ type RoomPricingInfo = Pick<
 /**
  * Devuelve WEEKDAY o WEEKEND según el día actual (hora local del servidor)
  */
-export function getCurrentDayGroup(): DayGroup {
-  const day = new Date().getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
-  return day === 5 || day === 6 ? 'WEEKEND' : 'WEEKDAY';
-}
+export { getCurrentDayGroup };
 
 /**
  * Devuelve los precios efectivos para una habitación dado un dayGroup.
@@ -30,27 +32,7 @@ export function getEffectivePrices(
   room: Pick<RoomType, 'price1h' | 'price1_5h' | 'price2h' | 'price3h' | 'price12h' | 'price24h' | 'priceNight'> & { dayRates?: RoomDayRate[] },
   dayGroup: DayGroup
 ) {
-  const dayRate = room.dayRates?.find((dr) => dr.dayGroup === dayGroup);
-  if (dayRate) {
-    return {
-      price1h: dayRate.price1h ?? room.price1h,
-      price1_5h: dayRate.price1_5h ?? room.price1_5h,
-      price2h: dayRate.price2h ?? room.price2h,
-      price3h: dayRate.price3h ?? room.price3h,
-      price12h: dayRate.price12h ?? room.price12h,
-      price24h: dayRate.price24h ?? room.price24h,
-      priceNight: dayRate.priceNight ?? room.priceNight,
-    };
-  }
-  return {
-    price1h: room.price1h,
-    price1_5h: room.price1_5h,
-    price2h: room.price2h,
-    price3h: room.price3h,
-    price12h: room.price12h,
-    price24h: room.price24h,
-    priceNight: room.priceNight,
-  };
+  return getEffectiveRoomPrices(room, dayGroup);
 }
 
 // Amenity data for list context (minimal fields)
@@ -86,26 +68,7 @@ type MotelWithRelations = Motel & {
  * Usa precios del día actual si existen dayRates; sino usa precios base.
  */
 export function getStartingPrice(rooms?: (RoomPricingInfo | RoomWithRelations)[]): number | null {
-  if (!rooms || rooms.length === 0) return null;
-
-  const activeRooms = rooms.filter((r) => r.isActive);
-  if (activeRooms.length === 0) return null;
-
-  const dayGroup = getCurrentDayGroup();
-  const allPrices: number[] = [];
-
-  activeRooms.forEach((room) => {
-    const effective = getEffectivePrices(room, dayGroup);
-    if (effective.price1h) allPrices.push(effective.price1h);
-    if (effective.price1_5h) allPrices.push(effective.price1_5h);
-    if (effective.price2h) allPrices.push(effective.price2h);
-    if (effective.price3h) allPrices.push(effective.price3h);
-    if (effective.price12h) allPrices.push(effective.price12h);
-    if (effective.price24h) allPrices.push(effective.price24h);
-    if (effective.priceNight) allPrices.push(effective.priceNight);
-  });
-
-  return allPrices.length > 0 ? Math.min(...allPrices) : null;
+  return getStartingRoomPrice(rooms);
 }
 
 /**
@@ -189,8 +152,8 @@ export function mapMotelToListItem(motel: MotelForList) {
     isFeatured: motel.isFeatured,
     hasPromo: hasPromotions,
     tienePromo: hasPromotions,
-    startingPrice: isFreePlan ? null : getStartingPrice(motel.rooms),
-    amenities: isFreePlan ? [] : (() => {
+    startingPrice: getStartingPrice(motel.rooms),
+    amenities: (() => {
       // Aggregate unique amenities from all active room amenities
       const map = new Map<string, { name: string; icon: string | null }>();
       for (const room of motel.rooms || []) {

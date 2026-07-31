@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
 import { sanitizeObject } from '@/lib/sanitize';
+import { getStartingRoomPrice } from '@/lib/domain/motels/pricing';
 
 const MobileFavoriteSchema = z.object({
   motelId: z.string().min(1).max(100),
@@ -81,6 +82,7 @@ export async function GET(request: NextRequest) {
             price12h: true,
             price24h: true,
             priceNight: true,
+            dayRates: true,
             amenities: {
               select: {
                 amenity: {
@@ -106,13 +108,7 @@ export async function GET(request: NextRequest) {
           motel.featuredPhotoApp || motel.featuredPhotoWeb || motel.featuredPhoto || null;
         const thumbnail = featuredPhoto;
 
-        const allPrices = motel.rooms
-          .filter((r) => r.isActive)
-          .flatMap((r) =>
-            ([r.price1h, r.price1_5h, r.price2h, r.price3h, r.price12h, r.price24h, r.priceNight] as (number | null)[])
-              .filter((p): p is number => p !== null && p !== undefined)
-          );
-        const precioDesde = allPrices.length > 0 ? Math.min(...allPrices) : 0;
+        const precioDesde = getStartingRoomPrice(motel.rooms) ?? 0;
 
         // Aggregate unique amenities from all active room amenities
         const amenityMap = new Map<string, { name: string; icon: string | null }>();

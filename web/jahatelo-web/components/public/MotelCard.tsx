@@ -27,8 +27,12 @@ export interface MotelCardProps {
     featuredPhotoWeb?: string | null;
     rooms?: Array<{
       price1h?: number | null;
+      price1_5h?: number | null;
       price2h?: number | null;
+      price3h?: number | null;
       price12h?: number | null;
+      price24h?: number | null;
+      priceNight?: number | null;
       amenities?: Array<{ amenity: { name: string; icon?: string | null } }>;
     }>;
     plan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND' | null;
@@ -53,7 +57,9 @@ export default function MotelCard({ motel }: MotelCardProps) {
   };
 
   const legacyPrices = !isCanonical
-    ? (motel.rooms ?? []).flatMap((room) => [room.price1h, room.price2h, room.price12h]).filter((price): price is number => typeof price === 'number')
+    ? (motel.rooms ?? [])
+      .flatMap((room) => [room.price1h, room.price1_5h, room.price2h, room.price3h, room.price12h, room.price24h, room.priceNight])
+      .filter((price): price is number => typeof price === 'number' && Number.isFinite(price) && price > 0)
     : [];
   const minPrice = isCanonical
     ? motel.startingPrice
@@ -183,13 +189,14 @@ export default function MotelCard({ motel }: MotelCardProps) {
           )}
 
           {/* Price */}
-          {minPrice !== null && (
-            <div className="mt-auto pt-4 border-t border-gray-100">
+          <div className="mt-auto pt-4 border-t border-gray-100">
+            {minPrice !== null && minPrice > 0 ? (
               <p className="text-xl font-bold text-purple-600">
+                <span className="mr-1 text-sm font-medium text-slate-500">Desde</span>
                 {formatGuaranies(minPrice)}
               </p>
-            </div>
-          )}
+            ) : <p className="text-lg font-semibold text-slate-500">Consultar</p>}
+          </div>
         </div>
       </div>
   );

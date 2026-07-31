@@ -227,7 +227,14 @@ function MotelCardComponent({ motel, onPress }) {
       {/* Fila inferior: precio, badges/amenities */}
       <View style={styles.bottomRow}>
         <View style={styles.priceContainer}>
-          <Text style={styles.price}>{formatPrice(motel.precioDesde)}</Text>
+          {motel.precioDesde > 0 ? (
+            <View style={styles.priceRow}>
+              <Text style={styles.pricePrefix}>Desde</Text>
+              <Text style={styles.price}>{formatPrice(motel.precioDesde)}</Text>
+            </View>
+          ) : (
+            <Text style={styles.price}>Consultar</Text>
+          )}
           {motel.distanciaKm && (
             <Text style={styles.distance}>{formatDistance(motel.distanciaKm)}</Text>
           )}
@@ -420,6 +427,16 @@ const styles = StyleSheet.create({
   },
   priceContainer: {
     flex: 0,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+  },
+  pricePrefix: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#777',
   },
   price: {
     fontSize: 17,

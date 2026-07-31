@@ -8,9 +8,6 @@ type Amenity = { id: string; name: string; icon?: string | null };
 type Plan = 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND';
 type PriceKey = 'price1h' | 'price1_5h' | 'price2h' | 'price3h' | 'price12h' | 'price24h' | 'priceNight';
 type RoomForm = { name: string; description: string; amenityIds: string[] } & Record<PriceKey, string>;
-type LegacyDraft = Partial<typeof initialForm> & {
-  id: string; savedAt: string; rooms?: Array<{ name?: string; description?: string; pricePerHour?: string }>;
-};
 
 const PRICE_FIELDS: Array<[PriceKey, string]> = [
   ['price1h', '1 h'], ['price1_5h', '1,5 h'], ['price2h', '2 h'], ['price3h', '3 h'],
@@ -37,7 +34,6 @@ export default function MotelCaptureForm() {
   const [amenitiesError, setAmenitiesError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [legacyDrafts, setLegacyDrafts] = useState<LegacyDraft[]>([]);
   const coordinates = extractCoordinatesFromGoogleMapsUrl(form.googleMapsUrl);
 
   useEffect(() => {
@@ -47,27 +43,11 @@ export default function MotelCaptureForm() {
       .catch((error: Error) => setAmenitiesError(error.message));
   }, []);
 
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('jahatelo_motel_drafts') || '[]');
-      if (Array.isArray(saved)) setLegacyDrafts(saved.sort((a, b) => new Date(b.savedAt || 0).getTime() - new Date(a.savedAt || 0).getTime()));
-    } catch {
-      // Un borrador corrupto no debe impedir usar el formulario.
-    }
-  }, []);
-
   const updateRoom = (index: number, patch: Partial<RoomForm>) => setRooms((current) => current.map((room, roomIndex) => roomIndex === index ? { ...room, ...patch } : room));
   const toggleAmenity = (index: number, amenityId: string) => {
     const selected = rooms[index].amenityIds;
     updateRoom(index, { amenityIds: selected.includes(amenityId) ? selected.filter((id) => id !== amenityId) : [...selected, amenityId] });
   };
-  const restoreLegacyDraft = (draft: LegacyDraft) => {
-    const plan: Plan = ['FREE', 'BASIC', 'GOLD', 'DIAMOND'].includes(draft.plan || '') ? draft.plan as Plan : 'FREE';
-    setForm({ ...initialForm, ...draft, plan });
-    setRooms((draft.rooms || []).filter((room) => room.name?.trim()).map((room) => ({ ...emptyRoom(), name: room.name || '', description: room.description || '', price1h: room.pricePerHour || '' })));
-    setSubmitError('Borrador recuperado. Verificá los datos y reasigná los amenities desde el catálogo antes de guardar.');
-  };
-
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitError('');
@@ -93,12 +73,6 @@ export default function MotelCaptureForm() {
       <p className="mt-1 text-sm text-slate-600">Cargá lo esencial ahora. Podrás completar fotos, promos, menú y demás datos desde la edición del motel.</p>
     </header>
     {submitError && <pre className="whitespace-pre-wrap rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{submitError}</pre>}
-
-    {legacyDrafts.length > 0 && <section className="rounded-xl border border-amber-200 bg-amber-50 p-5">
-      <h2 className="font-semibold text-amber-900">Borradores anteriores encontrados</h2>
-      <p className="mt-1 text-sm text-amber-800">Estaban guardados solo en este navegador. Podés recuperarlos y completar los amenities con el catálogo actual.</p>
-      <div className="mt-3 space-y-2">{legacyDrafts.map((draft) => <div key={draft.id} className="flex items-center justify-between rounded-lg bg-white p-3 text-sm"><span><strong>{draft.name || 'Sin nombre'}</strong>{draft.savedAt && ` · ${new Date(draft.savedAt).toLocaleString('es-PY')}`}</span><button type="button" onClick={() => restoreLegacyDraft(draft)} className="rounded-md border border-amber-300 px-3 py-1.5 font-medium text-amber-900">Recuperar</button></div>)}</div>
-    </section>}
 
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <h2 className="mb-4 text-lg font-semibold text-slate-900">Datos básicos</h2>
