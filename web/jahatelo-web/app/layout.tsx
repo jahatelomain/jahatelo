@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import AgeGate from "@/components/public/AgeGate";
 import AnalyticsProvider from "@/components/AnalyticsProvider";
 import GoogleAuthProvider from "@/components/GoogleAuthProvider";
+import PublicMobileShell from "@/components/public/PublicMobileShell";
 
 const lato = Lato({
   weight: ['400', '700'],
@@ -82,7 +83,7 @@ export default function RootLayout({
               <AgeGate />
               <PwaRegistrar />
               <AnalyticsProvider />
-              {children}
+              <PublicMobileShell>{children}</PublicMobileShell>
             </ToastProvider>
           </AuthProvider>
         </GoogleAuthProvider>

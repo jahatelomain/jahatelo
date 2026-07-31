@@ -424,24 +424,15 @@ export default function GoogleMapComponent({
       customLabel.setMap(googleMapRef.current);
       overlaysRef.current.push(customLabel);
 
-      const isFreePlan = motel.plan === 'FREE';
       const actionButtonColor = planConfig.labelColor;
-      const actionButton = isFreePlan
-        ? `
-          <div
-            style="display: block; width: 100%; text-align: center; background: #E5E7EB; color: #6B7280; font-weight: 600; padding: 10px 16px; border-radius: 8px; margin-top: 8px;"
-          >
-            No disponible
-          </div>
-        `
-        : `
-          <a
-            href="/motels/${motel.slug}"
-            style="display: block; width: 100%; text-align: center; background: ${actionButtonColor}; color: white; font-weight: 600; padding: 10px 16px; border-radius: 8px; text-decoration: none; margin-top: 8px;"
-          >
-            Ver detalles
-          </a>
-        `;
+      const actionButton = `
+        <a
+          href="/motels/${motel.slug}"
+          style="display: block; width: 100%; text-align: center; background: ${actionButtonColor}; color: white; font-weight: 600; padding: 10px 16px; border-radius: 8px; text-decoration: none; margin-top: 8px;"
+        >
+          Ver detalles
+        </a>
+      `;
 
       const motelPhoto = motel.featuredPhotoWeb || motel.featuredPhoto;
 

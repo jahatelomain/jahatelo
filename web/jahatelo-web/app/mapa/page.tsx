@@ -2,6 +2,7 @@ import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import MapView from '@/components/public/MapView';
 import SectionWrapper from '@/components/public/SectionWrapper';
+import MobilePageHeader from '@/components/public/MobilePageHeader';
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
 
@@ -17,9 +18,10 @@ export default function MapaPage() {
   return (
     <>
       <Navbar />
+      <MobilePageHeader title="Mapa de moteles" subtitle="Explorá los lugares disponibles" />
       <SectionWrapper className="min-h-screen">
         {/* Header */}
-        <div className="relative bg-gradient-to-br from-[#0f0f1a] via-[#161624] to-[#1a1530] overflow-hidden">
+        <div className="relative hidden overflow-hidden bg-gradient-to-br from-[#0f0f1a] via-[#161624] to-[#1a1530] md:block">
           <div className="navbar-gradient-border h-[2px] w-full absolute bottom-0 left-0" />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <span className="inline-block mb-3 text-xs font-semibold uppercase tracking-widest text-purple-300 bg-purple-900/40 border border-purple-700/50 px-4 py-1.5 rounded-full">
@@ -35,7 +37,7 @@ export default function MapaPage() {
         </div>
 
         {/* Map Container */}
-        <div className="h-[calc(100vh-200px)]">
+        <div className="h-[calc(100vh-76px)] md:h-[calc(100vh-200px)]">
           <MapView />
         </div>
       </SectionWrapper>

@@ -11,6 +11,8 @@ export type PublicMotelListItem = {
   hasPromo: boolean;
   tienePromo: boolean;
   startingPrice: number | null;
+  startingPriceWeekday: number | null;
+  startingPriceWeekend: number | null;
   amenities: Array<{ name: string; icon: string | null }>;
   thumbnail: string | null;
   featuredPhoto: string | null;

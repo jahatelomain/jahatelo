@@ -10,6 +10,7 @@ import FeaturedMotels from '@/components/public/FeaturedMotels';
 import AdPopup from '@/components/public/AdPopup';
 import PromoListWithAds from '@/components/public/PromoListWithAds';
 import CityListWithAds from '@/components/public/CityListWithAds';
+import MobileHome from '@/components/public/MobileHome';
 import { headers } from 'next/headers';
 import type { PublicMotelListResponse } from '@/lib/domain/motels/publicListItem';
 
@@ -51,7 +52,8 @@ export default async function HomePage() {
     <>
       <AdPopup />
       <Navbar />
-      <main data-testid="homepage-main">
+      <MobileHome featuredMotels={featuredMotels} cities={cities} />
+      <main data-testid="homepage-main" className="hidden md:block">
         {/* Hero */}
         <section className="relative bg-gradient-to-br from-[#0f0f1a] via-[#161624] to-[#1a1530] overflow-hidden">
           {/* Glow decorativo flotante */}

@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { extractCoordinatesFromGoogleMapsUrl, formatCoordinates, normalizeGoogleMapsUrl } from '@/lib/utils/coordinates';
+import LocationSelectFields from '@/components/admin/LocationSelectFields';
 
 type Amenity = { id: string; name: string; icon?: string | null };
 type Plan = 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND';
@@ -18,7 +19,7 @@ const emptyRoom = (): RoomForm => ({
   name: '', description: '', amenityIds: [], price1h: '', price1_5h: '', price2h: '', price3h: '', price12h: '', price24h: '', priceNight: '',
 });
 
-const initialForm: { name: string; contactName: string; phone: string; whatsapp: string; instagram: string; email: string; address: string; city: string; googleMapsUrl: string; description: string; plan: Plan } = { name: '', contactName: '', phone: '', whatsapp: '', instagram: '', email: '', address: '', city: '', googleMapsUrl: '', description: '', plan: 'FREE' };
+const initialForm: { name: string; contactName: string; phone: string; whatsapp: string; instagram: string; email: string; address: string; country: string; city: string; googleMapsUrl: string; description: string; plan: Plan } = { name: '', contactName: '', phone: '', whatsapp: '', instagram: '', email: '', address: '', country: '', city: '', googleMapsUrl: '', description: '', plan: 'FREE' };
 
 function errorMessage(payload: unknown) {
   const data = payload as { error?: string; details?: Array<{ path?: Array<string | number>; message?: string }> };
@@ -89,7 +90,7 @@ export default function MotelCaptureForm() {
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <h2 className="mb-4 text-lg font-semibold text-slate-900">Ubicación</h2>
       <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Ciudad"><input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className={inputClass} /></Field>
+        <LocationSelectFields country={form.country} city={form.city} onChange={(next) => setForm({ ...form, ...next })} className={inputClass} />
         <Field label="Dirección"><input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputClass} /></Field>
       </div>
       <Field label="Link o iframe de Google Maps" extra="Opcional al crear; si lo pegás, se guardan las coordenadas."><input value={form.googleMapsUrl} onChange={(e) => setForm({ ...form, googleMapsUrl: e.target.value })} className={inputClass} placeholder="Pegá el link o iframe de Google Maps" /></Field>

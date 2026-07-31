@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { extractCoordinatesFromGoogleMapsUrl, normalizeGoogleMapsUrl } from '@/lib/utils/coordinates';
+import { normalizeLocationName } from '@/lib/locationCatalog';
 
 const RoomFormSchema = z.object({
   name: z.string().min(1),
@@ -25,7 +26,8 @@ const MotelFormSchema = z.object({
   instagram: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
   address: z.string().optional(),
-  city: z.string().optional(),
+  country: z.string().min(2).max(100),
+  city: z.string().min(2).max(100),
   googleMapsUrl: z.preprocess(
     (value) => typeof value === 'string' && value.trim() ? normalizeGoogleMapsUrl(value) : undefined,
     z.string().url().optional(),
@@ -59,6 +61,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = MotelFormSchema.parse(body);
 
+    const country = await prisma.countryCatalog.findUnique({
+      where: { normalizedName: normalizeLocationName(validated.country) },
+      include: { cities: true },
+    });
+    const city = country?.cities.find((item) => item.isActive && item.normalizedName === normalizeLocationName(validated.city));
+    if (!country?.isActive || !city) {
+      return NextResponse.json({ error: 'Seleccioná un país y una ciudad válidos del catálogo.' }, { status: 400 });
+    }
+
     const coordinates = validated.googleMapsUrl
       ? extractCoordinatesFromGoogleMapsUrl(validated.googleMapsUrl)
       : null;
@@ -85,7 +96,8 @@ export async function POST(request: NextRequest) {
         slug,
         description: validated.description?.trim() || null,
         address: validated.address?.trim() || '',
-        city: validated.city?.trim() || '',
+        country: country.name,
+        city: city.name,
         mapUrl: validated.googleMapsUrl || null,
         latitude: coordinates?.lat ?? null,
         longitude: coordinates?.lng ?? null,

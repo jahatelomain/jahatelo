@@ -230,16 +230,16 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-5 md:px-6 md:py-8 lg:px-8">
       {/* Search Bar */}
-      <div className="mb-8">
+      <div className="mb-5 md:mb-8">
         <div className="relative max-w-3xl mx-auto">
           <input
             type="text"
             placeholder="Buscar moteles por nombre, ciudad, amenidades..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-6 py-4 pr-12 text-lg text-gray-900 border-2 border-gray-300 rounded-2xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600 transition-all"
+            className="w-full rounded-xl border-2 border-gray-300 px-4 py-3 pr-12 text-base text-gray-900 transition-all focus:border-purple-600 focus:ring-2 focus:ring-purple-600 md:rounded-2xl md:px-6 md:py-4 md:text-lg"
           />
           <div className="absolute inset-y-0 right-0 flex items-center pr-4">
             {searchQuery ? (
@@ -261,19 +261,19 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
       </div>
 
       {/* Filters Section */}
-      <div className="mb-6 max-w-5xl mx-auto space-y-5">
+      <div className="mx-auto mb-6 max-w-5xl space-y-4 md:space-y-5">
         {/* Quick Amenity Filters */}
         {quickAmenities.length > 0 && (
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-2">
               {quickAmenitiesLoading ? 'Cargando amenities...' : 'Filtros rápidos:'}
             </h3>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] md:flex-wrap">
               {quickAmenities.map((amenity) => (
                 <button
                   key={amenity.id}
                   onClick={() => toggleAmenity(amenity.id)}
-                  className={`px-4 py-2 rounded-full font-medium border-2 transition-all ${
+                  className={`shrink-0 rounded-full border-2 px-3 py-1.5 text-sm font-medium transition-all md:px-4 md:py-2 md:text-base ${
                     selectedAmenity === amenity.id
                       ? 'bg-purple-600 text-white border-purple-600 shadow-md'
                       : 'bg-white text-gray-700 border-gray-200 hover:border-purple-300'

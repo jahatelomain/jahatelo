@@ -189,6 +189,34 @@ model Motel {
 }
 
 // ============================================
+// LOCATION CATALOG
+// ============================================
+
+model CountryCatalog {
+  id             String        @id @default(cuid())
+  name           String
+  normalizedName String        @unique
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  cities         CityCatalog[]
+}
+
+model CityCatalog {
+  id             String         @id @default(cuid())
+  country        CountryCatalog @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  countryId      String
+  name           String
+  normalizedName String
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([countryId, normalizedName])
+  @@index([countryId, isActive])
+}
+
+// ============================================
 // PAYMENT HISTORY
 // ============================================
 

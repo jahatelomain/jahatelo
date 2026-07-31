@@ -1,4 +1,4 @@
-import { getEffectiveRoomPrices, getStartingRoomPrice } from '../pricing';
+import { getEffectiveRoomPrices, getStartingRoomPrice, getStartingRoomPricesByDay } from '../pricing';
 
 describe('room pricing', () => {
   it('uses the lowest positive price from active rooms', () => {
@@ -11,6 +11,19 @@ describe('room pricing', () => {
 
   it('returns null when no active room has a price', () => {
     expect(getStartingRoomPrice([{ isActive: true, priceNight: null }, { isActive: false, price1h: 50000 }])).toBeNull();
+  });
+
+  it('keeps independent weekday and weekend minimum prices', () => {
+    const rooms = [{
+      isActive: true,
+      priceNight: 150000,
+      dayRates: [
+        { dayGroup: 'WEEKDAY' as const, priceNight: 180000 },
+        { dayGroup: 'WEEKEND' as const, priceNight: 240000 },
+      ],
+    }];
+
+    expect(getStartingRoomPricesByDay(rooms)).toEqual({ weekday: 180000, weekend: 240000 });
   });
 
   it('uses a day-rate value exactly as stored without recalculating it', () => {

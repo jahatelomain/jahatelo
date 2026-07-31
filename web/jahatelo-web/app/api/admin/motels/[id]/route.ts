@@ -5,8 +5,15 @@ import { canAccessMotel } from '@/lib/auth';
 import { logAuditEvent } from '@/lib/audit';
 import { IdSchema, UpdateMotelSchema } from '@/lib/validations/schemas';
 import { sanitizeText } from '@/lib/sanitize';
+import { normalizeLocationName } from '@/lib/locationCatalog';
+import { extractCoordinatesFromGoogleMapsUrl, normalizeGoogleMapsUrl } from '@/lib/utils/coordinates';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
+
+// Los detalles de un motel se editan desde el mismo panel y nunca deben servir
+// una respuesta anterior tras un PATCH exitoso.
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -65,6 +72,9 @@ export async function GET(
                 order: 'asc',
               },
             },
+            // El formulario de edición necesita las tarifas por grupo de día
+            // para poder volver a mostrarlas sin perderlas al guardar.
+            dayRates: true,
           },
           orderBy: [
             { order: 'asc' },
@@ -89,11 +99,14 @@ export async function GET(
       []
     );
 
-    return NextResponse.json({
-      ...motel,
-      rooms,
-      menuCategories,
-    });
+    return NextResponse.json(
+      {
+        ...motel,
+        rooms,
+        menuCategories,
+      },
+      { headers: { 'Cache-Control': 'no-store, max-age=0' } },
+    );
   } catch (error) {
     console.error('Error fetching motel:', error);
     return NextResponse.json(
@@ -125,6 +138,22 @@ export async function PATCH(
     // Validar con Zod
     const validated = UpdateMotelSchema.parse(body);
 
+    if (validated.country !== undefined || validated.city !== undefined) {
+      const current = await prisma.motel.findUnique({ where: { id: idResult.data }, select: { country: true, city: true } });
+      const requestedCountry = validated.country ?? current?.country ?? '';
+      const requestedCity = validated.city ?? current?.city ?? '';
+      const country = await prisma.countryCatalog.findUnique({
+        where: { normalizedName: normalizeLocationName(requestedCountry) },
+        include: { cities: true },
+      });
+      const city = country?.cities.find((item) => item.isActive && item.normalizedName === normalizeLocationName(requestedCity));
+      if (!country?.isActive || !city) {
+        return NextResponse.json({ error: 'Seleccioná un país y una ciudad válidos del catálogo.' }, { status: 400 });
+      }
+      validated.country = country.name;
+      validated.city = city.name;
+    }
+
     // Sanitizar campos de texto
     const data: Prisma.MotelUpdateInput = {
       ...validated,
@@ -133,6 +162,17 @@ export async function PATCH(
       ...(validated.city ? { city: sanitizeText(validated.city) } : {}),
       ...(validated.address ? { address: sanitizeText(validated.address) } : {}),
     };
+
+    // mapUrl y sus coordenadas representan una sola ubicación. Nunca se debe
+    // conservar la coordenada previa cuando cambia el enlace, porque la web y
+    // las apps priorizan latitude/longitude para abrir el mapa y marcarlo.
+    if (validated.mapUrl !== undefined) {
+      const mapUrl = validated.mapUrl ? normalizeGoogleMapsUrl(validated.mapUrl) : null;
+      const coordinates = mapUrl ? extractCoordinatesFromGoogleMapsUrl(mapUrl) : null;
+      data.mapUrl = mapUrl;
+      data.latitude = coordinates?.lat ?? null;
+      data.longitude = coordinates?.lng ?? null;
+    }
 
     // Manejar nextBillingAt si existe
     if (body.nextBillingAt !== undefined) {

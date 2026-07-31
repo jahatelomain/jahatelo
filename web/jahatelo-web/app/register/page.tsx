@@ -153,32 +153,32 @@ function RegisterForm() {
   }, [resendSeconds]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-800 px-4 py-6 md:flex md:items-center md:justify-center md:px-4 md:py-12">
+      <div className="mx-auto w-full max-w-md">
+        <div className="bg-white p-6 shadow-2xl sm:rounded-2xl sm:p-8">
           {/* Header */}
-          <div className="text-center mb-8">
+          <div className="mb-7 text-center md:mb-8">
             <div className="flex items-center justify-center gap-0 mb-4">
-              <Image src="/logo-icon.png" alt="Jahatelo" width={64} height={64} className="w-16 h-16 object-contain" />
+              <Image src="/logo-icon.png" alt="Jahatelo" width={64} height={64} className="h-14 w-14 object-contain md:h-16 md:w-16" />
               <Image
                 src="/logo-text-gradient.png"
                 alt="Jahatelo"
                 width={160}
                 height={36}
-                className="h-9 w-auto object-contain -ml-0.5"
+                className="-ml-0.5 h-8 w-auto object-contain md:h-9"
               />
             </div>
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">
+            <h2 className="mb-1 text-2xl font-bold text-slate-900 md:mb-2 md:text-xl md:font-semibold">
               Crear Cuenta
             </h2>
-            <p className="text-slate-600">
+            <p className="text-sm text-slate-600 md:text-base">
               Regístrate para guardar tus favoritos y más
             </p>
           </div>
 
           {/* Error message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 md:mb-6 md:rounded-lg md:p-4">
               <p className="text-sm text-red-600">
                 {error}
               </p>
@@ -187,7 +187,7 @@ function RegisterForm() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="flex items-center gap-2 rounded-lg bg-slate-100 p-1">
+            <div className="flex items-center gap-2 rounded-xl bg-slate-100 p-1 md:rounded-lg">
               <button
                 type="button"
                 onClick={() => {
@@ -200,7 +200,7 @@ function RegisterForm() {
                   setConfirmPassword('');
                   setEmail('');
                 }}
-                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors md:rounded-md md:py-2 md:font-medium ${
                   registerMethod === 'sms' ? 'bg-white text-slate-900 shadow' : 'text-slate-600'
                 }`}
               >
@@ -215,7 +215,7 @@ function RegisterForm() {
                   setOtpCode('');
                   setResendSeconds(0);
                 }}
-                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors md:rounded-md md:py-2 md:font-medium ${
                   registerMethod === 'email' ? 'bg-white text-slate-900 shadow' : 'text-slate-600'
                 }`}
               >
@@ -234,7 +234,7 @@ function RegisterForm() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
                 placeholder="Tu nick"
               />
             </div>
@@ -254,7 +254,7 @@ function RegisterForm() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     required
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
                     placeholder="+595 981 234567"
                   />
                   <p className="mt-1 text-xs text-slate-500">
@@ -277,7 +277,7 @@ function RegisterForm() {
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value)}
                       required
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
+                      className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
                       placeholder="000000"
                     />
                   </div>
@@ -298,7 +298,7 @@ function RegisterForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
                     placeholder="tu@email.com"
                   />
                 </div>
@@ -317,7 +317,7 @@ function RegisterForm() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
                     placeholder="••••••••"
                   />
                   <p className="mt-1 text-xs text-slate-500">Mínimo 6 caracteres</p>
@@ -337,7 +337,7 @@ function RegisterForm() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all text-gray-900"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
                     placeholder="••••••••"
                   />
                 </div>
@@ -347,7 +347,7 @@ function RegisterForm() {
             <button
               type="submit"
               disabled={registerMethod === 'sms' ? (otpSent ? otpVerifyLoading : otpLoading) : loading}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-xl bg-purple-600 px-4 py-3.5 font-semibold text-white transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50 md:rounded-lg md:py-3 md:font-medium"
             >
               {registerMethod === 'sms'
                 ? (otpSent ? (otpVerifyLoading ? 'Verificando...' : 'Verificar y crear cuenta') : (otpLoading ? 'Enviando...' : 'Enviar código'))
