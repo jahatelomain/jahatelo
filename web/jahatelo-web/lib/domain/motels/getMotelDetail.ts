@@ -38,15 +38,8 @@ export async function getPublicMotelDetail(slugOrId: string) {
     },
   });
 
-  if (!motel || motel.plan !== 'FREE') return motel;
-
-  // FREE es visible, pero no publica módulos comerciales ni contenido de habitaciones.
-  return {
-    ...motel,
-    rooms: [],
-    promos: [],
-    menuCategories: [],
-    ratingAvg: 0,
-    ratingCount: 0,
-  };
+  // La capa de mapeo público decide qué módulos publicar para FREE. Conservamos
+  // las relaciones aquí para poder calcular el precio inicial y los amenities
+  // agregados de las habitaciones; nunca se exponen como contenido navegable.
+  return motel;
 }

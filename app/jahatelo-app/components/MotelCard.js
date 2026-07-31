@@ -160,11 +160,14 @@ function MotelCardComponent({ motel, onPress }) {
   };
 
   const handlePress = () => {
-    // Prefetch en background sin bloquear navegación
-    prefetchMotelDetails([motel]);
-
-    // Navegar inmediatamente
+    // La navegación de la card siempre es prioritaria. FREE se muestra con
+    // menor énfasis, pero sigue siendo navegable y no necesita precarga de
+    // módulos que su detalle no publica.
     onPress?.();
+
+    if (!isMuted) {
+      void prefetchMotelDetails([motel]);
+    }
   };
 
   const handlePressIn = () => {
@@ -295,6 +298,8 @@ function MotelCardComponent({ motel, onPress }) {
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: false }}
     >
       {isDiamond ? (
         <LinearGradient
