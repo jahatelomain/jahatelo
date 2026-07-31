@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import MotelCard from '@/components/public/MotelCard';
 import JsonLd from '@/components/JsonLd';
 import { generateCityCollectionSchema, generateBreadcrumbSchema } from '@/lib/seo';
+import { getStartingRoomPrice } from '@/lib/domain/motels/pricing';
 
 type Props = {
   params: Promise<{ ciudad: string }>;
@@ -25,6 +26,21 @@ async function getCityMotels(ciudad: string) {
       isActive: true,
     },
     include: {
+      rooms: {
+        where: { isActive: true },
+        select: {
+          isActive: true,
+          price1h: true,
+          price1_5h: true,
+          price2h: true,
+          price3h: true,
+          price12h: true,
+          price24h: true,
+          priceNight: true,
+          dayRates: true,
+          amenities: { select: { amenity: { select: { id: true, name: true, icon: true } } } },
+        },
+      },
       _count: {
         select: {
           reviews: true,
@@ -134,8 +150,10 @@ export default async function CityPage({ params }: Props) {
                   isFeatured: motel.isFeatured,
                   hasPromo: false,
                   tienePromo: false,
-                  startingPrice: null,
-                  amenities: [],
+                  startingPrice: getStartingRoomPrice(motel.rooms),
+                  amenities: Array.from(new Map(
+                    motel.rooms.flatMap((room) => room.amenities.map(({ amenity }) => [amenity.id, { name: amenity.name, icon: amenity.icon }])),
+                  ).values()),
                   thumbnail: motel.thumbnail,
                   featuredPhoto: motel.thumbnail,
                   promoImageUrl: null,
