@@ -41,8 +41,6 @@ export type RoomForm = {
   price24h: string;
   priceNight: string;
   maxPersons: string;
-  hasJacuzzi: boolean;
-  isFeatured: boolean;
   amenityIds: string[];
 };
 
@@ -57,7 +55,5 @@ export const createInitialRoomForm = (): RoomForm => ({
   price24h: '',
   priceNight: '',
   maxPersons: '',
-  hasJacuzzi: false,
-  isFeatured: false,
   amenityIds: [],
 });

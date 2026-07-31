@@ -10,8 +10,6 @@ export default function RoomSummary({ room }: { room: RoomType }) {
         <h3 className="text-lg font-semibold text-slate-900">{room.name}</h3>
       </div>
       <div className="flex flex-wrap gap-2">
-        {room.isFeatured && <span className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-semibold">⭐ Destacada</span>}
-        {room.hasJacuzzi && <span className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full font-semibold">🛁 Jacuzzi</span>}
         {room.maxPersons && (
           <span className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-slate-100 text-slate-700 rounded-full font-semibold">
             👥 Hasta {room.maxPersons} {room.maxPersons === 1 ? 'persona' : 'personas'}

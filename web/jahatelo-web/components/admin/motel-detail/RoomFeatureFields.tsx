@@ -2,8 +2,6 @@ import type { Amenity } from './types';
 
 type Form = {
   maxPersons: string;
-  hasJacuzzi: boolean;
-  isFeatured: boolean;
   amenityIds: string[];
 };
 
@@ -27,10 +25,6 @@ export default function RoomFeatureFields<T extends Form>({ form, amenities, onC
         <h4 className="mb-3 text-sm font-semibold text-slate-900">Características</h4>
         <div className="grid gap-4 md:grid-cols-2">
           <div><label className="mb-2 block text-sm font-medium text-slate-700">Capacidad Máxima</label><input type="number" value={form.maxPersons} onChange={(event) => onChange({ ...form, maxPersons: event.target.value })} className="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-transparent focus:ring-2 focus:ring-purple-600" placeholder="Número de personas" /></div>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-4">
-          <CheckField checked={form.hasJacuzzi} label="🛁 Jacuzzi" onChange={(hasJacuzzi) => onChange({ ...form, hasJacuzzi })} />
-          <CheckField checked={form.isFeatured} label="⭐ Destacada" onChange={(isFeatured) => onChange({ ...form, isFeatured })} />
         </div>
       </section>
       <section className="border-t border-slate-200 pt-4">

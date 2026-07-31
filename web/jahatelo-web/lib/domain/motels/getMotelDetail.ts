@@ -13,7 +13,7 @@ export async function getPublicMotelDetail(slugOrId: string) {
     include: {
       rooms: {
         where: { isActive: true },
-        orderBy: [{ order: 'asc' }, { isFeatured: 'desc' }, { name: 'asc' }],
+        orderBy: [{ order: 'asc' }, { name: 'asc' }],
         include: {
           roomPhotos: { orderBy: { order: 'asc' } },
           amenities: { include: { amenity: true } },

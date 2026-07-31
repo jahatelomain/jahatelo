@@ -136,8 +136,6 @@ const mapRoom = (apiRoom) => {
     amenities: normalizeAmenityList(apiRoom.amenities),
     photos: apiRoom.photos || [],
     maxPersons: apiRoom.maxPersons,
-    hasJacuzzi: apiRoom.hasJacuzzi || false,
-    isFeatured: apiRoom.isFeatured || false,
   };
 };
 
