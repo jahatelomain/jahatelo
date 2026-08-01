@@ -14,19 +14,19 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const queryResult = z
       .object({
-        status: z.enum(['ACTIVE', 'INACTIVE', 'DISABLED']).optional(),
-        payment: z.enum(['DIRECT_DEBIT', 'TRANSFER', 'EXCHANGE']).optional(),
+        status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
+        active: z.enum(['true', 'false']).optional(),
         search: z.string().max(100).optional(),
       })
       .safeParse({
         status: searchParams.get('status') || undefined,
-        payment: searchParams.get('payment') || undefined,
+        active: searchParams.get('active') || undefined,
         search: searchParams.get('search') || undefined,
       });
     if (!queryResult.success) {
       return NextResponse.json({ error: 'Parámetros inválidos', details: queryResult.error.issues }, { status: 400 });
     }
-    const { status, payment, search: searchQuery } = queryResult.data;
+    const { status, active, search: searchQuery } = queryResult.data;
     const paginationResult = AdminPaginationSchema.safeParse({
       page: searchParams.get('page') || undefined,
       limit: searchParams.get('limit') || undefined,
@@ -47,8 +47,10 @@ export async function GET(request: NextRequest) {
         ? {
             OR: [
               { name: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { billingCompanyName: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { billingTaxId: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { city: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { contactName: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { contactEmail: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { contactPhone: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
               { adminContactName: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
               { adminContactEmail: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
               { adminContactPhone: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
@@ -66,30 +68,29 @@ export async function GET(request: NextRequest) {
       ? { id: motelId }
       : {
           ...baseWhere,
-          ...(status ? { financialStatus: status } : {}),
-          ...(payment ? { paymentType: payment } : {}),
+          ...(status ? { status } : {}),
+          ...(active ? { isActive: active === 'true' } : {}),
         };
     const total = await prisma.motel.count({ where: dataWhere });
 
     const statusCounts: Record<string, number> = {};
-    const paymentCounts: Record<string, number> = {};
+    const activeCounts: Record<string, number> = {};
     if (!isMotelAdmin) {
       const statusSummary = await prisma.motel.groupBy({
-        by: ['financialStatus'],
+        by: ['status'],
         _count: { _all: true },
         where: baseWhere,
       });
-      const paymentSummary = await prisma.motel.groupBy({
-        by: ['paymentType'],
+      const activeSummary = await prisma.motel.groupBy({
+        by: ['isActive'],
         _count: { _all: true },
         where: baseWhere,
       });
       statusSummary.forEach((item) => {
-        statusCounts[item.financialStatus] = item._count?._all ?? 0;
+        statusCounts[item.status] = item._count?._all ?? 0;
       });
-      paymentSummary.forEach((item) => {
-        if (!item.paymentType) return;
-        paymentCounts[item.paymentType] = item._count?._all ?? 0;
+      activeSummary.forEach((item) => {
+        activeCounts[item.isActive ? 'active' : 'inactive'] = item._count?._all ?? 0;
       });
     }
 
@@ -110,7 +111,7 @@ export async function GET(request: NextRequest) {
         updatedAt: true,
       },
       orderBy: [
-        { financialStatus: 'asc' },
+        { status: 'asc' },
         { name: 'asc' },
       ],
       ...(usePagination ? { skip: (page - 1) * limit, take: limit } : {}),
@@ -129,7 +130,7 @@ export async function GET(request: NextRequest) {
         totalPages: Math.max(1, Math.ceil(total / limit)),
         summary: {
           statusCounts,
-          paymentCounts,
+          activeCounts,
         },
       },
     });

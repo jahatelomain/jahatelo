@@ -10,6 +10,7 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 type PaymentType = 'DIRECT_DEBIT' | 'TRANSFER' | 'EXCHANGE';
 type FinancialStatus = 'ACTIVE' | 'INACTIVE' | 'DISABLED';
+type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 interface Motel {
   id: string;
@@ -58,14 +59,14 @@ export default function FinancieroPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | FinancialStatus>('ALL');
-  const [paymentFilter, setPaymentFilter] = useState<'ALL' | PaymentType>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | MotelStatus>('ALL');
+  const [activeFilter, setActiveFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [summary, setSummary] = useState<{
     statusCounts: Record<string, number>;
-    paymentCounts: Record<string, number>;
-  }>({ statusCounts: {}, paymentCounts: {} });
+    activeCounts: Record<string, number>;
+  }>({ statusCounts: {}, activeCounts: {} });
   const pageSize = 20;
   const hasMore = motels.length < totalItems;
   const filtersKeyRef = useRef('');
@@ -77,7 +78,7 @@ export default function FinancieroPage() {
 
   useEffect(() => {
     if (!currentUser) return;
-    const nextKey = `${statusFilter}|${paymentFilter}|${debouncedSearchQuery.trim()}`;
+    const nextKey = `${statusFilter}|${activeFilter}|${debouncedSearchQuery.trim()}`;
     if (filtersKeyRef.current !== nextKey) {
       filtersKeyRef.current = nextKey;
       if (page !== 1) {
@@ -88,7 +89,7 @@ export default function FinancieroPage() {
     const isLoadingMore = page > 1;
     fetchMotels(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, statusFilter, paymentFilter, debouncedSearchQuery, currentUser]);
+  }, [page, statusFilter, activeFilter, debouncedSearchQuery, currentUser]);
 
   const { sentinelRef } = useInfiniteScroll({
     loading: loadingMore,
@@ -140,7 +141,7 @@ export default function FinancieroPage() {
       params.set('page', String(page));
       params.set('limit', String(pageSize));
       if (statusFilter !== 'ALL') params.set('status', statusFilter);
-      if (paymentFilter !== 'ALL') params.set('payment', paymentFilter);
+      if (activeFilter !== 'ALL') params.set('active', activeFilter === 'ACTIVE' ? 'true' : 'false');
       if (debouncedSearchQuery.trim()) params.set('search', debouncedSearchQuery.trim());
       const response = await fetch(`/api/admin/financiero?${params.toString()}`);
       if (response.ok) {
@@ -155,7 +156,7 @@ export default function FinancieroPage() {
         setTotalItems(meta?.total ?? motelsData.length);
         setSummary({
           statusCounts: meta?.summary?.statusCounts ?? {},
-          paymentCounts: meta?.summary?.paymentCounts ?? {},
+          activeCounts: meta?.summary?.activeCounts ?? {},
         });
       } else {
         if (!isLoadingMore) {
@@ -212,13 +213,13 @@ export default function FinancieroPage() {
       </div>
 
       {/* Search + Filters */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex-1">
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="md:col-span-3">
             <div className="relative">
               <input
                 type="text"
-                placeholder="Buscar por nombre, razón social o contacto..."
+                placeholder="Buscar por nombre, ciudad o contacto..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full border border-slate-300 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-purple-600 focus:border-transparent"
@@ -252,7 +253,7 @@ export default function FinancieroPage() {
 
         <div className="space-y-3">
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Estado financiero</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Estado</p>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setStatusFilter('ALL')}
@@ -265,45 +266,45 @@ export default function FinancieroPage() {
                 Todos <span className="ml-1 opacity-75">({totalItems})</span>
               </button>
               <button
-                onClick={() => setStatusFilter('ACTIVE')}
+                onClick={() => setStatusFilter('PENDING')}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  statusFilter === 'ACTIVE'
-                    ? 'bg-green-600 text-white shadow-md shadow-green-200'
-                    : 'bg-white text-slate-700 border border-slate-300 hover:border-green-300'
-                }`}
-              >
-                Activos <span className="ml-1 opacity-75">({summary.statusCounts.ACTIVE ?? 0})</span>
-              </button>
-              <button
-                onClick={() => setStatusFilter('INACTIVE')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  statusFilter === 'INACTIVE'
+                  statusFilter === 'PENDING'
                     ? 'bg-yellow-600 text-white shadow-md shadow-yellow-200'
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-yellow-300'
                 }`}
               >
-                Inactivos <span className="ml-1 opacity-75">({summary.statusCounts.INACTIVE ?? 0})</span>
+                Pendientes <span className="ml-1 opacity-75">({summary.statusCounts.PENDING ?? 0})</span>
               </button>
               <button
-                onClick={() => setStatusFilter('DISABLED')}
+                onClick={() => setStatusFilter('APPROVED')}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  statusFilter === 'DISABLED'
+                  statusFilter === 'APPROVED'
+                    ? 'bg-green-600 text-white shadow-md shadow-green-200'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:border-green-300'
+                }`}
+              >
+                Aprobados <span className="ml-1 opacity-75">({summary.statusCounts.APPROVED ?? 0})</span>
+              </button>
+              <button
+                onClick={() => setStatusFilter('REJECTED')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  statusFilter === 'REJECTED'
                     ? 'bg-red-600 text-white shadow-md shadow-red-200'
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-red-300'
                 }`}
               >
-                Inhabilitados <span className="ml-1 opacity-75">({summary.statusCounts.DISABLED ?? 0})</span>
+                Rechazados <span className="ml-1 opacity-75">({summary.statusCounts.REJECTED ?? 0})</span>
               </button>
             </div>
           </div>
 
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Tipo de cobro</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Visibilidad</p>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => setPaymentFilter('ALL')}
+                onClick={() => setActiveFilter('ALL')}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  paymentFilter === 'ALL'
+                  activeFilter === 'ALL'
                     ? 'bg-slate-700 text-white shadow-md shadow-slate-200'
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400'
                 }`}
@@ -311,34 +312,24 @@ export default function FinancieroPage() {
                 Todos
               </button>
               <button
-                onClick={() => setPaymentFilter('DIRECT_DEBIT')}
+                onClick={() => setActiveFilter('ACTIVE')}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  paymentFilter === 'DIRECT_DEBIT'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
-                    : 'bg-white text-slate-700 border border-slate-300 hover:border-indigo-300'
+                  activeFilter === 'ACTIVE'
+                    ? 'bg-green-600 text-white shadow-md shadow-green-200'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:border-green-300'
                 }`}
               >
-                Débito automático
+                Habilitados <span className="ml-1 opacity-75">({summary.activeCounts.active ?? 0})</span>
               </button>
               <button
-                onClick={() => setPaymentFilter('TRANSFER')}
+                onClick={() => setActiveFilter('INACTIVE')}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  paymentFilter === 'TRANSFER'
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                    : 'bg-white text-slate-700 border border-slate-300 hover:border-blue-300'
+                  activeFilter === 'INACTIVE'
+                    ? 'bg-slate-600 text-white shadow-md shadow-slate-200'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400'
                 }`}
               >
-                Transferencia
-              </button>
-              <button
-                onClick={() => setPaymentFilter('EXCHANGE')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  paymentFilter === 'EXCHANGE'
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
-                    : 'bg-white text-slate-700 border border-slate-300 hover:border-purple-300'
-                }`}
-              >
-                Canje
+                Deshabilitados <span className="ml-1 opacity-75">({summary.activeCounts.inactive ?? 0})</span>
               </button>
             </div>
           </div>
@@ -349,12 +340,12 @@ export default function FinancieroPage() {
             Mostrando <span className="font-semibold text-slate-900">{motelsArray.length}</span> de{' '}
             <span className="font-semibold text-slate-900">{totalItems}</span> moteles
           </p>
-          {(searchQuery || statusFilter !== 'ALL' || paymentFilter !== 'ALL') && (
+          {(searchQuery || statusFilter !== 'ALL' || activeFilter !== 'ALL') && (
             <button
               onClick={() => {
                 setSearchQuery('');
                 setStatusFilter('ALL');
-                setPaymentFilter('ALL');
+                setActiveFilter('ALL');
               }}
               className="text-sm text-purple-600 hover:text-purple-700 font-medium"
             >
