@@ -138,8 +138,33 @@ export async function PATCH(
     // Validar con Zod
     const validated = UpdateMotelSchema.parse(body);
 
+    if (access.user?.role !== 'SUPERADMIN') {
+      const currentLocation = await prisma.motel.findUnique({
+        where: { id: idResult.data },
+        select: { country: true, city: true, address: true, mapUrl: true },
+      });
+      if (!currentLocation) {
+        return NextResponse.json({ error: 'Motel no encontrado' }, { status: 404 });
+      }
+      const locationChanged =
+        (validated.country !== undefined && normalizeLocationName(validated.country || '') !== normalizeLocationName(currentLocation.country || '')) ||
+        (validated.city !== undefined && normalizeLocationName(validated.city || '') !== normalizeLocationName(currentLocation.city || '')) ||
+        (validated.address !== undefined && (validated.address || '') !== (currentLocation.address || '')) ||
+        (validated.mapUrl !== undefined && normalizeGoogleMapsUrl(validated.mapUrl || '') !== normalizeGoogleMapsUrl(currentLocation.mapUrl || ''));
+      if (locationChanged) {
+        return NextResponse.json({ error: 'Solo un superadministrador puede modificar la ubicación del motel.' }, { status: 403 });
+      }
+      delete validated.country;
+      delete validated.city;
+      delete validated.address;
+      delete validated.mapUrl;
+    }
+
     if (validated.country !== undefined || validated.city !== undefined) {
       const current = await prisma.motel.findUnique({ where: { id: idResult.data }, select: { country: true, city: true } });
+      if (!current) {
+        return NextResponse.json({ error: 'Motel no encontrado' }, { status: 404 });
+      }
       const requestedCountry = validated.country ?? current?.country ?? '';
       const requestedCity = validated.city ?? current?.city ?? '';
       const country = await prisma.countryCatalog.findUnique({

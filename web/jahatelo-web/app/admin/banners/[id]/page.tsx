@@ -380,15 +380,7 @@ export default function EditAdvertisementPage() {
                   </>
                 )}
               </label>
-              <span className="text-sm text-slate-500">o</span>
             </div>
-            <input
-              type="text"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2"
-              value={form.imageUrl}
-              onChange={(event) => setForm({ ...form, imageUrl: event.target.value })}
-              placeholder="https://... o /uploads/... (URL de imagen)"
-            />
             {form.imageUrl && (
               <div className="mt-2">
                 <AdminImage
@@ -462,13 +454,6 @@ export default function EditAdvertisementPage() {
                     {uploadingPopupWeb ? 'Subiendo...' : 'Reemplazar'}
                   </label>
                 </div>
-                <input
-                  type="text"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2"
-                  value={form.largeImageUrlWeb}
-                  onChange={(event) => setForm({ ...form, largeImageUrlWeb: event.target.value })}
-                  placeholder="https://... o /uploads/... (URL web 16:9)"
-                />
                 {(form.largeImageUrlWeb || form.largeImageUrl) && (
                   <AdminImage
                     src={form.largeImageUrlWeb || form.largeImageUrl}
@@ -500,13 +485,6 @@ export default function EditAdvertisementPage() {
                     {uploadingPopupApp ? 'Subiendo...' : 'Reemplazar'}
                   </label>
                 </div>
-                <input
-                  type="text"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2"
-                  value={form.largeImageUrlApp}
-                  onChange={(event) => setForm({ ...form, largeImageUrlApp: event.target.value })}
-                  placeholder="https://... o /uploads/... (URL app 4:5)"
-                />
                 {(form.largeImageUrlApp || form.largeImageUrl) && (
                   <AdminImage
                     src={form.largeImageUrlApp || form.largeImageUrl}
@@ -519,16 +497,6 @@ export default function EditAdvertisementPage() {
               </div>
             </div>
 
-            <div>
-              <label className="text-xs text-slate-500">URL fallback (legacy)</label>
-              <input
-                type="text"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 mt-1"
-                value={form.largeImageUrl}
-                onChange={(event) => setForm({ ...form, largeImageUrl: event.target.value })}
-                placeholder="https://... o /uploads/... (fallback)"
-              />
-            </div>
           </div>
         </div>
 

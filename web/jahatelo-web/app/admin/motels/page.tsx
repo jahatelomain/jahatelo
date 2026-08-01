@@ -44,6 +44,8 @@ export default function MotelsAdminPage() {
   const [statusFilter, setStatusFilter] = useState<MotelStatus | 'ALL'>('ALL');
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchSuggestions, setSearchSuggestions] = useState<Motel[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [selectedMotels, setSelectedMotels] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -104,7 +106,6 @@ export default function MotelsAdminPage() {
       const params = new URLSearchParams();
       params.set('page', String(page));
       params.set('limit', String(pageSize));
-      if (debouncedSearchQuery.trim()) params.set('q', debouncedSearchQuery.trim());
       if (statusFilter !== 'ALL') params.set('status', statusFilter);
       if (activeFilter === 'ACTIVE') params.set('active', 'true');
       if (activeFilter === 'INACTIVE') params.set('active', 'false');
@@ -161,7 +162,7 @@ export default function MotelsAdminPage() {
 
   useEffect(() => {
     if (!roleChecked || isMotelAdmin) return;
-    const nextKey = `${statusFilter}|${activeFilter}|${debouncedSearchQuery.trim()}`;
+    const nextKey = `${statusFilter}|${activeFilter}`;
     const filtersChanged = filtersKeyRef.current !== nextKey;
 
     if (filtersChanged) {
@@ -176,7 +177,38 @@ export default function MotelsAdminPage() {
       fetchMotels(isLoadingMore);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, statusFilter, activeFilter, debouncedSearchQuery, roleChecked, isMotelAdmin]);
+  }, [page, statusFilter, activeFilter, roleChecked, isMotelAdmin]);
+
+  useEffect(() => {
+    const query = debouncedSearchQuery.trim();
+    if (query.length < 3) {
+      setSearchSuggestions([]);
+      setSuggestionsLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const loadSuggestions = async () => {
+      setSuggestionsLoading(true);
+      try {
+        const params = new URLSearchParams({ q: query, page: '1', limit: '8' });
+        if (statusFilter !== 'ALL') params.set('status', statusFilter);
+        if (activeFilter === 'ACTIVE') params.set('active', 'true');
+        if (activeFilter === 'INACTIVE') params.set('active', 'false');
+        const response = await fetch(`/api/admin/motels?${params.toString()}`, { signal: controller.signal });
+        const data = await response.json();
+        if (!response.ok || controller.signal.aborted) return;
+        setSearchSuggestions(Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []);
+      } catch (error) {
+        if ((error as { name?: string }).name !== 'AbortError') setSearchSuggestions([]);
+      } finally {
+        if (!controller.signal.aborted) setSuggestionsLoading(false);
+      }
+    };
+
+    loadSuggestions();
+    return () => controller.abort();
+  }, [debouncedSearchQuery, statusFilter, activeFilter]);
 
   const motelsArray = Array.isArray(motels) ? motels : [];
   const allPageSelected =
@@ -508,7 +540,35 @@ export default function MotelsAdminPage() {
                   </svg>
                 </button>
               )}
+              {searchQuery.trim().length >= 3 && (
+                <div className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                  {suggestionsLoading ? (
+                    <p className="px-4 py-3 text-sm text-slate-500">Buscando moteles...</p>
+                  ) : searchSuggestions.length > 0 ? (
+                    <ul className="divide-y divide-slate-100">
+                      {searchSuggestions.map((motel) => (
+                        <li key={motel.id}>
+                          <Link
+                            href={`/admin/motels/${motel.id}`}
+                            className="block px-4 py-3 transition-colors hover:bg-purple-50"
+                          >
+                            <p className="text-sm font-semibold text-slate-900">{motel.name}</p>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                              {[motel.city, motel.contactName || motel.phone || motel.whatsapp].filter(Boolean).join(' · ')}
+                            </p>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="px-4 py-3 text-sm text-slate-500">No encontramos moteles con ese criterio.</p>
+                  )}
+                </div>
+              )}
             </div>
+            {searchQuery.trim().length > 0 && searchQuery.trim().length < 3 && (
+              <p className="mt-2 text-xs text-slate-500">Escribí al menos 3 caracteres para buscar.</p>
+            )}
           </div>
         </div>
 

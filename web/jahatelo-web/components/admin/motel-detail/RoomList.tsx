@@ -16,7 +16,6 @@ type Props = {
   onReorder: (rooms: RoomType[]) => void;
   onEdit: (room: RoomType) => void;
   onDelete: (roomId: string) => void;
-  onAddPhoto: (roomId: string, url: string) => void;
   onUploadPhoto: (roomId: string, event: ChangeEvent<HTMLInputElement>) => void;
   onReorderPhotos: (roomId: string, photos: RoomPhoto[]) => void;
   onDeletePhoto: (photoId: string) => void;
@@ -30,7 +29,6 @@ export default function RoomList({
   onReorder,
   onEdit,
   onDelete,
-  onAddPhoto,
   onUploadPhoto,
   onReorderPhotos,
   onDeletePhoto,
@@ -106,7 +104,6 @@ export default function RoomList({
             planLabel={planLabel}
             photoLimit={photoLimit}
             uploading={uploadingRoomId === room.id}
-            onAddUrl={onAddPhoto}
             onUpload={onUploadPhoto}
             onReorder={(photos) => onReorderPhotos(room.id, photos)}
             onDelete={onDeletePhoto}
