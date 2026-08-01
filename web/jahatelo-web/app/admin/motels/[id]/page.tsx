@@ -1310,7 +1310,6 @@ export default function MotelDetailPage() {
                     uploadingAuto={uploadingFeatured}
                     uploadingWeb={uploadingFeaturedWeb}
                     uploadingApp={uploadingFeaturedApp}
-                    onChange={setMotelForm}
                     onAutoUpload={handleFeaturedFileChange}
                     onVariantUpload={handleFeaturedVariantFileChange}
                   />
@@ -1350,7 +1349,7 @@ export default function MotelDetailPage() {
                 </div>
               </div>
 
-              <MotelLocationFields form={motelForm} onChange={setMotelForm} />
+              <MotelLocationFields form={motelForm} onChange={setMotelForm} canEditLocation={currentUser?.role === 'SUPERADMIN'} />
 
               <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 pt-4 pb-4 -mx-6 px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                 <button
@@ -1447,7 +1446,6 @@ export default function MotelDetailPage() {
             onReorder={handleReorderRooms}
             onEdit={handleEditRoom}
             onDelete={handleDeleteRoom}
-            onAddPhoto={handleAddRoomPhoto}
             onUploadPhoto={handleRoomPhotoFileChange}
             onReorderPhotos={handleReorderRoomPhotos}
             onDeletePhoto={handleDeleteRoomPhoto}
