@@ -165,6 +165,7 @@ export async function GET(request: NextRequest) {
       ...motel,
       thumbnail: normalizeLocalUrl(motel.thumbnail, baseUrl),
       featuredPhoto: normalizeLocalUrl(motel.featuredPhoto, baseUrl),
+      featuredPhotoWeb: normalizeLocalUrl(motel.featuredPhotoWeb, baseUrl),
       promoImageUrl: normalizeLocalUrl(motel.promoImageUrl, baseUrl),
     }));
 

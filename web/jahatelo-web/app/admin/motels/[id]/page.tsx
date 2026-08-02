@@ -1028,8 +1028,6 @@ export default function MotelDetailPage() {
         featuredPhotoApp: appUrl,
         featuredPhoto: prev.featuredPhoto || webUrl,
       }));
-      setSaveStatus('success');
-      setTimeout(() => setSaveStatus('idle'), 2500);
     } catch (error) {
       console.error('Error uploading featured photo:', error);
       toast.error('No se pudo subir la imagen. Intenta nuevamente.');
@@ -1059,8 +1057,6 @@ export default function MotelDetailPage() {
         featuredPhotoApp: variant === 'app' ? url : prev.featuredPhotoApp,
         featuredPhoto: prev.featuredPhoto || url,
       }));
-      setSaveStatus('success');
-      setTimeout(() => setSaveStatus('idle'), 2500);
     } catch (error) {
       console.error('Error uploading featured photo variant:', error);
       toast.error('No se pudo subir la imagen. Intenta nuevamente.');

@@ -554,7 +554,7 @@ export default function MotelsAdminPage() {
                           >
                             <p className="text-sm font-semibold text-slate-900">{motel.name}</p>
                             <p className="mt-0.5 text-xs text-slate-500">
-                              {[motel.city, motel.contactName || motel.phone || motel.whatsapp].filter(Boolean).join(' · ')}
+                              {[motel.city, motel.phone || motel.whatsapp || motel.contactPhone].filter(Boolean).join(' · ')}
                             </p>
                           </Link>
                         </li>
@@ -787,7 +787,7 @@ export default function MotelsAdminPage() {
                 Ubicación
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Contacto
+                Contacto público
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Estado
@@ -837,7 +837,7 @@ export default function MotelsAdminPage() {
                     {motel.city}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 max-w-[180px] truncate">
-                    {motel.contactName || motel.contactEmail || motel.contactPhone || '-'}
+                    {motel.phone || motel.whatsapp || motel.contactPhone || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {getStatusBadge(motel.status)}

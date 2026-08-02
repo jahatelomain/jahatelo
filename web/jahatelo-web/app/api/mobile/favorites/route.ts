@@ -106,6 +106,8 @@ export async function GET(request: NextRequest) {
       .map((motel) => {
         const featuredPhoto =
           motel.featuredPhotoApp || motel.featuredPhotoWeb || motel.featuredPhoto || null;
+        const featuredPhotoWeb =
+          motel.featuredPhotoWeb || motel.featuredPhoto || motel.featuredPhotoApp || null;
         const thumbnail = featuredPhoto;
 
         const precioDesde = getStartingRoomPrice(motel.rooms) ?? 0;
@@ -135,6 +137,7 @@ export async function GET(request: NextRequest) {
           tienePromo: motel.promos.some((p) => p.isActive),
           isFeatured: motel.isFeatured,
           thumbnail,
+          featuredPhotoWeb,
           plan: motel.plan,
         };
       });
