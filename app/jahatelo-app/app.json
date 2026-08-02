@@ -41,7 +41,7 @@
       "package": "app.jahatelo.mobile",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo-icon.png",
+        "foregroundImage": "./assets/app-icon-1024.png",
         "backgroundColor": "#FFFFFF"
       },
       "notification": {

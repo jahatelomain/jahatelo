@@ -63,7 +63,8 @@ async function getCityMotels(ciudad: string) {
         ...motel,
         ratingAvg: ratings._avg?.score,
         ratingCount: ratings._count?.score,
-        thumbnail: motel.featuredPhoto || null,
+        thumbnail: motel.featuredPhotoWeb || motel.featuredPhoto || null,
+        featuredPhotoWeb: motel.featuredPhotoWeb || motel.featuredPhoto || null,
       };
     })
   );
@@ -162,6 +163,7 @@ export default async function CityPage({ params }: Props) {
                   ).values()),
                   thumbnail: motel.thumbnail,
                   featuredPhoto: motel.thumbnail,
+                  featuredPhotoWeb: motel.featuredPhotoWeb,
                   promoImageUrl: null,
                   promoTitle: null,
                   promoDescription: null,

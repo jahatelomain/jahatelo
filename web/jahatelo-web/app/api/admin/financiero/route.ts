@@ -99,6 +99,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         name: true,
+        city: true,
         billingDay: true,
         paymentType: true,
         financialStatus: true,

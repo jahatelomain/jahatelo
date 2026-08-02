@@ -56,6 +56,8 @@ export async function GET(request: NextRequest) {
               { contactName: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
               { contactEmail: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
               { contactPhone: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { phone: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
+              { whatsapp: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
             ],
           }
         : {}),

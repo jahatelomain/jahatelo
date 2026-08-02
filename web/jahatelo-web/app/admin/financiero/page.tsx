@@ -15,6 +15,7 @@ type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 interface Motel {
   id: string;
   name: string;
+  city: string;
   billingDay: number | null;
   paymentType: PaymentType | null;
   financialStatus: FinancialStatus;
@@ -59,6 +60,8 @@ export default function FinancieroPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchSuggestions, setSearchSuggestions] = useState<Motel[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'ALL' | MotelStatus>('ALL');
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [page, setPage] = useState(1);
@@ -78,7 +81,7 @@ export default function FinancieroPage() {
 
   useEffect(() => {
     if (!currentUser) return;
-    const nextKey = `${statusFilter}|${activeFilter}|${debouncedSearchQuery.trim()}`;
+    const nextKey = `${statusFilter}|${activeFilter}`;
     if (filtersKeyRef.current !== nextKey) {
       filtersKeyRef.current = nextKey;
       if (page !== 1) {
@@ -89,7 +92,40 @@ export default function FinancieroPage() {
     const isLoadingMore = page > 1;
     fetchMotels(isLoadingMore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, statusFilter, activeFilter, debouncedSearchQuery, currentUser]);
+  }, [page, statusFilter, activeFilter, currentUser]);
+
+  useEffect(() => {
+    const query = debouncedSearchQuery.trim();
+    if (query.length < 3) {
+      setSearchSuggestions([]);
+      setSuggestionsLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const loadSuggestions = async () => {
+      setSuggestionsLoading(true);
+      try {
+        const params = new URLSearchParams({ search: query, page: '1', limit: '8' });
+        if (statusFilter !== 'ALL') params.set('status', statusFilter);
+        if (activeFilter === 'ACTIVE') params.set('active', 'true');
+        if (activeFilter === 'INACTIVE') params.set('active', 'false');
+        const response = await fetch(`/api/admin/financiero?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        const data = await response.json();
+        if (!response.ok || controller.signal.aborted) return;
+        setSearchSuggestions(Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []);
+      } catch (error) {
+        if ((error as { name?: string }).name !== 'AbortError') setSearchSuggestions([]);
+      } finally {
+        if (!controller.signal.aborted) setSuggestionsLoading(false);
+      }
+    };
+
+    loadSuggestions();
+    return () => controller.abort();
+  }, [debouncedSearchQuery, statusFilter, activeFilter]);
 
   const { sentinelRef } = useInfiniteScroll({
     loading: loadingMore,
@@ -142,7 +178,6 @@ export default function FinancieroPage() {
       params.set('limit', String(pageSize));
       if (statusFilter !== 'ALL') params.set('status', statusFilter);
       if (activeFilter !== 'ALL') params.set('active', activeFilter === 'ACTIVE' ? 'true' : 'false');
-      if (debouncedSearchQuery.trim()) params.set('search', debouncedSearchQuery.trim());
       const response = await fetch(`/api/admin/financiero?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
@@ -247,7 +282,35 @@ export default function FinancieroPage() {
                   </svg>
                 </button>
               )}
+              {searchQuery.trim().length >= 3 && (
+                <div className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                  {suggestionsLoading ? (
+                    <p className="px-4 py-3 text-sm text-slate-500">Buscando moteles...</p>
+                  ) : searchSuggestions.length > 0 ? (
+                    <ul className="divide-y divide-slate-100">
+                      {searchSuggestions.map((motel) => (
+                        <li key={motel.id}>
+                          <Link
+                            href={`/admin/financiero/${motel.id}`}
+                            className="block px-4 py-3 transition-colors hover:bg-purple-50"
+                          >
+                            <p className="text-sm font-semibold text-slate-900">{motel.name}</p>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                              {[motel.city, motel.adminContactName || motel.billingCompanyName].filter(Boolean).join(' · ')}
+                            </p>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="px-4 py-3 text-sm text-slate-500">No encontramos moteles con ese criterio.</p>
+                  )}
+                </div>
+              )}
             </div>
+            {searchQuery.trim().length > 0 && searchQuery.trim().length < 3 && (
+              <p className="mt-2 text-xs text-slate-500">Escribí al menos 3 caracteres para buscar.</p>
+            )}
           </div>
         </div>
 

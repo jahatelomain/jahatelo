@@ -16,6 +16,7 @@ interface Motel {
   slug: string;
   ciudad?: string;
   thumbnail?: string;
+  featuredPhotoWeb?: string;
   precioDesde?: number;
   plan: string;
   tienePromo?: boolean;
@@ -215,9 +216,9 @@ export default function MisFavoritosPage() {
                   <Link href={`/motels/${motel.slug}`}>
                     {/* Image */}
                     <div className="relative h-36 bg-gray-200 md:h-48">
-                      {motel.thumbnail ? (
+                      {(motel.featuredPhotoWeb || motel.thumbnail) ? (
                         <Image
-                          src={motel.thumbnail}
+                          src={motel.featuredPhotoWeb || motel.thumbnail || ''}
                           alt={motel.nombre}
                           fill
                           className="object-cover"

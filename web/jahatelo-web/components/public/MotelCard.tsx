@@ -47,7 +47,7 @@ export default function MotelCard({ motel }: MotelCardProps) {
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
   const isCanonical = 'rating' in motel;
   const realPhotoUrl = isCanonical
-    ? motel.thumbnail || motel.featuredPhoto || null
+    ? motel.featuredPhotoWeb || motel.thumbnail || motel.featuredPhoto || null
     : motel.featuredPhotoWeb || motel.featuredPhoto || null;
   const [imageFailed, setImageFailed] = useState(false);
   const photoUrl = imageFailed ? null : realPhotoUrl;

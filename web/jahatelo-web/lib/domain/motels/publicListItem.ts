@@ -16,6 +16,7 @@ export type PublicMotelListItem = {
   amenities: Array<{ name: string; icon: string | null }>;
   thumbnail: string | null;
   featuredPhoto: string | null;
+  featuredPhotoWeb?: string | null;
   promoImageUrl: string | null;
   promoTitle: string | null;
   promoDescription: string | null;
