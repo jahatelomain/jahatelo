@@ -6,7 +6,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { FileText, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Building2, FileText, MoreHorizontal, Trash2 } from 'lucide-react';
 
 type ProspectStatus = 'NEW' | 'CONTACTED' | 'IN_NEGOTIATION' | 'WON' | 'LOST';
 type ProspectChannel = 'WEB' | 'APP' | 'MANUAL';
@@ -444,6 +444,16 @@ export default function ProspectsPage() {
                                 onClick={() => setOpenMenuId(null)}
                               />
                               <div className="absolute right-0 mt-2 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg z-50">
+                                {prospect.status !== 'WON' && (
+                                  <button
+                                    onClick={() => { router.push(`/admin/motels/new?prospectId=${prospect.id}`); setOpenMenuId(null); }}
+                                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-purple-700 hover:bg-purple-50"
+                                    title="Dar de alta motel"
+                                    aria-label="Dar de alta motel desde prospecto"
+                                  >
+                                    <Building2 size={15} />
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => { handleDelete(prospect.id); setOpenMenuId(null); }}
                                   className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-600 hover:bg-red-50"

@@ -33,8 +33,20 @@ const MotelFormSchema = z.object({
     z.string().url().optional(),
   ),
   description: z.string().optional(),
+  prospectId: z.string().cuid().optional(),
   rooms: z.array(RoomFormSchema).default([]),
   plan: z.enum(['FREE', 'BASIC', 'GOLD', 'DIAMOND']).default('FREE'),
+}).superRefine((data, context) => {
+  if (!data.prospectId) return;
+  const requiredFields: Array<[keyof typeof data, string]> = [
+    ['contactName', 'Contacto'], ['phone', 'Teléfono'], ['whatsapp', 'WhatsApp'],
+    ['email', 'Correo'], ['address', 'Dirección'], ['googleMapsUrl', 'Google Maps'],
+  ];
+  requiredFields.forEach(([field, label]) => {
+    if (!String(data[field] || '').trim()) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: `${label} es obligatorio al convertir un prospecto.` });
+    }
+  });
 });
 
 function generateSlug(name: string): string {
@@ -90,8 +102,15 @@ export async function POST(request: NextRequest) {
       counter++;
     }
 
-    const motel = await prisma.motel.create({
-      data: {
+    const motel = await prisma.$transaction(async (tx) => {
+      let prospectNotes: string | null = null;
+      if (validated.prospectId) {
+        const prospect = await tx.motelProspect.findUnique({ where: { id: validated.prospectId } });
+        if (!prospect) throw new Error('El prospect seleccionado ya no existe.');
+        prospectNotes = prospect.notes;
+      }
+      const createdMotel = await tx.motel.create({
+        data: {
         name: validated.name,
         slug,
         description: validated.description?.trim() || null,
@@ -111,15 +130,15 @@ export async function POST(request: NextRequest) {
         status: 'PENDING',
         isActive: false,
         isFeatured: validated.plan === 'GOLD' || validated.plan === 'DIAMOND',
-      },
-    });
+        },
+      });
 
-    for (const room of validated.rooms) {
+      for (const room of validated.rooms) {
       const amenityIds = [...new Set(room.amenityIds)];
 
-      await prisma.roomType.create({
+        await tx.roomType.create({
         data: {
-          motelId: motel.id,
+          motelId: createdMotel.id,
           name: room.name,
           description: room.description || null,
           price1h: parseMoney(room.price1h),
@@ -136,8 +155,22 @@ export async function POST(request: NextRequest) {
               }
             : undefined,
         },
-      });
-    }
+        });
+      }
+
+      if (validated.prospectId) {
+        await tx.motelProspect.update({
+          where: { id: validated.prospectId },
+          data: {
+            status: 'WON',
+            notes: [prospectNotes, `Motel creado desde este prospecto: ${createdMotel.name} (${createdMotel.id}).`]
+              .filter(Boolean)
+              .join('\n\n'),
+          },
+        });
+      }
+      return createdMotel;
+    });
 
     return NextResponse.json({
       success: true,

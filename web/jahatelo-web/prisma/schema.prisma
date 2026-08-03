@@ -705,8 +705,8 @@ model HomeBanner {
 
 model MotelProspect {
   id            String          @id @default(cuid())
-  contactName   String
-  phone         String
+  contactName   String?
+  phone         String?
   email         String?
   motelName     String
   status        ProspectStatus  @default(NEW)

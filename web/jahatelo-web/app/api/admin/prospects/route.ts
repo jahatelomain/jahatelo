@@ -71,8 +71,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const validated = AdminProspectCreateSchema.parse(sanitized);
-    const phoneDigits = validated.phone.replace(/\D/g, '');
-    if (phoneDigits.length < 7) {
+    const phoneDigits = validated.phone?.replace(/\D/g, '') ?? '';
+    if (validated.phone && phoneDigits.length < 7) {
       return NextResponse.json(
         { error: 'El teléfono debe tener al menos 7 dígitos' },
         { status: 400 }
@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
     // Crear prospect
     const prospect = await prisma.motelProspect.create({
       data: {
-        contactName: validated.contactName.trim(),
-        phone: validated.phone.trim(),
+        contactName: validated.contactName?.trim() || null,
+        phone: validated.phone?.trim() || null,
         motelName: validated.motelName.trim(),
         channel: finalChannel,
         notes: validated.notes?.trim() || null,

@@ -475,8 +475,8 @@ export const PublicProspectSchema = z.object({
 );
 
 export const AdminProspectCreateSchema = z.object({
-  contactName: z.string().min(2).max(100),
-  phone: z.string().max(50),
+  contactName: z.string().min(2).max(100).optional().nullable(),
+  phone: z.string().max(50).optional().nullable(),
   motelName: z.string().min(2).max(100),
   channel: z.enum(['WEB', 'APP', 'MANUAL']).optional(),
   notes: z.string().max(1000).optional().nullable(),
