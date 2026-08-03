@@ -43,6 +43,13 @@ export async function PATCH(
       );
     }
 
+    if (existingUser.id === user?.id && isActive !== undefined) {
+      return NextResponse.json(
+        { error: 'No puedes cambiar el estado de tu propio usuario.' },
+        { status: 400 }
+      );
+    }
+
     // Preparar datos de actualización
     const updateData: {
       name?: string;

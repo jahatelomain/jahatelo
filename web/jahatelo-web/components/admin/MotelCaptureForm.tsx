@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { extractCoordinatesFromGoogleMapsUrl, formatCoordinates, normalizeGoogleMapsUrl } from '@/lib/utils/coordinates';
 import LocationSelectFields from '@/components/admin/LocationSelectFields';
 
@@ -29,13 +29,32 @@ function errorMessage(payload: unknown) {
 
 export default function MotelCaptureForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const prospectId = searchParams.get('prospectId');
   const [form, setForm] = useState(initialForm);
   const [rooms, setRooms] = useState<RoomForm[]>([]);
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [amenitiesError, setAmenitiesError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [prospectError, setProspectError] = useState('');
   const coordinates = extractCoordinatesFromGoogleMapsUrl(form.googleMapsUrl);
+
+  useEffect(() => {
+    if (!prospectId) return;
+    fetch(`/api/admin/prospects/${prospectId}`)
+      .then(async (response) => response.ok ? response.json() : Promise.reject(new Error('No se pudo cargar el prospecto.')))
+      .then((prospect) => setForm((current) => ({
+        ...current,
+        name: prospect.motelName || current.name,
+        contactName: prospect.contactName || current.contactName,
+        phone: prospect.phone || current.phone,
+        whatsapp: prospect.phone || current.whatsapp,
+        email: prospect.email || current.email,
+        plan: 'FREE',
+      })))
+      .catch((error: Error) => setProspectError(error.message));
+  }, [prospectId]);
 
   useEffect(() => {
     fetch('/api/admin/amenities')
@@ -56,7 +75,7 @@ export default function MotelCaptureForm() {
     try {
       const response = await fetch('/api/admin/motels/from-form', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, googleMapsUrl: form.googleMapsUrl ? normalizeGoogleMapsUrl(form.googleMapsUrl) : '', rooms }),
+        body: JSON.stringify({ ...form, prospectId: prospectId || undefined, googleMapsUrl: form.googleMapsUrl ? normalizeGoogleMapsUrl(form.googleMapsUrl) : '', rooms }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(errorMessage(payload));
@@ -72,7 +91,9 @@ export default function MotelCaptureForm() {
     <header>
       <h1 className="text-2xl font-bold text-slate-900">Alta de motel</h1>
       <p className="mt-1 text-sm text-slate-600">Cargá lo esencial ahora. Podrás completar fotos, promos, menú y demás datos desde la edición del motel.</p>
+      {prospectId && <p className="mt-2 rounded-lg bg-purple-50 px-3 py-2 text-sm font-medium text-purple-800">Alta desde prospecto: completá los campos obligatorios para crear el motel.</p>}
     </header>
+    {prospectError && <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{prospectError}</p>}
     {submitError && <pre className="whitespace-pre-wrap rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{submitError}</pre>}
 
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -80,10 +101,10 @@ export default function MotelCaptureForm() {
       <div className="grid gap-4 md:grid-cols-2">
         <Field label="Nombre del motel *"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} /></Field>
         <Field label="Plan *"><select value={form.plan} onChange={(e) => setForm({ ...form, plan: e.target.value as typeof form.plan })} className={inputClass}><option value="FREE">FREE</option><option value="BASIC">BASIC</option><option value="GOLD">GOLD</option><option value="DIAMOND">DIAMOND</option></select></Field>
-        <Field label="Teléfono"><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass} /></Field>
-        <Field label="WhatsApp"><input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} className={inputClass} /></Field>
-        <Field label="Contacto"><input value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} className={inputClass} /></Field>
-        <Field label="Email"><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputClass} /></Field>
+        <Field label={`Teléfono${prospectId ? ' *' : ''}`}><input required={Boolean(prospectId)} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass} /></Field>
+        <Field label={`WhatsApp${prospectId ? ' *' : ''}`}><input required={Boolean(prospectId)} value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} className={inputClass} /></Field>
+        <Field label={`Contacto${prospectId ? ' *' : ''}`}><input required={Boolean(prospectId)} value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} className={inputClass} /></Field>
+        <Field label={`Email${prospectId ? ' *' : ''}`}><input required={Boolean(prospectId)} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputClass} /></Field>
       </div>
     </section>
 
@@ -91,9 +112,9 @@ export default function MotelCaptureForm() {
       <h2 className="mb-4 text-lg font-semibold text-slate-900">Ubicación</h2>
       <div className="grid gap-4 md:grid-cols-2">
         <LocationSelectFields country={form.country} city={form.city} onChange={(next) => setForm({ ...form, ...next })} className={inputClass} />
-        <Field label="Dirección"><input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputClass} /></Field>
+        <Field label={`Dirección${prospectId ? ' *' : ''}`}><input required={Boolean(prospectId)} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputClass} /></Field>
       </div>
-      <Field label="Link o iframe de Google Maps" extra="Opcional al crear; si lo pegás, se guardan las coordenadas."><input value={form.googleMapsUrl} onChange={(e) => setForm({ ...form, googleMapsUrl: e.target.value })} className={inputClass} placeholder="Pegá el link o iframe de Google Maps" /></Field>
+      <Field label={`Link o iframe de Google Maps${prospectId ? ' *' : ''}`} extra={prospectId ? 'Obligatorio al convertir un prospecto; se guardan las coordenadas.' : 'Opcional al crear; si lo pegás, se guardan las coordenadas.'}><input required={Boolean(prospectId)} value={form.googleMapsUrl} onChange={(e) => setForm({ ...form, googleMapsUrl: e.target.value })} className={inputClass} placeholder="Pegá el link o iframe de Google Maps" /></Field>
       {form.googleMapsUrl && <p className={`mt-2 text-sm ${coordinates ? 'text-emerald-700' : 'text-amber-700'}`}>{coordinates ? `Coordenadas: ${formatCoordinates(coordinates.lat, coordinates.lng)}` : 'No se pudieron leer las coordenadas; podés guardar y corregirlo luego.'}</p>}
     </section>
 

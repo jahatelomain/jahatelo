@@ -6,6 +6,26 @@ import { AdminProspectUpdateSchema, IdSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
 
+/** GET /api/admin/prospects/:id - obtiene un prospect para iniciar su alta */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const access = await requireAdminAccess(request, ['SUPERADMIN'], 'prospects');
+    if (access.error) return access.error;
+    const { id } = await params;
+    const idResult = IdSchema.safeParse(id);
+    if (!idResult.success) return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    const prospect = await prisma.motelProspect.findUnique({ where: { id: idResult.data } });
+    if (!prospect) return NextResponse.json({ error: 'Prospect no encontrado' }, { status: 404 });
+    return NextResponse.json(prospect);
+  } catch (error) {
+    console.error('Error fetching prospect:', error);
+    return NextResponse.json({ error: 'Error al obtener prospect' }, { status: 500 });
+  }
+}
+
 /**
  * PATCH /api/admin/prospects/[id]
  * Actualiza el estado o notas de un prospect (solo SUPERADMIN)

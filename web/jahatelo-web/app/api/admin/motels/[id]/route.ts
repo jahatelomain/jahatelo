@@ -139,6 +139,12 @@ export async function PATCH(
     const validated = UpdateMotelSchema.parse(body);
 
     if (access.user?.role !== 'SUPERADMIN') {
+      if (validated.status !== undefined || validated.isActive !== undefined) {
+        return NextResponse.json(
+          { error: 'Solo un superadministrador puede modificar el estado o la habilitación del motel.' },
+          { status: 403 }
+        );
+      }
       const currentLocation = await prisma.motel.findUnique({
         where: { id: idResult.data },
         select: { country: true, city: true, address: true, mapUrl: true },
