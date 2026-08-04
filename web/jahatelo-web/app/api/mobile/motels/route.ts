@@ -26,6 +26,7 @@ const include = {
         select: { amenity: { select: { id: true, name: true, icon: true } } },
       },
       dayRates: true,
+      weekdayRates: true,
     },
   },
   promos: {

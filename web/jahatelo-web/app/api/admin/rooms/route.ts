@@ -66,6 +66,15 @@ export async function POST(request: NextRequest) {
                 price24h: dr.price24h ?? null,
                 priceNight: dr.priceNight ?? null,
               })),
+          }
+          : undefined,
+        weekdayRates: validated.weekdayRates && validated.weekdayRates.length > 0
+          ? {
+              create: validated.weekdayRates.flatMap((rule) => rule.weekdays.map((weekday) => ({
+                weekday,
+                duration: rule.duration,
+                price: rule.price,
+              }))),
             }
           : undefined,
       },
@@ -76,6 +85,7 @@ export async function POST(request: NextRequest) {
           },
         },
         dayRates: true,
+        weekdayRates: true,
       },
     });
 

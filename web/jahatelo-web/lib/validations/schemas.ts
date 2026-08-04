@@ -168,6 +168,12 @@ export const RoomDayRateSchema = z.object({
   priceNight: z.coerce.number().int().min(0).optional().nullable(),
 });
 
+export const RoomWeekdayRateSchema = z.object({
+  weekdays: z.array(z.enum(['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'])).min(1).max(7),
+  duration: z.enum(['H1', 'H1_5', 'H2', 'H3', 'H12', 'H24', 'NIGHT']),
+  price: z.coerce.number().int().min(1),
+});
+
 export const RoomAdminSchema = z.object({
   motelId: IdSchema,
   name: z.string().min(2, 'Nombre muy corto').max(100, 'Nombre muy largo'),
@@ -186,6 +192,7 @@ export const RoomAdminSchema = z.object({
   isActive: z.boolean().optional(),
   amenityIds: z.array(IdSchema).optional().nullable(),
   dayRates: z.array(RoomDayRateSchema).optional().nullable(),
+  weekdayRates: z.array(RoomWeekdayRateSchema).optional().nullable(),
 });
 
 export const UpdateRoomAdminSchema = RoomAdminSchema.partial().omit({ motelId: true });

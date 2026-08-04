@@ -74,6 +74,7 @@ export async function PATCH(
           },
         },
         dayRates: true,
+        weekdayRates: true,
       },
     });
 
@@ -104,6 +105,17 @@ export async function PATCH(
           },
         });
       }
+    }
+
+    if (validated.weekdayRates !== undefined) {
+      await prisma.roomWeekdayRate.deleteMany({ where: { roomTypeId: idResult.data } });
+      const rows = (validated.weekdayRates ?? []).flatMap((rule) => rule.weekdays.map((weekday) => ({
+        roomTypeId: idResult.data,
+        weekday,
+        duration: rule.duration,
+        price: rule.price,
+      })));
+      if (rows.length > 0) await prisma.roomWeekdayRate.createMany({ data: rows });
     }
 
     await touchMotel(room.motelId);

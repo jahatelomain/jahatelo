@@ -17,9 +17,14 @@ export type RoomPriceFields = {
     price24h?: number | null;
     priceNight?: number | null;
   }>;
+  weekdayRates?: Array<{
+    weekday: 'SUNDAY' | 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY';
+    duration: 'H1' | 'H1_5' | 'H2' | 'H3' | 'H12' | 'H24' | 'NIGHT';
+    price: number;
+  }>;
 };
 
-type PriceKey = Exclude<keyof RoomPriceFields, 'isActive' | 'dayRates'>;
+type PriceKey = Exclude<keyof RoomPriceFields, 'isActive' | 'dayRates' | 'weekdayRates'>;
 type EffectivePrices = Pick<RoomPriceFields, PriceKey>;
 
 const PRICE_KEYS: PriceKey[] = [
@@ -27,18 +32,31 @@ const PRICE_KEYS: PriceKey[] = [
 ];
 
 export function getCurrentDayGroup(date = new Date()): 'WEEKDAY' | 'WEEKEND' {
-  const day = date.getDay();
-  return day === 5 || day === 6 ? 'WEEKEND' : 'WEEKDAY';
+  const weekday = getCurrentWeekday(date);
+  return weekday === 'FRIDAY' || weekday === 'SATURDAY' ? 'WEEKEND' : 'WEEKDAY';
+}
+
+const WEEKDAY_BY_SHORT_NAME: Record<string, NonNullable<RoomPriceFields['weekdayRates']>[number]['weekday']> = {
+  Sun: 'SUNDAY', Mon: 'MONDAY', Tue: 'TUESDAY', Wed: 'WEDNESDAY', Thu: 'THURSDAY', Fri: 'FRIDAY', Sat: 'SATURDAY',
+};
+const DURATION_BY_PRICE_KEY: Record<PriceKey, NonNullable<RoomPriceFields['weekdayRates']>[number]['duration']> = {
+  price1h: 'H1', price1_5h: 'H1_5', price2h: 'H2', price3h: 'H3', price12h: 'H12', price24h: 'H24', priceNight: 'NIGHT',
+};
+
+export function getCurrentWeekday(date = new Date()) {
+  return WEEKDAY_BY_SHORT_NAME[new Intl.DateTimeFormat('en-US', { timeZone: 'America/Asuncion', weekday: 'short' }).format(date)] ?? 'SUNDAY';
 }
 
 /** Prioriza una tarifa especial del día sin modificar nunca el valor almacenado. */
 export function getEffectiveRoomPrices(
   room: RoomPriceFields,
   dayGroup = getCurrentDayGroup(),
+  weekday = getCurrentWeekday(),
 ): EffectivePrices {
   const dayRate = room.dayRates?.find((rate) => rate.dayGroup === dayGroup);
   return PRICE_KEYS.reduce<EffectivePrices>((prices, key) => {
-    prices[key] = dayRate?.[key] ?? room[key] ?? null;
+    const exactRate = room.weekdayRates?.find((rate) => rate.weekday === weekday && rate.duration === DURATION_BY_PRICE_KEY[key]);
+    prices[key] = exactRate?.price ?? dayRate?.[key] ?? room[key] ?? null;
     return prices;
   }, {});
 }

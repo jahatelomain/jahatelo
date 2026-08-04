@@ -17,6 +17,7 @@ import {
 import type {
   Amenity,
   DayRateForm,
+  WeekdayRateForm,
   Motel,
   MotelAdminTab,
   MotelReview,
@@ -109,6 +110,7 @@ export default function MotelDetailPage() {
   const [roomForm, setRoomForm] = useState(createInitialRoomForm());
   const [weekdayRates, setWeekdayRates] = useState(createEmptyDayRate());
   const [weekendRates, setWeekendRates] = useState(createEmptyDayRate());
+  const [weekdayRateRules, setWeekdayRateRules] = useState<WeekdayRateForm[]>([]);
 
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [categoryForm, setCategoryForm] = useState({ title: '', sortOrder: 0 });
@@ -575,6 +577,9 @@ export default function MotelDetailPage() {
     const hasWeekendData = Object.values(weValues).some((v) => v !== null);
     if (hasWeekdayData) dayRatesPayload.push({ dayGroup: 'WEEKDAY', ...wdValues });
     if (hasWeekendData) dayRatesPayload.push({ dayGroup: 'WEEKEND', ...weValues });
+    const weekdayRatesPayload = weekdayRateRules
+      .filter((rule) => rule.weekdays.length > 0 && Number(rule.price) > 0)
+      .map((rule) => ({ weekdays: rule.weekdays, duration: rule.duration, price: Number(rule.price) }));
 
     try {
       const res = await fetch(url, {
@@ -584,6 +589,7 @@ export default function MotelDetailPage() {
           motelId: id,
           ...normalizedForm,
           dayRates: dayRatesPayload.length > 0 ? dayRatesPayload : undefined,
+          weekdayRates: weekdayRatesPayload,
         }),
       });
 
@@ -594,6 +600,7 @@ export default function MotelDetailPage() {
         setRoomForm(createInitialRoomForm());
         setWeekdayRates(createEmptyDayRate());
         setWeekendRates(createEmptyDayRate());
+        setWeekdayRateRules([]);
         setSaveStatus('success');
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
@@ -641,6 +648,14 @@ export default function MotelDetailPage() {
       price24h: we.price24h?.toString() || '',
       priceNight: we.priceNight?.toString() || '',
     } : createEmptyDayRate());
+    const groupedSpecificRates = new Map<string, WeekdayRateForm>();
+    for (const rate of room.weekdayRates ?? []) {
+      const key = `${rate.duration}:${rate.price}`;
+      const existing = groupedSpecificRates.get(key);
+      if (existing) existing.weekdays.push(rate.weekday);
+      else groupedSpecificRates.set(key, { weekdays: [rate.weekday], duration: rate.duration, price: String(rate.price) });
+    }
+    setWeekdayRateRules(Array.from(groupedSpecificRates.values()));
     setShowRoomForm(true);
     setTimeout(() => {
       roomFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -653,6 +668,7 @@ export default function MotelDetailPage() {
     setRoomForm(createInitialRoomForm());
     setWeekdayRates(createEmptyDayRate());
     setWeekendRates(createEmptyDayRate());
+    setWeekdayRateRules([]);
   };
 
   const handleDeleteRoom = async (roomId: string) => {
@@ -1425,6 +1441,8 @@ export default function MotelDetailPage() {
                 amenities={amenities}
                 weekdayRates={weekdayRates}
                 weekendRates={weekendRates}
+                weekdayRateRules={weekdayRateRules}
+                onWeekdayRateRulesChange={setWeekdayRateRules}
                 onFormChange={setRoomForm}
                 onWeekdayChange={setWeekdayRates}
                 onWeekendChange={setWeekendRates}

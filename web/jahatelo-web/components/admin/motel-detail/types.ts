@@ -18,6 +18,12 @@ export type DayRateForm = {
   priceNight: string;
 };
 
+export type WeekdayRateForm = {
+  weekdays: Array<'SUNDAY' | 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY'>;
+  duration: 'H1' | 'H1_5' | 'H2' | 'H3' | 'H12' | 'H24' | 'NIGHT';
+  price: string;
+};
+
 export type RoomType = {
   id: string;
   name: string;
@@ -47,6 +53,11 @@ export type RoomType = {
     price12h: number | null;
     price24h: number | null;
     priceNight: number | null;
+  }>;
+  weekdayRates?: Array<{
+    weekday: WeekdayRateForm['weekdays'][number];
+    duration: WeekdayRateForm['duration'];
+    price: number;
   }>;
 };
 

@@ -75,6 +75,7 @@ export async function GET(
             // El formulario de edición necesita las tarifas por grupo de día
             // para poder volver a mostrarlas sin perderlas al guardar.
             dayRates: true,
+            weekdayRates: true,
           },
           orderBy: [
             { order: 'asc' },
