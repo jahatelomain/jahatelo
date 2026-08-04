@@ -273,13 +273,18 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                   ),
                 );
                 const prices = weekdayRateItems;
+                const weekdayOrder = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+                const weekdayLabels: Record<string, string> = { MONDAY: 'Lun', TUESDAY: 'Mar', WEDNESDAY: 'Mié', THURSDAY: 'Jue', FRIDAY: 'Vie', SATURDAY: 'Sáb', SUNDAY: 'Dom' };
                 const specificRates = Array.from(room.weekdayRates.reduce((groups, rate) => {
                   const key = `${rate.duration}:${rate.price}`;
-                  const group = groups.get(key) ?? { duration: rate.duration, price: rate.price, days: [] as string[] };
-                  group.days.push(({ SUNDAY: 'Dom', MONDAY: 'Lun', TUESDAY: 'Mar', WEDNESDAY: 'Mié', THURSDAY: 'Jue', FRIDAY: 'Vie', SATURDAY: 'Sáb' } as Record<string, string>)[rate.weekday] ?? rate.weekday);
+                  const group = groups.get(key) ?? { duration: rate.duration, price: rate.price, weekdays: [] as string[] };
+                  group.weekdays.push(rate.weekday);
                   groups.set(key, group);
                   return groups;
-                }, new Map<string, { duration: string; price: number; days: string[] }>()).values());
+                }, new Map<string, { duration: string; price: number; weekdays: string[] }>()).values()).map((rate) => ({
+                  ...rate,
+                  days: rate.weekdays.sort((first, second) => weekdayOrder.indexOf(first) - weekdayOrder.indexOf(second)).map((weekday) => weekdayLabels[weekday] ?? weekday),
+                })).sort((first, second) => weekdayOrder.indexOf(first.weekdays[0] ?? '') - weekdayOrder.indexOf(second.weekdays[0] ?? ''));
                 const durationLabel: Record<string, string> = { H1: '1h', H1_5: '1.5h', H2: '2h', H3: '3h', H12: '12h', H24: '24h', NIGHT: 'Dormida' };
 
                 return (

@@ -50,7 +50,8 @@ function PriceRow({ prices }) {
   );
 }
 
-const WEEKDAY_LABELS = { SUNDAY: 'Dom', MONDAY: 'Lun', TUESDAY: 'Mar', WEDNESDAY: 'Mié', THURSDAY: 'Jue', FRIDAY: 'Vie', SATURDAY: 'Sáb' };
+const WEEKDAY_ORDER = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+const WEEKDAY_LABELS = { MONDAY: 'Lun', TUESDAY: 'Mar', WEDNESDAY: 'Mié', THURSDAY: 'Jue', FRIDAY: 'Vie', SATURDAY: 'Sáb', SUNDAY: 'Dom' };
 const DURATION_LABELS = { H1: '1h', H1_5: '1.5h', H2: '2h', H3: '3h', H12: '12h', H24: '24h', NIGHT: 'Dormida' };
 
 function SpecificDayRates({ rates }) {
@@ -61,7 +62,11 @@ function SpecificDayRates({ rates }) {
     items[key].weekdays.push(rate.weekday);
     return items;
   }, {});
-  return <View style={styles.specificRates}>{Object.values(grouped).map((rate) => (
+  const sortedRates = Object.values(grouped).map((rate) => ({
+    ...rate,
+    weekdays: rate.weekdays.sort((first, second) => WEEKDAY_ORDER.indexOf(first) - WEEKDAY_ORDER.indexOf(second)),
+  })).sort((first, second) => WEEKDAY_ORDER.indexOf(first.weekdays[0]) - WEEKDAY_ORDER.indexOf(second.weekdays[0]));
+  return <View style={styles.specificRates}>{sortedRates.map((rate) => (
     <View key={`${rate.duration}-${rate.price}`} style={styles.specificRateRow}>
       <Text style={styles.specificRateDays}>{rate.weekdays.map((day) => WEEKDAY_LABELS[day] || day).join(', ')}</Text>
       <Text style={styles.specificRateValue}>{DURATION_LABELS[rate.duration] || rate.duration} · {formatPrice(rate.price)}</Text>

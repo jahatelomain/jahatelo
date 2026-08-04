@@ -7,6 +7,18 @@ import { IdSchema, UpdateRoomAdminSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
 
+function hasDuplicatedWeekdayRates(rules: Array<{ weekdays: string[]; duration: string }> | null | undefined) {
+  const seen = new Set<string>();
+  for (const rule of rules ?? []) {
+    for (const weekday of rule.weekdays) {
+      const key = `${weekday}:${rule.duration}`;
+      if (seen.has(key)) return true;
+      seen.add(key);
+    }
+  }
+  return false;
+}
+
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
@@ -39,6 +51,13 @@ export async function PATCH(
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const validated = UpdateRoomAdminSchema.parse(sanitized);
+
+    if (hasDuplicatedWeekdayRates(validated.weekdayRates)) {
+      return NextResponse.json(
+        { error: 'Un mismo día no puede tener dos precios para la misma duración.' },
+        { status: 400 },
+      );
+    }
 
     // Update room and replace amenities
     const room = await prisma.roomType.update({
