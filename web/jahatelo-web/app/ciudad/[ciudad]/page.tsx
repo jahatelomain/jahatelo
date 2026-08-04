@@ -39,6 +39,7 @@ async function getCityMotels(ciudad: string) {
           price24h: true,
           priceNight: true,
           dayRates: true,
+          weekdayRates: true,
           amenities: { select: { amenity: { select: { id: true, name: true, icon: true } } } },
         },
       },

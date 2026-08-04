@@ -1,4 +1,4 @@
-import { Motel, RoomType, Amenity, RoomAmenity, Promo, RoomPhoto, RoomDayRate, DayGroup } from '@prisma/client';
+import { Motel, RoomType, Amenity, RoomAmenity, Promo, RoomPhoto, RoomDayRate, RoomWeekdayRate, DayGroup } from '@prisma/client';
 import {
   getCurrentDayGroup,
   getEffectiveRoomPrices,
@@ -18,6 +18,7 @@ type RoomPricingInfo = Pick<
   | 'priceNight'
 > & {
   dayRates?: RoomDayRate[];
+  weekdayRates?: RoomWeekdayRate[];
 };
 
 /**
@@ -30,7 +31,7 @@ export { getCurrentDayGroup };
  * Prioriza dayRates si existe entrada para el grupo; fallback a precios base de RoomType.
  */
 export function getEffectivePrices(
-  room: Pick<RoomType, 'price1h' | 'price1_5h' | 'price2h' | 'price3h' | 'price12h' | 'price24h' | 'priceNight'> & { dayRates?: RoomDayRate[] },
+  room: Pick<RoomType, 'price1h' | 'price1_5h' | 'price2h' | 'price3h' | 'price12h' | 'price24h' | 'priceNight'> & { dayRates?: RoomDayRate[]; weekdayRates?: RoomWeekdayRate[] },
   dayGroup: DayGroup
 ) {
   return getEffectiveRoomPrices(room, dayGroup);
@@ -51,6 +52,7 @@ type RoomWithRelations = RoomType & {
   amenities: (RoomAmenity & { amenity: Amenity })[];
   roomPhotos: RoomPhoto[];
   dayRates?: RoomDayRate[];
+  weekdayRates?: RoomWeekdayRate[];
 };
 
 // Base type for list items - accepts both pricing info and full room data
@@ -213,6 +215,11 @@ export function mapRoomForMobile(room: RoomWithRelations) {
       price12h: dr.price12h,
       price24h: dr.price24h,
       priceNight: dr.priceNight,
+    })) || [],
+    weekdayRates: room.weekdayRates?.map((rate) => ({
+      weekday: rate.weekday,
+      duration: rate.duration,
+      price: rate.price,
     })) || [],
     amenities: room.amenities
       .filter((ra) => Boolean(ra?.amenity?.name))

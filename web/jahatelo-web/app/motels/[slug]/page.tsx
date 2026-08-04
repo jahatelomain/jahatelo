@@ -273,6 +273,14 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                   ),
                 );
                 const prices = weekdayRateItems;
+                const specificRates = Array.from(room.weekdayRates.reduce((groups, rate) => {
+                  const key = `${rate.duration}:${rate.price}`;
+                  const group = groups.get(key) ?? { duration: rate.duration, price: rate.price, days: [] as string[] };
+                  group.days.push(({ SUNDAY: 'Dom', MONDAY: 'Lun', TUESDAY: 'Mar', WEDNESDAY: 'Mié', THURSDAY: 'Jue', FRIDAY: 'Vie', SATURDAY: 'Sáb' } as Record<string, string>)[rate.weekday] ?? rate.weekday);
+                  groups.set(key, group);
+                  return groups;
+                }, new Map<string, { duration: string; price: number; days: string[] }>()).values());
+                const durationLabel: Record<string, string> = { H1: '1h', H1_5: '1.5h', H2: '2h', H3: '3h', H12: '12h', H24: '24h', NIGHT: 'Dormida' };
 
                 return (
                   <div key={room.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -345,6 +353,12 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                               </div>
                             ) : (
                               <PriceTable prices={prices.map(({ label, value }) => ({ label, price: value }))} />
+                            )}
+                            {specificRates.length > 0 && (
+                              <div className="mt-4 space-y-2 border-t border-dashed border-purple-200 pt-3">
+                                <p className="text-xs font-semibold text-purple-700">Tarifas según día</p>
+                                {specificRates.map((rate) => <div key={`${rate.duration}-${rate.price}`} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-purple-50 px-3 py-2 text-sm"><span className="font-medium text-purple-800">{rate.days.join(', ')}</span><span className="font-semibold text-gray-900">{durationLabel[rate.duration]} · Gs. {rate.price.toLocaleString('es-PY')}</span></div>)}
+                              </div>
                             )}
                           </div>
                         ) : (

@@ -83,6 +83,7 @@ export async function GET(request: NextRequest) {
             price24h: true,
             priceNight: true,
             dayRates: true,
+            weekdayRates: true,
             amenities: {
               select: {
                 amenity: {

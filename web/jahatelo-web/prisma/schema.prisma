@@ -108,6 +108,27 @@ enum DayGroup {
   WEEKEND   // Viernes y Sábado
 }
 
+/// Día de semana local de Paraguay. Se usa para sobrescrituras puntuales de tarifa.
+enum Weekday {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+enum RoomPriceDuration {
+  H1
+  H1_5
+  H2
+  H3
+  H12
+  H24
+  NIGHT
+}
+
 enum CodeRepeatRule {
   DAILY
   WEEKLY
@@ -274,6 +295,7 @@ model RoomType {
   reviews           Review[]
   roomPhotos        RoomPhoto[]
   dayRates          RoomDayRate[]
+  weekdayRates      RoomWeekdayRate[]
 }
 
 // ============================================
@@ -296,6 +318,23 @@ model RoomDayRate {
   updatedAt  DateTime  @updatedAt
 
   @@unique([roomTypeId, dayGroup])
+}
+
+/// Sobrescribe una duración concreta en un día concreto. El admin puede cargar
+/// varios días juntos; la API los guarda como filas individuales para evitar
+/// ambigüedades y poder combinar reglas libremente.
+model RoomWeekdayRate {
+  id         String            @id @default(cuid())
+  roomType   RoomType          @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  roomTypeId String
+  weekday    Weekday
+  duration   RoomPriceDuration
+  price      Int
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  @@unique([roomTypeId, weekday, duration])
+  @@index([roomTypeId, weekday])
 }
 
 // ============================================

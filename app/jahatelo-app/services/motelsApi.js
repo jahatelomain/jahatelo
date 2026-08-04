@@ -135,6 +135,7 @@ const mapRoom = (apiRoom) => {
     description: apiRoom.description,
     prices: apiRoom.prices || {},
     dayRates: apiRoom.dayRates || [],
+    weekdayRates: apiRoom.weekdayRates || [],
     amenities: normalizeAmenityList(apiRoom.amenities),
     photos: apiRoom.photos || [],
     maxPersons: apiRoom.maxPersons,

@@ -50,6 +50,25 @@ function PriceRow({ prices }) {
   );
 }
 
+const WEEKDAY_LABELS = { SUNDAY: 'Dom', MONDAY: 'Lun', TUESDAY: 'Mar', WEDNESDAY: 'Mié', THURSDAY: 'Jue', FRIDAY: 'Vie', SATURDAY: 'Sáb' };
+const DURATION_LABELS = { H1: '1h', H1_5: '1.5h', H2: '2h', H3: '3h', H12: '12h', H24: '24h', NIGHT: 'Dormida' };
+
+function SpecificDayRates({ rates }) {
+  if (!Array.isArray(rates) || rates.length === 0) return null;
+  const grouped = rates.reduce((items, rate) => {
+    const key = `${rate.duration}:${rate.price}`;
+    if (!items[key]) items[key] = { ...rate, weekdays: [] };
+    items[key].weekdays.push(rate.weekday);
+    return items;
+  }, {});
+  return <View style={styles.specificRates}>{Object.values(grouped).map((rate) => (
+    <View key={`${rate.duration}-${rate.price}`} style={styles.specificRateRow}>
+      <Text style={styles.specificRateDays}>{rate.weekdays.map((day) => WEEKDAY_LABELS[day] || day).join(', ')}</Text>
+      <Text style={styles.specificRateValue}>{DURATION_LABELS[rate.duration] || rate.duration} · {formatPrice(rate.price)}</Text>
+    </View>
+  ))}</View>;
+}
+
 function RoomCard({ room, motel, onPhotoGestureStart, onPhotoGestureEnd }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const tooltipTimer = useRef(null);
@@ -148,6 +167,7 @@ function RoomCard({ room, motel, onPhotoGestureStart, onPhotoGestureEnd }) {
           <Text style={styles.roomPrice}>CONSULTAR</Text>
         </View>
       )}
+      <SpecificDayRates rates={room.weekdayRates} />
 
       {/* Amenities */}
       {amenitiesWithIcon.length > 0 && (
@@ -340,6 +360,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2A0038',
   },
+  specificRates: { marginTop: 8, gap: 5 },
+  specificRateRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, backgroundColor: '#F4F0FF', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
+  specificRateDays: { fontSize: 11, fontWeight: '700', color: COLORS.primary },
+  specificRateValue: { fontSize: 11, fontWeight: '700', color: '#333' },
   // Amenities
   amenitiesSection: {
     marginTop: 8,

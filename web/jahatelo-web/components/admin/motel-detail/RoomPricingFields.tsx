@@ -1,4 +1,5 @@
-import type { DayRateForm } from './types';
+import { useState } from 'react';
+import type { DayRateForm, WeekdayRateForm } from './types';
 
 export const ROOM_PRICE_FIELDS = [
   ['price1h', '1h'], ['price1_5h', '1.5h'], ['price2h', '2h'], ['price3h', '3h'],
@@ -15,9 +16,11 @@ type Props = {
   onBaseChange: (field: PriceKey, value: string) => void;
   onWeekdayChange: (rates: DayRateForm) => void;
   onWeekendChange: (rates: DayRateForm) => void;
+  weekdayRateRules: WeekdayRateForm[];
+  onWeekdayRateRulesChange: (rules: WeekdayRateForm[]) => void;
 };
 
-export default function RoomPricingFields({ basePrices, weekdayRates, weekendRates, onBaseChange, onWeekdayChange, onWeekendChange }: Props) {
+export default function RoomPricingFields({ basePrices, weekdayRates, weekendRates, onBaseChange, onWeekdayChange, onWeekendChange, weekdayRateRules, onWeekdayRateRulesChange }: Props) {
   return (
     <>
       <section className="border-t border-slate-200 pt-4">
@@ -26,32 +29,46 @@ export default function RoomPricingFields({ basePrices, weekdayRates, weekendRat
           {ROOM_PRICE_FIELDS.map(([field, label]) => <PriceInput key={field} label={label} value={basePrices[field]} onChange={(value) => onBaseChange(field, value)} />)}
         </div>
       </section>
-      <section className="border-t border-slate-200 pt-4">
-        <h4 className="mb-1 text-sm font-semibold text-slate-900">Precios por Día (opcional)</h4>
-        <p className="mb-3 text-xs text-slate-500">Dejá vacío para usar los precios base. Si se llenan, sobreescriben los precios base según el día.</p>
-        <div className="grid gap-4 md:grid-cols-2">
-          <DayRateGroup title="Dom – Jue (Semana)" tone="blue" rates={weekdayRates} onChange={onWeekdayChange} />
-          <DayRateGroup title="Vie – Sáb (Fin de semana)" tone="orange" rates={weekendRates} onChange={onWeekendChange} />
-        </div>
-      </section>
+      <SpecificDayRates rules={weekdayRateRules} onChange={onWeekdayRateRulesChange} />
     </>
   );
 }
 
-function PriceInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
-  return <div><label className="mb-1.5 block text-xs font-medium text-slate-600">{label}</label><input type="number" value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-purple-600" placeholder="Gs." /></div>;
-}
+const DAYS: Array<[WeekdayRateForm['weekdays'][number], string]> = [
+  ['SUNDAY', 'Dom'], ['MONDAY', 'Lun'], ['TUESDAY', 'Mar'], ['WEDNESDAY', 'Mié'], ['THURSDAY', 'Jue'], ['FRIDAY', 'Vie'], ['SATURDAY', 'Sáb'],
+];
+const DURATIONS: Array<[WeekdayRateForm['duration'], string]> = [
+  ['H1', '1 h'], ['H1_5', '1,5 h'], ['H2', '2 h'], ['H3', '3 h'], ['H12', '12 h'], ['H24', '24 h'], ['NIGHT', 'Dormida'],
+];
 
-function DayRateGroup({ title, tone, rates, onChange }: { title: string; tone: 'blue' | 'orange'; rates: DayRateForm; onChange: (rates: DayRateForm) => void }) {
-  const containerClass = tone === 'blue' ? 'border-blue-100 bg-blue-50/40' : 'border-orange-100 bg-orange-50/40';
-  const titleClass = tone === 'blue' ? 'text-blue-700' : 'text-orange-700';
-  const focusClass = tone === 'blue' ? 'focus:ring-blue-400' : 'focus:ring-orange-400';
-  return (
-    <div className={`rounded-lg border p-3 ${containerClass}`}>
-      <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${titleClass}`}>{title}</p>
-      <div className="grid grid-cols-2 gap-2">
-        {ROOM_PRICE_FIELDS.map(([field, label]) => <div key={field}><label className="mb-1 block text-xs text-slate-500">{label}</label><input type="number" value={rates[field]} onChange={(event) => onChange({ ...rates, [field]: event.target.value })} className={`w-full rounded border border-slate-300 px-2 py-1.5 text-sm focus:border-transparent focus:ring-2 ${focusClass}`} placeholder="Gs." /></div>)}
+function SpecificDayRates({ rules, onChange }: { rules: WeekdayRateForm[]; onChange: (rules: WeekdayRateForm[]) => void }) {
+  const [draft, setDraft] = useState<WeekdayRateForm>({ weekdays: [], duration: 'NIGHT', price: '' });
+  const addRule = () => {
+    if (draft.weekdays.length === 0 || !Number.isInteger(Number(draft.price)) || Number(draft.price) <= 0) return;
+    onChange([...rules, { ...draft, weekdays: [...draft.weekdays] }]);
+    setDraft({ weekdays: [], duration: 'NIGHT', price: '' });
+  };
+  const toggleDay = (day: WeekdayRateForm['weekdays'][number]) => setDraft((current) => ({
+    ...current,
+    weekdays: current.weekdays.includes(day) ? current.weekdays.filter((value) => value !== day) : [...current.weekdays, day],
+  }));
+  return <section className="border-t border-slate-200 pt-4">
+    <h4 className="mb-1 text-sm font-semibold text-slate-900">Tarifas por días específicos</h4>
+    <p className="mb-3 text-xs text-slate-500">Elegí los días, una duración y el precio. Ej.: Vie, Sáb y Dom · Dormida · Gs. 214.000.</p>
+    <div className="rounded-xl border border-violet-200 bg-violet-50/50 p-3">
+      <div className="mb-3 flex flex-wrap gap-2">
+        {DAYS.map(([day, label]) => <label key={day} className={`cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium ${draft.weekdays.includes(day) ? 'border-violet-600 bg-violet-600 text-white' : 'border-slate-300 bg-white text-slate-600'}`}><input className="sr-only" type="checkbox" checked={draft.weekdays.includes(day)} onChange={() => toggleDay(day)} />{label}</label>)}
+      </div>
+      <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+        <select value={draft.duration} onChange={(event) => setDraft({ ...draft, duration: event.target.value as WeekdayRateForm['duration'] })} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"><>{DURATIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</></select>
+        <input type="number" min="1" value={draft.price} onChange={(event) => setDraft({ ...draft, price: event.target.value })} placeholder="Precio en Gs." className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <button type="button" onClick={addRule} className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-700">Agregar</button>
       </div>
     </div>
-  );
+    {rules.length > 0 && <div className="mt-3 space-y-2">{rules.map((rule, index) => <div key={`${rule.duration}-${rule.price}-${index}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"><span><strong>{rule.weekdays.map((day) => DAYS.find(([value]) => value === day)?.[1]).join(', ')}</strong> · {DURATIONS.find(([value]) => value === rule.duration)?.[1]} · Gs. {Number(rule.price).toLocaleString('es-PY')}</span><button type="button" onClick={() => onChange(rules.filter((_, ruleIndex) => ruleIndex !== index))} className="text-xs font-semibold text-red-600 hover:text-red-700">Eliminar</button></div>)}</div>}
+  </section>;
+}
+
+function PriceInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return <div><label className="mb-1.5 block text-xs font-medium text-slate-600">{label}</label><input type="number" value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-purple-600" placeholder="Gs." /></div>;
 }

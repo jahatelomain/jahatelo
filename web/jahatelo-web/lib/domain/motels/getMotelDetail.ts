@@ -18,6 +18,7 @@ export async function getPublicMotelDetail(slugOrId: string) {
           roomPhotos: { orderBy: { order: 'asc' } },
           amenities: { include: { amenity: true } },
           dayRates: true,
+          weekdayRates: true,
         },
       },
       menuCategories: {
