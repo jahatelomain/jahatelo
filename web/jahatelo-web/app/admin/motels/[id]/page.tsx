@@ -655,7 +655,11 @@ export default function MotelDetailPage() {
       if (existing) existing.weekdays.push(rate.weekday);
       else groupedSpecificRates.set(key, { weekdays: [rate.weekday], duration: rate.duration, price: String(rate.price) });
     }
-    setWeekdayRateRules(Array.from(groupedSpecificRates.values()));
+    const weekdayOrder = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+    setWeekdayRateRules(Array.from(groupedSpecificRates.values()).map((rule) => ({
+      ...rule,
+      weekdays: [...rule.weekdays].sort((first, second) => weekdayOrder.indexOf(first) - weekdayOrder.indexOf(second)),
+    })));
     setShowRoomForm(true);
     setTimeout(() => {
       roomFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });

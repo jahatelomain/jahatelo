@@ -11,6 +11,14 @@ const RATE_FIELDS = [
   ['priceNight', 'Dormida'],
 ] as const satisfies ReadonlyArray<[keyof RoomType, string]>;
 
+const WEEKDAY_ORDER = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+const WEEKDAY_LABELS: Record<string, string> = {
+  MONDAY: 'Lun', TUESDAY: 'Mar', WEDNESDAY: 'Mié', THURSDAY: 'Jue', FRIDAY: 'Vie', SATURDAY: 'Sáb', SUNDAY: 'Dom',
+};
+const DURATION_LABELS: Record<string, string> = {
+  H1: '1 h', H1_5: '1,5 h', H2: '2 h', H3: '3 h', H12: '12 h', H24: '24 h', NIGHT: 'Dormida',
+};
+
 export default function RoomRatesSummary({ room }: { room: RoomType }) {
   const toRates = (source: Pick<RoomType, (typeof RATE_FIELDS)[number][0]>) => RATE_FIELDS.flatMap(([field, label]) => {
     const value = source[field];
@@ -26,8 +34,24 @@ export default function RoomRatesSummary({ room }: { room: RoomType }) {
       (weekendRate) => weekdayRate.field === weekendRate.field && weekdayRate.value !== weekendRate.value,
     ),
   );
+  const specificRates = Array.from(
+    (room.weekdayRates ?? []).reduce((groups, rate) => {
+      const key = `${rate.duration}:${rate.price}`;
+      const group = groups.get(key) ?? { duration: rate.duration, price: rate.price, weekdays: [] as string[] };
+      group.weekdays.push(rate.weekday);
+      groups.set(key, group);
+      return groups;
+    }, new Map<string, { duration: string; price: number; weekdays: string[] }>()),
+  ).map(([, rate]) => ({
+    ...rate,
+    weekdays: rate.weekdays.sort((first, second) => WEEKDAY_ORDER.indexOf(first) - WEEKDAY_ORDER.indexOf(second)),
+  })).sort((first, second) => {
+    const firstDay = WEEKDAY_ORDER.indexOf(first.weekdays[0] ?? '');
+    const secondDay = WEEKDAY_ORDER.indexOf(second.weekdays[0] ?? '');
+    return firstDay - secondDay || first.duration.localeCompare(second.duration);
+  });
 
-  if (weekdayRates.length === 0 && weekendRates.length === 0) return null;
+  if (weekdayRates.length === 0 && weekendRates.length === 0 && specificRates.length === 0) return null;
 
   const RatesGrid = ({ items }: { items: typeof rates }) => (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -54,7 +78,16 @@ export default function RoomRatesSummary({ room }: { room: RoomType }) {
             <RatesGrid items={weekendRates} />
           </div>
         </div>
-      ) : <RatesGrid items={weekdayRates.length > 0 ? weekdayRates : weekendRates} />}
+      ) : (weekdayRates.length > 0 || weekendRates.length > 0) && <RatesGrid items={weekdayRates.length > 0 ? weekdayRates : weekendRates} />}
+      {specificRates.length > 0 && <div className="mt-4 rounded-xl border border-violet-100 bg-violet-50/40 p-3">
+        <p className="mb-2 text-xs font-semibold text-violet-800">Tarifas por día configuradas</p>
+        <div className="space-y-1.5">
+          {specificRates.map((rate) => <div key={`${rate.duration}-${rate.price}-${rate.weekdays.join('-')}`} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
+            <span className="font-medium text-slate-700">{rate.weekdays.map((weekday) => WEEKDAY_LABELS[weekday] ?? weekday).join(', ')} · {DURATION_LABELS[rate.duration] ?? rate.duration}</span>
+            <span className="font-semibold text-slate-900">Gs. {formatPrice(rate.price)}</span>
+          </div>)}
+        </div>
+      </div>}
     </div>
   );
 }
