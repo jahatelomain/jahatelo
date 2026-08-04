@@ -354,7 +354,7 @@ export default function AdminLayout({
   return (
     <ToastProvider>
       <Toaster position="top-right" richColors closeButton />
-      <div className="min-h-screen bg-slate-100 admin-theme text-slate-900">
+      <div className="min-h-[100dvh] bg-slate-100 admin-theme text-slate-900">
         {/* Topbar Moderno */}
         <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-20 h-20">
           <div className="px-6 h-full flex items-center justify-between">
@@ -480,7 +480,7 @@ export default function AdminLayout({
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 p-6 md:p-8 bg-slate-100 h-[calc(100vh-88px)] overflow-y-scroll">
+        <main className="flex-1 min-h-[calc(100dvh-5rem)] p-6 md:p-8 bg-slate-100">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
