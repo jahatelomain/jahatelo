@@ -53,11 +53,38 @@ export const extractLatLngFromMapUrl = (value: string | null) => {
 };
 
 /**
+ * Obtiene el CID de la ficha de Google Maps desde un enlace compartido o un
+ * iframe de Google Maps Embed. El CID identifica el negocio, mientras que las
+ * coordenadas solo apuntan a una posición aproximada del mapa.
+ */
+export const extractGoogleMapsCid = (value: string | null) => {
+  if (!value) return null;
+
+  try {
+    const normalized = normalizeMapUrl(value) || value;
+    const decoded = decodeURIComponent(normalized);
+    const directCid = decoded.match(/[?&]cid=(\d+)/i)?.[1];
+    if (directCid) return directCid;
+
+    // Los iframes Embed incluyen el feature id como !1s0x...:0x<CID_HEX>.
+    const cidHex = decoded.match(/!1s0x[0-9a-f]+:0x([0-9a-f]+)/i)?.[1];
+    if (!cidHex || typeof BigInt !== 'function') return null;
+
+    return BigInt(`0x${cidHex}`).toString(10);
+  } catch {
+    return null;
+  }
+};
+
+/**
  * Convierte un src de Google Maps Embed en un enlace que puede abrirse fuera
  * de un iframe. Google rechaza abrir directamente las URLs `/maps/embed`.
  */
 export const getGoogleMapsExternalUrl = (value: string | null, fallbackQuery = '') => {
   if (!value) return null;
+
+  const cid = extractGoogleMapsCid(value);
+  if (cid) return `https://www.google.com/maps?cid=${cid}`;
 
   const coordinates = extractLatLngFromMapUrl(value);
   if (coordinates) {

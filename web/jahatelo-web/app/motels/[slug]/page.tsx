@@ -22,6 +22,7 @@ import Tabs from '@/components/public/Tabs';
 import { getPublicMotelDetail } from '@/lib/domain/motels/getMotelDetail';
 import { normalizeLocalUploadPath } from '@/lib/normalizeLocalUrl';
 import { getEffectivePrices } from '@/app/api/mobile/mappers';
+import { getGoogleMapsExternalUrl } from '@/components/admin/motel-detail/formUtils';
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -559,20 +560,14 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
 
           {/* Address & Map Link */}
           {(() => {
-            let mapsHref: string | null = null;
-            if (motel.latitude != null && motel.longitude != null) {
-              mapsHref = `https://www.google.com/maps?q=${motel.latitude},${motel.longitude}`;
-            } else if (motel.mapUrl) {
-              if (motel.mapUrl.includes('maps/embed') || motel.mapUrl.includes('maps.google.com/maps?')) {
-                const lngMatch = motel.mapUrl.match(/!2d(-?\d+\.\d+)/);
-                const latMatch = motel.mapUrl.match(/!3d(-?\d+\.\d+)/);
-                if (latMatch && lngMatch) {
-                  mapsHref = `https://www.google.com/maps?q=${latMatch[1]},${lngMatch[1]}`;
-                }
-              } else {
-                mapsHref = motel.mapUrl;
-              }
-            }
+            const mapsHref = getGoogleMapsExternalUrl(
+              motel.mapUrl,
+              [motel.address, motel.city].filter(Boolean).join(', '),
+            ) || (
+              motel.latitude != null && motel.longitude != null
+                ? `https://www.google.com/maps/search/?api=1&query=${motel.latitude},${motel.longitude}`
+                : null
+            );
             return (
           <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 md:gap-4">
                 <span>{motel.address}</span>
