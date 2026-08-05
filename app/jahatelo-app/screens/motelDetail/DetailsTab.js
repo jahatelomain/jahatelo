@@ -6,6 +6,7 @@ import { formatPrice } from '../../services/motelsApi';
 import { getAmenityIconConfig } from '../../constants/amenityIcons';
 import { COLORS } from '../../constants/theme';
 import { normalizeMotelPlan, MOTEL_PLANS } from '../../constants/motelPlans';
+import { getGoogleMapsExternalUrl } from '../../utils/googleMaps';
 
 export default function DetailsTab({ route, refreshing, onRefresh, embedded = false }) {
   const { motel } = route.params || {};
@@ -20,14 +21,14 @@ export default function DetailsTab({ route, refreshing, onRefresh, embedded = fa
     );
   }
 
+  const mapsUrl = getGoogleMapsExternalUrl(motel.mapUrl, motel.location);
   const handleOpenMaps = () => {
-    if (motel.location && motel.location.lat && motel.location.lng) {
-      const url = `https://www.google.com/maps/search/?api=1&query=${motel.location.lat},${motel.location.lng}`;
-      Linking.openURL(url).catch(err => console.error('Error al abrir Google Maps:', err));
+    if (mapsUrl) {
+      Linking.openURL(mapsUrl).catch(err => console.error('Error al abrir Google Maps:', err));
     }
   };
 
-  const hasLocation = motel.location && motel.location.lat && motel.location.lng;
+  const hasLocation = Boolean(mapsUrl);
   const locationLabel = [motel.address, motel.ciudad || motel.city]
     .filter(Boolean)
     .join(', ');

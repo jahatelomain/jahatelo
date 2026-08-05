@@ -93,6 +93,7 @@ const mapMotelSummary = (apiMotel) => {
     promoTitle: apiMotel.promoTitle || null,
     promoDescription: apiMotel.promoDescription || null,
     plan: apiMotel.plan || 'BASIC',
+    mapUrl: apiMotel.mapUrl || null,
     // Coordenadas en el nivel raíz para fácil acceso
     latitude,
     longitude,
