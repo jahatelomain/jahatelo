@@ -83,20 +83,27 @@ export const extractGoogleMapsCid = (value: string | null) => {
 export const getGoogleMapsExternalUrl = (value: string | null, fallbackQuery = '') => {
   if (!value) return null;
 
-  const cid = extractGoogleMapsCid(value);
+  const normalized = normalizeMapUrl(value);
+  if (!normalized) return null;
+  const isEmbedUrl = /google\.[^/]+\/maps\/embed|\/maps\/embed/i.test(normalized);
+
+  // Un enlace normal de Google Maps (por ejemplo /maps/place/...) ya conserva
+  // la ficha y el pin exactos. No se debe reducir a su centro @lat,lng.
+  if (!isEmbedUrl) return normalized;
+
+  const cid = extractGoogleMapsCid(normalized);
   if (cid) return `https://www.google.com/maps?cid=${cid}`;
 
-  const coordinates = extractLatLngFromMapUrl(value);
+  const coordinates = extractLatLngFromMapUrl(normalized);
   if (coordinates) {
     return `https://www.google.com/maps/search/?api=1&query=${coordinates.latitude},${coordinates.longitude}`;
   }
 
-  const isEmbedUrl = /google\.[^/]+\/maps\/embed|\/maps\/embed/i.test(value);
   if (isEmbedUrl && fallbackQuery.trim()) {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fallbackQuery.trim())}`;
   }
 
-  return isEmbedUrl ? null : value;
+  return null;
 };
 
 export const getResponseError = async (response: Response, fallback: string) => {

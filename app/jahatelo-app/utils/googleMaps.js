@@ -43,6 +43,8 @@ const extractGoogleMapsCid = (value) => {
 
 export const getGoogleMapsExternalUrl = (value, location) => {
   const normalized = normalizeMapUrl(value);
+  if (normalized && !/\/maps\/embed/i.test(normalized)) return normalized;
+
   const cid = extractGoogleMapsCid(normalized);
   if (cid) return `https://www.google.com/maps?cid=${cid}`;
 
@@ -51,7 +53,6 @@ export const getGoogleMapsExternalUrl = (value, location) => {
     return `https://www.google.com/maps/search/?api=1&query=${coordinates.latitude},${coordinates.longitude}`;
   }
 
-  if (normalized && !/\/maps\/embed/i.test(normalized)) return normalized;
   if (location?.lat != null && location?.lng != null) {
     return `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}`;
   }
