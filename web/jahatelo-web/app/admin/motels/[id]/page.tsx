@@ -426,14 +426,6 @@ export default function MotelDetailPage() {
     try {
       const normalizedMapUrl = normalizeMapUrl(motelForm.mapUrl || '');
       const extractedCoords = extractLatLngFromMapUrl(normalizedMapUrl);
-      if (!extractedCoords) {
-        const saveWithoutCoordinates = window.confirm(
-          normalizedMapUrl
-            ? 'No se pudieron obtener coordenadas del link o iframe de Google Maps.\n\nAceptar: guardar igualmente sin ubicación en el mapa.\nCancelar: volver al formulario para corregirlo o reintentar.'
-            : 'No ingresaste un link o iframe de Google Maps.\n\nAceptar: guardar igualmente sin ubicación en el mapa.\nCancelar: volver al formulario para agregarlo.'
-        );
-        if (!saveWithoutCoordinates) return;
-      }
       const fallbackFeaturedPhoto =
         normalizeOptionalText(motelForm.featuredPhoto || '') ||
         normalizeOptionalText(motelForm.featuredPhotoWeb || '') ||
@@ -451,8 +443,13 @@ export default function MotelDetailPage() {
         featuredPhoto: normalizeUploadUrl(fallbackFeaturedPhoto),
         featuredPhotoWeb: normalizeUploadUrl(motelForm.featuredPhotoWeb || ''),
         featuredPhotoApp: normalizeUploadUrl(motelForm.featuredPhotoApp || ''),
-        latitude: extractedCoords?.latitude ?? null,
-        longitude: extractedCoords?.longitude ?? null,
+        // Los enlaces de ficha de Google Maps conservan el pin exacto aunque no
+        // expongan coordenadas. En ese caso no se interrumpe el guardado ni se
+        // borran coordenadas existentes de registros anteriores.
+        ...(extractedCoords ? {
+          latitude: extractedCoords.latitude,
+          longitude: extractedCoords.longitude,
+        } : {}),
         ...(editingCommercial ? {
           contactName: normalizeOptionalText(motelForm.contactName || ''),
           contactEmail: normalizeOptionalText(motelForm.contactEmail || ''),

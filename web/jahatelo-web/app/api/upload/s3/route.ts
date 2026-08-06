@@ -6,14 +6,14 @@ import { z } from 'zod';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { requireAdminAccess } from '@/lib/adminAccess';
+import { WATERMARKED_IMAGE_CONTENT_TYPE, WATERMARKED_IMAGE_EXTENSION, watermarkUploadedImage } from '@/lib/media/watermark';
 
 export const runtime = 'nodejs';
 
-function createObjectKey(filename?: string | null) {
-  const ext = filename?.includes('.') ? filename.split('.').pop() : undefined;
+function createObjectKey() {
   const unique = crypto.randomBytes(8).toString('hex');
   const datePrefix = new Date().toISOString().split('T')[0];
-  return `uploads/${datePrefix}/${unique}${ext ? `.${ext}` : ''}`;
+  return `uploads/${datePrefix}/${unique}.${WATERMARKED_IMAGE_EXTENSION}`;
 }
 
 export async function POST(request: Request) {
@@ -62,10 +62,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const key = createObjectKey(
-      typeof file.name === 'string' ? file.name : undefined,
-    );
+    const buffer = await watermarkUploadedImage(Buffer.from(await file.arrayBuffer()), file.type);
+    const key = createObjectKey();
 
     if (useLocalFallback) {
       const uploadDir = path.join(process.cwd(), 'public', 'uploads', path.dirname(key).replace(/^uploads\//, ''));
@@ -90,7 +88,7 @@ export async function POST(request: Request) {
         Bucket: process.env.AWS_S3_BUCKET!,
         Key: key,
         Body: buffer,
-        ContentType: file.type || 'application/octet-stream',
+        ContentType: WATERMARKED_IMAGE_CONTENT_TYPE,
       }),
     );
 
