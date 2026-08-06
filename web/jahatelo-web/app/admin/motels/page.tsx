@@ -244,6 +244,9 @@ export default function MotelsAdminPage() {
   const pendingCount = summary.statusCounts.PENDING ?? 0;
   const approvedCount = summary.statusCounts.APPROVED ?? 0;
   const rejectedCount = summary.statusCounts.REJECTED ?? 0;
+  // Los pills representan el universo completo devuelto por el resumen del
+  // servidor, no solo la página actual cargada por el scroll infinito.
+  const allStatusCount = pendingCount + approvedCount + rejectedCount;
   const activeCount = summary.activeCounts.active ?? 0;
   const inactiveCount = summary.activeCounts.inactive ?? 0;
 
@@ -586,7 +589,7 @@ export default function MotelsAdminPage() {
                     : 'bg-white text-slate-700 border border-slate-300 hover:border-purple-300'
                 }`}
               >
-                Todos <span className="ml-1 opacity-75">({motelsArray.length})</span>
+                Todos <span className="ml-1 opacity-75">({allStatusCount})</span>
               </button>
               <button
                 onClick={() => setStatusFilter('PENDING')}
