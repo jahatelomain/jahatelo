@@ -25,6 +25,9 @@ export const metadata: Metadata = {
   keywords: ["moteles", "alojamiento", "hospedaje", "promociones", "jahatelo"],
   authors: [{ name: "Jahatelo" }],
   creator: "Jahatelo",
+  verification: {
+    google: "xdLQRuzM5b1dwASHb89DYgS3SAWpW_VS1OuMvQg_IyU",
+  },
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com'),
   alternates: {
     canonical: process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com',

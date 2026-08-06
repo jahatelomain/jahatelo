@@ -1,275 +1,337 @@
-# Documentacion tecnica integral — Jahatelo
+# Documentación técnica integral — Jahatelo
 
-**Revision:** 2026-07-19  
-**Alcance:** aplicacion movil, web publica, panel administrativo, API, datos, integraciones y operacion.  
-**Fuente:** estructura y codigo de los repositorios locales. No contiene secretos ni valores de produccion.
+**Revisión:** 2026-08-05
+**Alcance:** web pública, PWA, panel administrativo, API, app iOS/Android, datos, integraciones, seguridad y operación.
+**Fuente de verdad:** código local de `projects/jahatelo/app/jahatelo-app` y `projects/jahatelo/web/jahatelo-web`. El esquema de Prisma y los Route Handlers prevalecen sobre esta guía si existiera una diferencia.
+**Seguridad:** este documento no contiene credenciales, tokens, datos personales ni configuraciones secretas de producción.
 
 ---
 
-## 1. Proposito del producto
+## 1. Propósito y superficies del producto
 
-Jahatelo es una plataforma para descubrir moteles, explorar sus habitaciones, precios, fotos, promociones, menu, ubicacion y resenas. Opera sobre tres experiencias que comparten el mismo backend:
+Jahatelo permite descubrir moteles, consultar sus habitaciones, tarifas, fotografías, promociones, menú y ubicación, y realizar acciones de contacto. Un mismo backend sirve tres superficies, que deben conservar las mismas reglas de negocio.
 
-| Superficie | Proyecto | Usuario principal | Funcion |
+| Superficie | Proyecto | Público | Responsabilidad |
 | --- | --- | --- | --- |
-| Web publica | `web/jahatelo-web` | visitante y usuario registrado | busqueda, detalle, favoritos, mapas, promos y registro |
-| Panel administrativo | `web/jahatelo-web/app/admin` | superadministrador y administrador de motel | alta, edicion, ordenamiento, contenido, comercial, analitica y soporte |
-| App movil | `app/jahatelo-app` | visitante y usuario registrado | experiencia nativa iOS/Android con el mismo catalogo y acciones principales |
+| Web pública y PWA | `web/jahatelo-web` | visitantes y usuarios registrados | búsqueda, mapas, ficha del motel, favoritos, promociones y cuenta |
+| Panel administrativo | `web/jahatelo-web/app/admin` | superadministración y administradores de motel | operación, catálogo, comercial, finanzas, auditoría y soporte |
+| App móvil | `app/jahatelo-app` | visitantes y usuarios registrados | experiencia nativa iOS/Android sobre los contratos `/api/mobile/*` |
 
-La API Next.js y PostgreSQL son la fuente de verdad. Web y app no deben implementar reglas divergentes sobre planes, moneda, amenities, visibilidad, precios u ordenamiento.
+La regla de evolución principal es: **una regla funcional se define una vez y se verifica en web, admin, API y app antes de considerarla terminada**. No se duplican criterios de plan, precios, visibilidad, moneda, amenities ni ordenamiento en pantallas aisladas.
 
-## 2. Arquitectura general
+## 2. Arquitectura
 
 ```text
-                 +-------------------+
-                 | Navegador / Web   |
-                 +---------+---------+
-                           |
-                 +---------v---------+
-                 | Next.js 16        |
-                 | Web + Admin + API |
-                 +----+----+----+----+
-                      |    |    |
-          +-----------+    |    +--------------------+
-          |                |                         |
- +--------v-------+ +------v-------+         +-------v--------+
- | PostgreSQL      | | AWS S3 / SNS |         | Google Maps /  |
- | Prisma          | | media / SMS  |         | OAuth          |
- +----------------+ +--------------+         +----------------+
-          ^
-          |
- +--------+----------------+
- | Expo / React Native     |
- | iOS y Android           |
- +-------------------------+
+ Navegador / PWA                 App Expo / React Native
+        |                                  |
+        +-------------+--------------------+
+                      |
+             Next.js 16 / React 19
+     web pública + admin + Route Handlers
+                      |
+     +----------------+------------------+
+     |                |                  |
+ PostgreSQL        AWS S3            Integraciones
+ Prisma           media             Google Maps, OAuth,
+                                      AWS SNS, SMTP, Expo Push,
+                                      Upstash, Sentry
 ```
 
-Servicios adicionales presentes en el codigo: Expo Push Notifications, SMTP para correo, Upstash Redis para rate limiting, Sentry para monitoreo, Vercel para build/deploy y Cloudinary como configuracion heredada/opcional. Confirmar el proveedor activo de media por entorno antes de cambiarlo.
+- Next.js es el backend y la web: no existe un backend móvil independiente.
+- PostgreSQL es la fuente transaccional; Prisma es su contrato técnico.
+- La app consume una proyección móvil de la API, no consulta la base directamente.
+- S3 aloja media subida. Las URLs de medios no deben almacenarse en Git.
+- Vercel construye y publica la web. El despliegue de producción debe provenir de `main` mediante el flujo `staging → main`.
 
-## 3. Repositorios y estructura
+## 3. Estructura de repositorio
 
 ```text
 projects/jahatelo/
-├── app/jahatelo-app/                 # Expo / React Native
-│   ├── screens/                       # pantallas de la app
-│   ├── components/                    # UI y detalle de motel
-│   ├── services/                      # cliente API, cache, push, Sentry
-│   ├── contexts/, hooks/, constants/  # estado, comportamiento y diseno
+├── app/jahatelo-app/                  # Expo / React Native
+│   ├── screens/                       # pantallas y tabs
+│   ├── components/                    # UI reutilizable
+│   ├── services/                      # API, cache, prefetch, push y Sentry
+│   ├── utils/, hooks/, contexts/      # comportamiento compartido
+│   ├── constants/                     # diseño, planes y amenities
 │   ├── ios/, android/                 # proyectos nativos
-│   └── docs/SISTEMA_JAHATELO.md       # este documento
-└── web/jahatelo-web/                  # Next.js 16
-    ├── app/                           # web publica, admin y API Route Handlers
-    ├── components/                    # componentes compartidos y de dominio
-    ├── contexts/, hooks/, lib/        # estado, utilidades y servicios
+│   └── docs/SISTEMA_JAHATELO.*        # esta documentación
+└── web/jahatelo-web/                  # Next.js
+    ├── app/                           # páginas, layouts y Route Handlers
+    ├── components/                    # UI pública, admin y dominio
+    ├── lib/domain/                    # reglas reutilizables de dominio
+    ├── lib/validations/               # contratos Zod
     ├── prisma/schema.prisma           # modelo PostgreSQL
-    ├── scripts/                       # tareas operativas y guardas de deploy
-    └── vercel.json                    # build y cron jobs
+    ├── prisma/migrations/             # migraciones versionadas
+    ├── scripts/                       # guardas y tareas operativas
+    └── vercel.json                    # build y programación declarada
 ```
 
-## 4. Stack tecnologico
+## 4. Stack y convenciones técnicas
 
-### Backend, web y administracion
+### Web, administración y API
 
-- Next.js 16 con React 19 y TypeScript.
-- App Router y Route Handlers bajo `app/api`.
-- Prisma 6 y PostgreSQL.
-- Tailwind CSS para interfaz web.
-- Zod para validacion de entradas.
-- JWT firmado con `jose`, cookies y/o header `Authorization`.
-- S3 mediante AWS SDK para uploads; AWS SNS para SMS OTP/alertas.
-- Expo Push para notificaciones moviles.
-- Sentry, logger y auditoria para observabilidad.
-- Jest, Playwright y ESLint para calidad.
+- Next.js `16.1.6`, React `19.2`, TypeScript y App Router.
+- Prisma `6.19` sobre PostgreSQL.
+- Tailwind CSS, React Hook Form, Sonner y Lucide.
+- Zod para validación de requests; DOMPurify/sanitización para textos.
+- `jose` y cookies/tokens para autenticación; `requireAdminAccess` para autorización de API.
+- Jest, Playwright, ESLint y TypeScript estricto para calidad.
 
-### Aplicacion movil
+### App nativa
 
-- Expo SDK 54, React Native 0.81 y React 19.
-- React Navigation, tabs y stack nativo.
-- `expo-image`, `expo-location`, `expo-notifications`, `expo-splash-screen`, `expo-av` y Lottie.
-- `react-native-maps`, AsyncStorage, NetInfo y Sentry React Native.
-- iOS/Android con bundle/package `app.jahatelo.mobile`.
+- Expo SDK 54, React Native `0.81`, React `19.1` y React Navigation.
+- `expo-image`, `expo-location`, `expo-notifications`, `expo-splash-screen`, Lottie, AsyncStorage, NetInfo, Sentry y `react-native-maps`.
+- Bundle/package: `app.jahatelo.mobile`.
+- La instalación temporal de iPhone se realiza como **Release nativo con bundle incluido**, no como Development Build con Metro.
 
-## 5. Modelo de datos
+### Convenciones de código
 
-La base es PostgreSQL. Prisma define las entidades y relaciones. La lista siguiente es una vista funcional; el esquema Prisma es el contrato tecnico completo.
+1. Las reglas de precio viven en `lib/domain/motels/pricing.ts`; las de plan en `lib/domain/motels/planPresentation.ts`.
+2. El detalle administrativo de motel está dividido por dominio. No volver a concentrar fotos, habitaciones, promociones, menú y ubicación en un componente gigante.
+3. Toda lista paginada usa `meta.total` y resúmenes del servidor; los contadores no se calculan a partir de la primera página cargada.
+4. Las acciones destructivas requieren confirmación y auditoría cuando corresponda.
+5. Las vistas móviles de la web reproducen funcionalmente la app, pero no reutilizan componentes React Native.
 
-| Dominio | Entidades principales | Responsabilidad |
+## 5. Dominio y datos
+
+### Entidades centrales
+
+| Área | Modelos | Función |
 | --- | --- | --- |
-| Catalogo | `Motel`, `RoomType`, `RoomDayRate`, `Photo`, `RoomPhoto` | motel, habitaciones, tarifas por bloque/dia, fotos y orden |
-| Amenities y menu | `Amenity`, `RoomAmenity`, `MenuCategory`, `MenuItem`, `Product` | amenities por habitacion y oferta gastronomica |
-| Relacion con usuario | `User`, `Favorite`, `Review`, `UserNotificationPreferences`, `PushToken` | cuentas, favoritos, resenas y preferencias |
-| Comercial | `Promo`, `PromoCode`, `Advertisement`, `AdAnalytics`, `HomeBanner` | promociones, canje, publicidad y medicion |
-| Operacion | `Schedule`, `PaymentMethod`, `SocialLink`, `PaymentHistory`, `MotelProspect` | horarios, contactos, cobros y prospectos |
-| Control | `AuditLog`, `MotelAnalytics`, `VisitorEvent`, `Settings` | trazabilidad, eventos, visitantes y configuracion |
-| Mensajeria | `WhatsappOtp`, `ContactMessage`, `ScheduledNotification`, `AutoNotificationConfig` | OTP, inbox y notificaciones programadas |
+| Catálogo | `Motel`, `RoomType`, `RoomPhoto`, `Schedule` | ficha, habitaciones, fotos ordenadas y horarios |
+| Tarifas | `RoomDayRate`, `RoomWeekdayRate` | precios por grupo de día y excepciones por día/duración |
+| Ubicación | `CountryCatalog`, `CityCatalog` | catálogo normalizado de país/ciudad |
+| Amenities y menú | `Amenity`, `RoomAmenity`, `MenuCategory`, `MenuItem`, `Product` | amenities por habitación y menú |
+| Usuarios | `User`, `AccessProfile`, `AccessProfilePermission`, `Favorite`, `Review` | cuentas, perfiles, permisos, favoritos y reseñas Jahatelo |
+| Comercial | `Promo`, `PromoCode`, `MotelProspect`, `HomeBanner`, `Advertisement` | promociones, cupones, prospectos y publicidad |
+| Financiero | `PaymentHistory`, datos de facturación del motel | cobros, estado y plan |
+| Observabilidad | `AuditLog`, `MotelAnalytics`, `VisitorEvent`, `AdAnalytics` | auditoría y métricas |
+| Comunicación | `PushToken`, `UserNotificationPreferences`, `ScheduledNotification`, `AutoNotificationConfig`, `ContactMessage` | push, preferencias, campañas e inbox |
 
-### Reglas de dominio importantes
+### Estados, roles y visibilidad
 
-1. Los amenities existen por habitacion. Lo que se muestra para un motel es la union de los amenities de sus habitaciones.
-2. El orden de habitaciones y fotos es dato persistente; admin, web y app deben respetar el mismo orden.
-3. Las portadas separadas `featuredPhotoWeb` (16:9) y `featuredPhotoApp` (4:5) permiten una presentacion correcta por plataforma. Existe una portada de compatibilidad (`featuredPhoto`).
-4. Los planes soportados son `FREE`, `BASIC`, `GOLD` y `DIAMOND`. La presentacion comercial debe centralizarse; no copiar sus reglas en cada pantalla.
-5. Estados de motel: `PENDING`, `APPROVED`, `REJECTED`; la visibilidad publica exige aprobacion y activacion.
-6. Roles: `SUPERADMIN`, `MOTEL_ADMIN`, `USER`. Un administrador de motel se limita a su motel y a los modulos habilitados.
+- Motel: `PENDING`, `APPROVED`, `REJECTED`.
+- Un motel se publica solo cuando está `APPROVED` e `isActive=true`.
+- Roles base: `SUPERADMIN`, `MOTEL_ADMIN`, `USER`.
+- Los perfiles configurables (`AccessProfile`) son la fuente preferida de permisos por módulo y acción (`VIEW`, `CREATE`, `UPDATE`, `DELETE`, `EXPORT`, `MANAGE`). El arreglo legacy `modulePermissions` existe como respaldo para cuentas antiguas.
+- `MOTEL_ADMIN` queda restringido a su `motelId`; no puede cambiar por sí mismo estado/habilitación, país, ciudad, dirección ni enlace de Maps. Tampoco puede eliminarse ni modificarse su propia habilitación.
 
-## 6. Web publica
+### Catálogo de ubicación
 
-Rutas principales confirmadas:
+- Países y ciudades se administran desde Configuración por superadministración.
+- El motel almacena el texto de país y ciudad ya normalizado contra el catálogo.
+- Barrio no forma parte del modelo operativo ni de los formularios actuales.
+- La dirección se presenta como una sola línea: `Dirección, Ciudad`.
 
-| Ruta | Funcion |
+### Fotos y amenities
+
+1. Los amenities son exclusivamente de habitación; el motel publica la unión de los amenities de sus habitaciones activas.
+2. La galería pública es la de habitaciones. No existe una galería operativa independiente del motel.
+3. `RoomPhoto.order` y `RoomType.order` determinan el orden en admin, web y app.
+4. La portada del motel usa `featuredPhotoWeb` para web (16:9), `featuredPhotoApp` para app (4:5) y `featuredPhoto` como compatibilidad.
+5. Las cargas se hacen mediante upload manual; los campos de URL de foto no son el flujo normal de edición.
+
+## 6. Planes y reglas comerciales
+
+| Plan | Catálogo público | Contenido publicado | Analytics para administrador de motel |
+| --- | --- | --- | --- |
+| `FREE` | visible, visualmente atenuado | solo detalles base; sin habitaciones, promos, menú ni reseñas | sin acceso |
+| `BASIC` | visible | contenido según límites configurados | resumen |
+| `GOLD` | visible | contenido según límites configurados | completo |
+| `DIAMOND` | visible con glow comercial | contenido según límites configurados | completo |
+
+- El glow se aplica únicamente a `DIAMOND` y debe ser consistente en todas las cards web/app.
+- Un motel FREE es navegable; no debe quedar como tarjeta bloqueada.
+- La regla de plan se aplica tanto en el mapper móvil como en la página pública. Ocultar una tab en UI no sustituye la restricción de datos del backend.
+
+## 7. Tarifas de habitaciones
+
+Cada habitación admite los bloques `1h`, `1.5h`, `2h`, `3h`, `12h`, `24h` y `Dormida` (no “Noche”). Todos los importes se guardan como enteros PYG y se muestran como `Gs.` sin cálculos que alteren el valor enviado por admin.
+
+### Prioridad de precio efectivo
+
+```text
+tarifa puntual para día + duración
+          ↓ si no existe
+tarifa por grupo WEEKDAY / WEEKEND
+          ↓ si no existe
+tarifa base de habitación
+```
+
+- `WEEKDAY`: domingo a jueves; `WEEKEND`: viernes y sábado.
+- La hora de referencia es `America/Asuncion`.
+- Las excepciones por día se guardan como una fila por `(habitación, día, duración)`; la restricción única evita dos precios para la misma combinación.
+- El mínimo mostrado en cards y detalle se calcula sobre habitaciones activas y tarifas efectivas. Si no existe ningún precio válido se muestra “Consultar”; en caso contrario, “Desde Gs. …”.
+- Las vistas de preview de admin muestran tarifas base, por grupo y puntuales ya cargadas antes de editar.
+
+## 8. Google Maps y ubicación exacta
+
+El campo `mapUrl` acepta tanto el vínculo de **Compartir** de Google Maps como el iframe de **Insertar un mapa**.
+
+1. El formulario normaliza un iframe y persiste solo su `src`; además extrae coordenadas para mapa/listados.
+2. Al abrir Google Maps, una URL normal `/maps/place/...` se preserva completa: contiene la ficha y el pin exacto del negocio.
+3. Para un iframe Embed, se intenta obtener el identificador de ficha (CID) y abrir la ficha del negocio.
+4. Solo si no existe identidad de ficha se usa latitud/longitud como respaldo.
+
+**Regla operativa:** preferir siempre el vínculo de “Compartir” para máxima precisión. Nunca convertir un enlace de ficha en un simple `@lat,lng` o `q=lat,lng`, pues esto abre el centro del mapa y puede alejar el pin del negocio.
+
+## 9. Web pública y PWA
+
+### Rutas principales
+
+| Ruta | Función |
 | --- | --- |
-| `/` | inicio, destacados, categorias, promociones y publicidad |
-| `/search` | busqueda y filtros |
-| `/mapa`, `/nearby` | mapa y cercania |
-| `/ciudad/[ciudad]`, `/ciudad/[ciudad]/[barrio]` | exploracion geografica |
-| `/motels/[slug]` | ficha del motel: detalles, habitaciones, promos, menu y resenas |
-| `/mis-favoritos`, `/perfil` | experiencia de cuenta |
-| `/login`, `/register` | autenticacion |
-| `/registrar-motel` | captacion/registro publico |
-| `/privacidad`, `/terminos`, `/soporte`, `/contacto` | legales y soporte |
-
-Caracteristicas: SEO/JSON-LD, sitemap, PWA, age gate, favoritos, analitica, mapas Google, llamados/WhatsApp, anuncios y manejo de errores.
-
-## 7. Panel administrativo
-
-El panel vive bajo `/admin` y valida autenticacion, rol y permisos de modulo tanto en interfaz como en API.
-
-| Modulo | Alcance |
-| --- | --- |
-| Dashboard | resumen y acciones rapidas |
-| Moteles | alta, aprobacion, activacion, detalle, contactos, plan, ubicacion, fotos, habitaciones, menu, promos, resenas y orden |
-| Amenities | catalogo de amenities de habitacion |
-| Promos | creacion, vigencia, codigos, canje, busqueda y estados |
-| Banners/Publicidad | anuncios, placements, variantes web/app y analitica |
-| Usuarios/Roles | cuentas, roles y permisos por modulo |
-| Comercial/Financiero | prospectos, facturacion, pagos y estado comercial |
-| Inbox/Notificaciones | mensajes, campanas y programacion push |
-| Analytics/Auditoria | indicadores, visitantes, eventos y trazabilidad |
-| Configuracion | ajustes operativos publicados |
-
-La pagina de detalle de motel fue modularizada en componentes por dominio. Cambios futuros deben conservar esa division: datos/formularios, fotos, habitaciones, promos, menu, ubicacion y resenas no deben volver a concentrarse en un unico archivo gigante.
-
-## 8. Aplicacion movil
-
-Pantallas verificadas: splash y age gate, inicio, lista/busqueda, ciudades, cerca mio, mapa, detalle de motel, favoritos, login/registro, perfil, preferencias de notificacion, historial de promos, contacto y registro de motel.
+| `/` | inicio, destacados, promos, publicidad y exploración |
+| `/search` | búsqueda y sugerencias |
+| `/mapa`, `/nearby` | mapa y cercanía |
+| `/ciudad/[ciudad]` | listados por ciudad |
+| `/motels/[slug]` | detalle del motel |
+| `/mis-favoritos`, `/perfil` | cuenta y favoritos |
+| `/login`, `/register` | autenticación |
+| `/registrar-motel` | captación pública |
+| `/contacto`, `/soporte`, `/privacidad`, `/terminos` | soporte y legales |
 
 ### Detalle de motel
 
-- Header con portada, acciones de contacto/favorito/compartir y plan.
-- Tabs de detalles, habitaciones, resenas, promos y menu cuando exista contenido.
-- Gestos horizontales controlados para tabs sin interferir con galerias verticales/horizontales.
-- Galeria de habitacion con previsualizacion fullscreen y swipe entre fotos.
-- Los datos se normalizan en `services/motelsApi.js` para tolerar respuestas legadas y mantener fotos/amenities en formato consistente.
+- La ficha reúne detalles, promociones, habitaciones, menú y reseñas según plan y disponibilidad.
+- Las fotos de habitación tienen visor ampliado con navegación entre fotos.
+- Las tabs se sincronizan con el desplazamiento/gesto móvil sin interferir con la galería.
+- Favoritos, contacto y métricas se registran mediante contratos comunes.
+- Solo se exponen reseñas de Jahatelo; Google no se usa como fuente de calificación pública.
 
-### Datos, cache y red
+### PWA
 
-- La app consume `/api/mobile/*` usando `EXPO_PUBLIC_API_URL`.
-- Agrega `X-App-Version`; el backend puede responder `426` para exigir actualizacion minima.
-- Cache local, vistas recientes, prefetch y soporte de red se concentran en `services/cacheService.js`, `prefetchService.js`, `useNetworkStatus` y `useOnlineRetry`.
-- En staging puede usar una compuerta Basic Auth almacenada localmente. No usar esa modalidad para una compilacion de produccion.
+La web declara `manifest.json` y registra `sw.js` mediante `PwaRegistrar`. La instalación es opcional y no reemplaza la app nativa. La interfaz de cliente en navegador móvil debe mantener equivalencia funcional con iOS/Android, conservando una presentación de escritorio separada.
 
-### Distribucion nativa
+## 10. Panel administrativo
 
-- El release iOS temporal autonomo se construye como `Release` con bundle incluido; no debe depender de Metro.
-- La app declara deep links para `jahatelo.com`, permisos de ubicacion/camara/fotos/notificaciones y dominios asociados iOS.
-- Todo cambio de plugin, permisos, scheme, bundle/package o `app.json` requiere validacion nativa en iOS y Android.
+El panel está bajo `/admin`. El acceso se valida en layout, interfaz y Route Handlers; una pantalla oculta nunca es la única barrera de seguridad.
 
-## 9. API y contratos
+| Módulo | Superadministración | Administrador de motel |
+| --- | --- | --- |
+| Dashboard | métricas globales | resumen operativo propio |
+| Gestión de motel | todos los moteles | acceso directo a su motel |
+| Habitaciones, fotos, menú y promos | administra todos | solo su motel |
+| Amenities y ubicación | catálogo global | lectura/uso autorizado según permisos |
+| Prospectos y ciudades | sí | no |
+| Usuarios, perfiles y auditoría | sí | no |
+| Financiero | gestión completa | vista informativa propia |
+| Analytics | todos | propio, sujeto al plan |
+| Canje de códigos | auditoría/global | canje e historial de sus promos |
+| Notificaciones masivas | sí | no puede enviar a clientes |
 
-Las rutas estan bajo `app/api`. Los grupos principales son:
+### Alta y ciclo comercial de motel
 
-| Prefijo | Funcion |
+1. Un prospecto se crea manualmente o desde captación, con estado `NEW`, `CONTACTED`, `IN_NEGOTIATION`, `WON` o `LOST`.
+2. Desde el prospecto se puede iniciar “Dar de alta motel”; sus datos disponibles se precargan.
+3. Al convertir, se completan obligatoriamente los datos requeridos del perfil, ubicación y contacto. El motel nace con el plan elegido (por defecto `FREE`) y puede quedar pendiente/habilitado según el flujo administrativo.
+4. Los borradores locales y el antiguo formulario autoguardado fueron retirados: no forman parte del flujo vigente.
+
+### Promociones y códigos
+
+- Una promo puede ser global o asociada a un motel, tener vigencia, imagen y reglas de códigos.
+- Los códigos tienen estado `PENDING` o `USED`, dispositivo emisor, fecha de canje y responsable.
+- El cliente obtiene el código desde la experiencia pública/app; el motel lo valida desde “Canjear código” y consulta su historial.
+- El historial debe preservarse al desactivar una promo. Eliminar entidades con relaciones exige revisar explícitamente la política de retención.
+
+### Auditoría
+
+`AuditLog` registra actor, acción, entidad, módulo, método, ruta, estado HTTP, IP, user-agent, metadatos y, cuando aplica, antes/después. El middleware de acceso también deja trazas de acceso concedido/denegado. Toda nueva operación administrativa sensible debe usar el helper de auditoría.
+
+## 11. App iOS y Android
+
+### Experiencia
+
+- Inicio, búsqueda, ciudades, cerca mío, mapa, favoritos, perfil, autenticación y detalle de motel consumen `/api/mobile/*`.
+- El detalle usa tabs/scroll sincronizados, pull-to-refresh, galería fullscreen y gestos protegidos para no cambiar de tab al deslizar fotos.
+- La app recibe `mapUrl` además de coordenadas; al abrir Maps aplica la misma regla de ficha exacta que la web.
+- El splash y launch screen se coordinan visualmente para evitar una transición perceptible.
+
+### Datos y resiliencia
+
+- `services/motelsApi.js` normaliza contratos móviles, fotos, amenities, plan, precios y ubicación.
+- Cache local, prefetch, reintentos y estado de red se concentran en `cacheService`, `prefetchService`, `useNetworkStatus` y `useOnlineRetry`.
+- La app envía `X-App-Version`; el servidor puede responder `426` si hay una versión mínima obligatoria.
+- Todos los listados deben implementar actualización manual por arrastre cuando la pantalla lo permita.
+
+### Builds y dispositivo
+
+```bash
+cd '/Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app'
+npm run ios:device -- <UDID>
+```
+
+Este es el camino preferido para reinstalar rápidamente una Release iOS temporal en un iPhone conectado, sin Metro. Usar una reconstrucción nativa completa solo cuando cambien Pods, permisos, `app.json`, firma, scheme o archivos nativos. Android se distribuye mediante APK generado desde una build nativa actualizada.
+
+## 12. API y contratos
+
+| Prefijo | Responsabilidad |
 | --- | --- |
-| `/api/mobile/*` | contratos consumidos por la app: moteles, detalle, ciudades, mapa, favoritos, resenas, auth y preferencias |
-| `/api/admin/*` | operaciones autenticadas de administracion: moteles, habitaciones, fotos, amenities, promos, usuarios, financiero, inbox, auditoria, analytics y settings |
-| `/api/auth/*` | registro, login, sesion, Google y OTP/WhatsApp segun flujo |
-| `/api/public/*` | registro/captacion publica de moteles |
-| `/api/advertisements/*` | lectura y tracking de anuncios |
-| `/api/analytics/*` | eventos de catalogo y visitantes |
-| `/api/upload/*` | upload general y firma/flujo S3 |
-| `/api/notifications/*` | programacion y consulta de notificaciones |
-| `/api/cron/*` | tareas programadas protegidas |
-| `/api/health` | health check |
+| `/api/mobile/*` | catálogo y acciones de la app: moteles, ciudades, mapa, favoritos, reseñas, auth y preferencias |
+| `/api/admin/*` | operación autenticada: moteles, habitaciones, fotos, amenities, ubicación, promos, códigos, usuarios, perfiles, prospectos, financiero, analytics, auditoría e inbox |
+| `/api/auth/*` | login, sesión, registro, Google, correo y teléfono/OTP según flujo |
+| `/api/public/*` | lectura/captación pública y promociones |
+| `/api/upload/*` | subida autorizada y flujo S3 |
+| `/api/analytics/*` | eventos de catálogo/visitantes |
+| `/api/notifications/*` | creación, envío inmediato y consulta de campañas |
+| `/api/cron/*` | procesadores protegidos de tareas programadas |
+| `/api/health` | verificación de salud |
 
 Reglas de contrato:
 
-1. Validar payloads de borde con Zod antes de persistir.
-2. Conservar compatibilidad de respuestas movil mientras haya versiones antiguas soportadas.
-3. Responder errores estables y no filtrar secretos, SQL ni stack traces.
-4. Cualquier campo nuevo de API debe evaluarse en web, admin, app, Prisma y migracion si aplica.
+1. Validar en el borde con Zod y responder errores estables, sin stack traces ni secretos.
+2. Todo cambio de Prisma requiere migración revisada, compatibilidad de API y actualización de mappers web/móvil.
+3. La API debe aplicar límites de plan y propiedad de recurso; nunca confiar solo en la UI.
+4. `mapUrl`, `latitude` y `longitude` describen una misma ubicación; al cambiar el enlace se recalculan las coordenadas, pero no se reemplaza un enlace de ficha al abrir Google Maps.
 
-## 10. Seguridad
+## 13. Autenticación, permisos y seguridad
 
-- JWT HS256, expiracion de siete dias y verificacion de token en servidor.
-- Control de rol y permisos de modulo con `requireAdminAccess`.
-- Middleware: HTTPS en produccion, CORS permitido, CSRF para operaciones web basadas en cookies, rate limiting y proteccion de staging.
-- Upstash Redis es el backend preferido del rate limit; existe fallback en memoria para edge/desarrollo.
-- Sanitizacion de texto/HTML, Zod, control de archivos y limites de upload.
-- Secrets solamente en variables de entorno. Nunca en Git, PDF, logs, capturas o cliente.
-- Cron endpoints deben requerir `CRON_SECRET`/autorizacion de Vercel.
+- JWT firmado y validación de sesión en servidor.
+- Roles, perfiles y acciones se verifican mediante `requireAdminAccess`.
+- Cuentas de motel se asocian a un motel. No se habilita la autocreación de equipos de motel desde ese perfil.
+- Validación Zod, sanitización, límites de carga y rate limiting con Upstash/fallback controlado.
+- HTTPS, CORS/CSRF según endpoint y protección de staging se configuran en middleware/entorno.
+- Secretos solo en variables de entorno. Todo `NEXT_PUBLIC_*` o `EXPO_PUBLIC_*` es visible en el cliente.
+- No almacenar contraseñas, tokens, URLs firmadas ni datos de producción en documentación, commits o capturas.
 
-## 11. Integraciones externas
+## 14. Notificaciones y comunicaciones
 
-| Servicio | Uso | Variables/configuracion relevantes |
+- La app registra tokens Expo en `PushToken`; las preferencias viven en `UserNotificationPreferences`.
+- Solo superadministración puede programar o enviar notificaciones a usuarios. Un motel no puede enviar campañas a clientes.
+- Para notificaciones inmediatas, la API procesa el envío en el momento. Para las programadas, `ScheduledNotification` registra destinatario, categoría, resultado y fallos.
+- El código declara tres endpoints de cron: proceso de notificaciones, limpieza de datos y limpieza de códigos. `vercel.json` los programa diariamente a las 03:00, 04:00 y 05:00 UTC respectivamente.
+- Si el entorno utiliza un programador externo (por ejemplo Supabase), debe invocar los mismos endpoints protegidos y quedar documentado en la configuración de producción. No afirmar que está activo sin verificarlo en el proveedor.
+- SMS usa AWS SNS cuando el flujo lo requiera; correo usa SMTP; Expo Push atiende dispositivos móviles. WhatsApp no es canal operativo automático actual.
+
+## 15. Integraciones externas
+
+| Servicio | Uso | Variables/grupo |
 | --- | --- | --- |
-| PostgreSQL | datos transaccionales | `DATABASE_URL`, `DIRECT_URL` |
-| Vercel | hosting, builds y cron | branch de produccion y variables del proyecto |
-| AWS S3 | media subida | credenciales AWS y bucket/configuracion de storage |
-| AWS SNS | SMS OTP y alertas | region, sender, secretos AWS |
-| Expo | build y push | `EXPO_PUBLIC_API_URL`, proyecto EAS y tokens push |
-| Google Maps | geocoding y mapas | claves servidor/publica |
-| Google OAuth | login | client IDs web/iOS/Android/Expo |
-| SMTP | email y verificacion | host, puerto, usuario, password |
-| Sentry | errores y trazas | DSN servidor/cliente/movil |
+| PostgreSQL | datos principales | `DATABASE_URL`, `DIRECT_URL` |
+| Vercel | build y hosting web | proyecto, rama permitida, variables |
+| AWS S3 | fotos y media | bucket, región y credenciales AWS |
+| AWS SNS | SMS/OTP | `AWS_SNS_*` y credenciales AWS |
+| Google Maps | mapas, iframe/enlaces y geocoding | claves Maps públicas/servidor |
+| Google OAuth | login social | IDs de cliente por plataforma |
+| SMTP | correo | `SMTP_*`, `EMAIL_FROM_*` |
+| Expo | push y builds móviles | URL API, proyecto/bundle y tokens |
+| Sentry | fallos y trazas | DSN web/móvil/servidor |
 | Upstash | rate limiting | URL y token REST |
 
-## 12. Media e imagenes
+Antes de cambiar un proveedor, identificar el que está activo en las variables del entorno objetivo. Cloudinary aparece como configuración heredada/opcional, no debe asumirse como el storage activo si S3 está configurado.
 
-1. Las imagenes de contenido se almacenan en servicio de media, no en Git.
-2. La subida debe validar tipo, tamano, autorizacion y URL resultante.
-3. Mantener variantes que respondan a plataforma: web horizontal y app vertical donde corresponda.
-4. Toda lista de fotos requiere orden estable y fallback seguro.
-5. La web debe usar el componente de imagen apropiado; la app usa sus componentes nativos para carga/cache.
-6. Antes de borrar media verificar referencias en motel, habitacion, promo, banner y almacenamiento remoto.
+## 16. Media, rendimiento y observabilidad
 
-## 13. Notificaciones y comunicaciones
+1. Validar MIME, tamaño, autorización y resultado de cada upload.
+2. Usar variantes correctas de portada por plataforma y evitar estirar/recortar la imagen de origen.
+3. Mantener órdenes de foto/habitación estables y actualizar en memoria tras reordenar; no obligar al usuario a recargar.
+4. Las listas usan paginación/infinite scroll, deduplicación por ID y contadores del servidor.
+5. `MotelAnalytics`, `VisitorEvent` y `AdAnalytics` capturan uso funcional; Sentry captura fallos técnicos.
+6. No enviar datos sensibles en eventos, logs ni etiquetas de observabilidad.
 
-- La app registra tokens Expo y preferencias por usuario/dispositivo.
-- El backend selecciona destinatarios por usuarios, rol, favoritos de motel o invitados, respetando preferencias segun categoria.
-- Las campanas programadas se guardan en `ScheduledNotification` y el cron `process-notifications` las procesa diariamente a las 03:00 UTC configurada por Vercel.
-- Limpieza de datos y codigos promo tiene crons separados a las 04:00 y 05:00.
-- Mensajes de contacto alimentan el inbox y pueden disparar alertas a administracion.
+## 17. Desarrollo, pruebas y despliegue
 
-## 14. Analitica y auditoria
-
-- Eventos de motel: vista, click telefono, WhatsApp, mapa, web y favoritos.
-- Eventos de publicidad: vista y click por placement.
-- Eventos de visitantes y analitica administrativa.
-- `AuditLog` registra acciones sensibles; todo cambio administrativo relevante debe conservar actor, recurso, accion y fecha.
-- Sentry complementa trazas de fallas. No usarlo para datos sensibles.
-
-## 15. Variables de entorno
-
-Usar `.env.example` como contrato. Principales grupos:
-
-```text
-DATABASE_URL, DIRECT_URL
-JWT_SECRET, OTP_SECRET, EMAIL_VERIFICATION_SECRET, CRON_SECRET
-AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SNS_*
-SMTP_*, EMAIL_FROM_*
-GOOGLE_MAPS_API_KEY, NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-NEXT_PUBLIC_GOOGLE_CLIENT_ID
-NEXT_PUBLIC_APP_URL, EXPO_PUBLIC_API_URL
-SENTRY_DSN, NEXT_PUBLIC_SENTRY_DSN
-UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
-STAGING_GATE_*, ALLOWED_PRODUCTION_BRANCH
-```
-
-Nunca copiar valores reales a documentacion. Cualquier variable `NEXT_PUBLIC_*` o `EXPO_PUBLIC_*` es visible en el cliente y no debe contener secretos.
-
-## 16. Desarrollo, calidad y despliegue
-
-### Comandos frecuentes
+### Comandos de validación
 
 ```bash
 # web
@@ -291,51 +353,44 @@ npm test -- --runInBand
 ```bash
 cd '/Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/web/jahatelo-web'
 npx prisma generate
-npx prisma migrate dev --skip-seed       # desarrollo, con revision previa
-npx prisma migrate deploy                # entorno de deploy
+npx prisma migrate dev --skip-seed   # solo desarrollo y previa revisión
+npx prisma migrate deploy            # entorno controlado de deploy
 ```
 
-No ejecutar migraciones destructivas ni restauraciones de base sin backup verificable y aprobacion. Un build puede requerir acceso a la base por la generacion/ejecucion de Prisma; diferenciar una dependencia de entorno de un error de compilacion.
+No ejecutar migraciones destructivas, restauraciones ni scripts de limpieza sin backup verificable y aprobación explícita.
 
-### Deploy
+### Flujo de entrega
 
-1. Revisar `git status` y diff.
-2. Validar lint, TypeScript y pruebas del alcance.
-3. Confirmar cuenta, repositorio, rama y proyecto Vercel correctos.
-4. Confirmar variables de entorno y migraciones requeridas.
-5. El build de Vercel protege produccion mediante `scripts/enforce-production-branch.js`; la rama permitida se controla con `ALLOWED_PRODUCTION_BRANCH`.
-6. No hacer commit, push, merge o deploy sin confirmacion explicita del responsable.
+1. Revisar `git status`, diff y cambios ajenos antes de editar.
+2. Validar el alcance: TypeScript/web, lint/app y tests relevantes.
+3. Confirmar cuenta GitHub y Vercel de Jahatelo.
+4. Hacer commit en `staging`, push, PR hacia `main`, esperar checks y fusionar desde GitHub.
+5. Verificar el despliegue asociado y probar el caso funcional en producción.
+6. No hacer commit, push, merge ni deploy sin confirmación explícita. “CPM” significa este flujo completo cuando el responsable lo solicita.
 
-## 17. Runbook de incidencias
+## 18. Runbook de incidencias
 
-| Sintoma | Primeras verificaciones |
+| Síntoma | Verificación inicial |
 | --- | --- |
-| Web 500 | logs de Vercel/Sentry, variables, Prisma/DB, endpoint concreto |
-| App sin datos | `EXPO_PUBLIC_API_URL`, red, endpoint `/api/mobile`, version minima 426 |
-| App abre launcher Expo | se instalo Development Build; crear Release con bundle nativo |
-| Fotos faltantes | URL guardada, permisos/bucket, referencias y variante web/app |
-| Mapa incorrecto | `mapUrl`, latitud/longitud, geocoding y clave Google Maps |
-| Push no llega | token activo, permisos, preferencias, payload Expo, cron y logs |
-| Admin sin acceso | token, rol, permisos de modulo, motel asignado y middleware |
-| Build falla por DB | validar variables/alcance de Prisma; no confundir con error TypeScript |
+| Web/API 500 | logs Vercel/Sentry, variables, Prisma/DB y endpoint exacto |
+| App sin datos | `EXPO_PUBLIC_API_URL`, red, contrato `/api/mobile/*`, caché y 426 |
+| App abre Expo launcher | se instaló Development Build; reinstalar Release con bundle nativo |
+| Fotos faltantes o mal encuadradas | referencia S3, permisos, variante 16:9/4:5 y orden |
+| Pin de Maps cercano | preservar enlace de ficha `maps/place`; no degradarlo a coordenadas |
+| Push no llega | token activo, permisos, preferencias, registro de resultado y scheduler activo |
+| Admin sin acceso | sesión, rol, perfil, acción requerida, módulo y motel asignado |
+| Precio incorrecto | revisar prioridad puntual → grupo → base y que el monto sea entero PYG |
+| Contador de listado incorrecto | usar `meta.summary`/`meta.total`, no la longitud de la página |
 
-## 18. Normas de evolucion
+## 19. Normas de evolución
 
-1. Todo cambio funcional debe evaluarse para web publica, admin y app.
-2. Reutilizar contratos y reglas de dominio; no duplicar logica de planes, precios, estado u orden.
-3. Separar componentes por dominio y mantener TypeScript estricto en web.
-4. Cambiar APIs y Prisma con migracion, validacion y compatibilidad planificada.
-5. Probar casos exitosos y de error, no solo la pantalla principal.
-6. Documentar integraciones nuevas, variables, permisos, cron y plan de rollback.
-7. Los archivos de recovery o backups temporales no son parte del producto: usar Git, backups de DB y storage documentado.
-
-## 19. Estado de verificacion de esta revision
-
-- App: lint y pruebas locales aprobadas (6 pruebas).
-- Web: TypeScript y pruebas locales aprobadas (40 pruebas).
-- Web: lint sin errores; persisten advertencias de optimizacion/estructura que se siguen corrigiendo gradualmente.
-- No se ejecuta deploy, migracion ni cambio de secretos como parte de esta documentacion.
+1. Diseñar primero el contrato y la regla de dominio; después adaptar web, app y admin.
+2. Preferir módulos de dominio, tipos explícitos y componentes pequeños por responsabilidad.
+3. No introducir campos de formulario sin una persistencia, permiso, visualización y caso de uso claros.
+4. No mantener compatibilidad obsoleta sin fecha de retirada y plan de migración.
+5. Toda integración nueva debe documentar credenciales requeridas, permisos, coste, monitoreo, reintentos y rollback.
+6. Archivos temporales, recovery y backups locales no son parte del producto: la recuperación se apoya en Git, backups de DB y almacenamiento documentado.
 
 ---
 
-**Documento vivo.** Actualizar esta guia cuando cambien contratos de API, entidades Prisma, proveedores externos, permisos nativos, cron jobs o proceso de despliegue.
+**Documento vivo.** Actualizar esta guía y regenerar HTML/PDF cuando cambien Prisma, contratos API, permisos, planes, proveedores, build nativo o flujo de despliegue.

@@ -19,6 +19,21 @@ const DURATION_LABELS: Record<string, string> = {
   H1: '1 h', H1_5: '1,5 h', H2: '2 h', H3: '3 h', H12: '12 h', H24: '24 h', NIGHT: 'Dormida',
 };
 
+type RateItem = { field: keyof RoomType; label: string; value: number };
+
+function RatesGrid({ items }: { items: RateItem[] }) {
+  return (
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      {items.map(({ field, label, value }) => (
+        <div key={field} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+          <div className="mb-0.5 text-xs text-slate-500">{label}</div>
+          <div className="font-semibold text-slate-900">Gs. {formatPrice(value)}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function RoomRatesSummary({ room }: { room: RoomType }) {
   const toRates = (source: Pick<RoomType, (typeof RATE_FIELDS)[number][0]>) => RATE_FIELDS.flatMap(([field, label]) => {
     const value = source[field];
@@ -52,17 +67,6 @@ export default function RoomRatesSummary({ room }: { room: RoomType }) {
   });
 
   if (weekdayRates.length === 0 && weekendRates.length === 0 && specificRates.length === 0) return null;
-
-  const RatesGrid = ({ items }: { items: typeof rates }) => (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-      {items.map(({ field, label, value }) => (
-        <div key={field} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
-          <div className="mb-0.5 text-xs text-slate-500">{label}</div>
-          <div className="font-semibold text-slate-900">Gs. {formatPrice(value)}</div>
-        </div>
-      ))}
-    </div>
-  );
 
   return (
     <div className="mb-4">
