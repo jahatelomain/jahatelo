@@ -16,6 +16,7 @@
     "postinstall": "prisma generate",
     "prisma:migrate": "prisma migrate dev --skip-seed",
     "prisma:backfill-locations": "node prisma/scripts/backfill-location-catalog.mjs",
+    "media:watermark:backfill": "tsx scripts/backfill-watermarks.mts",
     "prisma:studio": "prisma studio",
     "test-users:create": "node scripts/test-users.mjs create",
     "test-users:cleanup": "node scripts/test-users.mjs cleanup"
@@ -41,6 +42,7 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-hook-form": "^7.71.2",
+    "sharp": "^0.34.5",
     "sonner": "^2.0.7",
     "zod": "^4.3.5"
   },
