@@ -17,6 +17,7 @@
     "prisma:migrate": "prisma migrate dev --skip-seed",
     "prisma:backfill-locations": "node prisma/scripts/backfill-location-catalog.mjs",
     "media:watermark:backfill": "tsx scripts/backfill-watermarks.mts",
+    "motels:plans:basic": "tsx scripts/set-motels-basic.mts",
     "prisma:studio": "prisma studio",
     "test-users:create": "node scripts/test-users.mjs create",
     "test-users:cleanup": "node scripts/test-users.mjs cleanup"

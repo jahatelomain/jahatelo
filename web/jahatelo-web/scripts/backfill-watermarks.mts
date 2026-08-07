@@ -4,7 +4,12 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { PrismaClient } from '@prisma/client';
-import { WATERMARKED_IMAGE_CONTENT_TYPE, watermarkUploadedImage } from '../lib/media/watermark';
+import * as watermarkModule from '../lib/media/watermark';
+
+// tsx ejecuta scripts .mts como ESM, mientras que el helper de Next puede
+// resolverse como CommonJS durante tareas operativas. Aceptamos ambas formas.
+const watermarkExports = (watermarkModule as typeof watermarkModule & { default?: typeof watermarkModule }).default ?? watermarkModule;
+const { WATERMARKED_IMAGE_CONTENT_TYPE, watermarkUploadedImage } = watermarkExports;
 
 type ImageReference = {
   model: 'motel' | 'roomPhoto' | 'menuItem' | 'promo' | 'homeBanner' | 'advertisement';
@@ -42,14 +47,15 @@ const s3 = new S3Client({
 
 const storageHost = `${bucket}.s3.${region}.amazonaws.com`;
 const backupDirectory = process.env.WATERMARK_BACKUP_DIR
-  || path.resolve(process.cwd(), '../../../media/jahatelo/migraciones-marca-agua');
+  || path.resolve(process.cwd(), '../../../../media/jahatelo/migraciones-marca-agua');
 
 function getOwnedObjectKey(url: string) {
   try {
     const parsed = new URL(url);
     if (parsed.hostname !== storageHost) return null;
     const key = decodeURIComponent(parsed.pathname.replace(/^\//, ''));
-    return key.startsWith('uploads/') ? key : null;
+    if (!key.startsWith('uploads/') || key.startsWith('uploads/watermarked/')) return null;
+    return key;
   } catch {
     return null;
   }
@@ -116,8 +122,7 @@ async function saveManifest(filename: string, manifest: ManifestEntry[]) {
 
 async function main() {
   const references = await collectReferences();
-  const selected = typeof limit === 'number' && Number.isFinite(limit) ? references.slice(0, limit) : references;
-  const manifest: ManifestEntry[] = selected.map((reference) => ({
+  const manifest: ManifestEntry[] = references.map((reference) => ({
     ...reference,
     sourceKey: getOwnedObjectKey(reference.url),
     status: getOwnedObjectKey(reference.url) ? 'planned' : 'skipped',
@@ -126,8 +131,9 @@ async function main() {
   const manifestName = `marca-agua-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
   await saveManifest(manifestName, manifest);
 
-  const eligible = manifest.filter((entry) => entry.status === 'planned');
-  console.log(`Referencias detectadas: ${references.length}. Administradas por S3: ${eligible.length}. Omitidas: ${manifest.length - eligible.length}.`);
+  const candidates = manifest.filter((entry) => entry.status === 'planned');
+  const eligible = typeof limit === 'number' && Number.isFinite(limit) ? candidates.slice(0, limit) : candidates;
+  console.log(`Referencias detectadas: ${references.length}. Administradas por S3: ${candidates.length}. Lote actual: ${eligible.length}. Omitidas: ${manifest.length - candidates.length}.`);
   console.log(`Manifiesto de reversión: ${path.join(backupDirectory, manifestName)}`);
   if (!apply) {
     console.log('Modo simulación: no se modificó S3 ni la base. Repetí con --apply para ejecutar.');
@@ -173,5 +179,8 @@ async function main() {
   if (failed) process.exitCode = 1;
 }
 
-main()
-  .finally(async () => prisma.$disconnect());
+try {
+  await main();
+} finally {
+  await prisma.$disconnect();
+}

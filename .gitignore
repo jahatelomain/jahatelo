@@ -42,3 +42,4 @@ Fotos/
 Moteles/
 web/jahatelo-web/public/uploads/**
 !web/jahatelo-web/public/uploads/.gitkeep
+.env*
