@@ -64,6 +64,8 @@ export default function ProspectsPage() {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [notes, setNotes] = useState('');
@@ -79,10 +81,16 @@ export default function ProspectsPage() {
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [highlightedProspectId, setHighlightedProspectId] = useState<string | null>(null);
   const searchKeyRef = useRef('');
   const pageSize = 20;
-  const debouncedSearchQuery = useDebounce(searchQuery, 400);
+  const debouncedSearchQuery = useDebounce(searchQuery, 4000);
   const hasMore = prospects.length < totalItems;
+  const canShowSearchSuggestions =
+    searchQuery.trim().length >= 3 &&
+    searchQuery.trim() === debouncedSearchQuery.trim() &&
+    !isSearching;
+  const searchSuggestions = prospects.slice(0, 8);
 
   // Estado para crear prospect manual
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -141,8 +149,10 @@ export default function ProspectsPage() {
     if (!currentUser) return;
     if (isLoadingMore) {
       setLoadingMore(true);
-    } else {
+    } else if (!hasLoadedOnce) {
       setLoading(true);
+    } else {
+      setIsSearching(true);
     }
 
     try {
@@ -174,6 +184,8 @@ export default function ProspectsPage() {
     } finally {
       setLoading(false);
       setLoadingMore(false);
+      setIsSearching(false);
+      setHasLoadedOnce(true);
     }
   };
 
@@ -313,6 +325,11 @@ export default function ProspectsPage() {
     }
   };
 
+  const focusProspect = (prospectId: string) => {
+    setHighlightedProspectId(prospectId);
+    document.getElementById(`prospect-${prospectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
   if (loading || !currentUser) {
     return (
       <div className="space-y-6">
@@ -366,14 +383,20 @@ export default function ProspectsPage() {
             <input
               type="search"
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setHighlightedProspectId(null);
+              }}
               placeholder="Buscar en todos los prospects por motel, contacto, teléfono o notas..."
               className="w-full rounded-lg border border-slate-300 py-2.5 pl-10 pr-10 text-sm focus:border-transparent focus:ring-2 focus:ring-purple-600"
             />
             {searchQuery && (
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
+                onClick={() => {
+                  setSearchQuery('');
+                  setHighlightedProspectId(null);
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
                 aria-label="Limpiar búsqueda"
                 title="Limpiar búsqueda"
@@ -381,9 +404,35 @@ export default function ProspectsPage() {
                 <X className="h-5 w-5" />
               </button>
             )}
+            {canShowSearchSuggestions && (
+              <div className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                {searchSuggestions.length > 0 ? (
+                  <ul className="divide-y divide-slate-100">
+                    {searchSuggestions.map((prospect) => (
+                      <li key={prospect.id}>
+                        <button
+                          type="button"
+                          onClick={() => focusProspect(prospect.id)}
+                          className="block w-full px-4 py-3 text-left transition-colors hover:bg-purple-50"
+                        >
+                          <p className="text-sm font-semibold text-slate-900">{prospect.motelName}</p>
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            {[prospect.contactName, prospect.phone, STATUS_LABELS[prospect.status]].filter(Boolean).join(' · ')}
+                          </p>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="px-4 py-3 text-sm text-slate-500">No encontramos prospects con ese criterio.</p>
+                )}
+              </div>
+            )}
           </div>
           <p className="mt-2 text-xs text-slate-500">
-            La búsqueda consulta todos los prospects registrados, no solo los ya cargados en esta pantalla.
+            {isSearching
+              ? 'Buscando en todos los prospects...'
+              : 'La búsqueda inicia 4 segundos después de la última tecla y consulta todos los prospects registrados.'}
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -422,7 +471,7 @@ export default function ProspectsPage() {
                 </tr>
               ) : (
                 prospects.map((prospect) => (
-                  <tr key={prospect.id} className="hover:bg-slate-50">
+                  <tr id={`prospect-${prospect.id}`} key={prospect.id} className={`transition-colors hover:bg-slate-50 ${highlightedProspectId === prospect.id ? 'bg-purple-50 ring-1 ring-inset ring-purple-200' : ''}`}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-semibold text-slate-900">
                         {prospect.contactName}

@@ -175,5 +175,5 @@ npx eas-cli build --platform ios --profile production
 
 ---
 
-**Creado por:** Claude Code (AKAHATA STUDIO)
+**Creado por:** AKAHATA STUDIO
 **Última actualización:** 20 Enero 2025
