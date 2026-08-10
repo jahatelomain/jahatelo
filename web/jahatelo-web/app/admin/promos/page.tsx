@@ -12,6 +12,7 @@ import { BadgeCheck, Pencil, Power, Ticket, Trash2 } from 'lucide-react';
 import SearchableSelect from '@/components/admin/SearchableSelect';
 import AdminImage from '@/components/admin/motel-detail/AdminImage';
 import { getErrorMessage } from '@/lib/errors';
+import { exceedsImageUploadLimit, imageUploadLimitMessage } from '@/lib/media/uploadLimits';
 
 type Motel = {
   id: string;
@@ -556,8 +557,8 @@ export default function PromosAdminPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.warning('La imagen no puede superar 5MB');
+    if (exceedsImageUploadLimit(file)) {
+      toast.warning(imageUploadLimitMessage);
       return;
     }
 

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { getPublishedRoomPhotoLimit } from './roomPhotoLimits';
 
 /** Fuente única de filtros y ordenamiento para el detalle público. */
 export async function getPublicMotelDetail(slugOrId: string) {
@@ -42,5 +43,14 @@ export async function getPublicMotelDetail(slugOrId: string) {
   // La capa de mapeo público decide qué módulos publicar para FREE. Conservamos
   // las relaciones aquí para poder calcular el precio inicial y los amenities
   // agregados de las habitaciones; nunca se exponen como contenido navegable.
-  return motel;
+  if (!motel) return null;
+
+  const publishedPhotoLimit = getPublishedRoomPhotoLimit(motel.plan);
+  return {
+    ...motel,
+    rooms: motel.rooms.map((room) => ({
+      ...room,
+      roomPhotos: room.roomPhotos.slice(0, publishedPhotoLimit),
+    })),
+  };
 }

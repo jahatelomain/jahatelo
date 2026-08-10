@@ -6,12 +6,7 @@ import { logAuditEvent } from '@/lib/audit';
 import { RoomPhotoSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
-
-const getRoomPhotoLimit = (plan?: string | null) => {
-  if (plan === 'GOLD') return 3;
-  if (plan === 'DIAMOND') return null;
-  return 1;
-};
+import { MAX_STORED_ROOM_PHOTOS } from '@/lib/domain/motels/roomPhotoLimits';
 
 const ReorderRoomPhotosSchema = z.object({
   roomTypeId: z.string().min(1),
@@ -64,7 +59,7 @@ export async function POST(request: Request) {
 
     const roomType = await prisma.roomType.findUnique({
       where: { id: validated.roomTypeId },
-      select: { id: true, motelId: true, motel: { select: { plan: true } } },
+      select: { id: true, motelId: true },
     });
 
     if (!roomType) {
@@ -75,24 +70,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
-    const photoLimit = getRoomPhotoLimit(roomType.motel?.plan ?? 'BASIC');
-    if (photoLimit !== null) {
-      const currentCount = await prisma.roomPhoto.count({
-        where: { roomTypeId: validated.roomTypeId },
-      });
-      if (currentCount >= photoLimit) {
-        return NextResponse.json(
-          { error: `Límite de ${photoLimit} fotos por habitación para este plan` },
-          { status: 400 }
-        );
-      }
+    const currentCount = await prisma.roomPhoto.count({
+      where: { roomTypeId: validated.roomTypeId },
+    });
+    if (currentCount >= MAX_STORED_ROOM_PHOTOS) {
+      return NextResponse.json(
+        { error: `Límite de ${MAX_STORED_ROOM_PHOTOS} fotos por habitación` },
+        { status: 400 }
+      );
     }
 
     const nextOrder =
       validated.order ??
-      (await prisma.roomPhoto.count({
-        where: { roomTypeId: validated.roomTypeId },
-      }));
+      currentCount;
 
     const roomPhoto = await prisma.roomPhoto.create({
       data: {

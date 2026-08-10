@@ -20,10 +20,7 @@ export const getPlanPromoLimit = (plan: string | null | undefined) => {
 };
 
 export const getPlanRoomPhotoLimit = (plan: string | null | undefined) => {
-  const normalized = normalizePlan(plan);
-  if (normalized === 'GOLD') return 3;
-  if (normalized === 'DIAMOND') return Number.POSITIVE_INFINITY;
-  return 1;
+  return getPublishedRoomPhotoLimit(plan);
 };
 
 export const formatLimit = (limit: number) =>
@@ -43,3 +40,4 @@ export const sortByExplicitOrder = <T extends { id: string; order?: number; name
     return (left.order ?? 0) - (right.order ?? 0) || left.name.localeCompare(right.name);
   });
 };
+import { getPublishedRoomPhotoLimit } from '@/lib/domain/motels/roomPhotoLimits';

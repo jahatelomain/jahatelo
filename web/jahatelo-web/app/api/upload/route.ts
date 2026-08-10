@@ -8,6 +8,7 @@ import path from 'path';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import type { AdminModule } from '@/lib/adminModules';
 import { WATERMARKED_IMAGE_CONTENT_TYPE, WATERMARKED_IMAGE_EXTENSION, watermarkUploadedImage } from '@/lib/media/watermark';
+import { MAX_IMAGE_UPLOAD_BYTES, MAX_IMAGE_UPLOAD_LABEL } from '@/lib/media/uploadLimits';
 
 export const runtime = 'nodejs';
 
@@ -71,10 +72,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
+    // Validate file size before processing or storing it.
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
       return NextResponse.json(
-        { error: 'File size must be less than 10MB' },
+        { error: `La imagen no puede superar ${MAX_IMAGE_UPLOAD_LABEL}.` },
         { status: 400 },
       );
     }

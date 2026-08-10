@@ -11,7 +11,7 @@ type RoomPhoto = NonNullable<RoomType['roomPhotos']>[number];
 type Props = {
   rooms: RoomType[];
   planLabel: string;
-  photoLimit: string;
+  publishedPhotoLimit: number;
   uploadingRoomId: string | null;
   onReorder: (rooms: RoomType[]) => void;
   onEdit: (room: RoomType) => void;
@@ -24,7 +24,7 @@ type Props = {
 export default function RoomList({
   rooms,
   planLabel,
-  photoLimit,
+  publishedPhotoLimit,
   uploadingRoomId,
   onReorder,
   onEdit,
@@ -102,7 +102,7 @@ export default function RoomList({
             roomName={room.name}
             photos={room.roomPhotos ?? []}
             planLabel={planLabel}
-            photoLimit={photoLimit}
+            publishedPhotoLimit={publishedPhotoLimit}
             uploading={uploadingRoomId === room.id}
             onUpload={onUploadPhoto}
             onReorder={(photos) => onReorderPhotos(room.id, photos)}
