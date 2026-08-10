@@ -7,6 +7,7 @@ import { TableSkeleton } from '@/components/SkeletonLoader';
 import DirtyBanner from '@/components/admin/DirtyBanner';
 import AdminImage from '@/components/admin/motel-detail/AdminImage';
 import { getErrorMessage } from '@/lib/errors';
+import { exceedsImageUploadLimit, imageUploadLimitMessage } from '@/lib/media/uploadLimits';
 
 const placements = [
   { value: 'POPUP_HOME', label: 'Popup Home' },
@@ -193,8 +194,8 @@ export default function EditAdvertisementPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.warning('La imagen no puede superar 10MB');
+    if (exceedsImageUploadLimit(file)) {
+      toast.warning(imageUploadLimitMessage);
       return;
     }
 
@@ -216,8 +217,8 @@ export default function EditAdvertisementPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.warning('La imagen no puede superar 10MB');
+    if (exceedsImageUploadLimit(file)) {
+      toast.warning(imageUploadLimitMessage);
       return;
     }
 
@@ -253,8 +254,8 @@ export default function EditAdvertisementPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.warning('La imagen no puede superar 10MB');
+    if (exceedsImageUploadLimit(file)) {
+      toast.warning(imageUploadLimitMessage);
       return;
     }
 

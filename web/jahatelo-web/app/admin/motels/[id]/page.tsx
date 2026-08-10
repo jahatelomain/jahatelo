@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import DirtyBanner from '@/components/admin/DirtyBanner';
 import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
+import { exceedsImageUploadLimit, imageUploadLimitMessage } from '@/lib/media/uploadLimits';
 import {
   extractLatLngFromMapUrl,
   getGoogleMapsExternalUrl,
@@ -1028,6 +1029,11 @@ export default function MotelDetailPage() {
   const handleFeaturedFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (exceedsImageUploadLimit(file)) {
+      toast.warning(imageUploadLimitMessage);
+      event.target.value = '';
+      return;
+    }
 
     setUploadingFeatured(true);
     try {
@@ -1060,6 +1066,11 @@ export default function MotelDetailPage() {
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (exceedsImageUploadLimit(file)) {
+      toast.warning(imageUploadLimitMessage);
+      event.target.value = '';
+      return;
+    }
 
     const setUploading = variant === 'web' ? setUploadingFeaturedWeb : setUploadingFeaturedApp;
     setUploading(true);
@@ -1089,6 +1100,11 @@ export default function MotelDetailPage() {
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (exceedsImageUploadLimit(file)) {
+      toast.warning(imageUploadLimitMessage);
+      event.target.value = '';
+      return;
+    }
 
     setUploadingRoomId(roomId);
     try {
@@ -1456,7 +1472,7 @@ export default function MotelDetailPage() {
           <RoomList
             rooms={rooms}
             planLabel={getPlanLabel(motel.plan)}
-            photoLimit={formatLimit(roomPhotoLimit)}
+            publishedPhotoLimit={roomPhotoLimit}
             uploadingRoomId={uploadingRoomId}
             onReorder={handleReorderRooms}
             onEdit={handleEditRoom}

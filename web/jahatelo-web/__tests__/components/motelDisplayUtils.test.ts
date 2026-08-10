@@ -13,6 +13,7 @@ describe('motel admin display utilities', () => {
     expect(getPlanLabel('gold')).toBe('Gold');
     expect(getPlanPromoLimit('DIAMOND')).toBe(Number.POSITIVE_INFINITY);
     expect(getPlanRoomPhotoLimit('GOLD')).toBe(3);
+    expect(getPlanRoomPhotoLimit('DIAMOND')).toBe(10);
     expect(formatLimit(Number.POSITIVE_INFINITY)).toBe('Ilimitadas');
   });
 

@@ -23,7 +23,7 @@ const room = (id: string, name: string): RoomType => ({
 
 const baseProps = {
   planLabel: 'Gold',
-  photoLimit: '3',
+  publishedPhotoLimit: 3,
   uploadingRoomId: null,
   onEdit: jest.fn(),
   onDelete: jest.fn(),
