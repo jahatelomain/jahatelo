@@ -26,14 +26,29 @@ export async function GET(request: NextRequest) {
     const usePagination = searchParams.has('page') || searchParams.has('limit');
     const page = paginationResult.data.page ?? 1;
     const limit = paginationResult.data.limit ?? 20;
+    const query = (searchParams.get('q') || '').trim();
+    if (query.length > 100) {
+      return NextResponse.json({ error: 'La búsqueda no puede superar 100 caracteres' }, { status: 400 });
+    }
+    const where = query
+      ? {
+          OR: [
+            { motelName: { contains: query, mode: 'insensitive' as const } },
+            { contactName: { contains: query, mode: 'insensitive' as const } },
+            { phone: { contains: query, mode: 'insensitive' as const } },
+            { notes: { contains: query, mode: 'insensitive' as const } },
+          ],
+        }
+      : undefined;
 
-    const total = await prisma.motelProspect.count();
+    const total = await prisma.motelProspect.count({ where });
 
     const prospects = await prisma.motelProspect.findMany({
       orderBy: [
         { status: 'asc' },
         { createdAt: 'desc' },
       ],
+      where,
       ...(usePagination ? { skip: (page - 1) * limit, take: limit } : {}),
     });
 

@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { Building2, FileText, MoreHorizontal, Trash2 } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { Building2, FileText, MoreHorizontal, Search, Trash2, X } from 'lucide-react';
 
 type ProspectStatus = 'NEW' | 'CONTACTED' | 'IN_NEGOTIATION' | 'WON' | 'LOST';
 type ProspectChannel = 'WEB' | 'APP' | 'MANUAL';
@@ -77,7 +78,10 @@ export default function ProspectsPage() {
   } | null>(null);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchKeyRef = useRef('');
   const pageSize = 20;
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
   const hasMore = prospects.length < totalItems;
 
   // Estado para crear prospect manual
@@ -94,10 +98,20 @@ export default function ProspectsPage() {
 
   useEffect(() => {
     if (!currentUser) return;
-    const isLoadingMore = page > 1;
-    fetchProspects(isLoadingMore);
+    const query = debouncedSearchQuery.trim();
+    const searchChanged = searchKeyRef.current !== query;
+    if (searchChanged) {
+      searchKeyRef.current = query;
+      setProspects([]);
+      setTotalItems(0);
+      if (page !== 1) {
+        setPage(1);
+        return;
+      }
+    }
+    fetchProspects(!searchChanged && page > 1, query);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, currentUser]);
+  }, [page, currentUser, debouncedSearchQuery]);
 
   const { sentinelRef } = useInfiniteScroll({
     loading: loadingMore,
@@ -123,7 +137,7 @@ export default function ProspectsPage() {
     }
   };
 
-  const fetchProspects = async (isLoadingMore = false) => {
+  const fetchProspects = async (isLoadingMore = false, query = debouncedSearchQuery.trim()) => {
     if (!currentUser) return;
     if (isLoadingMore) {
       setLoadingMore(true);
@@ -135,6 +149,7 @@ export default function ProspectsPage() {
       const params = new URLSearchParams();
       params.set('page', String(page));
       params.set('limit', String(pageSize));
+      if (query) params.set('q', query);
       const response = await fetch(`/api/admin/prospects?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
@@ -345,6 +360,32 @@ export default function ProspectsPage() {
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="border-b border-slate-200 p-4">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Buscar en todos los prospects por motel, contacto, teléfono o notas..."
+              className="w-full rounded-lg border border-slate-300 py-2.5 pl-10 pr-10 text-sm focus:border-transparent focus:ring-2 focus:ring-purple-600"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                aria-label="Limpiar búsqueda"
+                title="Limpiar búsqueda"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-slate-500">
+            La búsqueda consulta todos los prospects registrados, no solo los ya cargados en esta pantalla.
+          </p>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
@@ -376,7 +417,7 @@ export default function ProspectsPage() {
               {prospects.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
-                    No hay prospects registrados
+                    {debouncedSearchQuery.trim() ? 'No encontramos prospects con ese criterio' : 'No hay prospects registrados'}
                   </td>
                 </tr>
               ) : (
