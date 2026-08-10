@@ -689,6 +689,6 @@ Con ~250 moteles en Paraguay y pricing actual:
 
 ---
 
-**Preparado por:** Claude (Auditoría Técnica Completa)
+**Preparado por:** AKAHATA STUDIO
 **Fecha:** 13 de Enero 2026
 **Versión:** 1.0

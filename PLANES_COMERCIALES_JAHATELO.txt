@@ -433,5 +433,5 @@ model Reservation {
 ================================================================================
 Generado: 2026-01-06
 Proyecto: Jahatelo - Plataforma de Moteles
-Autor: Claude (Anthropic)
+Autor: AKAHATA STUDIO
 ================================================================================

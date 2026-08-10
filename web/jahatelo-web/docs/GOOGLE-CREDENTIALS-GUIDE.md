@@ -383,4 +383,4 @@ Si llegaste hasta aquí, ya tienes Google Sign-In funcionando en Jahatelo.
 ---
 
 **Última actualización:** Enero 2025
-**Creado por:** Claude Code (AKAHATA STUDIO)
+**Creado por:** AKAHATA STUDIO

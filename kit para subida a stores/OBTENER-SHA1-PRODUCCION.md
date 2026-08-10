@@ -28,7 +28,7 @@ SHA-1: AA:BB:CC:DD:EE:FF:11:22:33:44:55:66:77:88:99:00:AA:BB:CC:DD
 
 ## 💻 Forma 2: Terminal (Si la web no funciona)
 
-Abre tu **terminal normal** (no Claude Code) y ejecuta:
+Abre una terminal y ejecuta:
 
 ```bash
 cd /Users/jota/Desktop/AKAHATA STUDIO/projects/jahatelo/app/jahatelo-app
