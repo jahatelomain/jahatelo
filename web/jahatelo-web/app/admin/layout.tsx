@@ -9,6 +9,23 @@ import { hasModuleAccess } from '@/lib/adminModules';
 import { getMotelAnalyticsAccess } from '@/lib/domain/motels/planPresentation';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { Toaster } from 'sonner';
+import {
+  BarChart3,
+  Bell,
+  Building2,
+  ChevronDown,
+  CreditCard,
+  Image as ImageIcon,
+  Inbox,
+  LayoutDashboard,
+  Megaphone,
+  ScanLine,
+  Settings2,
+  Sparkles,
+  Ticket,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 
 export default function AdminLayout({
   children,
@@ -280,26 +297,62 @@ export default function AdminLayout({
         .toUpperCase()
     : 'AD';
 
-  const renderNavItem = (item: NavItem, onClick?: () => void) => (
-    <Link
-      key={item.href}
-      href={item.href}
-      onClick={onClick}
-      className={`group flex items-center px-4 py-3 rounded-lg transition-all ${
-        isActive(item.href)
-          ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
-          : 'text-slate-600 hover:bg-white hover:shadow-sm'
-      }`}
-    >
-      <span className={`font-medium ${isActive(item.href) ? 'text-white' : 'group-hover:text-slate-900'}`}>
-        {item.label}
-      </span>
-    </Link>
-  );
+  const getNavIcon = (href: string): LucideIcon => {
+    if (href === '/admin') return LayoutDashboard;
+    if (href.startsWith('/admin/motels')) return Building2;
+    if (href.startsWith('/admin/amenities')) return Sparkles;
+    if (href.startsWith('/admin/promos')) return Ticket;
+    if (href.startsWith('/admin/prospects')) return Users;
+    if (href.startsWith('/admin/analytics')) return BarChart3;
+    if (href.startsWith('/admin/canjear-codigo')) return ScanLine;
+    if (href.startsWith('/admin/financiero')) return CreditCard;
+    if (href.startsWith('/admin/notifications')) return Bell;
+    if (href.startsWith('/admin/banners')) return ImageIcon;
+    if (href.startsWith('/admin/inbox')) return Inbox;
+    return Settings2;
+  };
+
+  const getSectionIcon = (section: string): LucideIcon => {
+    if (section === 'Gestión de moteles') return Building2;
+    if (section === 'Comercial') return BarChart3;
+    if (section === 'Publicidad') return Megaphone;
+    return Settings2;
+  };
+
+  const renderNavItem = (item: NavItem, onClick?: () => void) => {
+    const active = isActive(item.href);
+    const Icon = getNavIcon(item.href);
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={onClick}
+        className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 ${
+          active
+            ? 'bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-[0_12px_28px_rgba(147,51,234,0.25)] ring-1 ring-white/70'
+            : 'text-slate-600 hover:bg-white/90 hover:text-violet-700 hover:shadow-[0_8px_22px_rgba(112,72,173,0.10)]'
+        }`}
+      >
+        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-colors ${
+          active
+            ? 'bg-white/18 text-white'
+            : 'bg-violet-100/80 text-violet-600 group-hover:bg-violet-200/80'
+        }`}>
+          <Icon className="h-4 w-4" strokeWidth={2.2} />
+        </span>
+        <span className={`font-semibold ${active ? 'text-white' : 'group-hover:text-slate-900'}`}>
+          {item.label}
+        </span>
+      </Link>
+    );
+  };
 
   const renderSection = (section: NavSection, isMobile: boolean = false) => {
     const isExpanded = expandedSections[section.section];
     const isCollapsible = section.collapsible;
+    const hasActiveItem = section.items.some((item) => isActive(item.href));
+    const SectionIcon = getSectionIcon(section.section);
 
     if (!isCollapsible) {
       // Non-collapsible section (original behavior)
@@ -324,22 +377,22 @@ export default function AdminLayout({
       <div key={section.section}>
         <button
           onClick={() => toggleSection(section.section)}
-          className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-slate-700 hover:bg-white hover:shadow-sm transition-all group"
+          className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200 ${
+            hasActiveItem
+              ? 'bg-violet-100/75 text-violet-800 shadow-[0_8px_22px_rgba(112,72,173,0.08)]'
+              : 'text-slate-700 hover:bg-white/90 hover:shadow-[0_8px_22px_rgba(112,72,173,0.08)]'
+          }`}
         >
-          <span className="font-medium">{section.section}</span>
-          <svg
-            className={`w-4 h-4 text-slate-400 transition-transform ${
-              isExpanded ? 'rotate-180' : ''
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+          <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${
+            hasActiveItem ? 'bg-violet-200/80 text-violet-700' : 'bg-violet-100/80 text-violet-600'
+          }`}>
+            <SectionIcon className="h-4 w-4" strokeWidth={2.2} />
+          </span>
+          <span className="font-semibold">{section.section}</span>
+          <ChevronDown className={`ml-auto h-4 w-4 text-violet-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} strokeWidth={2.4} />
         </button>
         {isExpanded && (
-          <ul className="space-y-1 mt-1 ml-4">
+          <ul className="ml-7 mt-1 space-y-1 border-l border-violet-200/80 pl-3">
             {section.items.map((item) => (
               <li key={item.href}>
                 {renderNavItem(item, isMobile ? () => setMobileMenuOpen(false) : undefined)}
@@ -434,7 +487,7 @@ export default function AdminLayout({
 
       {/* Mobile Menu Sidebar */}
       <aside
-        className={`fixed top-[88px] left-0 bottom-0 w-64 bg-white border-r border-slate-200 z-40 transform transition-transform duration-300 md:hidden ${
+        className={`fixed top-[88px] left-0 bottom-0 w-64 border-r border-violet-100 bg-gradient-to-b from-white via-violet-50/70 to-rose-50/60 shadow-[18px_0_48px_rgba(112,72,173,0.16)] z-40 transform transition-transform duration-300 md:hidden ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -459,7 +512,7 @@ export default function AdminLayout({
 
       <div className="flex">
         {/* Sidebar Moderno */}
-        <aside className="w-64 bg-slate-50 border-r border-slate-200 min-h-[calc(100vh-88px)] sticky top-[88px] hidden md:block">
+        <aside className="w-64 min-h-[calc(100vh-88px)] sticky top-[88px] hidden border-r border-violet-100 bg-gradient-to-b from-white via-violet-50/70 to-rose-50/60 shadow-[14px_0_42px_rgba(112,72,173,0.08)] md:block">
           <nav className="p-4">
             <div className="space-y-2">
               {filteredNavStructure.map((element) => {
