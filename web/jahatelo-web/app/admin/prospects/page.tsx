@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
@@ -618,10 +619,18 @@ export default function ProspectsPage() {
       )}
 
       {/* Create Prospect Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-xl max-w-lg w-full p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">
+      {showCreateModal && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-prospect-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !creating) setShowCreateModal(false);
+          }}
+        >
+          <div className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
+            <h3 id="create-prospect-title" className="text-lg font-semibold text-slate-900 mb-4">
               Crear Prospect Manualmente
             </h3>
             <div className="space-y-4">
@@ -705,7 +714,8 @@ export default function ProspectsPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
       <ConfirmModal
         open={Boolean(confirmAction)}

@@ -1,37 +1,13 @@
 import { useState } from 'react';
-import type { DayRateForm, WeekdayRateForm } from './types';
-
-export const ROOM_PRICE_FIELDS = [
-  ['price1h', '1h'], ['price1_5h', '1.5h'], ['price2h', '2h'], ['price3h', '3h'],
-  ['price12h', '12h'], ['price24h', '24h'], ['priceNight', 'Dormida'],
-] as const;
-
-type PriceKey = (typeof ROOM_PRICE_FIELDS)[number][0];
-type BasePrices = Record<PriceKey, string>;
+import type { WeekdayRateForm } from './types';
 
 type Props = {
-  basePrices: BasePrices;
-  weekdayRates: DayRateForm;
-  weekendRates: DayRateForm;
-  onBaseChange: (field: PriceKey, value: string) => void;
-  onWeekdayChange: (rates: DayRateForm) => void;
-  onWeekendChange: (rates: DayRateForm) => void;
   weekdayRateRules: WeekdayRateForm[];
   onWeekdayRateRulesChange: (rules: WeekdayRateForm[]) => void;
 };
 
-export default function RoomPricingFields({ basePrices, weekdayRates, weekendRates, onBaseChange, onWeekdayChange, onWeekendChange, weekdayRateRules, onWeekdayRateRulesChange }: Props) {
-  return (
-    <>
-      <section className="border-t border-slate-200 pt-4">
-        <h4 className="mb-3 text-sm font-semibold text-slate-900">Precios por Tiempo</h4>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {ROOM_PRICE_FIELDS.map(([field, label]) => <PriceInput key={field} label={label} value={basePrices[field]} onChange={(value) => onBaseChange(field, value)} />)}
-        </div>
-      </section>
-      <SpecificDayRates rules={weekdayRateRules} onChange={onWeekdayRateRulesChange} />
-    </>
-  );
+export default function RoomPricingFields({ weekdayRateRules, onWeekdayRateRulesChange }: Props) {
+  return <SpecificDayRates rules={weekdayRateRules} onChange={onWeekdayRateRulesChange} />;
 }
 
 const DAYS: Array<[WeekdayRateForm['weekdays'][number], string]> = [
@@ -72,11 +48,30 @@ function SpecificDayRates({ rules, onChange }: { rules: WeekdayRateForm[]; onCha
       weekdays: current.weekdays.includes(day) ? current.weekdays.filter((value) => value !== day) : [...current.weekdays, day],
     }));
   };
+  const availableDays = DAYS.map(([day]) => day).filter((day) => !isReserved(day));
+  const allAvailableDaysSelected = availableDays.length > 0 && availableDays.every((day) => draft.weekdays.includes(day));
+  const toggleAllDays = () => {
+    setRuleError('');
+    setDraft((current) => ({
+      ...current,
+      weekdays: allAvailableDaysSelected
+        ? current.weekdays.filter((day) => isReserved(day))
+        : availableDays,
+    }));
+  };
   return <section className="border-t border-slate-200 pt-4">
-    <h4 className="mb-1 text-sm font-semibold text-slate-900">Tarifas por días específicos</h4>
-    <p className="mb-3 text-xs text-slate-500">Elegí los días, una duración y el precio. Ej.: Vie, Sáb y Dom · Dormida · Gs. 214.000.</p>
+    <h4 className="mb-1 text-sm font-semibold text-slate-900">Precios por tiempo</h4>
+    <p className="mb-3 text-xs text-slate-500">Elegí los días, una duración y el precio. Usá “Todos” para aplicar la misma tarifa toda la semana. Ej.: Vie, Sáb y Dom · Dormida · Gs. 214.000.</p>
     <div className="rounded-xl border border-violet-200 bg-violet-50/50 p-3">
       <div className="mb-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={toggleAllDays}
+          disabled={availableDays.length === 0}
+          className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors ${availableDays.length === 0 ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400' : allAvailableDaysSelected ? 'border-violet-700 bg-violet-700 text-white' : 'border-violet-300 bg-white text-violet-700 hover:border-violet-500 hover:bg-violet-100'}`}
+        >
+          Todos
+        </button>
         {DAYS.map(([day, label]) => {
           const reserved = isReserved(day);
           return <label key={day} title={reserved ? 'Ya existe un precio para este día y duración' : undefined} className={`rounded-full border px-2.5 py-1 text-xs font-medium ${reserved ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400' : draft.weekdays.includes(day) ? 'cursor-pointer border-violet-600 bg-violet-600 text-white' : 'cursor-pointer border-slate-300 bg-white text-slate-600'}`}><input className="sr-only" type="checkbox" disabled={reserved} checked={draft.weekdays.includes(day)} onChange={() => toggleDay(day)} />{label}</label>;
@@ -91,8 +86,4 @@ function SpecificDayRates({ rules, onChange }: { rules: WeekdayRateForm[]; onCha
     </div>
     {rules.length > 0 && <div className="mt-3 space-y-2">{rules.map((rule, index) => <div key={`${rule.duration}-${rule.price}-${index}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"><span><strong>{sortDays(rule.weekdays).map((day) => DAYS.find(([value]) => value === day)?.[1]).join(', ')}</strong> · {DURATIONS.find(([value]) => value === rule.duration)?.[1]} · Gs. {Number(rule.price).toLocaleString('es-PY')}</span><button type="button" onClick={() => onChange(rules.filter((_, ruleIndex) => ruleIndex !== index))} className="text-xs font-semibold text-red-600 hover:text-red-700">Eliminar</button></div>)}</div>}
   </section>;
-}
-
-function PriceInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
-  return <div><label className="mb-1.5 block text-xs font-medium text-slate-600">{label}</label><input type="number" value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-purple-600" placeholder="Gs." /></div>;
 }
