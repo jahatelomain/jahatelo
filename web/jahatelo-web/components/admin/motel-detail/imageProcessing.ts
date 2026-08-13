@@ -13,6 +13,7 @@ const loadImageFromFile = (file: File) =>
 const cropImageToRatio = (
   image: HTMLImageElement,
   ratio: number,
+  position = { x: 50, y: 50 },
   outputType = 'image/jpeg',
 ) =>
   new Promise<Blob>((resolve, reject) => {
@@ -31,10 +32,10 @@ const cropImageToRatio = (
 
     if (sourceRatio > ratio) {
       cropWidth = Math.round(sourceHeight * ratio);
-      cropX = Math.round((sourceWidth - cropWidth) / 2);
+      cropX = Math.round((sourceWidth - cropWidth) * (position.x / 100));
     } else if (sourceRatio < ratio) {
       cropHeight = Math.round(sourceWidth / ratio);
-      cropY = Math.round((sourceHeight - cropHeight) / 2);
+      cropY = Math.round((sourceHeight - cropHeight) * (position.y / 100));
     }
 
     const canvas = document.createElement('canvas');
@@ -64,10 +65,11 @@ export const createCroppedImageFile = async (
   file: File,
   ratio: number,
   suffix: string,
+  position?: { x: number; y: number },
 ) => {
   const { image, revoke } = await loadImageFromFile(file);
   try {
-    const blob = await cropImageToRatio(image, ratio);
+    const blob = await cropImageToRatio(image, ratio, position);
     const baseName = file.name.replace(/\.[^.]+$/, '');
     return new File([blob], `${baseName}-${suffix}.jpg`, {
       type: blob.type || 'image/jpeg',
