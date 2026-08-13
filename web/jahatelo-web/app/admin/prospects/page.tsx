@@ -71,6 +71,7 @@ export default function ProspectsPage() {
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [notes, setNotes] = useState('');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [actionMenuPosition, setActionMenuPosition] = useState<{ top: number; right: number } | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -519,25 +520,31 @@ export default function ProspectsPage() {
                         >
                           <FileText size={15} />
                         </button>
-                        <div className="relative">
+                        <div>
                           <button
-                            onClick={() => setOpenMenuId(openMenuId === prospect.id ? null : prospect.id)}
+                            onClick={(event) => {
+                              if (openMenuId === prospect.id) {
+                                setOpenMenuId(null);
+                                setActionMenuPosition(null);
+                                return;
+                              }
+                              const bounds = event.currentTarget.getBoundingClientRect();
+                              setActionMenuPosition({ top: bounds.bottom + 8, right: window.innerWidth - bounds.right });
+                              setOpenMenuId(prospect.id);
+                            }}
                             className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-purple-200"
                             title="Más acciones"
                             aria-label="Más acciones"
                           >
                             <MoreHorizontal size={16} />
                           </button>
-                          {openMenuId === prospect.id && (
+                          {openMenuId === prospect.id && actionMenuPosition && typeof document !== 'undefined' && createPortal(
                             <>
-                              <div
-                                className="fixed inset-0 z-40"
-                                onClick={() => setOpenMenuId(null)}
-                              />
-                              <div className="absolute right-0 mt-2 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg z-50">
+                              <div className="fixed inset-0 z-[90]" onClick={() => { setOpenMenuId(null); setActionMenuPosition(null); }} />
+                              <div className="fixed z-[100] flex gap-1 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg" style={{ top: actionMenuPosition.top, right: actionMenuPosition.right }}>
                                 {prospect.status !== 'WON' && (
                                   <button
-                                    onClick={() => { router.push(`/admin/motels/new?prospectId=${prospect.id}`); setOpenMenuId(null); }}
+                                    onClick={() => { router.push(`/admin/motels/new?prospectId=${prospect.id}`); setOpenMenuId(null); setActionMenuPosition(null); }}
                                     className="inline-flex h-8 w-8 items-center justify-center rounded-md text-purple-700 hover:bg-purple-50"
                                     title="Dar de alta motel"
                                     aria-label="Dar de alta motel desde prospecto"
@@ -546,7 +553,7 @@ export default function ProspectsPage() {
                                   </button>
                                 )}
                                 <button
-                                  onClick={() => { handleDelete(prospect.id); setOpenMenuId(null); }}
+                                  onClick={() => { handleDelete(prospect.id); setOpenMenuId(null); setActionMenuPosition(null); }}
                                   className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-600 hover:bg-red-50"
                                   title="Eliminar prospect"
                                   aria-label="Eliminar prospect"
@@ -554,7 +561,8 @@ export default function ProspectsPage() {
                                   <Trash2 size={15} />
                                 </button>
                               </div>
-                            </>
+                            </>,
+                            document.body,
                           )}
                         </div>
                       </div>

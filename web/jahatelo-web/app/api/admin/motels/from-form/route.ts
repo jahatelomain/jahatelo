@@ -39,8 +39,7 @@ const MotelFormSchema = z.object({
 }).superRefine((data, context) => {
   if (!data.prospectId) return;
   const requiredFields: Array<[keyof typeof data, string]> = [
-    ['contactName', 'Contacto'], ['phone', 'Teléfono'], ['whatsapp', 'WhatsApp'],
-    ['email', 'Correo'], ['address', 'Dirección'], ['googleMapsUrl', 'Google Maps'],
+    ['phone', 'Teléfono'], ['whatsapp', 'WhatsApp'], ['address', 'Dirección'], ['googleMapsUrl', 'Google Maps'],
   ];
   requiredFields.forEach(([field, label]) => {
     if (!String(data[field] || '').trim()) {
