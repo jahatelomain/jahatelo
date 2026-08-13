@@ -7,6 +7,7 @@ import { logAuditEvent } from '@/lib/audit';
 import { AdminPaginationSchema, AdminUserCreateSchema, AdminUserQuerySchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
+import { normalizeRelaxedSearch } from '@/lib/search/relaxedSearch';
 
 /**
  * GET /api/admin/users
@@ -89,11 +90,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (searchFilter) {
-      const query = searchFilter.trim().toLowerCase();
+      const query = normalizeRelaxedSearch(searchFilter);
       if (query) {
         filteredUsers = filteredUsers.filter((user) => {
-          const name = user.name?.toLowerCase() ?? '';
-          const email = user.email?.toLowerCase() ?? '';
+          const name = normalizeRelaxedSearch(user.name);
+          const email = normalizeRelaxedSearch(user.email);
           return name.includes(query) || email.includes(query);
         });
       }
