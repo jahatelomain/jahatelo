@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react';
 import DirtyBanner from '@/components/admin/DirtyBanner';
-import type { Amenity, DayRateForm, WeekdayRateForm } from './types';
+import type { Amenity, WeekdayRateForm } from './types';
 import type { RoomForm } from './formDefaults';
 import RoomFeatureFields from './RoomFeatureFields';
 import RoomPricingFields from './RoomPricingFields';
@@ -10,12 +10,8 @@ type Props = {
   dirty: boolean;
   form: RoomForm;
   amenities: Amenity[];
-  weekdayRates: DayRateForm;
-  weekendRates: DayRateForm;
   weekdayRateRules: WeekdayRateForm[];
   onFormChange: (form: RoomForm) => void;
-  onWeekdayChange: (rates: DayRateForm) => void;
-  onWeekendChange: (rates: DayRateForm) => void;
   onWeekdayRateRulesChange: (rules: WeekdayRateForm[]) => void;
   onCancel: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -26,12 +22,8 @@ export default function RoomEditorForm({
   dirty,
   form,
   amenities,
-  weekdayRates,
-  weekendRates,
   weekdayRateRules,
   onFormChange,
-  onWeekdayChange,
-  onWeekendChange,
   onWeekdayRateRulesChange,
   onCancel,
   onSubmit,
@@ -76,12 +68,6 @@ export default function RoomEditorForm({
           />
         </div>
         <RoomPricingFields
-          basePrices={form}
-          weekdayRates={weekdayRates}
-          weekendRates={weekendRates}
-          onBaseChange={(field, value) => onFormChange({ ...form, [field]: value })}
-          onWeekdayChange={onWeekdayChange}
-          onWeekendChange={onWeekendChange}
           weekdayRateRules={weekdayRateRules}
           onWeekdayRateRulesChange={onWeekdayRateRulesChange}
         />

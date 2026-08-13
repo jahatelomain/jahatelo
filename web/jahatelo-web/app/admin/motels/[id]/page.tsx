@@ -17,7 +17,6 @@ import {
 } from '@/components/admin/motel-detail/formUtils';
 import type {
   Amenity,
-  DayRateForm,
   WeekdayRateForm,
   Motel,
   MotelAdminTab,
@@ -29,7 +28,6 @@ import type {
   RoomType,
 } from '@/components/admin/motel-detail/types';
 import {
-  createEmptyDayRate,
   createInitialPromoForm,
   createInitialRoomForm,
 } from '@/components/admin/motel-detail/formDefaults';
@@ -52,6 +50,7 @@ import CommercialPlanFields from '@/components/admin/motel-detail/CommercialPlan
 import RoomEditorForm from '@/components/admin/motel-detail/RoomEditorForm';
 import useFormDirty from '@/hooks/useFormDirty';
 import RoomList from '@/components/admin/motel-detail/RoomList';
+import { MAX_STORED_ROOM_PHOTOS } from '@/lib/domain/motels/roomPhotoLimits';
 import FeaturedPhotoFields from '@/components/admin/motel-detail/FeaturedPhotoFields';
 import PromoEditorForm from '@/components/admin/motel-detail/PromoEditorForm';
 import CommercialSummary from '@/components/admin/motel-detail/CommercialSummary';
@@ -109,8 +108,6 @@ export default function MotelDetailPage() {
   const [showRoomForm, setShowRoomForm] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [roomForm, setRoomForm] = useState(createInitialRoomForm());
-  const [weekdayRates, setWeekdayRates] = useState(createEmptyDayRate());
-  const [weekendRates, setWeekendRates] = useState(createEmptyDayRate());
   const [weekdayRateRules, setWeekdayRateRules] = useState<WeekdayRateForm[]>([]);
 
   const [showCategoryForm, setShowCategoryForm] = useState(false);
@@ -552,29 +549,16 @@ export default function MotelDetailPage() {
     const method = editingRoomId ? 'PATCH' : 'POST';
 
     // Convert empty strings to null for numeric fields so Zod coercion doesn't fail
-    const numericFields = ['price1h', 'price1_5h', 'price2h', 'price3h', 'price12h', 'price24h', 'priceNight', 'maxPersons'] as const;
+    const numericFields = ['maxPersons'] as const;
     const normalizedForm = { ...roomForm } as Record<string, unknown>;
     numericFields.forEach((f) => {
       if (normalizedForm[f] === '') normalizedForm[f] = null;
     });
-
-    // Build dayRates array
-    const normalizeDayRate = (dr: DayRateForm) => ({
-      price1h: dr.price1h !== '' ? Number(dr.price1h) : null,
-      price1_5h: dr.price1_5h !== '' ? Number(dr.price1_5h) : null,
-      price2h: dr.price2h !== '' ? Number(dr.price2h) : null,
-      price3h: dr.price3h !== '' ? Number(dr.price3h) : null,
-      price12h: dr.price12h !== '' ? Number(dr.price12h) : null,
-      price24h: dr.price24h !== '' ? Number(dr.price24h) : null,
-      priceNight: dr.priceNight !== '' ? Number(dr.priceNight) : null,
+    const roomPayload = { ...normalizedForm };
+    ['price1h', 'price1_5h', 'price2h', 'price3h', 'price12h', 'price24h', 'priceNight'].forEach((field) => {
+      delete roomPayload[field];
     });
-    const dayRatesPayload = [];
-    const wdValues = normalizeDayRate(weekdayRates);
-    const weValues = normalizeDayRate(weekendRates);
-    const hasWeekdayData = Object.values(wdValues).some((v) => v !== null);
-    const hasWeekendData = Object.values(weValues).some((v) => v !== null);
-    if (hasWeekdayData) dayRatesPayload.push({ dayGroup: 'WEEKDAY', ...wdValues });
-    if (hasWeekendData) dayRatesPayload.push({ dayGroup: 'WEEKEND', ...weValues });
+
     const weekdayRatesPayload = weekdayRateRules
       .filter((rule) => rule.weekdays.length > 0 && Number(rule.price) > 0)
       .map((rule) => ({ weekdays: rule.weekdays, duration: rule.duration, price: Number(rule.price) }));
@@ -585,8 +569,7 @@ export default function MotelDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           motelId: id,
-          ...normalizedForm,
-          dayRates: dayRatesPayload.length > 0 ? dayRatesPayload : undefined,
+          ...roomPayload,
           weekdayRates: weekdayRatesPayload,
         }),
       });
@@ -596,8 +579,6 @@ export default function MotelDetailPage() {
         setShowRoomForm(false);
         setEditingRoomId(null);
         setRoomForm(createInitialRoomForm());
-        setWeekdayRates(createEmptyDayRate());
-        setWeekendRates(createEmptyDayRate());
         setWeekdayRateRules([]);
         setSaveStatus('success');
         setTimeout(() => setSaveStatus('idle'), 2500);
@@ -615,37 +596,16 @@ export default function MotelDetailPage() {
     setRoomForm({
       name: room.name,
       description: room.description || '',
-      price1h: room.price1h?.toString() || '',
-      price1_5h: room.price1_5h?.toString() || '',
-      price2h: room.price2h?.toString() || '',
-      price3h: room.price3h?.toString() || '',
-      price12h: room.price12h?.toString() || '',
-      price24h: room.price24h?.toString() || '',
-      priceNight: room.priceNight?.toString() || '',
+      price1h: '',
+      price1_5h: '',
+      price2h: '',
+      price3h: '',
+      price12h: '',
+      price24h: '',
+      priceNight: '',
       maxPersons: room.maxPersons?.toString() || '',
       amenityIds: (room.amenities ?? []).map((a) => a.amenity.id),
     });
-    // Populate day rates
-    const wd = room.dayRates?.find((dr) => dr.dayGroup === 'WEEKDAY');
-    const we = room.dayRates?.find((dr) => dr.dayGroup === 'WEEKEND');
-    setWeekdayRates(wd ? {
-      price1h: wd.price1h?.toString() || '',
-      price1_5h: wd.price1_5h?.toString() || '',
-      price2h: wd.price2h?.toString() || '',
-      price3h: wd.price3h?.toString() || '',
-      price12h: wd.price12h?.toString() || '',
-      price24h: wd.price24h?.toString() || '',
-      priceNight: wd.priceNight?.toString() || '',
-    } : createEmptyDayRate());
-    setWeekendRates(we ? {
-      price1h: we.price1h?.toString() || '',
-      price1_5h: we.price1_5h?.toString() || '',
-      price2h: we.price2h?.toString() || '',
-      price3h: we.price3h?.toString() || '',
-      price12h: we.price12h?.toString() || '',
-      price24h: we.price24h?.toString() || '',
-      priceNight: we.priceNight?.toString() || '',
-    } : createEmptyDayRate());
     const groupedSpecificRates = new Map<string, WeekdayRateForm>();
     for (const rate of room.weekdayRates ?? []) {
       const key = `${rate.duration}:${rate.price}`;
@@ -668,8 +628,6 @@ export default function MotelDetailPage() {
     setShowRoomForm(false);
     setEditingRoomId(null);
     setRoomForm(createInitialRoomForm());
-    setWeekdayRates(createEmptyDayRate());
-    setWeekendRates(createEmptyDayRate());
     setWeekdayRateRules([]);
   };
 
@@ -820,31 +778,13 @@ export default function MotelDetailPage() {
     });
   };
 
-  const handleAddRoomPhoto = async (roomId: string, url: string) => {
-    if (!url.trim()) return;
-
-    try {
-      const res = await fetch('/api/admin/room-photos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          roomTypeId: roomId,
-          url: url.trim(),
-        }),
-      });
-
-      if (res.ok) {
-        fetchMotel();
-        setSaveStatus('success');
-        setTimeout(() => setSaveStatus('idle'), 2500);
-      } else {
-        const message = await getResponseError(res, 'Error al agregar foto');
-        toast.error(message);
-      }
-    } catch (error) {
-      console.error('Error adding room photo:', error);
-      toast.error('Error al agregar foto');
-    }
+  const createRoomPhoto = async (roomId: string, url: string) => {
+    const res = await fetch('/api/admin/room-photos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomTypeId: roomId, url }),
+    });
+    if (!res.ok) throw new Error(await getResponseError(res, 'Error al agregar foto'));
   };
 
   const handleDeleteRoomPhoto = async (photoId: string) => {
@@ -1098,21 +1038,48 @@ export default function MotelDetailPage() {
     roomId: string,
     event: ChangeEvent<HTMLInputElement>,
   ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (exceedsImageUploadLimit(file)) {
-      toast.warning(imageUploadLimitMessage);
+    const files = Array.from(event.target.files ?? []);
+    if (files.length === 0) return;
+
+    const room = motel?.rooms?.find((item) => item.id === roomId);
+    const availableSlots = MAX_STORED_ROOM_PHOTOS - (room?.roomPhotos?.length ?? 0);
+    if (availableSlots <= 0) {
+      toast.warning(`Límite de ${MAX_STORED_ROOM_PHOTOS} fotos por habitación alcanzado.`);
+      event.target.value = '';
+      return;
+    }
+
+    const allowedFiles = files.filter((file) => !exceedsImageUploadLimit(file)).slice(0, availableSlots);
+    const rejectedBySize = files.length - files.filter((file) => !exceedsImageUploadLimit(file)).length;
+    const omittedByLimit = Math.max(0, files.filter((file) => !exceedsImageUploadLimit(file)).length - availableSlots);
+    if (rejectedBySize > 0) toast.warning(`${rejectedBySize} ${rejectedBySize === 1 ? 'imagen supera' : 'imágenes superan'} el máximo de 4 MB y no ${rejectedBySize === 1 ? 'se subió' : 'se subieron'}.`);
+    if (omittedByLimit > 0) toast.warning(`Solo se pueden guardar ${availableSlots} fotos más en esta habitación.`);
+    if (allowedFiles.length === 0) {
       event.target.value = '';
       return;
     }
 
     setUploadingRoomId(roomId);
+    let uploaded = 0;
+    const errors: string[] = [];
     try {
-      const url = await uploadFileToS3(file);
-      await handleAddRoomPhoto(roomId, url);
-    } catch (error) {
-      console.error('Error uploading room photo:', error);
-      toast.error('No se pudo subir la imagen. Intenta nuevamente.');
+      for (const file of allowedFiles) {
+        try {
+          const url = await uploadFileToS3(file);
+          await createRoomPhoto(roomId, url);
+          uploaded += 1;
+        } catch (error) {
+          console.error('Error uploading room photo:', error);
+          errors.push(file.name);
+        }
+      }
+      if (uploaded > 0) {
+        await fetchMotel();
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus('idle'), 2500);
+        toast.success(`${uploaded} ${uploaded === 1 ? 'foto subida' : 'fotos subidas'} correctamente.`);
+      }
+      if (errors.length > 0) toast.error(`No se pudieron subir ${errors.length} ${errors.length === 1 ? 'foto' : 'fotos'}.`);
     } finally {
       setUploadingRoomId(null);
       event.target.value = '';
@@ -1456,13 +1423,9 @@ export default function MotelDetailPage() {
                 dirty={roomFormDirty}
                 form={roomForm}
                 amenities={amenities}
-                weekdayRates={weekdayRates}
-                weekendRates={weekendRates}
                 weekdayRateRules={weekdayRateRules}
                 onWeekdayRateRulesChange={setWeekdayRateRules}
                 onFormChange={setRoomForm}
-                onWeekdayChange={setWeekdayRates}
-                onWeekendChange={setWeekendRates}
                 onCancel={closeRoomForm}
                 onSubmit={handleSaveRoom}
               />

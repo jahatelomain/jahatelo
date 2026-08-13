@@ -48,11 +48,12 @@ export default function RoomPhotoManager({
             <input
               type="file"
               accept="image/*"
+              multiple
               className="hidden"
               onChange={(event) => onUpload(roomId, event)}
               disabled={uploading || hasReachedStorageLimit}
             />
-            {uploading ? 'Subiendo...' : hasReachedStorageLimit ? `Límite de ${MAX_STORED_ROOM_PHOTOS} fotos alcanzado` : 'Subir archivo'}
+            {uploading ? 'Subiendo fotos...' : hasReachedStorageLimit ? `Límite de ${MAX_STORED_ROOM_PHOTOS} fotos alcanzado` : 'Seleccionar fotos'}
           </label>
         </div>
       </div>
