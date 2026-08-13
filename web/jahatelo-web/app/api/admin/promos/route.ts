@@ -7,6 +7,7 @@ import { logAuditEvent } from '@/lib/audit';
 import { AdminPaginationSchema, PromoQuerySchema, PromoSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
+import { normalizeRelaxedSearch, relaxedSearchSql } from '@/lib/search/relaxedSearch';
 
 const getPromoLimit = (plan?: string | null) => {
   if (plan === 'GOLD') return 3;
@@ -55,16 +56,18 @@ export async function GET(request: NextRequest) {
     const limit = paginationResult.data.limit ?? 20;
 
     const searchFilter = searchQuery?.trim();
+    const normalizedSearch = normalizeRelaxedSearch(searchFilter);
+    const matches = normalizedSearch
+      ? await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+          SELECT p.id FROM "Promo" p
+          INNER JOIN "Motel" m ON m.id = p."motelId"
+          WHERE ${relaxedSearchSql(Prisma.raw('p.title'))} LIKE ${`%${normalizedSearch}%`}
+             OR ${relaxedSearchSql(Prisma.raw('m.name'))} LIKE ${`%${normalizedSearch}%`}
+        `)
+      : null;
     const baseWhere: Prisma.PromoWhereInput = {
       ...(effectiveMotelId ? { motelId: effectiveMotelId } : {}),
-      ...(searchFilter
-        ? {
-            OR: [
-              { title: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { motel: { name: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } } },
-            ],
-          }
-        : {}),
+      ...(matches ? { id: { in: matches.map(({ id }) => id) } } : {}),
     };
     const dataWhere: Prisma.PromoWhereInput = {
       ...baseWhere,

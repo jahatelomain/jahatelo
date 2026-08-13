@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { AdminPaginationSchema, EmptySchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
+import { normalizeRelaxedSearch, relaxedSearchSql } from '@/lib/search/relaxedSearch';
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,21 +47,22 @@ export async function GET(request: NextRequest) {
         : undefined;
 
     const searchFilter = q?.trim();
+    const normalizedSearch = normalizeRelaxedSearch(searchFilter);
+    const searchMatches = normalizedSearch
+      ? await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+          SELECT m.id FROM "Motel" m
+          WHERE ${relaxedSearchSql(Prisma.raw('m.name'))} LIKE ${`%${normalizedSearch}%`}
+             OR ${relaxedSearchSql(Prisma.raw('m.city'))} LIKE ${`%${normalizedSearch}%`}
+             OR ${relaxedSearchSql(Prisma.raw('m."contactName"'))} LIKE ${`%${normalizedSearch}%`}
+             OR ${relaxedSearchSql(Prisma.raw('m."contactEmail"'))} LIKE ${`%${normalizedSearch}%`}
+             OR ${relaxedSearchSql(Prisma.raw('m."contactPhone"'))} LIKE ${`%${normalizedSearch}%`}
+             OR ${relaxedSearchSql(Prisma.raw('m.phone'))} LIKE ${`%${normalizedSearch}%`}
+             OR ${relaxedSearchSql(Prisma.raw('m.whatsapp'))} LIKE ${`%${normalizedSearch}%`}
+        `)
+      : null;
     const baseWhere: Prisma.MotelWhereInput = {
       ...(motelFilter ? motelFilter : {}),
-      ...(searchFilter
-        ? {
-            OR: [
-              { name: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { city: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { contactName: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { contactEmail: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { contactPhone: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { phone: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { whatsapp: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-            ],
-          }
-        : {}),
+      ...(searchMatches ? { id: { in: searchMatches.map(({ id }) => id) } } : {}),
     };
 
     const dataWhere: Prisma.MotelWhereInput = {

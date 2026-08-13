@@ -6,9 +6,8 @@ import prisma from '@/lib/prisma';
 import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
 import { MobileMotelsQuerySchema } from '@/lib/validations/schemas';
 import { mapMotelToListItem } from '../mappers';
+import { normalizeRelaxedSearch, relaxedSearchSql } from '@/lib/search/relaxedSearch';
 
-const ACCENT_FROM = 'áéíóúñÁÉÍÓÚÑäëïöüÄËÏÖÜàèìòùÀÈÌÒÙâêîôûÂÊÎÔÛ';
-const ACCENT_TO = 'aeiounAEIOUNaeiouAEIOUaeiouAEIOUaeiouAEIOU';
 
 const include = {
   rooms: {
@@ -39,9 +38,6 @@ type MotelWithListRelations = Prisma.MotelGetPayload<{ include: typeof include }
 type SearchId = { id: string };
 
 const normalize = (value?: string | null) => value?.trim() || undefined;
-const normalizeSearch = (value?: string | null) =>
-  normalize(value)?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
 const planPriority = (plan: Motel['plan']) => {
   if (plan === 'DIAMOND') return 1;
   if (plan === 'GOLD') return 2;
@@ -76,7 +72,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const search = normalizeSearch(parsed.data.search);
+    const search = normalizeRelaxedSearch(parsed.data.search);
     const city = normalize(parsed.data.city);
     const amenity = normalize(parsed.data.amenity);
     const ids = parsed.data.ids?.split(',').map((value) => value.trim()).filter(Boolean) ?? [];
@@ -89,9 +85,9 @@ export async function GET(request: NextRequest) {
       const pattern = `%${search}%`;
       const matches = await prisma.$queryRaw<SearchId[]>(Prisma.sql`
         SELECT m.id FROM "Motel" m
-        WHERE LOWER(TRANSLATE(m.name, ${ACCENT_FROM}, ${ACCENT_TO})) LIKE ${pattern}
-          OR LOWER(TRANSLATE(COALESCE(m.description, ''), ${ACCENT_FROM}, ${ACCENT_TO})) LIKE ${pattern}
-          OR LOWER(TRANSLATE(m.city, ${ACCENT_FROM}, ${ACCENT_TO})) LIKE ${pattern}
+        WHERE ${relaxedSearchSql(Prisma.raw('m.name'))} LIKE ${pattern}
+          OR ${relaxedSearchSql(Prisma.raw('m.description'))} LIKE ${pattern}
+          OR ${relaxedSearchSql(Prisma.raw('m.city'))} LIKE ${pattern}
       `);
       and.push({ id: { in: matches.map(({ id }) => id) } });
     }

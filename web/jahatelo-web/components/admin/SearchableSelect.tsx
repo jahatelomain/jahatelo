@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useMemo, useState } from 'react';
+import { normalizeRelaxedSearch } from '@/lib/search/relaxedSearch';
 
 type Option = { value: string; label: string; searchText?: string };
 type Props = { value: string; options: Option[]; placeholder: string; disabled?: boolean; required?: boolean; onChange: (value: string) => void };
@@ -11,9 +12,9 @@ export default function SearchableSelect({ value, options, placeholder, disabled
   const [query, setQuery] = useState(selected?.label ?? '');
   const [open, setOpen] = useState(false);
   const filtered = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase('es');
+    const normalized = normalizeRelaxedSearch(query);
     if (!normalized || selected?.label === query) return options;
-    return options.filter((option) => `${option.label} ${option.searchText ?? ''}`.toLocaleLowerCase('es').includes(normalized));
+    return options.filter((option) => normalizeRelaxedSearch(`${option.label} ${option.searchText ?? ''}`).includes(normalized));
   }, [options, query, selected?.label]);
 
   return (

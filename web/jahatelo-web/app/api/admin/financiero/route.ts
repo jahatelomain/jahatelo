@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { AdminPaginationSchema, EmptySchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
+import { normalizeRelaxedSearch, relaxedSearchSql } from '@/lib/search/relaxedSearch';
 
 /**
  * GET /api/admin/financiero
@@ -42,21 +43,22 @@ export async function GET(request: NextRequest) {
     if (access.error) return access.error;
 
     const searchFilter = searchQuery?.trim();
+    const normalizedSearch = normalizeRelaxedSearch(searchFilter);
+    const matches = normalizedSearch
+      ? await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+          SELECT m.id FROM "Motel" m
+          WHERE ${relaxedSearchSql(Prisma.raw('m.name'))} LIKE ${`%${normalizedSearch}%`}
+             OR ${relaxedSearchSql(Prisma.raw('m.city'))} LIKE ${`%${normalizedSearch}%`}
+             OR ${relaxedSearchSql(Prisma.raw('m."contactName"'))} LIKE ${`%${normalizedSearch}%`}
+             OR ${relaxedSearchSql(Prisma.raw('m."contactEmail"'))} LIKE ${`%${normalizedSearch}%`}
+             OR ${relaxedSearchSql(Prisma.raw('m."contactPhone"'))} LIKE ${`%${normalizedSearch}%`}
+             OR ${relaxedSearchSql(Prisma.raw('m."adminContactName"'))} LIKE ${`%${normalizedSearch}%`}
+             OR ${relaxedSearchSql(Prisma.raw('m."adminContactEmail"'))} LIKE ${`%${normalizedSearch}%`}
+             OR ${relaxedSearchSql(Prisma.raw('m."adminContactPhone"'))} LIKE ${`%${normalizedSearch}%`}
+        `)
+      : null;
     const baseWhere: Prisma.MotelWhereInput = {
-      ...(searchFilter
-        ? {
-            OR: [
-              { name: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { city: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { contactName: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { contactEmail: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { contactPhone: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { adminContactName: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { adminContactEmail: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-              { adminContactPhone: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } },
-            ],
-          }
-        : {}),
+      ...(matches ? { id: { in: matches.map(({ id }) => id) } } : {}),
     };
     const isMotelAdmin = access.user?.role === 'MOTEL_ADMIN';
     const motelId = access.user?.motelId;

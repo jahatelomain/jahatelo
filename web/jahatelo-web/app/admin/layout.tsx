@@ -409,7 +409,7 @@ export default function AdminLayout({
       <Toaster position="top-right" richColors closeButton />
       <div className="min-h-[100dvh] bg-slate-100 admin-theme text-slate-900">
         {/* Topbar Moderno */}
-        <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-20 h-20">
+        <header className="sticky top-0 z-20 h-20 border-b border-violet-100/90 bg-white/90 shadow-[0_10px_30px_rgba(91,33,182,0.08)] backdrop-blur-xl">
           <div className="px-6 h-full flex items-center justify-between">
             {/* Left: Logo + breadcrumb */}
             <div className="flex items-center gap-4">
@@ -454,13 +454,13 @@ export default function AdminLayout({
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen((prev) => !prev)}
-                  className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-fuchsia-500 flex items-center justify-center text-white text-sm font-bold hover:shadow-lg hover:scale-105 transition-all cursor-pointer"
+                    className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-fuchsia-500 text-sm font-bold text-white shadow-[0_10px_22px_rgba(147,51,234,0.28)] transition-all hover:scale-105 hover:shadow-[0_14px_28px_rgba(147,51,234,0.38)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-200"
                   title="Opciones de usuario"
                 >
                   {profileInitials}
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-40 rounded-lg bg-white shadow-xl border border-slate-200 overflow-hidden z-30">
+                  <div className="absolute right-0 z-30 mt-2 w-40 overflow-hidden rounded-xl border border-violet-100 bg-white/95 shadow-[0_18px_40px_rgba(76,29,149,0.16)] backdrop-blur-xl">
                     <button
                       onClick={() => {
                         setMenuOpen(false);
@@ -533,7 +533,7 @@ export default function AdminLayout({
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 min-h-[calc(100dvh-5rem)] p-6 md:p-8 bg-slate-100">
+        <main className="admin-main-canvas flex-1 min-h-[calc(100dvh-5rem)] p-6 md:p-8">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

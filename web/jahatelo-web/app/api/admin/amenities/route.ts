@@ -7,6 +7,7 @@ import { logAuditEvent } from '@/lib/audit';
 import { AdminPaginationSchema, AmenitySchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
+import { normalizeRelaxedSearch, relaxedSearchSql } from '@/lib/search/relaxedSearch';
 
 // GET all amenities
 export async function GET(request: NextRequest) {
@@ -40,10 +41,12 @@ export async function GET(request: NextRequest) {
     const limit = paginationResult.data.limit ?? 20;
 
     const searchFilter = searchQuery?.trim();
+    const normalizedSearch = normalizeRelaxedSearch(searchFilter);
+    const matches = normalizedSearch
+      ? await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`SELECT a.id FROM "Amenity" a WHERE ${relaxedSearchSql(Prisma.raw('a.name'))} LIKE ${`%${normalizedSearch}%`}`)
+      : null;
     const where: Prisma.AmenityWhereInput = {
-      ...(searchFilter
-        ? { name: { contains: searchFilter, mode: Prisma.QueryMode.insensitive } }
-        : {}),
+      ...(matches ? { id: { in: matches.map(({ id }) => id) } } : {}),
     };
     const total = await prisma.amenity.count({ where });
 

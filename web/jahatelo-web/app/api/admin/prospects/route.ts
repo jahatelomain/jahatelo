@@ -5,6 +5,8 @@ import { logAuditEvent } from '@/lib/audit';
 import { AdminPaginationSchema, AdminProspectCreateSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
+import { normalizeRelaxedSearch, relaxedSearchSql } from '@/lib/search/relaxedSearch';
+import { Prisma } from '@prisma/client';
 
 /**
  * GET /api/admin/prospects
@@ -30,16 +32,17 @@ export async function GET(request: NextRequest) {
     if (query.length > 100) {
       return NextResponse.json({ error: 'La búsqueda no puede superar 100 caracteres' }, { status: 400 });
     }
-    const where = query
-      ? {
-          OR: [
-            { motelName: { contains: query, mode: 'insensitive' as const } },
-            { contactName: { contains: query, mode: 'insensitive' as const } },
-            { phone: { contains: query, mode: 'insensitive' as const } },
-            { notes: { contains: query, mode: 'insensitive' as const } },
-          ],
-        }
-      : undefined;
+    const normalizedQuery = normalizeRelaxedSearch(query);
+    const matches = normalizedQuery
+      ? await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+          SELECT p.id FROM "MotelProspect" p
+          WHERE ${relaxedSearchSql(Prisma.raw('p."motelName"'))} LIKE ${`%${normalizedQuery}%`}
+             OR ${relaxedSearchSql(Prisma.raw('p."contactName"'))} LIKE ${`%${normalizedQuery}%`}
+             OR ${relaxedSearchSql(Prisma.raw('p.phone'))} LIKE ${`%${normalizedQuery}%`}
+             OR ${relaxedSearchSql(Prisma.raw('p.notes'))} LIKE ${`%${normalizedQuery}%`}
+        `)
+      : null;
+    const where = matches ? { id: { in: matches.map(({ id }) => id) } } : undefined;
 
     const total = await prisma.motelProspect.count({ where });
 

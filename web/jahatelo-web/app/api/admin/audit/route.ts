@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { AdminAuditQuerySchema, AdminPaginationSchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
+import { normalizeRelaxedSearch } from '@/lib/search/relaxedSearch';
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,14 +39,17 @@ export async function GET(request: NextRequest) {
     if (entityType) where.entityType = entityType;
     if (userId) where.userId = userId;
 
-    if (query) {
-      where.OR = [
-        { entityId: { contains: query, mode: 'insensitive' } },
-        { action: { contains: query, mode: 'insensitive' } },
-        { entityType: { contains: query, mode: 'insensitive' } },
-        { user: { email: { contains: query, mode: 'insensitive' } } },
-        { user: { name: { contains: query, mode: 'insensitive' } } },
-      ];
+    const normalizedQuery = normalizeRelaxedSearch(query);
+    if (normalizedQuery) {
+      const logs = await prisma.auditLog.findMany({
+        select: { id: true, entityId: true, action: true, entityType: true, user: { select: { name: true, email: true } } },
+        take: 2000,
+      });
+      const matchingIds = logs
+        .filter((log) => [log.entityId, log.action, log.entityType, log.user?.email, log.user?.name]
+          .some((value) => normalizeRelaxedSearch(value).includes(normalizedQuery)))
+        .map((log) => log.id);
+      where.id = { in: matchingIds };
     }
 
     const total = await prisma.auditLog.count({ where });
