@@ -52,6 +52,7 @@ import useFormDirty from '@/hooks/useFormDirty';
 import RoomList from '@/components/admin/motel-detail/RoomList';
 import { MAX_STORED_ROOM_PHOTOS } from '@/lib/domain/motels/roomPhotoLimits';
 import FeaturedPhotoFields from '@/components/admin/motel-detail/FeaturedPhotoFields';
+import FeaturedPhotoCropDialog, { type CropPosition, type FeaturedCrop } from '@/components/admin/motel-detail/FeaturedPhotoCropDialog';
 import PromoEditorForm from '@/components/admin/motel-detail/PromoEditorForm';
 import CommercialSummary from '@/components/admin/motel-detail/CommercialSummary';
 import GeneralInfoSummary from '@/components/admin/motel-detail/GeneralInfoSummary';
@@ -72,6 +73,8 @@ export default function MotelDetailPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<MotelAdminTab>('details');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
+  const [pendingFeaturedPhoto, setPendingFeaturedPhoto] = useState<File | null>(null);
+  const [pendingFeaturedPhotoMode, setPendingFeaturedPhotoMode] = useState<'auto' | 'web' | 'app' | null>(null);
 
   const [editingMotel, setEditingMotel] = useState(false);
   const [editingCommercial, setEditingCommercial] = useState(false);
@@ -974,30 +977,9 @@ export default function MotelDetailPage() {
       event.target.value = '';
       return;
     }
-
-    setUploadingFeatured(true);
-    try {
-      const [webFile, appFile] = await Promise.all([
-        createCroppedImageFile(file, 16 / 9, 'web'),
-        createCroppedImageFile(file, 4 / 5, 'app'),
-      ]);
-      const [webUrl, appUrl] = await Promise.all([
-        uploadFileToS3(webFile),
-        uploadFileToS3(appFile),
-      ]);
-      setMotelForm((prev) => ({
-        ...prev,
-        featuredPhotoWeb: webUrl,
-        featuredPhotoApp: appUrl,
-        featuredPhoto: prev.featuredPhoto || webUrl,
-      }));
-    } catch (error) {
-      console.error('Error uploading featured photo:', error);
-      toast.error('No se pudo subir la imagen. Intenta nuevamente.');
-    } finally {
-      setUploadingFeatured(false);
-      event.target.value = '';
-    }
+    setPendingFeaturedPhoto(file);
+    setPendingFeaturedPhotoMode('auto');
+    event.target.value = '';
   };
 
   const handleFeaturedVariantFileChange = async (
@@ -1012,25 +994,45 @@ export default function MotelDetailPage() {
       return;
     }
 
-    const setUploading = variant === 'web' ? setUploadingFeaturedWeb : setUploadingFeaturedApp;
+    setPendingFeaturedPhoto(file);
+    setPendingFeaturedPhotoMode(variant);
+    event.target.value = '';
+  };
+
+  const handleFeaturedCropConfirm = async (crops: FeaturedCrop) => {
+    const file = pendingFeaturedPhoto;
+    const mode = pendingFeaturedPhotoMode;
+    if (!file || !mode) return;
+
+    const setUploading = mode === 'auto'
+      ? setUploadingFeatured
+      : mode === 'web'
+        ? setUploadingFeaturedWeb
+        : setUploadingFeaturedApp;
+    setPendingFeaturedPhoto(null);
+    setPendingFeaturedPhotoMode(null);
     setUploading(true);
     try {
-      const targetRatio = variant === 'web' ? 16 / 9 : 4 / 5;
-      const suffix = variant === 'web' ? 'web' : 'app';
-      const croppedFile = await createCroppedImageFile(file, targetRatio, suffix);
-      const url = await uploadFileToS3(croppedFile);
-      setMotelForm((prev) => ({
-        ...prev,
-        featuredPhotoWeb: variant === 'web' ? url : prev.featuredPhotoWeb,
-        featuredPhotoApp: variant === 'app' ? url : prev.featuredPhotoApp,
-        featuredPhoto: prev.featuredPhoto || url,
-      }));
+      const cropFile = (variant: 'web' | 'app', position: CropPosition) =>
+        createCroppedImageFile(file, variant === 'web' ? 16 / 9 : 4 / 5, variant, position);
+      if (mode === 'auto') {
+        const [webFile, appFile] = await Promise.all([cropFile('web', crops.web), cropFile('app', crops.app)]);
+        const [webUrl, appUrl] = await Promise.all([uploadFileToS3(webFile), uploadFileToS3(appFile)]);
+        setMotelForm((prev) => ({ ...prev, featuredPhotoWeb: webUrl, featuredPhotoApp: appUrl, featuredPhoto: prev.featuredPhoto || webUrl }));
+      } else {
+        const url = await uploadFileToS3(await cropFile(mode, crops[mode]));
+        setMotelForm((prev) => ({
+          ...prev,
+          featuredPhotoWeb: mode === 'web' ? url : prev.featuredPhotoWeb,
+          featuredPhotoApp: mode === 'app' ? url : prev.featuredPhotoApp,
+          featuredPhoto: prev.featuredPhoto || url,
+        }));
+      }
     } catch (error) {
       console.error('Error uploading featured photo variant:', error);
       toast.error('No se pudo subir la imagen. Intenta nuevamente.');
     } finally {
       setUploading(false);
-      event.target.value = '';
     }
   };
 
@@ -1522,6 +1524,18 @@ export default function MotelDetailPage() {
           onRefresh={fetchReviews}
           onDelete={handleDeleteReview}
           canModerate={currentUser?.role === 'SUPERADMIN'}
+        />
+      )}
+
+      {pendingFeaturedPhoto && pendingFeaturedPhotoMode && (
+        <FeaturedPhotoCropDialog
+          file={pendingFeaturedPhoto}
+          mode={pendingFeaturedPhotoMode}
+          onCancel={() => {
+            setPendingFeaturedPhoto(null);
+            setPendingFeaturedPhotoMode(null);
+          }}
+          onConfirm={handleFeaturedCropConfirm}
         />
       )}
 
