@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-export type CropPosition = { x: number; y: number };
+export type CropPosition = { x: number; y: number; zoom: number };
 export type FeaturedCrop = { web: CropPosition; app: CropPosition };
 
 type Props = {
@@ -14,8 +14,8 @@ type Props = {
 };
 
 const INITIAL_CROPS: FeaturedCrop = {
-  web: { x: 50, y: 50 },
-  app: { x: 50, y: 50 },
+  web: { x: 50, y: 50, zoom: 1 },
+  app: { x: 50, y: 50, zoom: 1 },
 };
 
 export default function FeaturedPhotoCropDialog({ file, mode, onCancel, onConfirm }: Props) {
@@ -55,13 +55,19 @@ export default function FeaturedPhotoCropDialog({ file, mode, onCancel, onConfir
       },
     }));
   };
+  const changeZoom = (variant: 'web' | 'app', amount: number) => {
+    setCrops((current) => ({
+      ...current,
+      [variant]: { ...current[variant], zoom: Math.max(1, Math.min(2.5, Number((current[variant].zoom + amount).toFixed(1)))) },
+    }));
+  };
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="featured-crop-title">
       <div className="max-h-[calc(100dvh-2rem)] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
         <div className="mb-2">
           <h3 id="featured-crop-title" className="text-lg font-semibold text-slate-900">Ajustar encuadre de la foto</h3>
-          <p className="mt-1 text-sm text-slate-600">Arrastrá la foto dentro del marco o usá las flechas para moverla. Podés dejar un encuadre distinto para Web y App.</p>
+          <p className="mt-1 text-sm text-slate-600">Arrastrá la foto dentro del marco, usá las flechas para moverla y − / + para alejar o acercar. Podés dejar un encuadre distinto para Web y App.</p>
         </div>
         <div className={`mt-5 grid gap-5 ${variants.length === 2 ? 'md:grid-cols-2' : 'max-w-xl'}`}>
           {variants.map((variant) => {
@@ -80,20 +86,26 @@ export default function FeaturedPhotoCropDialog({ file, mode, onCancel, onConfir
                   title="Arrastrá la foto para mover el encuadre"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- objeto local antes de subirlo */}
-                  <img src={previewUrl} alt={`Previsualización ${ratioLabel}`} className="h-full w-full object-cover" style={{ objectPosition: `${crop.x}% ${crop.y}%` }} />
+                  <img src={previewUrl} alt={`Previsualización ${ratioLabel}`} className="h-full w-full object-cover transition-transform" style={{ objectPosition: `${crop.x}% ${crop.y}%`, transform: `scale(${crop.zoom})`, transformOrigin: `${crop.x}% ${crop.y}%` }} />
                 </div>
                 <div className="mt-3 flex items-center justify-between gap-3">
-                  <p className="text-xs text-slate-500">Arrastrá la foto o usá las flechas.</p>
-                  <div className="grid grid-cols-3 gap-1" aria-label={`Mover foto ${ratioLabel}`}>
-                    <span />
-                    <MoveButton label="Mover arriba" onClick={() => moveCrop(variant, 0, -10)}>↑</MoveButton>
-                    <span />
-                    <MoveButton label="Mover a la izquierda" onClick={() => moveCrop(variant, -10, 0)}>←</MoveButton>
-                    <MoveButton label="Centrar foto" onClick={() => setCrops((current) => ({ ...current, [variant]: { x: 50, y: 50 } }))}>⌾</MoveButton>
-                    <MoveButton label="Mover a la derecha" onClick={() => moveCrop(variant, 10, 0)}>→</MoveButton>
-                    <span />
-                    <MoveButton label="Mover abajo" onClick={() => moveCrop(variant, 0, 10)}>↓</MoveButton>
-                    <span />
+                  <p className="text-xs text-slate-500">Arrastrá o usá los controles.</p>
+                  <div className="flex items-center gap-2">
+                    <div className="grid grid-cols-3 gap-1" aria-label={`Mover foto ${ratioLabel}`}>
+                      <span />
+                      <MoveButton label="Mover arriba" onClick={() => moveCrop(variant, 0, -10)}>↑</MoveButton>
+                      <span />
+                      <MoveButton label="Mover a la izquierda" onClick={() => moveCrop(variant, -10, 0)}>←</MoveButton>
+                      <MoveButton label="Centrar foto" onClick={() => setCrops((current) => ({ ...current, [variant]: { ...current[variant], x: 50, y: 50 } }))}>⌾</MoveButton>
+                      <MoveButton label="Mover a la derecha" onClick={() => moveCrop(variant, 10, 0)}>→</MoveButton>
+                      <span />
+                      <MoveButton label="Mover abajo" onClick={() => moveCrop(variant, 0, 10)}>↓</MoveButton>
+                      <span />
+                    </div>
+                    <div className="flex flex-col gap-1 border-l border-slate-200 pl-2" aria-label={`Zoom de foto ${ratioLabel}`}>
+                      <MoveButton label="Acercar foto" onClick={() => changeZoom(variant, 0.1)}>+</MoveButton>
+                      <MoveButton label="Alejar foto" onClick={() => changeZoom(variant, -0.1)}>−</MoveButton>
+                    </div>
                   </div>
                 </div>
               </section>
