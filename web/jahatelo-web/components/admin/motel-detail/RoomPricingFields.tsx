@@ -78,7 +78,7 @@ function SpecificDayRates({ rules, onChange }: { rules: WeekdayRateForm[]; onCha
         })}
       </div>
       <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-        <select value={draft.duration} onChange={(event) => { setDraft({ ...draft, duration: event.target.value as WeekdayRateForm['duration'], weekdays: [] }); setRuleError(''); }} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">{DURATIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+        <select value={draft.duration} onChange={(event) => { setDraft((current) => ({ ...current, duration: event.target.value as WeekdayRateForm['duration'] })); setRuleError(''); }} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">{DURATIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
         <input type="number" min="1" value={draft.price} onChange={(event) => { setDraft({ ...draft, price: event.target.value }); setRuleError(''); }} placeholder="Precio en Gs." className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
         <button type="button" onClick={addRule} className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-700">Agregar</button>
       </div>
