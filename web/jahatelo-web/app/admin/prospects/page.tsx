@@ -271,17 +271,17 @@ export default function ProspectsPage() {
 
   const handleCreateProspect = async () => {
     // Validación básica
-    if (!newContactName.trim() || !newPhone.trim() || !newMotelName.trim()) {
-      toast?.showToast('Todos los campos son requeridos', 'error');
+    if (!newMotelName.trim()) {
+      toast?.showToast('El nombre del motel es obligatorio', 'error');
       return;
     }
 
-    if (newContactName.trim().length < 2) {
+    if (newContactName.trim() && newContactName.trim().length < 2) {
       toast?.showToast('El nombre de contacto debe tener al menos 2 caracteres', 'error');
       return;
     }
 
-    if (newPhone.replace(/\D/g, '').length < 7) {
+    if (newPhone.trim() && newPhone.replace(/\D/g, '').length < 7) {
       toast?.showToast('El teléfono debe tener al menos 7 dígitos', 'error');
       return;
     }
@@ -543,14 +543,14 @@ export default function ProspectsPage() {
                               <div className="fixed inset-0 z-[90]" onClick={() => { setOpenMenuId(null); setActionMenuPosition(null); }} />
                               <div className="fixed z-[100] flex gap-1 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg" style={{ top: actionMenuPosition.top, right: actionMenuPosition.right }}>
                                 {prospect.status !== 'WON' && (
-                                  <button
-                                    onClick={() => { router.push(`/admin/motels/new?prospectId=${prospect.id}`); setOpenMenuId(null); setActionMenuPosition(null); }}
+                                  <a
+                                    href={`/admin/motels/new?prospectId=${prospect.id}`}
                                     className="inline-flex h-8 w-8 items-center justify-center rounded-md text-purple-700 hover:bg-purple-50"
                                     title="Dar de alta motel"
                                     aria-label="Dar de alta motel desde prospecto"
                                   >
                                     <Building2 size={15} />
-                                  </button>
+                                  </a>
                                 )}
                                 <button
                                   onClick={() => { handleDelete(prospect.id); setOpenMenuId(null); setActionMenuPosition(null); }}
@@ -644,7 +644,7 @@ export default function ProspectsPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Nombre de contacto *
+                  Nombre de contacto (opcional)
                 </label>
                 <input
                   type="text"
@@ -652,12 +652,12 @@ export default function ProspectsPage() {
                   onChange={(e) => setNewContactName(e.target.value)}
                   placeholder="Ej: Juan Pérez"
                   disabled={creating}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent disabled:bg-slate-100"
+                  className="w-full border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent disabled:bg-slate-100"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Teléfono *
+                  Teléfono (opcional)
                 </label>
                 <input
                   type="tel"
@@ -665,7 +665,7 @@ export default function ProspectsPage() {
                   onChange={(e) => setNewPhone(e.target.value)}
                   placeholder="Ej: 0981 123 456"
                   disabled={creating}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent disabled:bg-slate-100"
+                  className="w-full border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent disabled:bg-slate-100"
                 />
               </div>
               <div>
@@ -678,7 +678,7 @@ export default function ProspectsPage() {
                   onChange={(e) => setNewMotelName(e.target.value)}
                   placeholder="Ej: Motel Paradise"
                   disabled={creating}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent disabled:bg-slate-100"
+                  className="w-full border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent disabled:bg-slate-100"
                 />
               </div>
               <div>
@@ -691,7 +691,7 @@ export default function ProspectsPage() {
                   rows={3}
                   placeholder="Notas adicionales..."
                   disabled={creating}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent disabled:bg-slate-100"
+                  className="w-full border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent disabled:bg-slate-100"
                 />
               </div>
             </div>
