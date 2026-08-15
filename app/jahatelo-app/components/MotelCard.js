@@ -20,7 +20,7 @@ import { getAmenityIconConfig } from '../constants/amenityIcons';
 import { COLORS } from '../constants/theme';
 import { hasMotelPlanGlow, isMotelPlanMuted, normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
 import { trackFavoriteAdd, trackFavoriteRemove } from '../services/analyticsService';
-import MotelLogoHeart from './MotelLogoHeart';
+import MotelLogoTile from './MotelLogoTile';
 
 function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -188,37 +188,40 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
 
   const cardBody = (
     <Animated.View style={[styles.card, animatedCardStyle, isMuted && styles.disabledCard, isDiamond && styles.cardNoMargin]}>
-      {/* Header con nombre y favorito */}
-      <View style={styles.cardHeader}>
-        <View style={styles.headerLeft}>
-          {motel.logoUrl && <MotelLogoHeart uri={motel.logoUrl} />}
-          <View style={styles.headerText}>
-            <Text style={styles.motelName} numberOfLines={1}>{motel.nombre}</Text>
-            <Text style={styles.location} numberOfLines={1}>
-              <Ionicons name="location-outline" size={12} color="#888" /> {motel.ciudad || 'Sin ciudad'}
-            </Text>
-          </View>
-        </View>
-        <View style={styles.headerActions}>
-          {showFavoriteAction && <TouchableOpacity
-            onPress={handleFavoritePress}
-            style={styles.actionButton}
-            activeOpacity={0.7}
-          >
-            <Animated.View style={animatedHeartStyle}>
-              <Ionicons
-                name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
-                size={20}
-                color={COLORS.primary}
-              />
-            </Animated.View>
-          </TouchableOpacity>}
-        </View>
-      </View>
+      <View style={styles.cardContentRow}>
+        {motel.logoUrl && <MotelLogoTile uri={motel.logoUrl} />}
 
-      {/* Fila inferior: precio, badges/amenities */}
-      <View style={styles.bottomRow}>
-        <View style={styles.priceContainer}>
+        <View style={styles.cardInfo}>
+          {/* Header con nombre y favorito */}
+          <View style={styles.cardHeader}>
+            <View style={styles.headerLeft}>
+              <View style={styles.headerText}>
+                <Text style={styles.motelName} numberOfLines={1}>{motel.nombre}</Text>
+                <Text style={styles.location} numberOfLines={1}>
+                  <Ionicons name="location-outline" size={12} color="#888" /> {motel.ciudad || 'Sin ciudad'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.headerActions}>
+              {showFavoriteAction && <TouchableOpacity
+                onPress={handleFavoritePress}
+                style={styles.actionButton}
+                activeOpacity={0.7}
+              >
+                <Animated.View style={animatedHeartStyle}>
+                  <Ionicons
+                    name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
+                    size={20}
+                    color={COLORS.primary}
+                  />
+                </Animated.View>
+              </TouchableOpacity>}
+            </View>
+          </View>
+
+          {/* Fila inferior: precio, badges/amenities */}
+          <View style={styles.bottomRow}>
+            <View style={styles.priceContainer}>
           {motel.precioDesde > 0 ? (
             hasDayPriceVariation ? (
               <Text style={styles.dayPriceSummary} numberOfLines={1}>
@@ -238,9 +241,9 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
           {motel.distanciaKm && (
             <Text style={styles.distance}>{formatDistance(motel.distanciaKm)}</Text>
           )}
-        </View>
+            </View>
 
-        <View style={styles.rightInfo}>
+            <View style={styles.rightInfo}>
           {/* Badges y Amenities en una sola fila */}
           <View style={styles.badgesRow}>
             {motel.tienePromo && (
@@ -284,6 +287,8 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
                 ) : null;
               })
             )}
+          </View>
+            </View>
           </View>
         </View>
       </View>
@@ -392,6 +397,15 @@ const styles = StyleSheet.create({
   disabledCard: {
     opacity: 0.4,
     backgroundColor: '#F5F5F5',
+  },
+  cardContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  cardInfo: {
+    flex: 1,
+    minWidth: 0,
   },
   cardHeader: {
     flexDirection: 'row',

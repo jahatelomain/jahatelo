@@ -93,6 +93,38 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
   const isGold = normalizedPlan === 'GOLD';
   const locationLabel = [motel.address, motel.city].filter(Boolean).join(', ') || 'Sin ubicación';
 
+  // En móvil, las listas se leen más rápido como filas: logo a la izquierda y
+  // la información al costado. El formato de card con foto se conserva en web
+  // de escritorio y en los carruseles destacados.
+  const mobileListCard = (
+    <article className={`flex gap-3 border-b border-slate-100 py-3 last:border-b-0 ${isDisabled ? 'opacity-40' : ''}`}>
+      {motel.logoUrl ? (
+        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50">
+          <Image src={motel.logoUrl} alt={`Logo de ${motel.name}`} fill sizes="96px" className="object-cover" />
+        </div>
+      ) : null}
+      <div className="min-w-0 flex-1 py-0.5">
+        <div className="flex items-start gap-2">
+          <h3 className="min-w-0 flex-1 truncate text-base font-bold text-slate-900">{motel.name}</h3>
+          {showFavoriteAction ? <span className="shrink-0"><FavoriteButtonClient motelId={motel.id} source="LIST" size="small" /></span> : null}
+        </div>
+        <p className="mt-1 truncate text-xs text-slate-500">{locationLabel}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {(isCanonical ? motel.tienePromo : false) ? <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-800">PROMO</span> : null}
+          {isDiamond ? <span className="rounded-full bg-cyan-950 px-2 py-0.5 text-[10px] font-bold text-cyan-200">DIAMOND</span> : null}
+          {isGold ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">GOLD</span> : null}
+          {topAmenities.slice(0, 3).map((amenity, index) => {
+            const IconComponent = amenity.icon ? iconLibrary[amenity.icon] : undefined;
+            return <span key={`${amenity.name}-${index}`} title={amenity.name} className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-purple-50 text-purple-600">{IconComponent ? <IconComponent size={13} /> : <span className="text-xs">•</span>}</span>;
+          })}
+        </div>
+        <p className="mt-2 text-sm font-bold text-purple-600">
+          {hasDayPriceVariation ? <><span className="text-[11px] font-medium text-slate-500">S–J </span>{formatGuaranies(weekdayPrice)}<span className="mx-1 text-purple-300">·</span><span className="text-[11px] font-medium text-slate-500">V–S </span>{formatGuaranies(weekendPrice)}</> : minPrice !== null && minPrice > 0 ? <><span className="mr-1 text-xs font-medium text-slate-500">Desde</span>{formatGuaranies(minPrice)}</> : 'Consultar'}
+        </p>
+      </div>
+    </article>
+  );
+
   const cardInner = (
     <div
       className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[360px] h-full flex flex-col ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-pointer' : 'cursor-pointer'} ${isDiamond ? 'border-transparent' : ''}`}
@@ -293,5 +325,10 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
     cardInner
   );
 
-  return <Link href={`/motels/${motel.slug}`} onClick={handleClick}>{cardContent}</Link>;
+  return (
+    <Link href={`/motels/${motel.slug}`} onClick={handleClick}>
+      <div className="md:hidden">{mobileListCard}</div>
+      <div className="hidden md:block">{cardContent}</div>
+    </Link>
+  );
 }

@@ -11,6 +11,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { hasMotelPlanGlow } from '../constants/motelPlans';
+import MotelLogoHeart from './MotelLogoHeart';
 
 const COLORS = {
   white: '#FFFFFF',
@@ -82,7 +83,14 @@ export default function MotelCardSmall({ motel, onPress }) {
       onPress={onPress}
       activeOpacity={0.85}
     >
-      <Image source={imageSource} style={[styles.image, isPlaceholder && styles.placeholderImage]} />
+      <View style={styles.imageContainer}>
+        <Image source={imageSource} style={[styles.image, isPlaceholder && styles.placeholderImage]} />
+        {motel.logoUrl && (
+          <View style={styles.logoBadge} pointerEvents="none">
+            <MotelLogoHeart uri={motel.logoUrl} size={36} />
+          </View>
+        )}
+      </View>
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1}>
           {motel.nombre}
@@ -183,6 +191,14 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: 90,
+  },
+  imageContainer: {
+    position: 'relative',
+  },
+  logoBadge: {
+    position: 'absolute',
+    top: 7,
+    left: 7,
   },
   placeholderImage: {
     opacity: 0.5,
