@@ -330,7 +330,7 @@ export default function MotelDetailPage() {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isActive: !promo.isActive }),
       });
       if (!res.ok) throw new Error(await getResponseError(res, 'No se pudo actualizar la promo'));
-      toast.success(promo.isActive ? 'Promo desactivada; su historial se conserva.' : 'Promo reactivada.');
+      toast.success(promo.isActive ? 'Promoción desactivada; su historial de códigos se conserva.' : 'Promoción activada nuevamente.');
       fetchPromos();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo actualizar la promo');
