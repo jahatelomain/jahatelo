@@ -246,7 +246,7 @@ export default function CitySelectorScreen({ route, navigation }) {
     return (value || '').toString().trim().toLowerCase();
   };
 
-  const handleCityPress = (city) => {
+  const handleCityPress = async (city) => {
     if (mode === 'promos' && useProvidedMotels) {
       const cityKey = normalizeCityName(city.name);
       const filteredMotels = motels.filter((motel) => (
