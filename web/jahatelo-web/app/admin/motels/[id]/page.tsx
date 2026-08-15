@@ -1196,7 +1196,7 @@ export default function MotelDetailPage() {
               </div>
             ) : (
               promos.map((promo) => (
-                <PromoCard key={promo.id} promo={promo} superAdmin={currentUser?.role === 'SUPERADMIN'} menuOpen={openPromoMenuId === promo.id} onEdit={handleEditPromo} onDelete={handleDeletePromo} onToggleActive={handleTogglePromoActive} onMenuChange={setOpenPromoMenuId}>
+                <PromoCard key={promo.id} promo={promo} menuOpen={openPromoMenuId === promo.id} onEdit={handleEditPromo} onDelete={handleDeletePromo} onToggleActive={handleTogglePromoActive} onMenuChange={setOpenPromoMenuId}>
 
                     {promo.hasPromoCode && (
                       <PromoCodePanel
