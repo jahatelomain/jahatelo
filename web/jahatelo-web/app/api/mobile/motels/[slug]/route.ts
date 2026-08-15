@@ -38,6 +38,7 @@ export async function GET(
       ...data,
       thumbnail: normalizeLocalUrl(data.thumbnail, baseUrl),
       featuredPhoto: normalizeLocalUrl(data.featuredPhoto, baseUrl),
+      logoUrl: normalizeLocalUrl(data.logoUrl, baseUrl),
       promos: (data.promos || []).map((promo) => ({
         ...promo,
         imageUrl: normalizeLocalUrl(promo.imageUrl, baseUrl),

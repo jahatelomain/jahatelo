@@ -105,6 +105,7 @@ export type Motel = {
   featuredPhoto: string | null;
   featuredPhotoWeb?: string | null;
   featuredPhotoApp?: string | null;
+  logoUrl?: string | null;
   ratingAvg: number | null;
   ratingCount: number | null;
   createdAt?: string;

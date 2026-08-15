@@ -7,6 +7,8 @@ type ItemForm = { name: string; price: string; description: string };
 type Props = {
   showCategoryForm: boolean;
   showItemForm: boolean;
+  editingCategory?: boolean;
+  editingItem?: boolean;
   categoryForm: CategoryForm;
   itemForm: ItemForm;
   categoryFormDirty: boolean;
@@ -28,6 +30,8 @@ const CloseIcon = () => (
 export default function MenuForms({
   showCategoryForm,
   showItemForm,
+  editingCategory = false,
+  editingItem = false,
   categoryForm,
   itemForm,
   categoryFormDirty,
@@ -45,7 +49,7 @@ export default function MenuForms({
     return (
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-900">Nueva Categoría</h3>
+          <h3 className="text-lg font-semibold text-slate-900">{editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}</h3>
           <button type="button" onClick={onCancelCategory} aria-label="Cerrar formulario de categoría" className="text-slate-400 transition-colors hover:text-slate-600">
             <CloseIcon />
           </button>
@@ -63,7 +67,7 @@ export default function MenuForms({
               required
             />
           </div>
-          <FormActions submitLabel="Crear Categoría" onCancel={onCancelCategory} />
+          <FormActions submitLabel={editingCategory ? 'Guardar Categoría' : 'Crear Categoría'} onCancel={onCancelCategory} />
         </form>
       </div>
     );
@@ -72,7 +76,7 @@ export default function MenuForms({
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-6 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">Nuevo Item</h3>
+        <h3 className="text-lg font-semibold text-slate-900">{editingItem ? 'Editar Item' : 'Nuevo Item'}</h3>
         <button type="button" onClick={onCancelItem} aria-label="Cerrar formulario de item" className="text-slate-400 transition-colors hover:text-slate-600">
           <CloseIcon />
         </button>
@@ -91,7 +95,7 @@ export default function MenuForms({
           <label className="mb-2 block text-sm font-medium text-slate-700">Descripción <span className="text-slate-400">(opcional)</span></label>
           <textarea value={itemForm.description} onChange={(event) => onItemChange({ ...itemForm, description: event.target.value })} className="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-transparent focus:ring-2 focus:ring-purple-600" rows={3} placeholder="Descripción del item" />
         </div>
-        <FormActions submitLabel="Crear Item" onCancel={onCancelItem} />
+        <FormActions submitLabel={editingItem ? 'Guardar Item' : 'Crear Item'} onCancel={onCancelItem} />
       </form>
     </div>
   );

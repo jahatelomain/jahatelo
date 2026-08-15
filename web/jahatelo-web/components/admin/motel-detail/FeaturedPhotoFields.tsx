@@ -2,19 +2,29 @@ import type { ChangeEvent } from 'react';
 import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
 import AdminImage from './AdminImage';
 
-type PhotoForm = { featuredPhotoWeb: string; featuredPhotoApp: string };
+type PhotoForm = { featuredPhotoWeb: string; featuredPhotoApp: string; logoUrl: string };
 type Props<T extends PhotoForm> = {
   form: T;
   uploadingAuto: boolean;
   uploadingWeb: boolean;
   uploadingApp: boolean;
+  uploadingLogo: boolean;
   onAutoUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onVariantUpload: (variant: 'web' | 'app', event: ChangeEvent<HTMLInputElement>) => void;
+  onLogoUpload: (event: ChangeEvent<HTMLInputElement>) => void;
 };
 
-export default function FeaturedPhotoFields<T extends PhotoForm>({ form, uploadingAuto, uploadingWeb, uploadingApp, onAutoUpload, onVariantUpload }: Props<T>) {
+export default function FeaturedPhotoFields<T extends PhotoForm>({ form, uploadingAuto, uploadingWeb, uploadingApp, uploadingLogo, onAutoUpload, onVariantUpload, onLogoUpload }: Props<T>) {
   return (
     <div>
+      <div className="mb-6 rounded-xl border border-purple-100 bg-purple-50/50 p-4">
+        <p className="mb-2 text-sm font-medium text-slate-700">Logo del motel</p>
+        <div className="flex flex-wrap items-center gap-4">
+          <UploadButton uploading={uploadingLogo} label={form.logoUrl ? 'Reemplazar logo' : 'Subir logo'} onChange={onLogoUpload} />
+          <p className="text-xs text-slate-500">Usá preferentemente una imagen cuadrada. Aparecerá dentro de un corazón en las tarjetas.</p>
+          {form.logoUrl && <AdminImage src={normalizeLocalUrl(form.logoUrl) || ''} alt="Logo del motel" width={96} height={96} className="h-16 w-16 rounded-full border border-white object-cover shadow-sm" />}
+        </div>
+      </div>
       <label className="block text-sm font-medium text-slate-700 mb-2">Foto principal (auto)</label>
       <div className="flex flex-wrap items-center gap-3">
         <UploadButton uploading={uploadingAuto} label="Subir y generar 16:9 + 4:5" onChange={onAutoUpload} />

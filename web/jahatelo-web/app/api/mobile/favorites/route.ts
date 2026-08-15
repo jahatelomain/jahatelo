@@ -139,6 +139,7 @@ export async function GET(request: NextRequest) {
           isFeatured: motel.isFeatured,
           thumbnail,
           featuredPhotoWeb,
+          logoUrl: motel.logoUrl || null,
           plan: motel.plan,
         };
       });

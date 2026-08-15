@@ -20,9 +20,9 @@ import { getAmenityIconConfig } from '../constants/amenityIcons';
 import { COLORS } from '../constants/theme';
 import { hasMotelPlanGlow, isMotelPlanMuted, normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
 import { trackFavoriteAdd, trackFavoriteRemove } from '../services/analyticsService';
-import { shareMotel } from '../utils/share';
+import MotelLogoHeart from './MotelLogoHeart';
 
-function MotelCardComponent({ motel, onPress }) {
+function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
   const { isFavorite, toggleFavorite } = useFavorites();
 
   // Derivadas de motel con null safety — deben estar antes de los hooks
@@ -156,14 +156,6 @@ function MotelCardComponent({ motel, onPress }) {
     }
   };
 
-  const handleSharePress = (e) => {
-    // Prevenir que se dispare el onPress de la card
-    e.stopPropagation();
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    shareMotel(motel);
-  };
-
   const handlePress = () => {
     // La navegación de la card siempre es prioritaria. FREE se muestra con
     // menor énfasis, pero sigue siendo navegable y no necesita precarga de
@@ -199,24 +191,16 @@ function MotelCardComponent({ motel, onPress }) {
       {/* Header con nombre y favorito */}
       <View style={styles.cardHeader}>
         <View style={styles.headerLeft}>
-          <Text style={styles.motelName} numberOfLines={1}>{motel.nombre}</Text>
-          <Text style={styles.location} numberOfLines={1}>
-            <Ionicons name="location-outline" size={12} color="#888" /> {motel.ciudad || 'Sin ciudad'}
-          </Text>
+          {motel.logoUrl && <MotelLogoHeart uri={motel.logoUrl} />}
+          <View style={styles.headerText}>
+            <Text style={styles.motelName} numberOfLines={1}>{motel.nombre}</Text>
+            <Text style={styles.location} numberOfLines={1}>
+              <Ionicons name="location-outline" size={12} color="#888" /> {motel.ciudad || 'Sin ciudad'}
+            </Text>
+          </View>
         </View>
         <View style={styles.headerActions}>
-          <TouchableOpacity
-            onPress={handleSharePress}
-            style={styles.actionButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="share-social-outline"
-              size={19}
-              color={COLORS.primary}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
+          {showFavoriteAction && <TouchableOpacity
             onPress={handleFavoritePress}
             style={styles.actionButton}
             activeOpacity={0.7}
@@ -228,7 +212,7 @@ function MotelCardComponent({ motel, onPress }) {
                 color={COLORS.primary}
               />
             </Animated.View>
-          </TouchableOpacity>
+          </TouchableOpacity>}
         </View>
       </View>
 
@@ -418,6 +402,12 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
     marginRight: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 0,
+  },
+  headerText: {
+    flex: 1,
   },
   motelName: {
     fontSize: 15,

@@ -140,6 +140,7 @@ export default function CityMotelsScreen({ route, navigation }) {
               return (
                 <MotelCard
                   motel={item.data}
+                  showFavoriteAction={false}
                   onPress={() => navigation.navigate('MotelDetail', { motelId: item.data.id })}
                 />
               );

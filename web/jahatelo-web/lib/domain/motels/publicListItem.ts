@@ -17,6 +17,7 @@ export type PublicMotelListItem = {
   thumbnail: string | null;
   featuredPhoto: string | null;
   featuredPhotoWeb?: string | null;
+  logoUrl: string | null;
   promoImageUrl: string | null;
   promoTitle: string | null;
   promoDescription: string | null;
