@@ -27,6 +27,8 @@ import { fetchCities } from '../services/motelsApi';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { mixAdvertisements } from '../utils/mixAdvertisements';
 import AdDetailModal from '../components/AdDetailModal';
+import MotelCard from '../components/MotelCard';
+import { fetchMotels } from '../services/motelsApi';
 
 // Componente de city card animada
 const AnimatedCityCard = ({ item, index, onPress }) => {
@@ -166,6 +168,9 @@ export default function CitySelectorScreen({ route, navigation }) {
   const [error, setError] = useState(null);
   const [selectedAd, setSelectedAd] = useState(null);
   const [showAdDetailModal, setShowAdDetailModal] = useState(false);
+  const [expandedCity, setExpandedCity] = useState(null);
+  const [motelsByCity, setMotelsByCity] = useState({});
+  const [loadingCity, setLoadingCity] = useState(null);
   const { ads: listAds, loading: adsLoading, trackAdEvent } = useAdvertisements('LIST_INLINE');
 
   const loadCities = useCallback(async ({ initial = false } = {}) => {
@@ -256,10 +261,23 @@ export default function CitySelectorScreen({ route, navigation }) {
       return;
     }
 
-    navigation.navigate('CityMotels', {
-      cityName: city.name,
-      motels: city.motels,
-    });
+    if (expandedCity === city.name) {
+      setExpandedCity(null);
+      return;
+    }
+
+    setExpandedCity(city.name);
+    if (motelsByCity[city.name]) return;
+
+    setLoadingCity(city.name);
+    try {
+      const cityMotels = city.motels?.length ? city.motels : await fetchMotels({ city: city.name });
+      setMotelsByCity((current) => ({ ...current, [city.name]: cityMotels || [] }));
+    } catch (err) {
+      setError(err?.message || 'Error al cargar moteles');
+    } finally {
+      setLoadingCity(null);
+    }
   };
 
   const handleAdClick = (ad) => {
@@ -333,12 +351,16 @@ export default function CitySelectorScreen({ route, navigation }) {
                 );
               }
 
+              const city = item.data;
+              const isExpanded = expandedCity === city.name;
+              const cityMotels = motelsByCity[city.name] || [];
               return (
-                <AnimatedCityCard
-                  item={item.data}
-                  index={index}
-                  onPress={handleCityPress}
-                />
+                <View>
+                  <AnimatedCityCard item={city} index={index} onPress={handleCityPress} />
+                  {isExpanded && <View style={styles.expandedCityContent}>
+                    {loadingCity === city.name ? <View style={styles.loadingRow}><ActivityIndicator size="small" color={COLORS.primary} /><Text style={styles.subtitle}>Cargando moteles...</Text></View> : cityMotels.length === 0 ? <Text style={styles.emptyCityText}>No hay moteles publicados en esta ciudad.</Text> : cityMotels.map((motel) => <MotelCard key={motel.id} motel={motel} showFavoriteAction={false} onPress={() => navigation.navigate('MotelDetail', { motelId: motel.id })} />)}
+                  </View>}
+                </View>
               );
             }}
             showsVerticalScrollIndicator={false}
@@ -422,6 +444,16 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 24,
+  },
+  expandedCityContent: {
+    paddingTop: 4,
+    paddingBottom: 8,
+  },
+  emptyCityText: {
+    color: COLORS.textLight,
+    fontSize: 14,
+    paddingVertical: 16,
+    textAlign: 'center',
   },
   cityCard: {
     flexDirection: 'row',

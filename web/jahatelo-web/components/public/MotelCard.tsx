@@ -6,6 +6,7 @@ import Image from 'next/image';
 import * as LucideIcons from 'lucide-react';
 import { trackMotelView } from '@/lib/analyticsService';
 import FavoriteButtonClient from '@/components/public/FavoriteButtonClient';
+import MotelLogoHeart from '@/components/public/MotelLogoHeart';
 import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
 import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
 import type { CSSProperties } from 'react';
@@ -14,6 +15,7 @@ import type { PublicMotelListItem } from '@/lib/domain/motels/publicListItem';
 import { hasMotelPlanGlow, isMotelPlanDisabled, normalizeMotelPlan } from '@/lib/domain/motels/planPresentation';
 
 export interface MotelCardProps {
+  showFavoriteAction?: boolean;
   motel: (PublicMotelListItem | {
     id: string;
     name: string;
@@ -25,6 +27,7 @@ export interface MotelCardProps {
     ratingCount?: number | null;
     featuredPhoto?: string | null;
     featuredPhotoWeb?: string | null;
+    logoUrl?: string | null;
     rooms?: Array<{
       price1h?: number | null;
       price1_5h?: number | null;
@@ -43,7 +46,7 @@ export interface MotelCardProps {
   };
 }
 
-export default function MotelCard({ motel }: MotelCardProps) {
+export default function MotelCard({ motel, showFavoriteAction = true }: MotelCardProps) {
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
   const isCanonical = 'rating' in motel;
   const realPhotoUrl = isCanonical
@@ -115,9 +118,10 @@ export default function MotelCard({ motel }: MotelCardProps) {
           ) : (
             <div className="w-full h-full bg-transparent" />
           )}
-          <div className="absolute top-3 left-3">
+          {motel.logoUrl && <MotelLogoHeart src={motel.logoUrl} alt={motel.name} className="absolute left-3 top-3 h-12 w-14" />}
+          {showFavoriteAction && <div className={`absolute top-3 ${motel.logoUrl ? 'left-[4.25rem]' : 'left-3'}`}>
             <FavoriteButtonClient motelId={motel.id} source="LIST" size="small" />
-          </div>
+          </div>}
           <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
             {(isCanonical ? motel.tienePromo : false) && (
               <div className="bg-purple-100 text-purple-950 text-[10px] font-bold px-2 py-0.5 rounded-full">

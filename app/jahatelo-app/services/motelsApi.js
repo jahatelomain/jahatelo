@@ -104,6 +104,7 @@ const mapMotelSummary = (apiMotel) => {
     thumbnail,
     featuredPhotoApp: apiMotel.featuredPhotoApp || null,
     featuredPhotoWeb: apiMotel.featuredPhotoWeb || null,
+    logoUrl: apiMotel.logoUrl || null,
   });
 };
 

@@ -169,6 +169,7 @@ model Motel {
   featuredPhoto    String?         // Foto principal/portada del motel
   featuredPhotoWeb String?         // Portada 16:9 para web
   featuredPhotoApp String?         // Portada 4:5 para app
+  logoUrl          String?         // Logo independiente del motel para tarjetas públicas
   status           MotelStatus     @default(PENDING)
   isActive         Boolean         @default(false)
   contactName      String?

@@ -100,6 +100,14 @@ export const MotelSchema = z.object({
     )
     .optional()
     .nullable(),
+  logoUrl: z
+    .string()
+    .refine(
+      (value) => value.startsWith('/uploads/') || z.string().url().safeParse(value).success,
+      'URL de logo inválida'
+    )
+    .optional()
+    .nullable(),
   status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
   isActive: z.boolean().optional(),
   contactName: z.string().min(2).max(100).optional().nullable(),

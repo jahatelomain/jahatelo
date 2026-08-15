@@ -106,6 +106,7 @@ export default function MotelDetailPage() {
     featuredPhoto: '',
     featuredPhotoWeb: '',
     featuredPhotoApp: '',
+    logoUrl: '',
   });
 
   const [showRoomForm, setShowRoomForm] = useState(false);
@@ -114,9 +115,11 @@ export default function MotelDetailPage() {
   const [weekdayRateRules, setWeekdayRateRules] = useState<WeekdayRateForm[]>([]);
 
   const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [categoryForm, setCategoryForm] = useState({ title: '', sortOrder: 0 });
 
   const [showItemForm, setShowItemForm] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [itemCategoryId, setItemCategoryId] = useState<string | null>(null);
   const [itemForm, setItemForm] = useState({ name: '', price: '', description: '' });
 
@@ -138,6 +141,7 @@ export default function MotelDetailPage() {
   const [uploadingFeatured, setUploadingFeatured] = useState(false);
   const [uploadingFeaturedWeb, setUploadingFeaturedWeb] = useState(false);
   const [uploadingFeaturedApp, setUploadingFeaturedApp] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingRoomId, setUploadingRoomId] = useState<string | null>(null);
   const [uploadingPromo, setUploadingPromo] = useState(false);
   const [reviews, setReviews] = useState<MotelReview[]>([]);
@@ -203,6 +207,7 @@ export default function MotelDetailPage() {
         featuredPhoto: normalizeUploadUrl(data.featuredPhoto || '') || '',
         featuredPhotoWeb: normalizeUploadUrl(data.featuredPhotoWeb || '') || '',
         featuredPhotoApp: normalizeUploadUrl(data.featuredPhotoApp || '') || '',
+        logoUrl: normalizeUploadUrl(data.logoUrl || '') || '',
       });
     } catch (error) {
       console.error('Error fetching motel:', error);
@@ -444,6 +449,7 @@ export default function MotelDetailPage() {
         featuredPhoto: normalizeUploadUrl(fallbackFeaturedPhoto),
         featuredPhotoWeb: normalizeUploadUrl(motelForm.featuredPhotoWeb || ''),
         featuredPhotoApp: normalizeUploadUrl(motelForm.featuredPhotoApp || ''),
+        logoUrl: normalizeUploadUrl(motelForm.logoUrl || ''),
         // Los enlaces de ficha de Google Maps conservan el pin exacto aunque no
         // expongan coordenadas. En ese caso no se interrumpe el guardado ni se
         // borran coordenadas existentes de registros anteriores.
@@ -667,11 +673,11 @@ export default function MotelDetailPage() {
   const handleSaveCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/admin/menu-categories', {
-        method: 'POST',
+      const res = await fetch(editingCategoryId ? `/api/admin/menu-categories/${editingCategoryId}` : '/api/admin/menu-categories', {
+        method: editingCategoryId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          motelId: id,
+          ...(!editingCategoryId && { motelId: id }),
           ...categoryForm,
         }),
       });
@@ -679,15 +685,16 @@ export default function MotelDetailPage() {
       if (res.ok) {
         fetchMotel();
         setShowCategoryForm(false);
+        setEditingCategoryId(null);
         setCategoryForm({ title: '', sortOrder: 0 });
         setSaveStatus('success');
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
-        toast.error('Error al crear categoría');
+        toast.error(editingCategoryId ? 'Error al actualizar categoría' : 'Error al crear categoría');
       }
     } catch (error) {
       console.error('Error saving category:', error);
-      toast.error('Error al crear categoría');
+      toast.error(editingCategoryId ? 'Error al actualizar categoría' : 'Error al crear categoría');
     }
   };
 
@@ -726,11 +733,11 @@ export default function MotelDetailPage() {
     if (!itemCategoryId) return;
 
     try {
-      const res = await fetch('/api/admin/menu-items', {
-        method: 'POST',
+      const res = await fetch(editingItemId ? `/api/admin/menu-items/${editingItemId}` : '/api/admin/menu-items', {
+        method: editingItemId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          categoryId: itemCategoryId,
+          ...(!editingItemId && { categoryId: itemCategoryId }),
           ...itemForm,
         }),
       });
@@ -739,15 +746,16 @@ export default function MotelDetailPage() {
         fetchMotel();
         setShowItemForm(false);
         setItemCategoryId(null);
+        setEditingItemId(null);
         setItemForm({ name: '', price: '', description: '' });
         setSaveStatus('success');
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
-        toast.error('Error al crear item');
+        toast.error(editingItemId ? 'Error al actualizar item' : 'Error al crear item');
       }
     } catch (error) {
       console.error('Error saving item:', error);
-      toast.error('Error al crear item');
+      toast.error(editingItemId ? 'Error al actualizar item' : 'Error al crear item');
     }
   };
 
@@ -982,6 +990,29 @@ export default function MotelDetailPage() {
     event.target.value = '';
   };
 
+  const handleLogoFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (exceedsImageUploadLimit(file)) {
+      toast.warning(imageUploadLimitMessage);
+      event.target.value = '';
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const logoUrl = await uploadFileToS3(file);
+      setMotelForm((prev) => ({ ...prev, logoUrl }));
+      toast.success('Logo cargado. Guardá los cambios para publicarlo.');
+    } catch (error) {
+      console.error('Error uploading motel logo:', error);
+      toast.error('No se pudo subir el logo. Intentá nuevamente.');
+    } finally {
+      setUploadingLogo(false);
+      event.target.value = '';
+    }
+  };
+
   const handleFeaturedVariantFileChange = async (
     variant: 'web' | 'app',
     event: ChangeEvent<HTMLInputElement>
@@ -1196,7 +1227,7 @@ export default function MotelDetailPage() {
               </div>
             ) : (
               promos.map((promo) => (
-                <PromoCard key={promo.id} promo={promo} superAdmin={currentUser?.role === 'SUPERADMIN'} menuOpen={openPromoMenuId === promo.id} onEdit={handleEditPromo} onDelete={handleDeletePromo} onToggleActive={handleTogglePromoActive} onMenuChange={setOpenPromoMenuId}>
+                <PromoCard key={promo.id} promo={promo} menuOpen={openPromoMenuId === promo.id} onEdit={handleEditPromo} onDelete={handleDeletePromo} onToggleActive={handleTogglePromoActive} onMenuChange={setOpenPromoMenuId}>
 
                     {promo.hasPromoCode && (
                       <PromoCodePanel
@@ -1308,8 +1339,10 @@ export default function MotelDetailPage() {
                     uploadingAuto={uploadingFeatured}
                     uploadingWeb={uploadingFeaturedWeb}
                     uploadingApp={uploadingFeaturedApp}
+                    uploadingLogo={uploadingLogo}
                     onAutoUpload={handleFeaturedFileChange}
                     onVariantUpload={handleFeaturedVariantFileChange}
+                    onLogoUpload={handleLogoFileChange}
                   />
                   <div className="flex items-center">
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -1469,6 +1502,8 @@ export default function MotelDetailPage() {
           <MenuForms
             showCategoryForm={showCategoryForm}
             showItemForm={showItemForm}
+            editingCategory={Boolean(editingCategoryId)}
+            editingItem={Boolean(editingItemId)}
             categoryForm={categoryForm}
             itemForm={itemForm}
             categoryFormDirty={categoryFormDirty}
@@ -1479,10 +1514,12 @@ export default function MotelDetailPage() {
             onSaveItem={handleSaveItem}
             onCancelCategory={() => {
               setShowCategoryForm(false);
+              setEditingCategoryId(null);
               setCategoryForm({ title: '', sortOrder: 0 });
             }}
             onCancelItem={() => {
               setShowItemForm(false);
+              setEditingItemId(null);
               setItemCategoryId(null);
               setItemForm({ name: '', price: '', description: '' });
             }}
@@ -1504,10 +1541,22 @@ export default function MotelDetailPage() {
                   key={category.id}
                   category={category}
                   onAddItem={(categoryId) => {
+                    setEditingItemId(null);
                     setItemCategoryId(categoryId);
                     setShowItemForm(true);
                   }}
+                  onEditCategory={(category) => {
+                    setEditingCategoryId(category.id);
+                    setCategoryForm({ title: category.title, sortOrder: category.sortOrder });
+                    setShowCategoryForm(true);
+                  }}
                   onDeleteCategory={handleDeleteCategory}
+                  onEditItem={(categoryId, item) => {
+                    setEditingItemId(item.id);
+                    setItemCategoryId(categoryId);
+                    setItemForm({ name: item.name, price: String(item.price), description: item.description || '' });
+                    setShowItemForm(true);
+                  }}
                   onDeleteItem={handleDeleteItem}
                 />
               ))
