@@ -336,15 +336,15 @@ export default function PromoCarousel({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 4, // Reducido de 12 a 4 para acercar a header
-    marginBottom: 12,
+    marginTop: 2,
+    marginBottom: 6,
   },
   curvedContainer: {
-    backgroundColor: COLORS.card,
-    paddingTop: 10, // Reducido de 18 a 10 para menos espacio antes del título
-    paddingBottom: 22,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    backgroundColor: '#F8F5FA',
+    paddingTop: 8,
+    paddingBottom: 14,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
     zIndex: 1,
   },
   sectionTitle: {
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     paddingHorizontal: 20,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   listContent: {
     paddingHorizontal: 20,

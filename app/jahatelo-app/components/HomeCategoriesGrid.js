@@ -155,14 +155,14 @@ export default function HomeCategoriesGrid({ categories = [] }) {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 8,
-    marginBottom: 24,
+    marginBottom: 12,
   },
   mapButtonWrapper: {
-    marginBottom: 16,
+    marginBottom: 8,
     paddingHorizontal: 8,
   },
   grid: {
-    paddingBottom: 20,
+    paddingBottom: 8,
   },
   row: {
     justifyContent: 'space-between',
@@ -172,14 +172,14 @@ const styles = StyleSheet.create({
     maxWidth: '48%',
   },
   partnersContainer: {
-    marginTop: 8,
+    marginTop: 4,
   },
   partnersTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.text,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   logosRow: {
     flexDirection: 'row',
