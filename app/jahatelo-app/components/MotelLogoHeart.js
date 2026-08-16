@@ -5,25 +5,29 @@ import { Ionicons } from '@expo/vector-icons';
 /**
  * Sello de logo para fotos. Usamos Image nativo en vez de SVG <Image> porque
  * los logos que se suben se convierten a WebP y SVG no los dibuja de forma
- * consistente en iOS. El corazón queda como marco y la imagen siempre se ve.
+ * consistente en iOS. El corazón es un contenedor oscuro continuo: no deja
+ * un aro blanco entre el logo y el borde, incluso con logos cuadrados.
  */
 export default function MotelLogoHeart({ uri, size = 42 }) {
   const [failed, setFailed] = useState(false);
 
   if (!uri || failed) return null;
 
-  const logoSize = Math.round(size * 0.58);
+  const heartSize = Math.round(size * 1.12);
+  const logoSize = Math.round(size * 0.74);
 
   return (
     <View style={[styles.container, { width: size, height: size }]} accessibilityLabel="Logo del motel">
-      <Ionicons name="heart" size={size * 1.12} color="#FFFFFF" style={styles.heart} />
-      <Ionicons name="heart-outline" size={size * 1.12} color="#6E1C8A" style={styles.heart} />
-      <Image
-        source={{ uri }}
-        style={[styles.logo, { width: logoSize, height: logoSize, borderRadius: logoSize / 2 }]}
-        resizeMode="cover"
-        onError={() => setFailed(true)}
-      />
+      <Ionicons name="heart" size={heartSize} color="#090B12" style={styles.heart} />
+      <Ionicons name="heart-outline" size={heartSize} color="#FFFFFF" style={styles.heart} />
+      <View style={[styles.logoFrame, { width: logoSize, height: logoSize, borderRadius: logoSize / 2 }]}>
+        <Image
+          source={{ uri }}
+          style={styles.logo}
+          resizeMode="contain"
+          onError={() => setFailed(true)}
+        />
+      </View>
     </View>
   );
 }
@@ -41,9 +45,14 @@ const styles = StyleSheet.create({
   heart: {
     position: 'absolute',
   },
+  logoFrame: {
+    alignItems: 'center',
+    backgroundColor: '#090B12',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
   logo: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.9)',
+    height: '100%',
+    width: '100%',
   },
 });
