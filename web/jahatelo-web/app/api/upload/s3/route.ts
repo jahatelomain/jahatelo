@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
+import sharp from 'sharp';
 import { UploadFormSchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
 import { writeFile, mkdir } from 'fs/promises';
@@ -11,10 +12,11 @@ import { MAX_IMAGE_UPLOAD_BYTES, MAX_IMAGE_UPLOAD_LABEL } from '@/lib/media/uplo
 
 export const runtime = 'nodejs';
 
-function createObjectKey() {
+function createObjectKey(folder?: 'logos') {
   const unique = crypto.randomBytes(8).toString('hex');
   const datePrefix = new Date().toISOString().split('T')[0];
-  return `uploads/${datePrefix}/${unique}.${WATERMARKED_IMAGE_EXTENSION}`;
+  const folderPrefix = folder ? `${folder}/` : '';
+  return `uploads/${folderPrefix}${datePrefix}/${unique}.${WATERMARKED_IMAGE_EXTENSION}`;
 }
 
 export async function POST(request: Request) {
@@ -47,6 +49,8 @@ export async function POST(request: Request) {
 
     const formData = await request.formData();
     const file = formData.get('file');
+    const assetType = formData.get('assetType');
+    const isMotelLogo = assetType === 'motel-logo';
     UploadFormSchema.parse({});
     if (!(file instanceof Blob)) {
       return NextResponse.json(
@@ -63,8 +67,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const buffer = await watermarkUploadedImage(Buffer.from(await file.arrayBuffer()), file.type);
-    const key = createObjectKey();
+    const originalBuffer = Buffer.from(await file.arrayBuffer());
+    // Los logos son identidad de marca: se optimizan a WebP, pero no reciben
+    // marca de agua. El resto de imágenes conserva la protección habitual.
+    const buffer = isMotelLogo
+      ? await sharp(originalBuffer).rotate().webp({ quality: 88 }).toBuffer()
+      : await watermarkUploadedImage(originalBuffer, file.type);
+    const key = createObjectKey(isMotelLogo ? 'logos' : undefined);
 
     if (useLocalFallback) {
       const uploadDir = path.join(process.cwd(), 'public', 'uploads', path.dirname(key).replace(/^uploads\//, ''));
