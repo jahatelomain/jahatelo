@@ -953,9 +953,10 @@ export default function MotelDetailPage() {
     }
   };
 
-  const uploadFileToS3 = async (file: File) => {
+  const uploadFileToS3 = async (file: File, assetType?: 'motel-logo') => {
     const formData = new FormData();
     formData.append('file', file);
+    if (assetType) formData.append('assetType', assetType);
 
     const res = await fetch('/api/upload/s3', {
       method: 'POST',
@@ -1001,7 +1002,7 @@ export default function MotelDetailPage() {
 
     setUploadingLogo(true);
     try {
-      const logoUrl = await uploadFileToS3(file);
+      const logoUrl = await uploadFileToS3(file, 'motel-logo');
       setMotelForm((prev) => ({ ...prev, logoUrl }));
       toast.success('Logo cargado. Guardá los cambios para publicarlo.');
     } catch (error) {
