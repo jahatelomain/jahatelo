@@ -177,7 +177,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none" />
 
-              {motel.logoUrl && <MotelLogoHeart src={motel.logoUrl} alt={motel.name} className="absolute left-4 top-4 h-14 w-16" />}
+              {motel.logoUrl && <MotelLogoHeart src={motel.logoUrl} alt={motel.name} scale={motel.logoScale} className="absolute left-4 top-4 h-14 w-16" />}
 
               {/* Badge DESTACADO */}
               <div className="absolute top-4 right-4 bg-purple-600 text-white px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 shadow-lg pointer-events-none">

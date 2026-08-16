@@ -182,6 +182,7 @@ export function mapMotelToListItem(motel: MotelForList) {
     // variante explícita para no recortar una imagen 4:5 dentro de una card 16:9.
     featuredPhotoWeb: motel.featuredPhotoWeb || motel.featuredPhoto || motel.featuredPhotoApp || null,
     logoUrl: motel.logoUrl || null,
+    logoScale: motel.logoScale,
     // Incluir datos de la primera promo activa para el carrusel
     // ?v=updatedAt fuerza al cache nativo de React Native a recargar cuando cambia la imagen
     promoImageUrl: addVersionParam(firstPromo?.imageUrl, firstPromo?.updatedAt),

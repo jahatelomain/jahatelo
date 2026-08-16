@@ -6,8 +6,9 @@ import { Image, StyleSheet, View } from 'react-native';
  * porque los logos que se suben se convierten a WebP y SVG no los dibuja de
  * forma consistente en iOS.
  */
-export default function MotelLogoHeart({ uri, size = 42 }) {
+export default function MotelLogoHeart({ uri, size = 42, scale = 1 }) {
   const [failed, setFailed] = useState(false);
+  const normalizedScale = Math.min(1, Math.max(0.6, scale || 1));
 
   if (!uri || failed) return null;
 
@@ -18,7 +19,7 @@ export default function MotelLogoHeart({ uri, size = 42 }) {
     >
       <Image
         source={{ uri }}
-        style={styles.logo}
+        style={[styles.logo, { transform: [{ scale: normalizedScale }] }]}
         resizeMode="contain"
         onError={() => setFailed(true)}
       />

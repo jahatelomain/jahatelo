@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import type { CSSProperties } from 'react';
 import { useState } from 'react';
 
 const FALLBACK_IMAGE =
@@ -12,9 +13,10 @@ type Props = {
   className: string;
   width?: number;
   height?: number;
+  style?: CSSProperties;
 };
 
-export default function AdminImage({ src, alt, className, width = 800, height = 450 }: Props) {
+export default function AdminImage({ src, alt, className, width = 800, height = 450, style }: Props) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const currentSrc = !src || failedSrc === src ? FALLBACK_IMAGE : src;
 
@@ -26,6 +28,7 @@ export default function AdminImage({ src, alt, className, width = 800, height = 
       width={width}
       height={height}
       className={className}
+      style={style}
       onError={() => setFailedSrc(src)}
     />
   );

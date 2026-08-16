@@ -103,6 +103,7 @@ export async function GET(request: NextRequest) {
           featuredPhotoWeb: true,
           featuredPhotoApp: true,
           logoUrl: true,
+          logoScale: true,
           _count: {
             select: {
               rooms: true,
