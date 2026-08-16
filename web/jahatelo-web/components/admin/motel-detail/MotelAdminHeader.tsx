@@ -8,6 +8,8 @@ type Props = {
   isSuperAdmin: boolean;
   featuredPhotoWeb: string | null;
   featuredPhotoApp: string | null;
+  logoUrl?: string | null;
+  logoScale?: number | null;
   roomCount: number;
   promoCount: number;
   onStatusChange: (updates: { status?: MotelStatus; isActive?: boolean }) => void;
@@ -19,6 +21,8 @@ export default function MotelAdminHeader({
   isSuperAdmin,
   featuredPhotoWeb,
   featuredPhotoApp,
+  logoUrl,
+  logoScale,
   roomCount,
   promoCount,
   onStatusChange,
@@ -128,6 +132,11 @@ export default function MotelAdminHeader({
             </div>
           )}
           {(featuredPhotoWeb || featuredPhotoApp) && <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-900/60 to-transparent" />}
+          {logoUrl && (
+            <div className="absolute left-4 top-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-slate-950 p-1 shadow-lg">
+              <AdminImage src={logoUrl} alt={`Logo de ${motel.name}`} width={64} height={64} className="h-full w-full rounded-full object-contain" style={{ transform: `scale(${logoScale ?? 1})` }} />
+            </div>
+          )}
         </div>
       </div>
 

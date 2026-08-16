@@ -103,7 +103,7 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
       >
         {motel?.logoUrl ? (
           <View style={styles.motelLogoBadge} pointerEvents="none">
-            <MotelLogoHeart uri={motel.logoUrl} size={48} />
+            <MotelLogoHeart uri={motel.logoUrl} size={48} scale={motel.logoScale} />
           </View>
         ) : null}
         <View style={styles.promoBadge}>

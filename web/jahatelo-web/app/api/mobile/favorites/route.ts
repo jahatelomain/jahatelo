@@ -140,6 +140,7 @@ export async function GET(request: NextRequest) {
           thumbnail,
           featuredPhotoWeb,
           logoUrl: motel.logoUrl || null,
+          logoScale: motel.logoScale,
           plan: motel.plan,
         };
       });
