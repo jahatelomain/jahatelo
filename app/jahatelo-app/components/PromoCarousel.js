@@ -10,6 +10,7 @@ import Animated, {
   Extrapolate,
 } from 'react-native-reanimated';
 import { hasMotelPlanGlow } from '../constants/motelPlans';
+import MotelLogoHeart from './MotelLogoHeart';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.75;
@@ -100,6 +101,11 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
         imageStyle={[styles.cardImage, isPlaceholder && styles.placeholderImage]}
         onError={() => setImageFailed(true)}
       >
+        {motel?.logoUrl ? (
+          <View style={styles.motelLogoBadge} pointerEvents="none">
+            <MotelLogoHeart uri={motel.logoUrl} size={48} />
+          </View>
+        ) : null}
         <View style={styles.promoBadge}>
           <Ionicons name={badgeIconName} size={14} color={COLORS.white} />
           <Text style={styles.promoBadgeText}>{badgeLabel}</Text>
@@ -386,6 +392,12 @@ const styles = StyleSheet.create({
   },
   placeholderImage: {
     opacity: 0.5,
+  },
+  motelLogoBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    zIndex: 2,
   },
   promoBadge: {
     position: 'absolute',
