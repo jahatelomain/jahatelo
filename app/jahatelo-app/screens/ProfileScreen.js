@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
+import { APP_BUILD_LABEL } from '../constants/appBuild';
 import { useAuth } from '../contexts/AuthContext';
 import {
   clearCache,
@@ -357,9 +358,13 @@ export default function ProfileScreen() {
               title="Sobre Jahatelo"
               onPress={() => handleLegalPress(
                 'Sobre Jahatelo',
-                'Jahatelo es la plataforma líder para descubrir y reservar moteles en Paraguay.\n\nNuestra misión es facilitar el acceso a información confiable sobre moteles, ayudando a los usuarios a encontrar el lugar perfecto para sus momentos especiales.\n\nVersión: 1.0.0 (MVP)'
+                `Jahatelo es la plataforma líder para descubrir y reservar moteles en Paraguay.\n\nNuestra misión es facilitar el acceso a información confiable sobre moteles, ayudando a los usuarios a encontrar el lugar perfecto para sus momentos especiales.\n\nVersión instalada: ${APP_BUILD_LABEL}`
               )}
             />
+          </View>
+          <View style={styles.buildInfo}>
+            <Ionicons name="code-slash-outline" size={15} color={COLORS.gray} />
+            <Text style={styles.buildInfoText}>Versión instalada: {APP_BUILD_LABEL}</Text>
           </View>
         </View>
 
@@ -526,6 +531,18 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.divider,
+  },
+  buildInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 18,
+    paddingTop: 12,
+  },
+  buildInfoText: {
+    color: COLORS.gray,
+    fontSize: 12,
+    fontWeight: '500',
   },
   optionLeft: {
     flexDirection: 'row',

@@ -1,23 +1,49 @@
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import Svg, { ClipPath, Defs, Image as SvgImage, Path } from 'react-native-svg';
+import React, { useState } from 'react';
+import { Image, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-const HEART_PATH = 'M50 91C45 86 10 62 10 34C10 18 22 8 37 8C45 8 52 12 57 19C62 12 69 8 77 8C92 8 104 18 104 34C104 62 69 86 64 91C60 95 54 95 50 91Z';
-
+/**
+ * Sello de logo para fotos. Usamos Image nativo en vez de SVG <Image> porque
+ * los logos que se suben se convierten a WebP y SVG no los dibuja de forma
+ * consistente en iOS. El corazón queda como marco y la imagen siempre se ve.
+ */
 export default function MotelLogoHeart({ uri, size = 42 }) {
-  if (!uri) return null;
+  const [failed, setFailed] = useState(false);
+
+  if (!uri || failed) return null;
+
+  const logoSize = Math.round(size * 0.58);
 
   return (
     <View style={[styles.container, { width: size, height: size }]} accessibilityLabel="Logo del motel">
-      <Svg width={size} height={size} viewBox="0 0 114 100">
-        <Defs><ClipPath id="motel-logo-heart"><Path d={HEART_PATH} /></ClipPath></Defs>
-        <SvgImage href={{ uri }} width="114" height="100" preserveAspectRatio="xMidYMid slice" clipPath="url(#motel-logo-heart)" />
-        <Path d={HEART_PATH} fill="none" stroke="#FFFFFF" strokeWidth="4" />
-      </Svg>
+      <Ionicons name="heart" size={size * 1.12} color="#FFFFFF" style={styles.heart} />
+      <Ionicons name="heart-outline" size={size * 1.12} color="#6E1C8A" style={styles.heart} />
+      <Image
+        source={{ uri }}
+        style={[styles.logo, { width: logoSize, height: logoSize, borderRadius: logoSize / 2 }]}
+        resizeMode="cover"
+        onError={() => setFailed(true)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { marginRight: 9, shadowColor: '#2A0038', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 3 },
+  container: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#2A0038',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  heart: {
+    position: 'absolute',
+  },
+  logo: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.9)',
+  },
 });
