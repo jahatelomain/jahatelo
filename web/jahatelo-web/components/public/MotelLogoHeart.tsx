@@ -13,7 +13,8 @@ export default function MotelLogoHeart({ src, alt, className = '' }: Props) {
     <span className={`block drop-shadow-md ${className}`} title={`${alt} · logo`}>
       <svg viewBox="0 0 114 100" role="img" aria-label={`Logo de ${alt}`} className="h-full w-full">
         <defs><clipPath id={clipId}><path d={heartPath} /></clipPath></defs>
-        <image href={src} width="114" height="100" preserveAspectRatio="xMidYMid slice" clipPath={`url(#${clipId})`} />
+        <path d={heartPath} fill="#090B12" />
+        <image href={src} x="13" y="12" width="88" height="76" preserveAspectRatio="xMidYMid meet" clipPath={`url(#${clipId})`} />
         <path d={heartPath} fill="none" stroke="white" strokeWidth="4" />
       </svg>
     </span>
