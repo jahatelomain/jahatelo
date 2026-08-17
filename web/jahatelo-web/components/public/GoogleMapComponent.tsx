@@ -334,7 +334,7 @@ export default function GoogleMapComponent({
     googleMapRef.current = new window.google.maps.Map(mapRef.current, {
       center: initialCenter,
       zoom: 13,
-      mapId: 'JAHATELO_MAP', // Required for advanced markers
+      mapId: '5a5c021d949062e767299e61', // Estilo cloud y marcadores avanzados de Jahatelo
       mapTypeControl: true,
       streetViewControl: true,
       fullscreenControl: true,
