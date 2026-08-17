@@ -61,6 +61,7 @@ export default function MotelsAdminPage() {
   const [selectedMotels, setSelectedMotels] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [googlePinsLoading, setGooglePinsLoading] = useState(false);
+  const [googlePinsApplying, setGooglePinsApplying] = useState(false);
   const [googlePinPreview, setGooglePinPreview] = useState<GooglePinPreview | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
@@ -325,6 +326,34 @@ export default function MotelsAdminPage() {
     }
   };
 
+  const applyMissingOfficialGooglePins = () => {
+    setConfirmAction({
+      title: 'Completar pines faltantes',
+      message: 'Se guardarán únicamente las coordenadas que todavía faltan, usando la ficha oficial encontrada por Google. Las ubicaciones existentes no se modificarán.',
+      confirmText: 'Completar pines',
+      onConfirm: async () => {
+        setGooglePinsApplying(true);
+        try {
+          const response = await fetch('/api/admin/motels/google-pins', { method: 'PATCH' });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data?.error || 'No se pudieron guardar los pines.');
+
+          await fetchMotels();
+          setGooglePinPreview(null);
+          toast.success(`Se completaron ${data.updated?.length || 0} pin(es) de Google.`);
+          if (data.unresolved?.length) {
+            toast.error(`${data.unresolved.length} motel(es) requieren revisión manual de ubicación.`);
+          }
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : 'No se pudieron guardar los pines.');
+        } finally {
+          setGooglePinsApplying(false);
+          setConfirmAction(null);
+        }
+      },
+    });
+  };
+
   const handleBulkReject = () => {
     setConfirmAction({
       title: 'Rechazar moteles',
@@ -555,9 +584,21 @@ export default function MotelsAdminPage() {
                 Google validó {googlePinPreview.matches.length} de {googlePinPreview.total} moteles activos. Esta revisión no modificó ningún dato.
               </p>
             </div>
-            <button type="button" onClick={() => setGooglePinPreview(null)} className="text-sm font-medium text-cyan-800 hover:text-cyan-950">
-              Cerrar
-            </button>
+            <div className="flex items-center gap-3">
+              {googlePinPreview.matches.some((item) => item.current.latitude === null || item.current.longitude === null) && (
+                <button
+                  type="button"
+                  onClick={applyMissingOfficialGooglePins}
+                  disabled={googlePinsApplying}
+                  className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-medium text-white hover:bg-cyan-800 disabled:cursor-wait disabled:opacity-60"
+                >
+                  {googlePinsApplying ? 'Guardando pines…' : 'Completar pines faltantes'}
+                </button>
+              )}
+              <button type="button" onClick={() => setGooglePinPreview(null)} className="text-sm font-medium text-cyan-800 hover:text-cyan-950">
+                Cerrar
+              </button>
+            </div>
           </div>
           <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
             {googlePinPreview.matches.map((item) => (
