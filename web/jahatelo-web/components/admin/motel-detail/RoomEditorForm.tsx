@@ -13,6 +13,7 @@ type Props = {
   weekdayRateRules: WeekdayRateForm[];
   onFormChange: (form: RoomForm) => void;
   onWeekdayRateRulesChange: (rules: WeekdayRateForm[]) => void;
+  saving?: boolean;
   onCancel: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
@@ -25,6 +26,7 @@ export default function RoomEditorForm({
   weekdayRateRules,
   onFormChange,
   onWeekdayRateRulesChange,
+  saving = false,
   onCancel,
   onSubmit,
 }: Props) {
@@ -76,8 +78,8 @@ export default function RoomEditorForm({
           <button type="button" onClick={onCancel} className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors">
             Cancelar
           </button>
-          <button type="submit" className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors shadow-sm shadow-purple-200">
-            {editing ? 'Actualizar Habitación' : 'Crear Habitación'}
+          <button type="submit" disabled={saving} className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:cursor-wait disabled:opacity-60 font-medium transition-colors shadow-sm shadow-purple-200">
+            {saving ? 'Guardando…' : editing ? 'Actualizar Habitación' : 'Crear Habitación'}
           </button>
         </div>
       </form>

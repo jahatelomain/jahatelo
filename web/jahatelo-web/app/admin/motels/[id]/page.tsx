@@ -112,6 +112,7 @@ export default function MotelDetailPage() {
 
   const [showRoomForm, setShowRoomForm] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
+  const [savingRoom, setSavingRoom] = useState(false);
   const [roomForm, setRoomForm] = useState(createInitialRoomForm());
   const [weekdayRateRules, setWeekdayRateRules] = useState<WeekdayRateForm[]>([]);
 
@@ -560,6 +561,11 @@ export default function MotelDetailPage() {
 
   const handleSaveRoom = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (savingRoom) return;
+    if (!id) {
+      toast.error('Todavía no se cargó el motel. Esperá un instante e intentá de nuevo.');
+      return;
+    }
     const url = editingRoomId
       ? `/api/admin/rooms/${editingRoomId}`
       : '/api/admin/rooms';
@@ -580,6 +586,19 @@ export default function MotelDetailPage() {
       .filter((rule) => rule.weekdays.length > 0 && Number(rule.price) > 0)
       .map((rule) => ({ weekdays: rule.weekdays, duration: rule.duration, price: Number(rule.price) }));
 
+    const seenWeekdayRates = new Set<string>();
+    const hasDuplicatedWeekdayRate = weekdayRatesPayload.some((rule) => rule.weekdays.some((weekday) => {
+      const key = `${weekday}:${rule.duration}`;
+      if (seenWeekdayRates.has(key)) return true;
+      seenWeekdayRates.add(key);
+      return false;
+    }));
+    if (hasDuplicatedWeekdayRate) {
+      toast.error('Un mismo día no puede tener dos precios para la misma duración. Revisá las tarifas cargadas.');
+      return;
+    }
+
+    setSavingRoom(true);
     try {
       const res = await fetch(url, {
         method,
@@ -600,11 +619,13 @@ export default function MotelDetailPage() {
         setSaveStatus('success');
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
-        toast.error('Error al guardar habitación');
+        toast.error(await getResponseError(res, 'Error al guardar habitación'));
       }
     } catch (error) {
       console.error('Error saving room:', error);
       toast.error('Error al guardar habitación');
+    } finally {
+      setSavingRoom(false);
     }
   };
 
@@ -1473,6 +1494,7 @@ export default function MotelDetailPage() {
                 weekdayRateRules={weekdayRateRules}
                 onWeekdayRateRulesChange={setWeekdayRateRules}
                 onFormChange={setRoomForm}
+                saving={savingRoom}
                 onCancel={closeRoomForm}
                 onSubmit={handleSaveRoom}
               />
