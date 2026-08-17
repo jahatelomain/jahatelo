@@ -34,17 +34,6 @@ type Motel = {
   };
 };
 
-type GooglePinPreview = {
-  total: number;
-  matches: Array<{
-    id: string;
-    name: string;
-    current: { latitude: number | null; longitude: number | null };
-    proposed: { name: string; address: string | null; latitude: number; longitude: number };
-  }>;
-  unresolved: Array<{ id: string; name: string }>;
-};
-
 export default function MotelsAdminPage() {
   const router = useRouter();
   const [roleChecked, setRoleChecked] = useState(false);
@@ -60,9 +49,6 @@ export default function MotelsAdminPage() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [selectedMotels, setSelectedMotels] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
-  const [googlePinsLoading, setGooglePinsLoading] = useState(false);
-  const [googlePinsApplying, setGooglePinsApplying] = useState(false);
-  const [googlePinPreview, setGooglePinPreview] = useState<GooglePinPreview | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -312,48 +298,6 @@ export default function MotelsAdminPage() {
     });
   };
 
-  const previewOfficialGooglePins = async () => {
-    setGooglePinsLoading(true);
-    try {
-      const response = await fetch('/api/admin/motels/google-pins', { method: 'POST' });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.error || 'No se pudo consultar Google Maps.');
-      setGooglePinPreview(data);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo consultar Google Maps.');
-    } finally {
-      setGooglePinsLoading(false);
-    }
-  };
-
-  const applyMissingOfficialGooglePins = () => {
-    setConfirmAction({
-      title: 'Completar pines faltantes',
-      message: 'Se guardarán únicamente las coordenadas que todavía faltan, usando la ficha oficial encontrada por Google. Las ubicaciones existentes no se modificarán.',
-      confirmText: 'Completar pines',
-      onConfirm: async () => {
-        setGooglePinsApplying(true);
-        try {
-          const response = await fetch('/api/admin/motels/google-pins', { method: 'PATCH' });
-          const data = await response.json();
-          if (!response.ok) throw new Error(data?.error || 'No se pudieron guardar los pines.');
-
-          await fetchMotels();
-          setGooglePinPreview(null);
-          toast.success(`Se completaron ${data.updated?.length || 0} pin(es) de Google.`);
-          if (data.unresolved?.length) {
-            toast.error(`${data.unresolved.length} motel(es) requieren revisión manual de ubicación.`);
-          }
-        } catch (error) {
-          toast.error(error instanceof Error ? error.message : 'No se pudieron guardar los pines.');
-        } finally {
-          setGooglePinsApplying(false);
-          setConfirmAction(null);
-        }
-      },
-    });
-  };
-
   const handleBulkReject = () => {
     setConfirmAction({
       title: 'Rechazar moteles',
@@ -510,18 +454,6 @@ export default function MotelsAdminPage() {
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={previewOfficialGooglePins}
-            disabled={googlePinsLoading}
-            className="inline-flex items-center justify-center gap-2 bg-white border border-cyan-300 text-cyan-800 px-4 py-2.5 rounded-lg hover:bg-cyan-50 transition-colors font-medium shadow-sm text-sm disabled:cursor-wait disabled:opacity-60"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A2 2 0 012.5 15.487V5.5a2 2 0 012.947-1.789L10 6l4.553-2.289A2 2 0 0117.5 5.5v9.987a2 2 0 01-1.053 1.789L11 20l-2-1z" />
-            </svg>
-            {googlePinsLoading ? 'Verificando pines…' : 'Revisar pines de Google'}
-          </button>
-
           {/* Toggle de vista Lista/Grid */}
           <div className="inline-flex rounded-lg border border-slate-300 bg-white p-1">
             <button
@@ -574,47 +506,6 @@ export default function MotelsAdminPage() {
           </Link>
         </div>
       </div>
-
-      {googlePinPreview && (
-        <section className="rounded-xl border border-cyan-200 bg-cyan-50 p-4 shadow-sm">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 className="font-semibold text-cyan-950">Vista previa de pines oficiales</h2>
-              <p className="text-sm text-cyan-900 mt-1">
-                Google validó {googlePinPreview.matches.length} de {googlePinPreview.total} moteles activos. Esta revisión no modificó ningún dato.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {googlePinPreview.matches.some((item) => item.current.latitude === null || item.current.longitude === null) && (
-                <button
-                  type="button"
-                  onClick={applyMissingOfficialGooglePins}
-                  disabled={googlePinsApplying}
-                  className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-medium text-white hover:bg-cyan-800 disabled:cursor-wait disabled:opacity-60"
-                >
-                  {googlePinsApplying ? 'Guardando pines…' : 'Completar pines faltantes'}
-                </button>
-              )}
-              <button type="button" onClick={() => setGooglePinPreview(null)} className="text-sm font-medium text-cyan-800 hover:text-cyan-950">
-                Cerrar
-              </button>
-            </div>
-          </div>
-          <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
-            {googlePinPreview.matches.map((item) => (
-              <div key={item.id} className="rounded-lg border border-cyan-100 bg-white px-3 py-2 text-slate-700">
-                <p className="font-medium text-slate-900">{item.name}</p>
-                <p className="truncate text-xs text-slate-500">Google: {item.proposed.name}{item.proposed.address ? ` · ${item.proposed.address}` : ''}</p>
-              </div>
-            ))}
-          </div>
-          {googlePinPreview.unresolved.length > 0 && (
-            <p className="mt-3 text-xs text-amber-800">
-              Requieren revisión manual: {googlePinPreview.unresolved.map((item) => item.name).join(', ')}.
-            </p>
-          )}
-        </section>
-      )}
 
       {/* Búsqueda */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
