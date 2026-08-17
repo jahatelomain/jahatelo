@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
@@ -19,23 +19,15 @@ const COLORS = {
 
 export default function LoadingScreen({ message = 'Cargando...' }) {
   const scale = useSharedValue(1);
-  const rotate = useSharedValue(0);
   const opacity = useSharedValue(0.7);
 
   useEffect(() => {
     // Animación de pulso
     scale.value = withRepeat(
       withSequence(
-        withSpring(1.2, { damping: 8 }),
+        withSpring(1.06, { damping: 12 }),
         withSpring(1, { damping: 8 })
       ),
-      -1,
-      false
-    );
-
-    // Animación de rotación
-    rotate.value = withRepeat(
-      withTiming(360, { duration: 2000 }),
       -1,
       false
     );
@@ -49,12 +41,11 @@ export default function LoadingScreen({ message = 'Cargando...' }) {
       -1,
       false
     );
-  }, [opacity, rotate, scale]);
+  }, [opacity, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
       { scale: scale.value },
-      { rotate: `${rotate.value}deg` },
     ],
     opacity: opacity.value,
   }));
@@ -68,13 +59,10 @@ export default function LoadingScreen({ message = 'Cargando...' }) {
         style={styles.background}
       >
         <Animated.View style={[styles.logoContainer, animatedStyle]}>
-          <View style={styles.logo}>
-            <Text style={styles.logoText}>J</Text>
-          </View>
+          <Image source={require('../assets/logo-icon.png')} style={styles.logo} />
         </Animated.View>
 
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.white} />
           <Text style={styles.loadingText}>{message}</Text>
         </View>
       </LinearGradient>
@@ -95,19 +83,9 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logo: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: COLORS.white,
-  },
-  logoText: {
-    fontSize: 48,
-    fontWeight: '900',
-    color: COLORS.white,
+    width: 88,
+    height: 88,
+    resizeMode: 'contain',
   },
   loadingContainer: {
     alignItems: 'center',
