@@ -1,0 +1,11 @@
+# Archivos locales que nunca deben enviarse en un despliegue de Vercel.
+node_modules
+.next
+.git
+.vercel
+.env*
+coverage
+playwright-report
+test-results
+*.tsbuildinfo
+public/uploads
