@@ -23,6 +23,15 @@ import { useOnlineRetry } from '../hooks/useOnlineRetry';
 const API_URL = getApiRoot();
 const MAP_REQUEST_TIMEOUT_MS = 10000;
 const IS_ANDROID = Platform.OS === 'android';
+
+// IDs públicos de Google Maps, cada uno asociado al diseño cloud de Jahatelo.
+// El estilo publicado oculta únicamente los alojamientos de Google para no
+// duplicar los pines propios de Jahatelo.
+const GOOGLE_MAP_ID = Platform.select({
+  ios: '5a5c021d949062e756d2bbdd',
+  android: '5a5c021d949062e775a5d0c4',
+});
+
 const debugLog = (...args) => {
   if (__DEV__) console.log(...args);
 };
@@ -524,6 +533,7 @@ export default function MapScreen() {
         ref={mapRef}
         style={styles.map}
         provider={PROVIDER_GOOGLE}
+        googleMapId={GOOGLE_MAP_ID}
         initialRegion={initialRegion}
         showsUserLocation={!!userLocation}
         showsMyLocationButton={false}
