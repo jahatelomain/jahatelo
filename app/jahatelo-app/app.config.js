@@ -2,6 +2,7 @@ import 'dotenv/config';
 
 export default ({ config }) => ({
   ...config,
+  plugins: [...(config.plugins || []), './plugins/withGoogleMapsIos'],
   extra: {
     ...config.extra,
     eas: {

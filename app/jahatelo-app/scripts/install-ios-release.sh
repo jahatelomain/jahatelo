@@ -14,6 +14,14 @@ fi
 DEVICE_ID="$1"
 DERIVED_DATA_DIR="${DERIVED_DATA_DIR:-/tmp/jahatelo-ios-release}"
 APP_PATH="$DERIVED_DATA_DIR/Build/Products/Release-iphoneos/Jahatelo.app"
+GOOGLE_MAPS_IOS_API_KEY="$(sed -n 's/^IOS_GOOGLE_MAPS_API_KEY=//p' .env.local | tail -n 1)"
+
+if [[ -z "$GOOGLE_MAPS_IOS_API_KEY" ]]; then
+  echo "Falta IOS_GOOGLE_MAPS_API_KEY en .env.local para compilar el mapa de Google en iOS."
+  exit 1
+fi
+
+node scripts/patch-expo-constants-podspec.js
 
 # CoreDevice (devicectl) y Xcode pueden exponer IDs distintos para el mismo
 # iPhone. El usuario ingresa el ID de devicectl porque se utiliza luego para
@@ -39,6 +47,8 @@ if [[ -z "$XCODE_DEVICE_ID" || "$XCODE_DEVICE_ID" == *"Connecting"* ]]; then
 fi
 
 echo "Compilando para $DEVICE_NAME (Xcode: $XCODE_DEVICE_ID)…"
+
+export GOOGLE_MAPS_IOS_API_KEY
 
 xcodebuild \
   -workspace ios/Jahatelo.xcworkspace \
