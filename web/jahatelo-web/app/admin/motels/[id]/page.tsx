@@ -485,12 +485,17 @@ export default function MotelDetailPage() {
       if (res.ok) {
         const updatedMotel = await res.json().catch(() => null);
         if (updatedMotel?.mapUrl !== normalizedMapUrl) {
-          toast.error('El servidor no confirmó la nueva URL de Google Maps. No se marcó el cambio como guardado.');
-          return;
+          // Places puede devolver el enlace canónico de la ficha. Es el
+          // comportamiento esperado y más preciso que conservar el iframe.
+          if (!updatedMotel?.googlePlaceId) {
+            toast.error('El servidor no confirmó la nueva URL de Google Maps. No se marcó el cambio como guardado.');
+            return;
+          }
         }
         await fetchMotel();
         setEditingMotel(false);
         setEditingCommercial(false);
+        if (updatedMotel?.locationWarning) toast.warning(updatedMotel.locationWarning);
         setSaveStatus('success');
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {

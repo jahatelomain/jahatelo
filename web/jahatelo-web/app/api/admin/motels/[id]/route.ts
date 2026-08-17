@@ -6,7 +6,8 @@ import { logAuditEvent } from '@/lib/audit';
 import { IdSchema, UpdateMotelSchema } from '@/lib/validations/schemas';
 import { sanitizeText } from '@/lib/sanitize';
 import { normalizeLocationName } from '@/lib/locationCatalog';
-import { extractCoordinatesFromGoogleMapsUrl, normalizeGoogleMapsUrl } from '@/lib/utils/coordinates';
+import { normalizeGoogleMapsUrl } from '@/lib/utils/coordinates';
+import { findOfficialGooglePlace } from '@/lib/googlePlaces';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 
@@ -195,15 +196,37 @@ export async function PATCH(
       ...(validated.address ? { address: sanitizeText(validated.address) } : {}),
     };
 
-    // mapUrl y sus coordenadas representan una sola ubicación. Nunca se debe
-    // conservar la coordenada previa cuando cambia el enlace, porque la web y
-    // las apps priorizan latitude/longitude para abrir el mapa y marcarlo.
+    let locationWarning: string | null = null;
+    // La ubicación que aparece en un iframe es el centro de su vista, no
+    // necesariamente el pin del negocio. Al cambiar el enlace, resolvemos la
+    // ficha canónica con Places API y guardamos su Place ID y coordenadas.
     if (validated.mapUrl !== undefined) {
       const mapUrl = validated.mapUrl ? normalizeGoogleMapsUrl(validated.mapUrl) : null;
-      const coordinates = mapUrl ? extractCoordinatesFromGoogleMapsUrl(mapUrl) : null;
       data.mapUrl = mapUrl;
-      data.latitude = coordinates?.lat ?? null;
-      data.longitude = coordinates?.lng ?? null;
+      if (!mapUrl) {
+        data.googlePlaceId = null;
+        data.latitude = null;
+        data.longitude = null;
+      } else {
+        const currentMotel = await prisma.motel.findUnique({
+          where: { id: idResult.data },
+          select: { name: true, address: true, city: true, country: true },
+        });
+        if (!currentMotel) return NextResponse.json({ error: 'Motel no encontrado' }, { status: 404 });
+        const place = await findOfficialGooglePlace(currentMotel);
+        if (place) {
+          data.googlePlaceId = place.id;
+          data.latitude = place.latitude;
+          data.longitude = place.longitude;
+          // El enlace devuelto por Places abre la ficha del establecimiento.
+          data.mapUrl = place.googleMapsUri || mapUrl;
+        } else {
+          // Guardamos el enlace, pero no sobrescribimos un pin previo con el
+          // centro del iframe. El administrador puede volver a intentarlo
+          // una vez habilitada Places API (New) o revisada la ficha.
+          locationWarning = 'Se guardó el enlace, pero no se pudo verificar el pin oficial de Google. Se conservó la ubicación anterior.';
+        }
+      }
     }
 
     // Manejar nextBillingAt si existe
@@ -224,7 +247,7 @@ export async function PATCH(
       metadata: { name: motel.name },
     });
 
-    return NextResponse.json(motel);
+    return NextResponse.json({ ...motel, locationWarning });
   } catch (error) {
     // Errores de validación Zod
     if (error instanceof z.ZodError) {

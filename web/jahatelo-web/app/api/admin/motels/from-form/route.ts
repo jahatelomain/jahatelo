@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
-import { extractCoordinatesFromGoogleMapsUrl, normalizeGoogleMapsUrl } from '@/lib/utils/coordinates';
+import { normalizeGoogleMapsUrl } from '@/lib/utils/coordinates';
 import { normalizeLocationName } from '@/lib/locationCatalog';
+import { findOfficialGooglePlace } from '@/lib/googlePlaces';
 
 const RoomFormSchema = z.object({
   name: z.string().min(1),
@@ -81,8 +82,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Seleccioná un país y una ciudad válidos del catálogo.' }, { status: 400 });
     }
 
-    const coordinates = validated.googleMapsUrl
-      ? extractCoordinatesFromGoogleMapsUrl(validated.googleMapsUrl)
+    const officialPlace = validated.googleMapsUrl
+      ? await findOfficialGooglePlace({
+          name: validated.name,
+          address: validated.address,
+          city: city.name,
+          country: country.name,
+        })
       : null;
 
     const requestedAmenityIds = [...new Set(validated.rooms.flatMap((room) => room.amenityIds))];
@@ -116,9 +122,10 @@ export async function POST(request: NextRequest) {
         address: validated.address?.trim() || '',
         country: country.name,
         city: city.name,
-        mapUrl: validated.googleMapsUrl || null,
-        latitude: coordinates?.lat ?? null,
-        longitude: coordinates?.lng ?? null,
+        mapUrl: officialPlace?.googleMapsUri || validated.googleMapsUrl || null,
+        googlePlaceId: officialPlace?.id || null,
+        latitude: officialPlace?.latitude ?? null,
+        longitude: officialPlace?.longitude ?? null,
         phone: validated.phone?.trim() || null,
         whatsapp: validated.whatsapp || null,
         instagram: validated.instagram || null,
@@ -174,7 +181,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       motel: { id: motel.id, slug: motel.slug, name: motel.name },
-      message: 'Motel creado exitosamente.',
+      message: officialPlace
+        ? 'Motel creado exitosamente con el pin oficial de Google.'
+        : 'Motel creado exitosamente. El pin oficial de Google queda pendiente de verificar.',
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

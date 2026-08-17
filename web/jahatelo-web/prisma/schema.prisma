@@ -160,6 +160,7 @@ model Motel {
   address          String
   country          String?
   mapUrl           String?
+  googlePlaceId    String?         @unique // Ficha oficial de Google Maps, no el centro del iframe
   latitude         Float?
   longitude        Float?
   phone            String?
