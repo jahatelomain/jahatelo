@@ -118,7 +118,7 @@ export default function MotelCaptureForm() {
       {form.googleMapsUrl && <p className={`mt-2 text-sm ${coordinates ? 'text-emerald-700' : 'text-amber-700'}`}>{coordinates ? `Coordenadas: ${formatCoordinates(coordinates.lat, coordinates.lng)}` : 'No se pudieron leer las coordenadas; podés guardar y corregirlo luego.'}</p>}
     </section>
 
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><Field label="Descripción"><textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className={inputClass} placeholder="Opcional; se puede completar luego." /></Field></section>
+    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><Field label="Slogan"><textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className={inputClass} placeholder="Opcional; se puede completar luego." /></Field></section>
 
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between"><div><h2 className="text-lg font-semibold text-slate-900">Habitaciones iniciales</h2><p className="text-sm text-slate-600">Opcional. Podés crear el motel vacío y cargar todo luego desde su edición.</p></div><button type="button" onClick={() => setRooms((current) => [...current, emptyRoom()])} className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white">Agregar habitación</button></div>

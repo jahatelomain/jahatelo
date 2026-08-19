@@ -23,6 +23,7 @@ import { getPublicMotelDetail } from '@/lib/domain/motels/getMotelDetail';
 import { normalizeLocalUploadPath } from '@/lib/normalizeLocalUrl';
 import { getEffectivePrices } from '@/app/api/mobile/mappers';
 import { getGoogleMapsExternalUrl } from '@/components/admin/motel-detail/formUtils';
+import { PRICE_UPDATING_MESSAGE } from '@/lib/domain/motels/pricePresentation';
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -153,17 +154,14 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
   tabs.push({
     id: 'details',
     label: 'Detalles',
+    intro: motel.description ? (
+      <p className={`mb-2 whitespace-pre-line text-base italic leading-7 text-slate-600 md:text-lg${isFreePlan ? ' opacity-45' : ''}`}>
+        {motel.description}
+      </p>
+    ) : undefined,
     content: (
         <div className={isFreePlan ? 'opacity-45' : undefined}>
           {/* Galería removida: la imagen principal vive en el header */}
-          {/* Description */}
-          {motel.description && (
-            <div className="mb-8">
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Descripción</h3>
-              <p className="text-gray-700 whitespace-pre-line">{motel.description}</p>
-            </div>
-          )}
-
           {motel.schedules.length > 0 && (
             <div className="mb-8">
               <h3 className="mb-3 text-xl font-semibold text-gray-900">Horarios</h3>
@@ -368,7 +366,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                             )}
                           </div>
                         ) : (
-                          <div className="border-t border-gray-200 pt-4 font-bold text-gray-900">CONSULTAR</div>
+                          <div className="border-t border-gray-200 pt-4 text-sm font-semibold leading-5 text-slate-500">{PRICE_UPDATING_MESSAGE}</div>
                         )}
                       </div>
                     </div>

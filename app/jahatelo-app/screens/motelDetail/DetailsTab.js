@@ -5,6 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { formatPrice } from '../../services/motelsApi';
 import { getAmenityIconConfig } from '../../constants/amenityIcons';
 import { COLORS } from '../../constants/theme';
+import { PRICE_UPDATING_MESSAGE } from '../../constants/motelPrices';
 import { normalizeMotelPlan, MOTEL_PLANS } from '../../constants/motelPlans';
 import { getGoogleMapsExternalUrl } from '../../utils/googleMaps';
 
@@ -79,19 +80,15 @@ export default function DetailsTab({ route, refreshing, onRefresh, embedded = fa
           </View>
         )}
 
-        <View style={styles.priceContainer}>
-          <Text style={styles.priceLabel}>Desde</Text>
-          <Text style={styles.price}>{formatPrice(motel.precioDesde)}</Text>
-        </View>
+        {motel.precioDesde > 0 ? (
+          <View style={styles.priceContainer}>
+            <Text style={styles.priceLabel}>Desde</Text>
+            <Text style={styles.price}>{formatPrice(motel.precioDesde)}</Text>
+          </View>
+        ) : (
+          <Text style={styles.priceUpdating}>{PRICE_UPDATING_MESSAGE}</Text>
+        )}
       </View>
-
-      {/* Descripción */}
-      {!!motel.description && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Descripción</Text>
-          <Text style={styles.descriptionText}>{motel.description}</Text>
-        </View>
-      )}
 
       {/* Botón Google Maps */}
       <Pressable
@@ -248,6 +245,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.primary,
   },
+  priceUpdating: {
+    marginTop: 8,
+    color: COLORS.textLight,
+    fontSize: 15,
+    fontWeight: '600',
+  },
   mapsButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -277,11 +280,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2A0038',
     marginBottom: 12,
-  },
-  descriptionText: {
-    fontSize: 14,
-    color: '#444',
-    lineHeight: 22,
   },
   scheduleRow: {
     flexDirection: 'row',

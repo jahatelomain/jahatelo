@@ -15,6 +15,10 @@ DEVICE_ID="$1"
 DERIVED_DATA_DIR="${DERIVED_DATA_DIR:-/tmp/jahatelo-ios-release}"
 APP_PATH="$DERIVED_DATA_DIR/Build/Products/Release-iphoneos/Jahatelo.app"
 GOOGLE_MAPS_IOS_API_KEY="$(sed -n 's/^IOS_GOOGLE_MAPS_API_KEY=//p' .env.local | tail -n 1)"
+BUILD_INFO_PATH="constants/appBuild.js"
+INFO_PLIST_PATH="ios/Jahatelo/Info.plist"
+BUILD_INFO_BACKUP="$DERIVED_DATA_DIR/.appBuild.before-ios-build.js"
+INFO_PLIST_BACKUP="$DERIVED_DATA_DIR/.Info.before-ios-build.plist"
 
 if [[ -z "$GOOGLE_MAPS_IOS_API_KEY" ]]; then
   echo "Falta IOS_GOOGLE_MAPS_API_KEY en .env.local para compilar el mapa de Google en iOS."
@@ -22,6 +26,22 @@ if [[ -z "$GOOGLE_MAPS_IOS_API_KEY" ]]; then
 fi
 
 node scripts/patch-expo-constants-podspec.js
+
+# Cada instalación manual recibe un identificador visible y un CFBundleVersion
+# nuevos. Restauramos los archivos fuente al finalizar: el identificador queda
+# dentro de la app instalada, sin ensuciar el repositorio por una build local.
+mkdir -p "$DERIVED_DATA_DIR"
+cp "$BUILD_INFO_PATH" "$BUILD_INFO_BACKUP"
+cp "$INFO_PLIST_PATH" "$INFO_PLIST_BACKUP"
+restore_build_sources() {
+  cp "$BUILD_INFO_BACKUP" "$BUILD_INFO_PATH"
+  cp "$INFO_PLIST_BACKUP" "$INFO_PLIST_PATH"
+}
+trap restore_build_sources EXIT
+
+IFS='|' read -r NATIVE_BUILD APP_BUILD_LABEL <<< "$(node scripts/prepare-ios-build-label.js "$DERIVED_DATA_DIR/.jahatelo-build-state.json")"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $NATIVE_BUILD" "$INFO_PLIST_PATH"
+echo "Build Jahatelo: $APP_BUILD_LABEL (nativo $NATIVE_BUILD)"
 
 # CoreDevice (devicectl) y Xcode pueden exponer IDs distintos para el mismo
 # iPhone. El usuario ingresa el ID de devicectl porque se utiliza luego para

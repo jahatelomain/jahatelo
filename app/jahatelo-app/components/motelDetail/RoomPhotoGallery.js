@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
 import FullscreenPhotoViewer from './FullscreenPhotoViewer';
 
 export default function RoomPhotoGallery({
@@ -29,10 +30,6 @@ export default function RoomPhotoGallery({
         showsHorizontalScrollIndicator={false}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
-        onTouchStart={onHorizontalGestureStart}
-        onTouchEnd={onHorizontalGestureEnd}
-        onTouchCancel={onHorizontalGestureEnd}
-        onMomentumScrollEnd={onHorizontalGestureEnd}
       >
         {photos.map((photo, index) => (
           <TouchableOpacity

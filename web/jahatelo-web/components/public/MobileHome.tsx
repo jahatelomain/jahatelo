@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { ArrowRight, Bell, ChevronDown, LoaderCircle, Map, MapPin, Search, Tag } from 'lucide-react';
 import type { PublicMotelListItem } from '@/lib/domain/motels/publicListItem';
 import { formatGuaranies } from '@/lib/formatCurrency';
+import { PRICE_UPDATING_MESSAGE } from '@/lib/domain/motels/pricePresentation';
 import MotelCard from '@/components/public/MotelCard';
 import MotelLogoHeart from '@/components/public/MotelLogoHeart';
 
@@ -86,7 +87,7 @@ export default function MobileHome({ featuredMotels, cities }: { featuredMotels:
           {featuredMotels.map((motel) => (
             <Link key={motel.id} href={`/motels/${motel.slug}`} className="w-64 shrink-0 snap-start overflow-hidden rounded-2xl bg-white shadow-[0_6px_14px_rgba(42,0,56,0.1)] transition duration-200 active:scale-[0.98]">
               <div className="relative h-32 bg-purple-100">{(motel.featuredPhotoWeb || motel.thumbnail) && <Image src={motel.featuredPhotoWeb || motel.thumbnail || ''} alt={motel.name} fill className="object-cover" sizes="256px" />}{motel.logoUrl && <MotelLogoHeart src={motel.logoUrl} alt={motel.name} scale={motel.logoScale} className="absolute left-3 top-3 h-10 w-12" />}</div>
-              <div className="p-3"><p className="truncate font-bold text-slate-900">{motel.name}</p><p className="mt-1 truncate text-xs text-slate-500">{[motel.address, motel.city].filter(Boolean).join(', ')}</p><p className="mt-2 text-sm font-bold text-purple-600">{motel.startingPrice ? `Desde ${formatGuaranies(motel.startingPrice)}` : 'Consultar'}</p></div>
+              <div className="p-3"><p className="truncate font-bold text-slate-900">{motel.name}</p><p className="mt-1 truncate text-xs text-slate-500">{[motel.address, motel.city].filter(Boolean).join(', ')}</p><p className="mt-2 text-sm font-bold text-purple-600">{motel.startingPrice ? `Desde ${formatGuaranies(motel.startingPrice)}` : PRICE_UPDATING_MESSAGE}</p></div>
             </Link>
           ))}
           {featuredMotels.length === 0 && <p className="text-sm text-slate-500">No hay moteles destacados.</p>}

@@ -13,6 +13,7 @@ import type { CSSProperties } from 'react';
 import { formatGuaranies } from '@/lib/formatCurrency';
 import type { PublicMotelListItem } from '@/lib/domain/motels/publicListItem';
 import { hasMotelPlanGlow, isMotelPlanDisabled, normalizeMotelPlan } from '@/lib/domain/motels/planPresentation';
+import { PRICE_UPDATING_MESSAGE } from '@/lib/domain/motels/pricePresentation';
 
 export interface MotelCardProps {
   showFavoriteAction?: boolean;
@@ -120,7 +121,7 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
           })}
         </div>
         <p className="mt-2 text-sm font-bold text-purple-600">
-          {hasDayPriceVariation ? <><span className="text-[11px] font-medium text-slate-500">S–J </span>{formatGuaranies(weekdayPrice)}<span className="mx-1 text-purple-300">·</span><span className="text-[11px] font-medium text-slate-500">V–S </span>{formatGuaranies(weekendPrice)}</> : minPrice !== null && minPrice > 0 ? <><span className="mr-1 text-xs font-medium text-slate-500">Desde</span>{formatGuaranies(minPrice)}</> : 'Consultar'}
+          {hasDayPriceVariation ? <><span className="text-[11px] font-medium text-slate-500">S–J </span>{formatGuaranies(weekdayPrice)}<span className="mx-1 text-purple-300">·</span><span className="text-[11px] font-medium text-slate-500">V–S </span>{formatGuaranies(weekendPrice)}</> : minPrice !== null && minPrice > 0 ? <><span className="mr-1 text-xs font-medium text-slate-500">Desde</span>{formatGuaranies(minPrice)}</> : PRICE_UPDATING_MESSAGE}
         </p>
       </div>
     </article>
@@ -248,7 +249,7 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
                 <span className="mr-1 text-sm font-medium text-slate-500">Desde</span>
                 {formatGuaranies(minPrice)}
               </p>
-            ) : <p className="text-lg font-semibold text-slate-500">Consultar</p>}
+            ) : <p className="text-sm font-semibold leading-5 text-slate-500">{PRICE_UPDATING_MESSAGE}</p>}
           </div>
         </div>
       </div>

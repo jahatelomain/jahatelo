@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatGuaranies } from '@/lib/formatCurrency';
+import { PRICE_UPDATING_MESSAGE } from '@/lib/domain/motels/pricePresentation';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import MobilePageHeader from '@/components/public/MobilePageHeader';
@@ -103,7 +104,7 @@ export default function MisFavoritosPage() {
   };
 
   const formatPrice = (price?: number) => {
-    if (!price) return 'Consultar';
+    if (!price) return PRICE_UPDATING_MESSAGE;
     return `Desde ${formatGuaranies(price)}`;
   };
 

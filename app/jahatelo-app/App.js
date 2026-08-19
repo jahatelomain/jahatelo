@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 // Inicializar Sentry antes de cualquier render (solo producción)
 initSentry();
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import {
   Alert,
@@ -240,19 +241,22 @@ export default function App() {
 
   if (!stagingAuthChecked) {
     return (
-      <SafeAreaProvider>
-        <View style={stylesStaging.loadingContainer}>
-          <ActivityIndicator size="large" color="#822DE2" />
-          <Text style={stylesStaging.loadingText}>Inicializando app...</Text>
-        </View>
-      </SafeAreaProvider>
+      <GestureHandlerRootView style={stylesStaging.root}>
+        <SafeAreaProvider>
+          <View style={stylesStaging.loadingContainer}>
+            <ActivityIndicator size="large" color="#822DE2" />
+            <Text style={stylesStaging.loadingText}>Inicializando app...</Text>
+          </View>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     );
   }
 
   if (isStagingEnvironment() && !stagingAuthReady) {
     return (
-      <SafeAreaProvider>
-        <KeyboardAvoidingView
+      <GestureHandlerRootView style={stylesStaging.root}>
+        <SafeAreaProvider>
+          <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={stylesStaging.screen}
         >
@@ -313,25 +317,31 @@ export default function App() {
               )}
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
-      </SafeAreaProvider>
+          </KeyboardAvoidingView>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     );
   }
 
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <FavoritesProvider>
-          <NavigationProvider>
-            <AppContent />
-          </NavigationProvider>
-        </FavoritesProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={stylesStaging.root}>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <FavoritesProvider>
+            <NavigationProvider>
+              <AppContent />
+            </NavigationProvider>
+          </FavoritesProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const stylesStaging = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   screen: {
     flex: 1,
     backgroundColor: '#F4F4F5',
