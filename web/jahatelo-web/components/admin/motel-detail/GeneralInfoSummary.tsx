@@ -11,7 +11,7 @@ export default function GeneralInfoSummary({ motel, featuredPhotoWeb, featuredPh
     <dl className="grid md:grid-cols-2 gap-4">
       <Value label="Nombre" value={motel.name} strong />
       <Value label="Slug" value={motel.slug} mono />
-      <Value label="Descripción" value={motel.description || '-'} wide />
+      <Value label="Slogan" value={motel.description || '-'} wide />
       <Value label="Teléfono" value={motel.phone || '-'} />
       <Value label="WhatsApp" value={motel.whatsapp || '-'} />
       <Value label="Calificación" value={`${rating.toFixed(1)} ⭐ ${count === 0 ? '(Sin reseñas aún)' : `(${count} ${count === 1 ? 'reseña' : 'reseñas'})`}`} />

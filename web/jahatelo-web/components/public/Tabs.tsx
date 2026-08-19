@@ -6,6 +6,7 @@ interface Tab {
   id: string;
   label: string;
   content: React.ReactNode;
+  intro?: React.ReactNode;
 }
 
 interface TabsProps {
@@ -103,6 +104,7 @@ export default function Tabs({ tabs, defaultTab }: TabsProps) {
             ref={(element) => { sectionRefs.current[tab.id] = element; }}
             className="scroll-mt-24 border-b border-gray-100 py-6 last:border-b-0 md:scroll-mt-40 md:py-8"
           >
+            {tab.intro}
             <h2 className="mb-5 text-sm font-extrabold uppercase tracking-[0.12em] text-slate-900">
               {tab.label}
             </h2>

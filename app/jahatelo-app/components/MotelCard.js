@@ -18,6 +18,7 @@ import { useFavorites } from '../hooks/useFavorites';
 import { prefetchMotelDetails } from '../services/prefetchService';
 import { getAmenityIconConfig } from '../constants/amenityIcons';
 import { COLORS } from '../constants/theme';
+import { PRICE_UPDATING_MESSAGE } from '../constants/motelPrices';
 import { hasMotelPlanGlow, isMotelPlanMuted, normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
 import { trackFavoriteAdd, trackFavoriteRemove } from '../services/analyticsService';
 import MotelLogoTile from './MotelLogoTile';
@@ -236,7 +237,7 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
               </View>
             )
           ) : (
-            <Text style={styles.price}>Consultar</Text>
+            <Text style={styles.priceUpdating} numberOfLines={2}>{PRICE_UPDATING_MESSAGE}</Text>
           )}
           {motel.distanciaKm && (
             <Text style={styles.distance}>{formatDistance(motel.distanciaKm)}</Text>
@@ -465,6 +466,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.primary,
     marginBottom: 2,
+  },
+  priceUpdating: {
+    color: COLORS.textLight,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 17,
   },
   dayPriceSummary: {
     fontSize: 12,

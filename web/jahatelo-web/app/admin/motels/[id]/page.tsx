@@ -1358,7 +1358,7 @@ export default function MotelDetailPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Descripción</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Slogan</label>
                     <textarea
                       value={motelForm.description}
                       onChange={(e) => setMotelForm({ ...motelForm, description: e.target.value })}

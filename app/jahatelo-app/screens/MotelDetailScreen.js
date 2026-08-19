@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Linking, Dimensions, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GestureDetector } from 'react-native-gesture-handler';
 import { fetchMotelBySlug } from '../services/motelsApi';
 import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../hooks/useFavorites';
@@ -177,11 +178,7 @@ export default function MotelDetailScreen({ route, navigation }) {
     ...(!isFreePlan ? [{ key: 'Reseñas', name: 'Reseñas', component: ReviewsTab }] : []),
   ];
   const selectedTab = availableTabs.find((tab) => tab.name === activeTab) || availableTabs[0];
-  const {
-    panHandlers: tabSwipeHandlers,
-    beginChildHorizontalGesture,
-    endChildHorizontalGesture,
-  } = useMotelTabsGesture({
+  const { tabSwipeGesture } = useMotelTabsGesture({
     tabs: availableTabs,
     activeTab: selectedTab.name,
     onTabChange: (tabName) => {
@@ -348,16 +345,16 @@ export default function MotelDetailScreen({ route, navigation }) {
           activeTab={selectedTab.name}
           onTabPress={handleTabPress}
         />
-        <ScrollView
-          ref={detailScrollRef}
-          style={styles.tabContent}
-          contentContainerStyle={styles.sectionsContent}
-          showsVerticalScrollIndicator={false}
-          onScroll={handleSectionsScroll}
-          scrollEventThrottle={16}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />}
-          {...tabSwipeHandlers}
-        >
+        <GestureDetector gesture={tabSwipeGesture}>
+          <ScrollView
+            ref={detailScrollRef}
+            style={styles.tabContent}
+            contentContainerStyle={styles.sectionsContent}
+            showsVerticalScrollIndicator={false}
+            onScroll={handleSectionsScroll}
+            scrollEventThrottle={16}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />}
+          >
           {availableTabs.map((tab) => {
             const TabComponent = tab.component;
             return (
@@ -368,18 +365,20 @@ export default function MotelDetailScreen({ route, navigation }) {
                 }}
                 style={styles.sectionContainer}
               >
+                {tab.name === 'Detalles' && !!motel.description && (
+                  <Text style={[styles.slogan, isFreePlan && styles.freeSlogan]}>{motel.description}</Text>
+                )}
                 <Text style={styles.sectionHeading}>{tab.name.toUpperCase()}</Text>
                 <TabComponent
                   route={{ params: { motel } }}
                   navigation={navigation}
                   embedded
-                  onChildHorizontalGestureStart={beginChildHorizontalGesture}
-                  onChildHorizontalGestureEnd={endChildHorizontalGesture}
                 />
               </View>
             );
           })}
-        </ScrollView>
+          </ScrollView>
+        </GestureDetector>
       </View>
     </SafeAreaView>
   );
@@ -517,6 +516,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 24,
     paddingBottom: 4,
+  },
+  slogan: {
+    color: COLORS.textLight,
+    fontSize: 16,
+    fontStyle: 'italic',
+    lineHeight: 23,
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 2,
+  },
+  freeSlogan: {
+    opacity: 0.45,
   },
   errorContainer: {
     flex: 1,

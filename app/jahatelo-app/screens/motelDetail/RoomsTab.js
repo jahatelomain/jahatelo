@@ -4,6 +4,7 @@ import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { formatPrice } from '../../services/motelsApi';
 import { getAmenityIconConfig } from '../../constants/amenityIcons';
 import { COLORS } from '../../constants/theme';
+import { PRICE_UPDATING_MESSAGE } from '../../constants/motelPrices';
 import * as Haptics from 'expo-haptics';
 import { shareRoom } from '../../utils/share';
 import RoomPhotoGallery from '../../components/motelDetail/RoomPhotoGallery';
@@ -169,7 +170,7 @@ function RoomCard({ room, motel, onPhotoGestureStart, onPhotoGestureEnd }) {
       ) : (
         // Sin tarifas configuradas
         <View style={styles.roomPriceRow}>
-          <Text style={styles.roomPrice}>CONSULTAR</Text>
+          <Text style={styles.roomPrice}>{PRICE_UPDATING_MESSAGE}</Text>
         </View>
       )}
       <SpecificDayRates rates={room.weekdayRates} />

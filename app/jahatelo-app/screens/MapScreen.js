@@ -66,102 +66,11 @@ const getPlanZIndex = (plan) => {
   }
 };
 
-// ===== CLUSTERING =====
-// Agrupa moteles cercanos según el nivel de zoom actual del mapa.
-// El radio de clustering escala con latitudeDelta para ser proporcional al zoom.
-function clusterMotels(motels, latitudeDelta) {
-  // Radio proporcional al zoom: más alejado = clusters más grandes
-  const clusterRadius = latitudeDelta * 0.12;
-
-  const visited = new Set();
-  const clusters = [];
-
-  for (let i = 0; i < motels.length; i++) {
-    if (visited.has(i)) continue;
-
-    const group = [motels[i]];
-    visited.add(i);
-
-    for (let j = i + 1; j < motels.length; j++) {
-      if (visited.has(j)) continue;
-
-      const dLat = Math.abs(motels[i].latitude - motels[j].latitude);
-      const dLng = Math.abs(motels[i].longitude - motels[j].longitude);
-
-      if (dLat < clusterRadius && dLng < clusterRadius) {
-        group.add ? group.add(motels[j]) : group.push(motels[j]);
-        visited.add(j);
-      }
-    }
-
-    if (group.length > 1) {
-      // Calcular centroide del cluster
-      const avgLat = group.reduce((s, m) => s + m.latitude, 0) / group.length;
-      const avgLng = group.reduce((s, m) => s + m.longitude, 0) / group.length;
-
-      // El plan más alto del grupo determina el color del cluster
-      const bestPlan = group.reduce((best, m) => {
-        return getPlanOrder(m.plan) > getPlanOrder(best) ? m.plan : best;
-      }, 'FREE');
-
-      clusters.push({
-        type: 'cluster',
-        id: `cluster_${i}`,
-        latitude: avgLat,
-        longitude: avgLng,
-        count: group.length,
-        motels: group,
-        bestPlan,
-      });
-    } else {
-      clusters.push({ type: 'single', ...motels[i] });
-    }
-  }
-
-  return clusters;
-}
-
-// ===== CLUSTER MARKER =====
-const ClusterMarker = React.memo(({ cluster, onPress }) => {
-  const { bestPlan, count, latitude, longitude } = cluster;
-  const isDiamond = bestPlan === 'DIAMOND';
-  const isGold = bestPlan === 'GOLD';
-
-  const bgColor = isDiamond ? '#7DD3FC' : isGold ? '#F59E0B' : COLORS.primary;
-
-  return (
-    <Marker
-      coordinate={{ latitude, longitude }}
-      anchor={{ x: 0.5, y: 0.5 }}
-      zIndex={500}
-      tracksViewChanges={false}
-      onPress={IS_ANDROID ? undefined : onPress}
-    >
-      <View style={[styles.clusterOuter, { borderColor: bgColor }]}>
-        <View style={[styles.clusterInner, { backgroundColor: bgColor }]}>
-          <Text style={styles.clusterText}>{count}</Text>
-        </View>
-      </View>
-
-      {IS_ANDROID && (
-        <Callout tooltip onPress={onPress}>
-          <View style={[styles.calloutContainer, { backgroundColor: bgColor, padding: 12 }]}>
-            <Text style={styles.calloutTitle}>{count} moteles</Text>
-            <Text style={styles.calloutSubtitle}>Tap para acercar</Text>
-          </View>
-        </Callout>
-      )}
-    </Marker>
-  );
-});
-
-ClusterMarker.displayName = 'ClusterMarker';
-
 // ===== CUSTOM MARKER (individual) =====
-const CustomMarker = React.memo(({ motel, onPress }) => {
+const CustomMarker = React.memo(({ motel, onPress, showLabel }) => {
   const plan = normalizeMotelPlan(motel.plan);
   const isMuted = isMotelPlanMuted(plan);
-  const [tracksChanges, setTracksChanges] = useState(IS_ANDROID);
+  const [tracksChanges, setTracksChanges] = useState(IS_ANDROID || showLabel);
   const planZIndex = getPlanZIndex(plan);
 
   const isGold = plan === MOTEL_PLANS.GOLD;
@@ -200,7 +109,10 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
     { padding: Math.round(12 * sizeMultiplier) },
   ];
 
-  const shouldAnimate = isGold || isDiamond;
+  // Las vistas personalizadas dentro de MapKit/Google Maps iOS son costosas.
+  // Reservamos la animación para Android; en iOS el pin queda estático y el
+  // mapa no necesita redibujar decenas de sub-vistas durante un zoom.
+  const shouldAnimate = IS_ANDROID && (isGold || isDiamond);
 
   useEffect(() => {
     if (!IS_ANDROID) return;
@@ -212,8 +124,18 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
     return () => clearTimeout(timer);
   }, [shouldAnimate]);
 
+  // En Google Maps iOS el contenido personalizado del marcador se convierte
+  // en una imagen. Cuando cambia la etiqueta por el zoom, habilitamos un único
+  // redibujado breve para que la imagen se actualice y luego lo detenemos.
   useEffect(() => {
-    if (!isGold && !isDiamond) return;
+    if (IS_ANDROID) return undefined;
+    setTracksChanges(true);
+    const timer = setTimeout(() => setTracksChanges(false), 350);
+    return () => clearTimeout(timer);
+  }, [showLabel]);
+
+  useEffect(() => {
+    if (!shouldAnimate) return undefined;
     const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(bounceAnim, {
@@ -230,9 +152,9 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
     );
     animation.start();
     return () => animation.stop();
-  }, [bounceAnim, isGold, isDiamond]);
+  }, [bounceAnim, shouldAnimate]);
 
-  const bounceStyle = isGold || isDiamond ? { transform: [{ translateY: bounceAnim }] } : null;
+  const bounceStyle = shouldAnimate ? { transform: [{ translateY: bounceAnim }] } : null;
 
   return (
     <Marker
@@ -243,11 +165,11 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
       anchor={{ x: 0.5, y: 1 }}
       zIndex={planZIndex}
       onPress={IS_ANDROID ? undefined : onPress}
-      tracksViewChanges={IS_ANDROID ? tracksChanges : false}
+      tracksViewChanges={tracksChanges}
     >
       <View style={{ alignItems: 'center' }}>
-        {!IS_ANDROID && (
-          <Animated.View style={[labelContainerStyle, bounceStyle]} pointerEvents="none">
+        {!IS_ANDROID && showLabel && (
+          <View style={labelContainerStyle} pointerEvents="none">
             {isGold && (
               <View style={styles.labelBadge}>
                 <Ionicons name="star" size={12} color="#F59E0B" />
@@ -261,10 +183,10 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
             <Text style={labelTextStyle} numberOfLines={1}>
               {motel.name}
             </Text>
-          </Animated.View>
+          </View>
         )}
 
-        <Animated.View style={[bounceStyle, pinStyle]}>
+        <Animated.View style={[pinStyle, bounceStyle]}>
           <View style={styles.markerInner}>
             <Ionicons
               name="heart"
@@ -295,7 +217,8 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
   );
 }, (prevProps, nextProps) => {
   return prevProps.motel.id === nextProps.motel.id &&
-         prevProps.motel.plan === nextProps.motel.plan;
+         prevProps.motel.plan === nextProps.motel.plan &&
+         prevProps.showLabel === nextProps.showLabel;
 });
 
 CustomMarker.displayName = 'CustomMarker';
@@ -329,19 +252,16 @@ export default function MapScreen() {
     });
   }, [motels]);
 
-  // Aplica clustering según el zoom actual
-  const clusteredItems = useMemo(() => {
-    // Con zoom muy cercano (delta < 0.05) no agrupar — mostrar todos
-    if (currentLatitudeDelta < 0.05) return sortedMotels.map(m => ({ type: 'single', ...m }));
-    return clusterMotels(sortedMotels, currentLatitudeDelta);
-  }, [sortedMotels, currentLatitudeDelta]);
+  // El mapa siempre muestra los pines individuales. Las etiquetas aparecen
+  // solamente al acercarse para mantener una vista amplia, limpia y legible.
+  const shouldShowIosLabels = !IS_ANDROID && currentLatitudeDelta < 0.12;
 
   useEffect(() => {
     fetchMapData();
   }, []);
 
   // Retry automático al reconectar a internet
-  const { isOnline } = useOnlineRetry(useCallback(() => {
+  useOnlineRetry(useCallback(() => {
     if (error) fetchMapData();
   }, [error]));
 
@@ -470,17 +390,6 @@ export default function MapScreen() {
     });
   }, [navigation]);
 
-  // Al tocar un cluster: acercar el zoom al centroide del grupo
-  const handleClusterPress = useCallback((cluster) => {
-    const newDelta = Math.max(currentLatitudeDelta * 0.4, 0.01);
-    mapRef.current?.animateToRegion({
-      latitude: cluster.latitude,
-      longitude: cluster.longitude,
-      latitudeDelta: newDelta,
-      longitudeDelta: newDelta,
-    }, 400);
-  }, [currentLatitudeDelta]);
-
   const handleRegionChangeComplete = useCallback((region) => {
     setCurrentLatitudeDelta(region.latitudeDelta);
   }, []);
@@ -530,33 +439,23 @@ export default function MapScreen() {
 
       {/* Map */}
       <MapView
-        ref={mapRef}
-        style={styles.map}
-        provider={PROVIDER_GOOGLE}
-        googleMapId={GOOGLE_MAP_ID}
-        initialRegion={initialRegion}
-        showsUserLocation={!!userLocation}
-        showsMyLocationButton={false}
-        onRegionChangeComplete={handleRegionChangeComplete}
-      >
-        {clusteredItems.map((item) => {
-          if (item.type === 'cluster') {
-            return (
-              <ClusterMarker
-                key={item.id}
-                cluster={item}
-                onPress={() => handleClusterPress(item)}
-              />
-            );
-          }
-          return (
-            <CustomMarker
-              key={item.id}
-              motel={item}
-              onPress={() => handleMarkerPress(item)}
-            />
-          );
-        })}
+          ref={mapRef}
+          style={styles.map}
+          provider={PROVIDER_GOOGLE}
+          googleMapId={GOOGLE_MAP_ID}
+          initialRegion={initialRegion}
+          showsUserLocation={!!userLocation}
+          showsMyLocationButton={false}
+          onRegionChangeComplete={handleRegionChangeComplete}
+        >
+        {sortedMotels.map((motel) => (
+          <CustomMarker
+            key={motel.id}
+            motel={motel}
+            onPress={() => handleMarkerPress(motel)}
+            showLabel={shouldShowIosLabels}
+          />
+        ))}
 
         {userLocation && (
           <Marker
@@ -618,29 +517,6 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
-  },
-
-  // ===== CLUSTER STYLES =====
-  clusterOuter: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 3,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  clusterInner: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  clusterText: {
-    color: COLORS.white,
-    fontWeight: '700',
-    fontSize: 14,
   },
 
   // ===== MARKER STYLES =====

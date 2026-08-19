@@ -1,7 +1,9 @@
 import { useMemo, useRef } from 'react';
-import { PanResponder } from 'react-native';
+import { Gesture } from 'react-native-gesture-handler';
 
-const MIN_HORIZONTAL_DISTANCE = 18;
+// Un gesto de pestaña debe ser deliberado. Un umbral alto permite que los
+// carruseles internos (fotos) activen primero su propio scroll nativo.
+const MIN_HORIZONTAL_DISTANCE = 64;
 const SWIPE_DISTANCE = 55;
 const SWIPE_VELOCITY = 0.35;
 
@@ -24,37 +26,26 @@ export default function useMotelTabsGesture({ tabs, activeTab, onTabChange }) {
   const tabsRef = useRef(tabs);
   const activeTabRef = useRef(activeTab);
   const onTabChangeRef = useRef(onTabChange);
-  const childHorizontalGestureActive = useRef(false);
 
   tabsRef.current = tabs;
   activeTabRef.current = activeTab;
   onTabChangeRef.current = onTabChange;
 
-  const panHandlers = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_, gestureState) => {
-      if (childHorizontalGestureActive.current) return false;
-      return shouldCaptureTabSwipe(gestureState);
-    },
-    onPanResponderRelease: (_, gestureState) => {
-      const { dx, vx } = gestureState;
+  const tabSwipeGesture = useMemo(() => Gesture.Pan()
+    .activeOffsetX([-MIN_HORIZONTAL_DISTANCE, MIN_HORIZONTAL_DISTANCE])
+    .failOffsetY([-16, 16])
+    .runOnJS(true)
+    .onEnd(({ translationX, velocityX }) => {
       const nextTab = getTabAfterSwipe({
         tabs: tabsRef.current,
         activeTab: activeTabRef.current,
-        dx,
-        vx,
+        dx: translationX,
+        vx: velocityX,
       });
       if (nextTab) onTabChangeRef.current(nextTab);
-    },
-    onPanResponderTerminationRequest: () => true,
-  }).panHandlers, []);
+    }), []);
 
   return {
-    panHandlers,
-    beginChildHorizontalGesture: () => {
-      childHorizontalGestureActive.current = true;
-    },
-    endChildHorizontalGesture: () => {
-      childHorizontalGestureActive.current = false;
-    },
+    tabSwipeGesture,
   };
 }
