@@ -7,6 +7,7 @@ import { RoomPhotoSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
 import { MAX_STORED_ROOM_PHOTOS } from '@/lib/domain/motels/roomPhotoLimits';
+import { getRequestBaseUrl, normalizeMediaFields, normalizeMediaUrlForStorage } from '@/lib/media/adminMediaUrls';
 
 const ReorderRoomPhotosSchema = z.object({
   roomTypeId: z.string().min(1),
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
     const roomPhoto = await prisma.roomPhoto.create({
       data: {
         roomTypeId: validated.roomTypeId,
-        url: validated.url,
+        url: normalizeMediaUrlForStorage(validated.url) || '',
         order: nextOrder,
       },
     });
@@ -102,7 +103,7 @@ export async function POST(request: Request) {
       metadata: { roomTypeId: roomPhoto.roomTypeId, url: roomPhoto.url },
     });
 
-    return NextResponse.json(roomPhoto);
+    return NextResponse.json(normalizeMediaFields(roomPhoto, getRequestBaseUrl(request), ['url']));
   } catch (error) {
     console.error('Error creating room photo:', error);
     if (error instanceof z.ZodError) {

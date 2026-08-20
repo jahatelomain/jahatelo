@@ -6,6 +6,7 @@ import { logAuditEvent } from '@/lib/audit';
 import { IdSchema, UpdatePromoSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
+import { getRequestBaseUrl, normalizeMediaFields, normalizeMediaUrlForStorage } from '@/lib/media/adminMediaUrls';
 
 // PATCH /api/admin/promos/[id]
 export async function PATCH(
@@ -44,7 +45,7 @@ export async function PATCH(
       data: {
         ...(validated.title !== undefined && { title: validated.title }),
         ...(validated.description !== undefined && { description: validated.description }),
-        ...(validated.imageUrl !== undefined && { imageUrl: validated.imageUrl }),
+        ...(validated.imageUrl !== undefined && { imageUrl: normalizeMediaUrlForStorage(validated.imageUrl) }),
         ...(validated.validFrom !== undefined && { validFrom: validated.validFrom ? new Date(validated.validFrom) : null }),
         ...(validated.validUntil !== undefined && { validUntil: validated.validUntil ? new Date(validated.validUntil) : null }),
         ...(validated.isActive !== undefined && { isActive: validated.isActive }),
@@ -66,7 +67,7 @@ export async function PATCH(
       metadata: { motelId: promo.motelId, title: promo.title },
     });
 
-    return NextResponse.json(promo);
+    return NextResponse.json(normalizeMediaFields(promo, getRequestBaseUrl(request), ['imageUrl']));
   } catch (error) {
     console.error('Error updating promo:', error);
     if (error instanceof z.ZodError) {

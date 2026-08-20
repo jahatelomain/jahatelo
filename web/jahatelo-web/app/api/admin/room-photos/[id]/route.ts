@@ -7,6 +7,7 @@ import { logAuditEvent } from '@/lib/audit';
 import { IdSchema, UpdateRoomPhotoSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
+import { getRequestBaseUrl, normalizeMediaFields, normalizeMediaUrlForStorage } from '@/lib/media/adminMediaUrls';
 
 export async function DELETE(
   request: Request,
@@ -103,7 +104,7 @@ export async function PATCH(
     if (validated.order !== undefined && validated.order !== null) {
       updateData.order = validated.order;
     }
-    if (validated.url !== undefined) updateData.url = validated.url;
+    if (validated.url !== undefined) updateData.url = normalizeMediaUrlForStorage(validated.url) || '';
 
     const updatedPhoto = await prisma.roomPhoto.update({
       where: { id: idResult.data },
@@ -120,7 +121,7 @@ export async function PATCH(
       metadata: { roomTypeId: updatedPhoto.roomTypeId, url: updatedPhoto.url },
     });
 
-    return NextResponse.json(updatedPhoto);
+    return NextResponse.json(normalizeMediaFields(updatedPhoto, getRequestBaseUrl(request), ['url']));
   } catch (error) {
     console.error('Error updating room photo:', error);
     if (error instanceof z.ZodError) {

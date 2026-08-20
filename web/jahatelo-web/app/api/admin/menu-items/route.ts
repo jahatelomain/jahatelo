@@ -6,6 +6,7 @@ import { logAuditEvent } from '@/lib/audit';
 import { MenuItemSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
+import { getRequestBaseUrl, normalizeMediaFields, normalizeMediaUrlForStorage } from '@/lib/media/adminMediaUrls';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
         name: validated.name,
         price: validated.price,
         description: validated.description ?? null,
-        photoUrl: validated.photoUrl ?? null,
+        photoUrl: normalizeMediaUrlForStorage(validated.photoUrl),
       },
     });
 
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       metadata: { categoryId: item.categoryId, name: item.name },
     });
 
-    return NextResponse.json(item, { status: 201 });
+    return NextResponse.json(normalizeMediaFields(item, getRequestBaseUrl(request), ['photoUrl']), { status: 201 });
   } catch (error) {
     console.error('Error creating menu item:', error);
     if (error instanceof z.ZodError) {
