@@ -100,6 +100,9 @@ const nextConfig: NextConfig = {
               "base-uri 'self'",
               "default-src 'self'",
               `script-src 'self'${isDev ? " 'unsafe-eval'" : ''} 'unsafe-inline' https://maps.googleapis.com https://maps.gstatic.com https://accounts.google.com https://apis.google.com`,
+              // Google Maps vectorial crea workers desde blob:. Sin esta
+              // excepción puede degradarse a raster y perder el mapa base.
+              "worker-src 'self' blob:",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               `img-src 'self' data: https:${isDev ? ' http:' : ''} blob: https://jahatelo-media.s3.us-east-1.amazonaws.com`,
               "font-src 'self' https://fonts.gstatic.com",
