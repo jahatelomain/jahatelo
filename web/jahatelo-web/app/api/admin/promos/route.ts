@@ -8,6 +8,7 @@ import { AdminPaginationSchema, PromoQuerySchema, PromoSchema } from '@/lib/vali
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
 import { normalizeRelaxedSearch, relaxedSearchSql } from '@/lib/search/relaxedSearch';
+import { getRequestBaseUrl, normalizeMediaFields, normalizeMediaUrlForStorage } from '@/lib/media/adminMediaUrls';
 
 const getPromoLimit = (plan?: string | null) => {
   if (plan === 'GOLD') return 3;
@@ -111,12 +112,14 @@ export async function GET(request: NextRequest) {
       ...(usePagination ? { skip: (page - 1) * limit, take: limit } : {}),
     });
 
+    const normalizedPromos = promos.map((promo) => normalizeMediaFields(promo, getRequestBaseUrl(request), ['imageUrl']));
+
     if (!usePagination) {
-      return NextResponse.json(promos);
+      return NextResponse.json(normalizedPromos);
     }
 
     return NextResponse.json({
-      data: promos,
+      data: normalizedPromos,
       meta: {
         page,
         limit,
@@ -178,7 +181,7 @@ export async function POST(request: NextRequest) {
         motelId: validated.motelId,
         title: validated.title,
         description: validated.description ?? null,
-        imageUrl: validated.imageUrl ?? null,
+        imageUrl: normalizeMediaUrlForStorage(validated.imageUrl),
         validFrom: validated.validFrom ? new Date(validated.validFrom) : null,
         validUntil: validated.validUntil ? new Date(validated.validUntil) : null,
         isActive: validated.isActive ?? true,
@@ -200,7 +203,7 @@ export async function POST(request: NextRequest) {
       metadata: { motelId: promo.motelId, title: promo.title },
     });
 
-    return NextResponse.json(promo, { status: 201 });
+    return NextResponse.json(normalizeMediaFields(promo, getRequestBaseUrl(request), ['imageUrl']), { status: 201 });
   } catch (error) {
     console.error('Error creating promo:', error);
     if (error instanceof z.ZodError) {

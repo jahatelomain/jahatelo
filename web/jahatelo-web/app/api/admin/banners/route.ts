@@ -6,6 +6,7 @@ import { logAuditEvent } from '@/lib/audit';
 import { AdminPaginationSchema, AdvertisementQuerySchema, AdvertisementSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
+import { getRequestBaseUrl, normalizeMediaFields, normalizeMediaUrlForStorage } from '@/lib/media/adminMediaUrls';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,15 +54,22 @@ export async function GET(request: NextRequest) {
       ...(usePagination ? { skip: (page - 1) * limit, take: limit } : {}),
     });
 
+    const normalizedAds = ads.map((ad) => normalizeMediaFields(ad, getRequestBaseUrl(request), [
+      'imageUrl',
+      'largeImageUrl',
+      'largeImageUrlWeb',
+      'largeImageUrlApp',
+    ]));
+
     if (!usePagination) {
-      return NextResponse.json(ads, {
+      return NextResponse.json(normalizedAds, {
         headers: { 'Cache-Control': 'no-store' },
       });
     }
 
     return NextResponse.json(
       {
-        data: ads,
+        data: normalizedAds,
         meta: {
           page,
           limit,
@@ -93,10 +101,10 @@ export async function POST(request: NextRequest) {
       data: {
         title: validated.title,
         advertiser: validated.advertiser,
-        imageUrl: validated.imageUrl,
-        largeImageUrl: validated.largeImageUrl ?? null,
-        largeImageUrlWeb: validated.largeImageUrlWeb ?? null,
-        largeImageUrlApp: validated.largeImageUrlApp ?? null,
+        imageUrl: normalizeMediaUrlForStorage(validated.imageUrl) || '',
+        largeImageUrl: normalizeMediaUrlForStorage(validated.largeImageUrl),
+        largeImageUrlWeb: normalizeMediaUrlForStorage(validated.largeImageUrlWeb),
+        largeImageUrlApp: normalizeMediaUrlForStorage(validated.largeImageUrlApp),
         description: validated.description ?? null,
         linkUrl: validated.linkUrl ?? null,
         placement: validated.placement,
@@ -117,7 +125,12 @@ export async function POST(request: NextRequest) {
       metadata: { placement: ad.placement, advertiser: ad.advertiser },
     });
 
-    return NextResponse.json(ad, { status: 201 });
+    return NextResponse.json(normalizeMediaFields(ad, getRequestBaseUrl(request), [
+      'imageUrl',
+      'largeImageUrl',
+      'largeImageUrlWeb',
+      'largeImageUrlApp',
+    ]), { status: 201 });
   } catch (error) {
     console.error('Error creating advertisement:', error);
     if (error instanceof z.ZodError) {

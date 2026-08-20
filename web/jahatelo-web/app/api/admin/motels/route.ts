@@ -5,6 +5,7 @@ import { requireAdminAccess } from '@/lib/adminAccess';
 import { AdminPaginationSchema, EmptySchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
 import { normalizeRelaxedSearch, relaxedSearchSql } from '@/lib/search/relaxedSearch';
+import { getRequestBaseUrl, normalizeMotelMedia } from '@/lib/media/adminMediaUrls';
 
 export async function GET(request: NextRequest) {
   try {
@@ -128,12 +129,14 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {});
 
+    const normalizedMotels = (motels ?? []).map((motel) => normalizeMotelMedia(motel, getRequestBaseUrl(request)));
+
     if (!usePagination) {
-      return NextResponse.json(motels ?? []);
+      return NextResponse.json(normalizedMotels);
     }
 
     return NextResponse.json({
-      data: motels ?? [],
+      data: normalizedMotels,
       meta: {
         page,
         limit,
