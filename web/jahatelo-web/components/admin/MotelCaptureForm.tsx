@@ -102,7 +102,7 @@ export default function MotelCaptureForm() {
         <Field label="Nombre del motel *"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} /></Field>
         <Field label="Plan *"><select value={form.plan} onChange={(e) => setForm({ ...form, plan: e.target.value as typeof form.plan })} className={inputClass}><option value="FREE">FREE</option><option value="BASIC">BASIC</option><option value="GOLD">GOLD</option><option value="DIAMOND">DIAMOND</option></select></Field>
         <Field label={`Teléfono${prospectId ? ' *' : ''}`}><input required={Boolean(prospectId)} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass} /></Field>
-        <Field label={`WhatsApp${prospectId ? ' *' : ''}`}><input required={Boolean(prospectId)} value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} className={inputClass} /></Field>
+        <Field label="WhatsApp"><input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} className={inputClass} /></Field>
         <Field label="Contacto"><input value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} className={inputClass} /></Field>
         <Field label="Email"><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputClass} /></Field>
       </div>

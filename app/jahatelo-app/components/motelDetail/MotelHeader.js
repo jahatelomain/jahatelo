@@ -29,18 +29,15 @@ export default function MotelHeader({ motel, onCall, onWhatsApp, onShare }) {
           />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.contactButton, !whatsapp && styles.contactButtonDisabled]}
-          onPress={whatsapp ? () => onWhatsApp(whatsapp) : undefined}
-          activeOpacity={0.7}
-          disabled={!whatsapp}
-        >
-          <Ionicons
-            name="logo-whatsapp"
-            size={16}
-            color={whatsapp ? '#25D366' : COLORS.muted}
-          />
-        </TouchableOpacity>
+        {whatsapp ? (
+          <TouchableOpacity
+            style={styles.contactButton}
+            onPress={() => onWhatsApp(whatsapp)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="logo-whatsapp" size={16} color="#25D366" />
+          </TouchableOpacity>
+        ) : null}
 
         <TouchableOpacity style={styles.contactButton} onPress={onShare} activeOpacity={0.7}>
           <Ionicons name="share-social-outline" size={16} color={COLORS.primary} />
