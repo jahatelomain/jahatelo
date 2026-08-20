@@ -10,6 +10,7 @@ import { normalizeGoogleMapsUrl } from '@/lib/utils/coordinates';
 import { findOfficialGooglePlace } from '@/lib/googlePlaces';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
+import { getRequestBaseUrl, normalizeMotelMedia, normalizeMediaUrlForStorage } from '@/lib/media/adminMediaUrls';
 
 // Los detalles de un motel se editan desde el mismo panel y nunca deben servir
 // una respuesta anterior tras un PATCH exitoso.
@@ -102,11 +103,11 @@ export async function GET(
     );
 
     return NextResponse.json(
-      {
+      normalizeMotelMedia({
         ...motel,
         rooms,
         menuCategories,
-      },
+      }, getRequestBaseUrl(request)),
       { headers: { 'Cache-Control': 'no-store, max-age=0' } },
     );
   } catch (error) {
@@ -196,6 +197,11 @@ export async function PATCH(
       ...(validated.address ? { address: sanitizeText(validated.address) } : {}),
     };
 
+    if (validated.featuredPhoto !== undefined) data.featuredPhoto = normalizeMediaUrlForStorage(validated.featuredPhoto);
+    if (validated.featuredPhotoWeb !== undefined) data.featuredPhotoWeb = normalizeMediaUrlForStorage(validated.featuredPhotoWeb);
+    if (validated.featuredPhotoApp !== undefined) data.featuredPhotoApp = normalizeMediaUrlForStorage(validated.featuredPhotoApp);
+    if (validated.logoUrl !== undefined) data.logoUrl = normalizeMediaUrlForStorage(validated.logoUrl);
+
     let locationWarning: string | null = null;
     // La ubicación que aparece en un iframe es el centro de su vista, no
     // necesariamente el pin del negocio. Al cambiar el enlace, resolvemos la
@@ -247,7 +253,10 @@ export async function PATCH(
       metadata: { name: motel.name },
     });
 
-    return NextResponse.json({ ...motel, locationWarning });
+    return NextResponse.json({
+      ...normalizeMotelMedia(motel, getRequestBaseUrl(request)),
+      locationWarning,
+    });
   } catch (error) {
     // Errores de validación Zod
     if (error instanceof z.ZodError) {

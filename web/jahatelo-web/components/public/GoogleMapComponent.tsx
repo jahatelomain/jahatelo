@@ -335,6 +335,9 @@ export default function GoogleMapComponent({
       center: initialCenter,
       zoom: 13,
       mapId: '5a5c021d949062e767299e61', // Estilo cloud y marcadores avanzados de Jahatelo
+      // La web pública siempre usa el diseño claro, independientemente del
+      // esquema oscuro del navegador o sistema operativo.
+      colorScheme: 'LIGHT',
       mapTypeControl: true,
       streetViewControl: true,
       fullscreenControl: true,

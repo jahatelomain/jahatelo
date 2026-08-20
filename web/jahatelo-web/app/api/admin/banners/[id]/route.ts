@@ -5,6 +5,7 @@ import { logAuditEvent } from '@/lib/audit';
 import { AdvertisementAdminUpdateSchema, IdSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
+import { getRequestBaseUrl, normalizeMediaFields, normalizeMediaUrlForStorage } from '@/lib/media/adminMediaUrls';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +28,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Anuncio no encontrado' }, { status: 404 });
     }
 
-    return NextResponse.json(ad, {
+    return NextResponse.json(normalizeMediaFields(ad, getRequestBaseUrl(request), [
+      'imageUrl',
+      'largeImageUrl',
+      'largeImageUrlWeb',
+      'largeImageUrlApp',
+    ]), {
       headers: { 'Cache-Control': 'no-store' },
     });
   } catch (error) {
@@ -56,10 +62,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       data: {
         title: validated.title,
         advertiser: validated.advertiser,
-        imageUrl: validated.imageUrl ?? undefined,
-        largeImageUrl: validated.largeImageUrl ?? null,
-        largeImageUrlWeb: validated.largeImageUrlWeb ?? null,
-        largeImageUrlApp: validated.largeImageUrlApp ?? null,
+        imageUrl: validated.imageUrl === undefined ? undefined : normalizeMediaUrlForStorage(validated.imageUrl) || undefined,
+        largeImageUrl: normalizeMediaUrlForStorage(validated.largeImageUrl),
+        largeImageUrlWeb: normalizeMediaUrlForStorage(validated.largeImageUrlWeb),
+        largeImageUrlApp: normalizeMediaUrlForStorage(validated.largeImageUrlApp),
         description: validated.description ?? null,
         linkUrl: validated.linkUrl ?? null,
         placement: validated.placement,
@@ -82,7 +88,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       metadata: { placement: ad.placement, status: ad.status },
     });
 
-    return NextResponse.json(ad);
+    return NextResponse.json(normalizeMediaFields(ad, getRequestBaseUrl(request), [
+      'imageUrl',
+      'largeImageUrl',
+      'largeImageUrlWeb',
+      'largeImageUrlApp',
+    ]));
   } catch (error) {
     console.error('Error updating advertisement:', error);
     if (error instanceof z.ZodError) {

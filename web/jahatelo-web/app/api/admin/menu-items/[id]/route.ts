@@ -6,6 +6,7 @@ import { logAuditEvent } from '@/lib/audit';
 import { IdSchema, UpdateMenuItemSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
+import { getRequestBaseUrl, normalizeMediaFields, normalizeMediaUrlForStorage } from '@/lib/media/adminMediaUrls';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -47,7 +48,7 @@ export async function PATCH(
         ...(validated.name !== undefined && { name: validated.name }),
         ...(validated.price !== undefined && { price: validated.price }),
         ...(validated.description !== undefined && { description: validated.description }),
-        ...(validated.photoUrl !== undefined && { photoUrl: validated.photoUrl }),
+        ...(validated.photoUrl !== undefined && { photoUrl: normalizeMediaUrlForStorage(validated.photoUrl) }),
       },
     });
 
@@ -61,7 +62,7 @@ export async function PATCH(
       metadata: { categoryId: item.categoryId, name: item.name },
     });
 
-    return NextResponse.json(item);
+    return NextResponse.json(normalizeMediaFields(item, getRequestBaseUrl(request), ['photoUrl']));
   } catch (error) {
     console.error('Error updating menu item:', error);
     if (error instanceof z.ZodError) {

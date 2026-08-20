@@ -66,6 +66,19 @@ const getPlanZIndex = (plan) => {
   }
 };
 
+const getNativeMarkerColor = (plan) => {
+  switch (normalizeMotelPlan(plan)) {
+    case MOTEL_PLANS.DIAMOND:
+      return '#22D3EE';
+    case MOTEL_PLANS.GOLD:
+      return '#F59E0B';
+    case MOTEL_PLANS.FREE:
+      return '#94A3B8';
+    default:
+      return COLORS.primary;
+  }
+};
+
 // ===== CUSTOM MARKER (individual) =====
 const CustomMarker = React.memo(({ motel, onPress, showLabel }) => {
   const plan = normalizeMotelPlan(motel.plan);
@@ -156,6 +169,23 @@ const CustomMarker = React.memo(({ motel, onPress, showLabel }) => {
 
   const bounceStyle = shouldAnimate ? { transform: [{ translateY: bounceAnim }] } : null;
 
+  // Google Maps en iOS rasteriza cada hijo personalizado de <Marker>. Con
+  // decenas de moteles esto consume memoria de golpe y puede cerrar la app.
+  // Fuera del área cercana usamos el pin nativo (liviano); al acercarse, sólo
+  // los moteles visibles recuperan la etiqueta personalizada.
+  if (!IS_ANDROID && !showLabel) {
+    return (
+      <Marker
+        coordinate={{ latitude: motel.latitude, longitude: motel.longitude }}
+        anchor={{ x: 0.5, y: 1 }}
+        zIndex={planZIndex}
+        pinColor={getNativeMarkerColor(plan)}
+        onPress={onPress}
+        tracksViewChanges={false}
+      />
+    );
+  }
+
   return (
     <Marker
       coordinate={{
@@ -236,6 +266,12 @@ export default function MapScreen() {
   const [error, setError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [currentLatitudeDelta, setCurrentLatitudeDelta] = useState(0.5);
+  const [currentRegion, setCurrentRegion] = useState({
+    latitude: -25.2637,
+    longitude: -57.5759,
+    latitudeDelta: 0.5,
+    longitudeDelta: 0.5,
+  });
   const [initialRegion, setInitialRegion] = useState({
     latitude: -25.2637,
     longitude: -57.5759,
@@ -255,6 +291,21 @@ export default function MapScreen() {
   // El mapa siempre muestra los pines individuales. Las etiquetas aparecen
   // solamente al acercarse para mantener una vista amplia, limpia y legible.
   const shouldShowIosLabels = !IS_ANDROID && currentLatitudeDelta < 0.12;
+
+  const shouldRenderIosLabel = useCallback((motel) => {
+    if (!shouldShowIosLabels) return false;
+
+    // Dejamos un margen para que las etiquetas de los bordes no aparezcan y
+    // desaparezcan mientras se arrastra el mapa. Así iOS sólo rasteriza unos
+    // pocos marcadores al mismo tiempo.
+    const latitudeLimit = currentRegion.latitudeDelta * 0.6;
+    const longitudeLimit = currentRegion.longitudeDelta * 0.6;
+
+    return (
+      Math.abs(motel.latitude - currentRegion.latitude) <= latitudeLimit &&
+      Math.abs(motel.longitude - currentRegion.longitude) <= longitudeLimit
+    );
+  }, [currentRegion, shouldShowIosLabels]);
 
   useEffect(() => {
     fetchMapData();
@@ -392,6 +443,7 @@ export default function MapScreen() {
 
   const handleRegionChangeComplete = useCallback((region) => {
     setCurrentLatitudeDelta(region.latitudeDelta);
+    setCurrentRegion(region);
   }, []);
 
   if (loading) {
@@ -453,7 +505,7 @@ export default function MapScreen() {
             key={motel.id}
             motel={motel}
             onPress={() => handleMarkerPress(motel)}
-            showLabel={shouldShowIosLabels}
+            showLabel={shouldRenderIosLabel(motel)}
           />
         ))}
 
