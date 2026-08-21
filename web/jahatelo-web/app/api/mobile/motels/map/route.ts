@@ -7,6 +7,7 @@ import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 60; // Cache por 60 segundos
+const MARKER_RENDER_VERSION = '2';
 
 /**
  * GET /api/mobile/motels/map
@@ -69,7 +70,7 @@ export async function GET() {
           latitude: m.latitude!,
           longitude: m.longitude!,
           plan: m.plan,
-          markerVersion: m.updatedAt.toISOString(),
+          markerVersion: `${m.updatedAt.toISOString()}-${MARKER_RENDER_VERSION}`,
           isFeatured: m.isFeatured,
           featuredPhoto: normalizeLocalUrl(m.featuredPhotoApp ?? m.featuredPhotoWeb ?? m.featuredPhoto ?? null, baseUrl),
           featuredPhotoWeb: normalizeLocalUrl(m.featuredPhotoWeb ?? m.featuredPhoto ?? m.featuredPhotoApp ?? null, baseUrl),
