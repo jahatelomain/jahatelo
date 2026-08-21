@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,23 +7,21 @@ import {
   Alert,
   StatusBar,
   Platform,
-  Animated,
 } from 'react-native';
 import LoadingScreen from '../components/LoadingScreen';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
-import { isMotelPlanMuted, normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
+import { normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
 import { useNavigation } from '@react-navigation/native';
 import { getApiRoot } from '../services/apiBaseUrl';
+import { withCachedMapMarkerImages } from '../services/mapMarkerCache';
 import { useOnlineRetry } from '../hooks/useOnlineRetry';
 
 const API_URL = getApiRoot();
 const MAP_REQUEST_TIMEOUT_MS = 10000;
-const IS_ANDROID = Platform.OS === 'android';
-
 // IDs públicos de Google Maps, cada uno asociado al diseño cloud de Jahatelo.
 // El estilo publicado oculta únicamente los alojamientos de Google para no
 // duplicar los pines propios de Jahatelo.
@@ -66,189 +64,40 @@ const getPlanZIndex = (plan) => {
   }
 };
 
-const getNativeMarkerColor = (plan) => {
-  switch (normalizeMotelPlan(plan)) {
+const getMarkerImage = (motel) => {
+  if (motel.markerImageUri) return { uri: motel.markerImageUri };
+
+  switch (normalizeMotelPlan(motel.plan)) {
     case MOTEL_PLANS.DIAMOND:
-      return '#22D3EE';
+      return require('../assets/map-pin-diamond.png');
     case MOTEL_PLANS.GOLD:
-      return '#F59E0B';
+      return require('../assets/map-pin-gold.png');
     case MOTEL_PLANS.FREE:
-      return '#94A3B8';
+      return require('../assets/map-pin-free.png');
     default:
-      return COLORS.primary;
+      return require('../assets/map-pin-basic.png');
   }
 };
 
-// ===== CUSTOM MARKER (individual) =====
-const CustomMarker = React.memo(({ motel, onPress, showLabel }) => {
+// Los PNG locales se dibujan directamente por el SDK nativo. A diferencia de
+// las vistas React dentro de <Marker>, no se rasterizan de nuevo durante cada
+// zoom/pan, por lo que todos los pines pueden ser de Jahatelo desde el inicio.
+const CustomMarker = React.memo(({ motel, onPress }) => {
   const plan = normalizeMotelPlan(motel.plan);
-  const isMuted = isMotelPlanMuted(plan);
-  const [tracksChanges, setTracksChanges] = useState(IS_ANDROID || showLabel);
   const planZIndex = getPlanZIndex(plan);
-
-  const isGold = plan === MOTEL_PLANS.GOLD;
-  const isDiamond = plan === MOTEL_PLANS.DIAMOND;
-  const sizeMultiplier = isDiamond ? 1.3 : isGold ? 1.15 : 1;
-  const pinSize = Math.round(36 * sizeMultiplier);
-  const bounceAnim = useRef(new Animated.Value(0)).current;
-  const pinStyle = [
-    styles.markerPin,
-    isMuted && styles.disabledMarker,
-    isGold && styles.goldMarker,
-    isDiamond && styles.diamondMarker,
-    { width: pinSize, height: pinSize, borderRadius: Math.round(pinSize / 2) },
-  ];
-  const labelContainerStyle = [
-    styles.iosLabelContainer,
-    isMuted && styles.disabledLabel,
-    isGold && styles.goldLabel,
-    isDiamond && styles.diamondLabel,
-    {
-      paddingHorizontal: Math.round(10 * sizeMultiplier),
-      paddingVertical: Math.round(4 * sizeMultiplier),
-      borderRadius: Math.round(10 * sizeMultiplier),
-      maxWidth: Math.round(180 * sizeMultiplier),
-    },
-  ];
-  const labelTextStyle = [
-    styles.iosLabelText,
-    { fontSize: Math.round(12 * sizeMultiplier) },
-  ];
-  const calloutStyle = [
-    styles.calloutContainer,
-    isMuted && styles.disabledCallout,
-    isGold && styles.goldCallout,
-    isDiamond && styles.diamondCallout,
-    { padding: Math.round(12 * sizeMultiplier) },
-  ];
-
-  // Las vistas personalizadas dentro de MapKit/Google Maps iOS son costosas.
-  // Reservamos la animación para Android; en iOS el pin queda estático y el
-  // mapa no necesita redibujar decenas de sub-vistas durante un zoom.
-  const shouldAnimate = IS_ANDROID && (isGold || isDiamond);
-
-  useEffect(() => {
-    if (!IS_ANDROID) return;
-    if (shouldAnimate) {
-      setTracksChanges(true);
-      return;
-    }
-    const timer = setTimeout(() => setTracksChanges(false), 500);
-    return () => clearTimeout(timer);
-  }, [shouldAnimate]);
-
-  // En Google Maps iOS el contenido personalizado del marcador se convierte
-  // en una imagen. Cuando cambia la etiqueta por el zoom, habilitamos un único
-  // redibujado breve para que la imagen se actualice y luego lo detenemos.
-  useEffect(() => {
-    if (IS_ANDROID) return undefined;
-    setTracksChanges(true);
-    const timer = setTimeout(() => setTracksChanges(false), 350);
-    return () => clearTimeout(timer);
-  }, [showLabel]);
-
-  useEffect(() => {
-    if (!shouldAnimate) return undefined;
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(bounceAnim, {
-          toValue: -2,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(bounceAnim, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    animation.start();
-    return () => animation.stop();
-  }, [bounceAnim, shouldAnimate]);
-
-  const bounceStyle = shouldAnimate ? { transform: [{ translateY: bounceAnim }] } : null;
-
-  // Google Maps en iOS rasteriza cada hijo personalizado de <Marker>. Con
-  // decenas de moteles esto consume memoria de golpe y puede cerrar la app.
-  // Fuera del área cercana usamos el pin nativo (liviano); al acercarse, sólo
-  // los moteles visibles recuperan la etiqueta personalizada.
-  if (!IS_ANDROID && !showLabel) {
-    return (
-      <Marker
-        coordinate={{ latitude: motel.latitude, longitude: motel.longitude }}
-        anchor={{ x: 0.5, y: 1 }}
-        zIndex={planZIndex}
-        pinColor={getNativeMarkerColor(plan)}
-        onPress={onPress}
-        tracksViewChanges={false}
-      />
-    );
-  }
-
   return (
     <Marker
-      coordinate={{
-        latitude: motel.latitude,
-        longitude: motel.longitude,
-      }}
+      coordinate={{ latitude: motel.latitude, longitude: motel.longitude }}
       anchor={{ x: 0.5, y: 1 }}
       zIndex={planZIndex}
-      onPress={IS_ANDROID ? undefined : onPress}
-      tracksViewChanges={tracksChanges}
-    >
-      <View style={{ alignItems: 'center' }}>
-        {!IS_ANDROID && showLabel && (
-          <View style={labelContainerStyle} pointerEvents="none">
-            {isGold && (
-              <View style={styles.labelBadge}>
-                <Ionicons name="star" size={12} color="#F59E0B" />
-              </View>
-            )}
-            {isDiamond && (
-              <View style={styles.labelBadge}>
-                <Ionicons name="diamond" size={12} color="#0EA5E9" />
-              </View>
-            )}
-            <Text style={labelTextStyle} numberOfLines={1}>
-              {motel.name}
-            </Text>
-          </View>
-        )}
-
-        <Animated.View style={[pinStyle, bounceStyle]}>
-          <View style={styles.markerInner}>
-            <Ionicons
-              name="heart"
-              size={Math.round((isGold || isDiamond ? 18 : 14) * sizeMultiplier)}
-              color={COLORS.white}
-            />
-          </View>
-        </Animated.View>
-      </View>
-
-      {IS_ANDROID && (
-        <Callout tooltip onPress={onPress}>
-          <View style={calloutStyle}>
-            {isDiamond && (
-              <Text style={[styles.calloutBadge, { fontSize: Math.round(11 * sizeMultiplier) }]}>💎 DIAMOND</Text>
-            )}
-            {isGold && !isDiamond && (
-              <Text style={[styles.calloutBadge, { fontSize: Math.round(11 * sizeMultiplier) }]}>⭐ GOLD</Text>
-            )}
-            <Text style={[styles.calloutTitle, { fontSize: Math.round(14 * sizeMultiplier) }]} numberOfLines={1}>
-              {motel.name}
-            </Text>
-            <Text style={[styles.calloutSubtitle, { fontSize: Math.round(11 * sizeMultiplier) }]}>Tap para ver detalles</Text>
-          </View>
-        </Callout>
-      )}
-    </Marker>
+      image={getMarkerImage(motel)}
+      onPress={onPress}
+      tracksViewChanges={false}
+    />
   );
 }, (prevProps, nextProps) => {
   return prevProps.motel.id === nextProps.motel.id &&
-         prevProps.motel.plan === nextProps.motel.plan &&
-         prevProps.showLabel === nextProps.showLabel;
+         prevProps.motel.plan === nextProps.motel.plan;
 });
 
 CustomMarker.displayName = 'CustomMarker';
@@ -265,13 +114,6 @@ export default function MapScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
-  const [currentLatitudeDelta, setCurrentLatitudeDelta] = useState(0.5);
-  const [currentRegion, setCurrentRegion] = useState({
-    latitude: -25.2637,
-    longitude: -57.5759,
-    latitudeDelta: 0.5,
-    longitudeDelta: 0.5,
-  });
   const [initialRegion, setInitialRegion] = useState({
     latitude: -25.2637,
     longitude: -57.5759,
@@ -287,25 +129,6 @@ export default function MapScreen() {
       return (a.name || '').localeCompare(b.name || '');
     });
   }, [motels]);
-
-  // El mapa siempre muestra los pines individuales. Las etiquetas aparecen
-  // solamente al acercarse para mantener una vista amplia, limpia y legible.
-  const shouldShowIosLabels = !IS_ANDROID && currentLatitudeDelta < 0.12;
-
-  const shouldRenderIosLabel = useCallback((motel) => {
-    if (!shouldShowIosLabels) return false;
-
-    // Dejamos un margen para que las etiquetas de los bordes no aparezcan y
-    // desaparezcan mientras se arrastra el mapa. Así iOS sólo rasteriza unos
-    // pocos marcadores al mismo tiempo.
-    const latitudeLimit = currentRegion.latitudeDelta * 0.6;
-    const longitudeLimit = currentRegion.longitudeDelta * 0.6;
-
-    return (
-      Math.abs(motel.latitude - currentRegion.latitude) <= latitudeLimit &&
-      Math.abs(motel.longitude - currentRegion.longitude) <= longitudeLimit
-    );
-  }, [currentRegion, shouldShowIosLabels]);
 
   useEffect(() => {
     fetchMapData();
@@ -323,12 +146,14 @@ export default function MapScreen() {
       const now = Date.now();
       if (cachedMapData && (now - cacheTimestamp) < CACHE_DURATION) {
         debugLog('📍 Usando datos del mapa cacheados');
-        setMotels(cachedMapData.motels);
+        const cachedMotels = await withCachedMapMarkerImages(cachedMapData.motels, API_URL);
+        cachedMapData = { ...cachedMapData, motels: cachedMotels };
+        setMotels(cachedMotels);
 
-        if (cachedMapData.motels.length > 0) {
+        if (cachedMotels.length > 0) {
           const firstMotelRegion = {
-            latitude: cachedMapData.motels[0].latitude,
-            longitude: cachedMapData.motels[0].longitude,
+            latitude: cachedMotels[0].latitude,
+            longitude: cachedMotels[0].longitude,
             latitudeDelta: 0.5,
             longitudeDelta: 0.5,
           };
@@ -365,14 +190,15 @@ export default function MapScreen() {
       const data = await response.json();
 
       if (data.success && data.motels.length > 0) {
-        cachedMapData = data;
+        const mapMotels = await withCachedMapMarkerImages(data.motels, API_URL);
+        cachedMapData = { ...data, motels: mapMotels };
         cacheTimestamp = now;
 
-        setMotels(data.motels);
+        setMotels(mapMotels);
 
         const firstMotelRegion = {
-          latitude: data.motels[0].latitude,
-          longitude: data.motels[0].longitude,
+          latitude: mapMotels[0].latitude,
+          longitude: mapMotels[0].longitude,
           latitudeDelta: 0.5,
           longitudeDelta: 0.5,
         };
@@ -441,11 +267,6 @@ export default function MapScreen() {
     });
   }, [navigation]);
 
-  const handleRegionChangeComplete = useCallback((region) => {
-    setCurrentLatitudeDelta(region.latitudeDelta);
-    setCurrentRegion(region);
-  }, []);
-
   if (loading) {
     return <LoadingScreen message="Cargando mapa..." />;
   }
@@ -490,35 +311,36 @@ export default function MapScreen() {
       </View>
 
       {/* Map */}
-      <MapView
-          ref={mapRef}
-          style={styles.map}
-          provider={PROVIDER_GOOGLE}
-          googleMapId={GOOGLE_MAP_ID}
-          initialRegion={initialRegion}
-          showsUserLocation={!!userLocation}
-          showsMyLocationButton={false}
-          onRegionChangeComplete={handleRegionChangeComplete}
-        >
-        {sortedMotels.map((motel) => (
-          <CustomMarker
-            key={motel.id}
-            motel={motel}
-            onPress={() => handleMarkerPress(motel)}
-            showLabel={shouldRenderIosLabel(motel)}
-          />
-        ))}
+      <View style={styles.mapContainer}>
+        <MapView
+            ref={mapRef}
+            style={StyleSheet.absoluteFill}
+            provider={PROVIDER_GOOGLE}
+            googleMapId={GOOGLE_MAP_ID}
+            initialRegion={initialRegion}
+            showsUserLocation={!!userLocation}
+            showsMyLocationButton={false}
+          >
+          {sortedMotels.map((motel) => (
+            <CustomMarker
+              key={motel.id}
+              motel={motel}
+              onPress={() => handleMarkerPress(motel)}
+            />
+          ))}
 
-        {userLocation && (
-          <Marker
-            coordinate={userLocation}
-            title="Tu ubicación"
-            pinColor="#D32F2F"
-            zIndex={1200}
-            tracksViewChanges={false}
-          />
-        )}
-      </MapView>
+          {userLocation && (
+            <Marker
+              coordinate={userLocation}
+              title="Tu ubicación"
+              pinColor="#D32F2F"
+              zIndex={1200}
+              tracksViewChanges={false}
+            />
+          )}
+        </MapView>
+
+      </View>
 
       {/* Center on Me Button */}
       <TouchableOpacity
@@ -567,128 +389,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.text,
   },
-  map: {
+  mapContainer: {
     flex: 1,
-  },
-
-  // ===== MARKER STYLES =====
-  markerPin: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 20,
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: COLORS.white,
-    ...(Platform.OS === 'android' && {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 3,
-      elevation: 5,
-    }),
-  },
-  markerInner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  disabledMarker: {
-    backgroundColor: '#9CA3AF',
-    opacity: 1,
-  },
-  goldMarker: {
-    backgroundColor: '#F59E0B',
-  },
-  diamondMarker: {
-    backgroundColor: '#7DD3FC',
-  },
-
-  // ===== CALLOUT STYLES =====
-  calloutContainer: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    padding: 12,
-    minWidth: 120,
-    maxWidth: 200,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  calloutTitle: {
-    color: COLORS.white,
-    fontWeight: '700',
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  calloutSubtitle: {
-    color: COLORS.white,
-    fontSize: 11,
-    opacity: 0.9,
-  },
-  disabledCallout: {
-    backgroundColor: '#CCCCCC',
-  },
-  goldCallout: {
-    backgroundColor: '#F59E0B',
-  },
-  diamondCallout: {
-    backgroundColor: '#7DD3FC',
-  },
-  calloutBadge: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.white,
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  iosLabelContainer: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: COLORS.white,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginBottom: 3,
-    maxWidth: 180,
-    alignSelf: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 3,
-    position: 'relative',
-    overflow: 'visible',
-  },
-  disabledLabel: {
-    backgroundColor: '#9CA3AF',
-  },
-  goldLabel: {
-    backgroundColor: '#F59E0B',
-  },
-  diamondLabel: {
-    backgroundColor: '#7DD3FC',
-  },
-  labelBadge: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: COLORS.white,
-    borderWidth: 2,
-    borderColor: COLORS.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iosLabelText: {
-    fontSize: 12,
-    color: COLORS.white,
-    fontWeight: '600',
-    textAlign: 'center',
+    overflow: 'hidden',
   },
   centerButton: {
     position: 'absolute',
