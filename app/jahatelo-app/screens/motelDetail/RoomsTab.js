@@ -55,6 +55,19 @@ const WEEKDAY_ORDER = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', '
 const WEEKDAY_LABELS = { MONDAY: 'Lun', TUESDAY: 'Mar', WEDNESDAY: 'Mié', THURSDAY: 'Jue', FRIDAY: 'Vie', SATURDAY: 'Sáb', SUNDAY: 'Dom' };
 const DURATION_LABELS = { H1: '1h', H1_5: '1.5h', H2: '2h', H3: '3h', H12: '12h', H24: '24h', NIGHT: 'Dormida' };
 
+function formatWeekdaySelection(weekdays) {
+  const orderedDays = [...weekdays].sort((first, second) => WEEKDAY_ORDER.indexOf(first) - WEEKDAY_ORDER.indexOf(second));
+  if (orderedDays.length === WEEKDAY_ORDER.length) return 'Todos los días';
+
+  const indexes = orderedDays.map((day) => WEEKDAY_ORDER.indexOf(day));
+  const isConsecutive = indexes.every((index, position) => position === 0 || index === indexes[position - 1] + 1);
+  if (orderedDays.length > 1 && isConsecutive) {
+    return `${WEEKDAY_LABELS[orderedDays[0]]}–${WEEKDAY_LABELS[orderedDays[orderedDays.length - 1]]}`;
+  }
+
+  return orderedDays.map((day) => WEEKDAY_LABELS[day] || day).join(' · ');
+}
+
 function SpecificDayRates({ rates }) {
   if (!Array.isArray(rates) || rates.length === 0) return null;
   const grouped = rates.reduce((items, rate) => {
@@ -67,12 +80,23 @@ function SpecificDayRates({ rates }) {
     ...rate,
     weekdays: rate.weekdays.sort((first, second) => WEEKDAY_ORDER.indexOf(first) - WEEKDAY_ORDER.indexOf(second)),
   })).sort((first, second) => WEEKDAY_ORDER.indexOf(first.weekdays[0]) - WEEKDAY_ORDER.indexOf(second.weekdays[0]));
-  return <View style={styles.specificRates}>{sortedRates.map((rate) => (
-    <View key={`${rate.duration}-${rate.price}`} style={styles.specificRateRow}>
-      <Text style={styles.specificRateDays}>{rate.weekdays.map((day) => WEEKDAY_LABELS[day] || day).join(', ')}</Text>
-      <Text style={styles.specificRateValue}>{DURATION_LABELS[rate.duration] || rate.duration} · {formatPrice(rate.price)}</Text>
+  return (
+    <View style={styles.specificRates}>
+      <Text style={styles.specificRatesTitle}>Tarifas según día</Text>
+      {sortedRates.map((rate) => (
+        <View key={`${rate.duration}-${rate.price}`} style={styles.specificRateRow}>
+          <View style={styles.specificRateContext}>
+            <Ionicons name="calendar-outline" size={14} color={COLORS.primary} />
+            <View>
+              <Text style={styles.specificRateDays}>{formatWeekdaySelection(rate.weekdays)}</Text>
+              <Text style={styles.specificRateDuration}>{DURATION_LABELS[rate.duration] || rate.duration}</Text>
+            </View>
+          </View>
+          <Text style={styles.specificRateValue}>{formatPrice(rate.price)}</Text>
+        </View>
+      ))}
     </View>
-  ))}</View>;
+  );
 }
 
 function RoomCard({ room, motel, onPhotoGestureStart, onPhotoGestureEnd }) {
@@ -366,10 +390,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2A0038',
   },
-  specificRates: { marginTop: 8, gap: 5 },
-  specificRateRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, backgroundColor: '#F4F0FF', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
-  specificRateDays: { fontSize: 11, fontWeight: '700', color: COLORS.primary },
-  specificRateValue: { fontSize: 11, fontWeight: '700', color: '#333' },
+  specificRates: { marginTop: 12, gap: 7, borderTopWidth: 1, borderTopColor: '#E9E1F0', paddingTop: 12 },
+  specificRatesTitle: { fontSize: 12, fontWeight: '700', color: '#54206B', marginBottom: 1 },
+  specificRateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, backgroundColor: '#F7F3FF', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 },
+  specificRateContext: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  specificRateDays: { fontSize: 12, fontWeight: '700', color: '#3C1952' },
+  specificRateDuration: { marginTop: 1, fontSize: 11, color: '#765B83' },
+  specificRateValue: { fontSize: 14, fontWeight: '800', color: COLORS.primary },
   // Amenities
   amenitiesSection: {
     marginTop: 8,

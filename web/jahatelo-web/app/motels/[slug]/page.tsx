@@ -274,6 +274,14 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                 const prices = weekdayRateItems;
                 const weekdayOrder = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
                 const weekdayLabels: Record<string, string> = { MONDAY: 'Lun', TUESDAY: 'Mar', WEDNESDAY: 'Mié', THURSDAY: 'Jue', FRIDAY: 'Vie', SATURDAY: 'Sáb', SUNDAY: 'Dom' };
+                const formatWeekdaySelection = (weekdays: string[]) => {
+                  const orderedDays = [...weekdays].sort((first, second) => weekdayOrder.indexOf(first) - weekdayOrder.indexOf(second));
+                  if (orderedDays.length === weekdayOrder.length) return 'Todos los días';
+                  const indexes = orderedDays.map((weekday) => weekdayOrder.indexOf(weekday));
+                  const isConsecutive = indexes.every((index, position) => position === 0 || index === indexes[position - 1] + 1);
+                  if (orderedDays.length > 1 && isConsecutive) return `${weekdayLabels[orderedDays[0]]}–${weekdayLabels[orderedDays[orderedDays.length - 1]]}`;
+                  return orderedDays.map((weekday) => weekdayLabels[weekday] ?? weekday).join(' · ');
+                };
                 const specificRates = Array.from(room.weekdayRates.reduce((groups, rate) => {
                   const key = `${rate.duration}:${rate.price}`;
                   const group = groups.get(key) ?? { duration: rate.duration, price: rate.price, weekdays: [] as string[] };
@@ -282,7 +290,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                   return groups;
                 }, new Map<string, { duration: string; price: number; weekdays: string[] }>()).values()).map((rate) => ({
                   ...rate,
-                  days: rate.weekdays.sort((first, second) => weekdayOrder.indexOf(first) - weekdayOrder.indexOf(second)).map((weekday) => weekdayLabels[weekday] ?? weekday),
+                  weekdays: rate.weekdays.sort((first, second) => weekdayOrder.indexOf(first) - weekdayOrder.indexOf(second)),
                 })).sort((first, second) => weekdayOrder.indexOf(first.weekdays[0] ?? '') - weekdayOrder.indexOf(second.weekdays[0] ?? ''));
                 const durationLabel: Record<string, string> = { H1: '1h', H1_5: '1.5h', H2: '2h', H3: '3h', H12: '12h', H24: '24h', NIGHT: 'Dormida' };
 
@@ -361,7 +369,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                             {specificRates.length > 0 && (
                               <div className="mt-4 space-y-2 border-t border-dashed border-purple-200 pt-3">
                                 <p className="text-xs font-semibold text-purple-700">Tarifas según día</p>
-                                {specificRates.map((rate) => <div key={`${rate.duration}-${rate.price}`} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-purple-50 px-3 py-2 text-sm"><span className="font-medium text-purple-800">{rate.days.join(', ')}</span><span className="font-semibold text-gray-900">{durationLabel[rate.duration]} · Gs. {rate.price.toLocaleString('es-PY')}</span></div>)}
+                                {specificRates.map((rate) => <div key={`${rate.duration}-${rate.price}`} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-purple-50 px-3 py-2.5 text-sm"><span className="min-w-0"><span className="block font-semibold text-purple-900">{formatWeekdaySelection(rate.weekdays)}</span><span className="block text-xs text-purple-700">{durationLabel[rate.duration]}</span></span><span className="whitespace-nowrap text-base font-bold text-purple-700">Gs. {rate.price.toLocaleString('es-PY')}</span></div>)}
                               </div>
                             )}
                           </div>

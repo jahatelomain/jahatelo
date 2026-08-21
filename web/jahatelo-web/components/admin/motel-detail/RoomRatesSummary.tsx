@@ -19,6 +19,15 @@ const DURATION_LABELS: Record<string, string> = {
   H1: '1 h', H1_5: '1,5 h', H2: '2 h', H3: '3 h', H12: '12 h', H24: '24 h', NIGHT: 'Dormida',
 };
 
+function formatWeekdaySelection(weekdays: string[]) {
+  const orderedDays = [...weekdays].sort((first, second) => WEEKDAY_ORDER.indexOf(first) - WEEKDAY_ORDER.indexOf(second));
+  if (orderedDays.length === WEEKDAY_ORDER.length) return 'Todos los días';
+  const indexes = orderedDays.map((weekday) => WEEKDAY_ORDER.indexOf(weekday));
+  const isConsecutive = indexes.every((index, position) => position === 0 || index === indexes[position - 1] + 1);
+  if (orderedDays.length > 1 && isConsecutive) return `${WEEKDAY_LABELS[orderedDays[0]]}–${WEEKDAY_LABELS[orderedDays[orderedDays.length - 1]]}`;
+  return orderedDays.map((weekday) => WEEKDAY_LABELS[weekday] ?? weekday).join(' · ');
+}
+
 type RateItem = { field: keyof RoomType; label: string; value: number };
 
 function RatesGrid({ items }: { items: RateItem[] }) {
@@ -86,9 +95,9 @@ export default function RoomRatesSummary({ room }: { room: RoomType }) {
       {specificRates.length > 0 && <div className="mt-4 rounded-xl border border-violet-100 bg-violet-50/40 p-3">
         <p className="mb-2 text-xs font-semibold text-violet-800">Tarifas por día configuradas</p>
         <div className="space-y-1.5">
-          {specificRates.map((rate) => <div key={`${rate.duration}-${rate.price}-${rate.weekdays.join('-')}`} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
-            <span className="font-medium text-slate-700">{rate.weekdays.map((weekday) => WEEKDAY_LABELS[weekday] ?? weekday).join(', ')} · {DURATION_LABELS[rate.duration] ?? rate.duration}</span>
-            <span className="font-semibold text-slate-900">Gs. {formatPrice(rate.price)}</span>
+          {specificRates.map((rate) => <div key={`${rate.duration}-${rate.price}-${rate.weekdays.join('-')}`} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg bg-white/70 px-2.5 py-2 text-sm">
+            <span><span className="block font-semibold text-slate-800">{formatWeekdaySelection(rate.weekdays)}</span><span className="block text-xs text-slate-500">{DURATION_LABELS[rate.duration] ?? rate.duration}</span></span>
+            <span className="font-bold text-violet-800">Gs. {formatPrice(rate.price)}</span>
           </div>)}
         </div>
       </div>}
