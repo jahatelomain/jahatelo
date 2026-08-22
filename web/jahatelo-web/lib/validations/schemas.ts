@@ -594,6 +594,7 @@ export const FinancialPaymentCreateSchema = z.object({
 export const RoomPhotoSchema = z.object({
   roomTypeId: IdSchema,
   url: UploadOrUrlSchema,
+  appUrl: UploadOrUrlSchema.optional().nullable(),
   order: z.coerce.number().int().min(0).optional().nullable(),
 });
 

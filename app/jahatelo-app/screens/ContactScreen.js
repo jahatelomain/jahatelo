@@ -135,7 +135,7 @@ export default function ContactScreen({ navigation }) {
             <View style={styles.iconContainer}>
               <Ionicons name="mail" size={48} color={COLORS.primary} />
             </View>
-            <Text style={styles.introTitle}>¿Tienes alguna pregunta?</Text>
+            <Text style={styles.introTitle}>¿Tenés un motel y querés publicarte en Jahatelo?</Text>
             <Text style={styles.introText}>
               Nos encantaría escucharte. Completa el formulario y nos pondremos en contacto
               pronto.

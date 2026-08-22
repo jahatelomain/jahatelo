@@ -1,5 +1,14 @@
 # Pendientes de Jahatelo
 
+## Colaboración y actualización del catálogo
+
+Implementar una vía simple desde la app y la web para que los clientes ayuden a mantener el catálogo actualizado:
+
+1. Reportar precios desactualizados, información incorrecta o un motel cerrado.
+2. Adjuntar una breve descripción y, cuando corresponda, la información vigente que conoce el cliente.
+3. Recomendar un motel que todavía no esté cargado en Jahatelo.
+4. Crear el reporte como un registro auditable para que SUPERADMIN pueda revisarlo, asignarlo, resolverlo o descartarlo sin modificar automáticamente datos públicos.
+
 ## Google Search Console y permisos
 
 Configurar una integración técnica segura con Google Search Console para Jahatelo:

@@ -43,7 +43,7 @@ export type RoomType = {
   amenities: Array<{
     amenity: { id: string; name: string; icon: string | null };
   }>;
-  roomPhotos?: Array<{ id: string; url: string; order: number }>;
+  roomPhotos?: Array<{ id: string; url: string; appUrl?: string | null; order: number }>;
   dayRates?: Array<{
     dayGroup: 'WEEKDAY' | 'WEEKEND';
     price1h: number | null;

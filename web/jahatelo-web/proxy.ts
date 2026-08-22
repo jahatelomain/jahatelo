@@ -44,20 +44,20 @@ const isSameOrigin = (request: NextRequest) => {
  * @param windowMs - Time window in milliseconds
  */
 function rateLimitInMemory(
-  ip: string,
+  identifier: string,
   limit: number,
   windowMs: number
 ): { success: boolean; remaining: number } {
   const now = Date.now();
-  const record = rateLimitMap.get(ip);
+  const record = rateLimitMap.get(identifier);
 
   // Limpiar registros expirados
   if (record && now > record.resetTime) {
-    rateLimitMap.delete(ip);
+    rateLimitMap.delete(identifier);
   }
 
   // Obtener o crear registro
-  const current = rateLimitMap.get(ip) || { count: 0, resetTime: now + windowMs };
+  const current = rateLimitMap.get(identifier) || { count: 0, resetTime: now + windowMs };
 
   // Verificar límite
   if (current.count >= limit) {
@@ -66,7 +66,7 @@ function rateLimitInMemory(
 
   // Incrementar contador
   current.count++;
-  rateLimitMap.set(ip, current);
+  rateLimitMap.set(identifier, current);
 
   return { success: true, remaining: limit - current.count };
 }
@@ -98,7 +98,7 @@ async function applyRateLimit(
   if (isUpstashEnabled()) {
     return rateLimitUpstash(identifier, limit, windowMs);
   }
-  return rateLimitInMemory(ip, limit, windowMs);
+  return rateLimitInMemory(identifier, limit, windowMs);
 }
 
 export async function proxy(request: NextRequest) {

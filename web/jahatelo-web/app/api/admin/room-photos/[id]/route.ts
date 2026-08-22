@@ -25,7 +25,7 @@ export async function DELETE(
 
     const roomPhoto = await prisma.roomPhoto.findUnique({
       where: { id: idResult.data },
-      select: { id: true, roomTypeId: true, url: true, roomType: { select: { motelId: true } } },
+      select: { id: true, roomTypeId: true, url: true, appUrl: true, roomType: { select: { motelId: true } } },
     });
     if (!roomPhoto) {
       return NextResponse.json({ error: 'Foto no encontrada' }, { status: 404 });
@@ -105,6 +105,7 @@ export async function PATCH(
       updateData.order = validated.order;
     }
     if (validated.url !== undefined) updateData.url = normalizeMediaUrlForStorage(validated.url) || '';
+    if (validated.appUrl !== undefined) updateData.appUrl = normalizeMediaUrlForStorage(validated.appUrl) || null;
 
     const updatedPhoto = await prisma.roomPhoto.update({
       where: { id: idResult.data },
@@ -121,7 +122,7 @@ export async function PATCH(
       metadata: { roomTypeId: updatedPhoto.roomTypeId, url: updatedPhoto.url },
     });
 
-    return NextResponse.json(normalizeMediaFields(updatedPhoto, getRequestBaseUrl(request), ['url']));
+    return NextResponse.json(normalizeMediaFields(updatedPhoto, getRequestBaseUrl(request), ['url', 'appUrl']));
   } catch (error) {
     console.error('Error updating room photo:', error);
     if (error instanceof z.ZodError) {
