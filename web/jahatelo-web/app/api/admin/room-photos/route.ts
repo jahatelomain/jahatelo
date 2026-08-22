@@ -89,6 +89,7 @@ export async function POST(request: Request) {
       data: {
         roomTypeId: validated.roomTypeId,
         url: normalizeMediaUrlForStorage(validated.url) || '',
+        appUrl: normalizeMediaUrlForStorage(validated.appUrl) || null,
         order: nextOrder,
       },
     });
@@ -103,7 +104,7 @@ export async function POST(request: Request) {
       metadata: { roomTypeId: roomPhoto.roomTypeId, url: roomPhoto.url },
     });
 
-    return NextResponse.json(normalizeMediaFields(roomPhoto, getRequestBaseUrl(request), ['url']));
+    return NextResponse.json(normalizeMediaFields(roomPhoto, getRequestBaseUrl(request), ['url', 'appUrl']));
   } catch (error) {
     console.error('Error creating room photo:', error);
     if (error instanceof z.ZodError) {

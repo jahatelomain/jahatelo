@@ -372,7 +372,8 @@ model RoomPhoto {
   id          String    @id @default(cuid())
   roomType    RoomType  @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
   roomTypeId  String
-  url         String
+  url         String    // Variante con marca de agua para la web pública
+  appUrl      String?   // Variante limpia para las apps nativas
   order       Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

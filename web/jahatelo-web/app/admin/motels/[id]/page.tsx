@@ -420,7 +420,7 @@ export default function MotelDetailPage() {
     if (!file) return;
     setUploadingPromo(true);
     try {
-      const uploadedUrl = await uploadFileToS3(file);
+      const { url: uploadedUrl } = await uploadFileToS3(file);
       setPromoForm({ ...promoForm, imageUrl: uploadedUrl });
     } catch (error) {
       console.error('Error uploading promo image:', error);
@@ -818,11 +818,11 @@ export default function MotelDetailPage() {
     });
   };
 
-  const createRoomPhoto = async (roomId: string, url: string) => {
+  const createRoomPhoto = async (roomId: string, url: string, appUrl?: string) => {
     const res = await fetch('/api/admin/room-photos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roomTypeId: roomId, url }),
+      body: JSON.stringify({ roomTypeId: roomId, url, appUrl }),
     });
     if (!res.ok) throw new Error(await getResponseError(res, 'Error al agregar foto'));
   };
@@ -982,7 +982,7 @@ export default function MotelDetailPage() {
     }
   };
 
-  const uploadFileToS3 = async (file: File, assetType?: 'motel-logo') => {
+  const uploadFileToS3 = async (file: File, assetType?: 'motel-logo' | 'motel-photo' | 'room-photo') => {
     const formData = new FormData();
     formData.append('file', file);
     if (assetType) formData.append('assetType', assetType);
@@ -1004,7 +1004,7 @@ export default function MotelDetailPage() {
     }
 
     const data = await res.json();
-    return data.url as string;
+    return { url: data.url as string, appUrl: data.appUrl as string | undefined };
   };
 
   const handleFeaturedFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -1031,7 +1031,7 @@ export default function MotelDetailPage() {
 
     setUploadingLogo(true);
     try {
-      const logoUrl = await uploadFileToS3(file, 'motel-logo');
+      const { url: logoUrl } = await uploadFileToS3(file, 'motel-logo');
       setMotelForm((prev) => ({ ...prev, logoUrl }));
       toast.success('Logo cargado. Guardá los cambios para publicarlo.');
     } catch (error) {
@@ -1078,15 +1078,15 @@ export default function MotelDetailPage() {
         createCroppedImageFile(file, variant === 'web' ? 16 / 9 : 4 / 5, variant, position);
       if (mode === 'auto') {
         const [webFile, appFile] = await Promise.all([cropFile('web', crops.web), cropFile('app', crops.app)]);
-        const [webUrl, appUrl] = await Promise.all([uploadFileToS3(webFile), uploadFileToS3(appFile)]);
-        setMotelForm((prev) => ({ ...prev, featuredPhotoWeb: webUrl, featuredPhotoApp: appUrl, featuredPhoto: prev.featuredPhoto || webUrl }));
+        const [webUpload, appUpload] = await Promise.all([uploadFileToS3(webFile, 'motel-photo'), uploadFileToS3(appFile, 'motel-photo')]);
+        setMotelForm((prev) => ({ ...prev, featuredPhotoWeb: webUpload.url, featuredPhotoApp: appUpload.appUrl || appUpload.url, featuredPhoto: prev.featuredPhoto || webUpload.url }));
       } else {
-        const url = await uploadFileToS3(await cropFile(mode, crops[mode]));
+        const upload = await uploadFileToS3(await cropFile(mode, crops[mode]), 'motel-photo');
         setMotelForm((prev) => ({
           ...prev,
-          featuredPhotoWeb: mode === 'web' ? url : prev.featuredPhotoWeb,
-          featuredPhotoApp: mode === 'app' ? url : prev.featuredPhotoApp,
-          featuredPhoto: prev.featuredPhoto || url,
+          featuredPhotoWeb: mode === 'web' ? upload.url : prev.featuredPhotoWeb,
+          featuredPhotoApp: mode === 'app' ? upload.appUrl || upload.url : prev.featuredPhotoApp,
+          featuredPhoto: prev.featuredPhoto || upload.url,
         }));
       }
     } catch (error) {
@@ -1128,8 +1128,8 @@ export default function MotelDetailPage() {
     try {
       for (const file of allowedFiles) {
         try {
-          const url = await uploadFileToS3(file);
-          await createRoomPhoto(roomId, url);
+          const upload = await uploadFileToS3(file, 'room-photo');
+          await createRoomPhoto(roomId, upload.url, upload.appUrl);
           uploaded += 1;
         } catch (error) {
           console.error('Error uploading room photo:', error);

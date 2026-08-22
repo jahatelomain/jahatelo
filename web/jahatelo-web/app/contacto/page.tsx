@@ -65,7 +65,7 @@ export default function ContactoPage() {
             <span className="inline-block mb-4 text-xs font-semibold uppercase tracking-widest text-purple-300 bg-purple-900/40 border border-purple-700/50 px-4 py-1.5 rounded-full">
               Sumá tu motel
             </span>
-            <h1 className="mb-3 text-3xl font-extrabold text-white md:mb-4 md:text-4xl">¿Tenés un motel?</h1>
+            <h1 className="mb-3 text-3xl font-extrabold text-white md:mb-4 md:text-4xl">¿Tenés un motel y querés publicarte en Jahatelo?</h1>
             <p className="text-base text-purple-200/70 md:text-lg">
               Dejanos tus datos y te contactamos para que tu motel aparezca en Jahatelo.
             </p>

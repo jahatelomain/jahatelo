@@ -7,12 +7,12 @@ import { z } from 'zod';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { requireAdminAccess } from '@/lib/adminAccess';
-import { WATERMARKED_IMAGE_CONTENT_TYPE, WATERMARKED_IMAGE_EXTENSION, watermarkUploadedImage } from '@/lib/media/watermark';
+import { WATERMARKED_IMAGE_CONTENT_TYPE, WATERMARKED_IMAGE_EXTENSION, optimizeImageForApp, watermarkUploadedImage } from '@/lib/media/watermark';
 import { MAX_IMAGE_UPLOAD_BYTES, MAX_IMAGE_UPLOAD_LABEL } from '@/lib/media/uploadLimits';
 
 export const runtime = 'nodejs';
 
-function createObjectKey(folder?: 'logos') {
+function createObjectKey(folder?: 'logos' | 'watermarked' | 'app') {
   const unique = crypto.randomBytes(8).toString('hex');
   const datePrefix = new Date().toISOString().split('T')[0];
   const folderPrefix = folder ? `${folder}/` : '';
@@ -51,6 +51,7 @@ export async function POST(request: Request) {
     const file = formData.get('file');
     const assetType = formData.get('assetType');
     const isMotelLogo = assetType === 'motel-logo';
+    const needsAppVariant = assetType === 'motel-photo' || assetType === 'room-photo';
     UploadFormSchema.parse({});
     if (!(file instanceof Blob)) {
       return NextResponse.json(
@@ -73,7 +74,11 @@ export async function POST(request: Request) {
     const buffer = isMotelLogo
       ? await sharp(originalBuffer).rotate().webp({ quality: 88 }).toBuffer()
       : await watermarkUploadedImage(originalBuffer, file.type);
-    const key = createObjectKey(isMotelLogo ? 'logos' : undefined);
+    const appBuffer = needsAppVariant
+      ? await optimizeImageForApp(originalBuffer, file.type)
+      : null;
+    const key = createObjectKey(isMotelLogo ? 'logos' : needsAppVariant ? 'watermarked' : undefined);
+    const appKey = appBuffer ? createObjectKey('app') : null;
 
     if (useLocalFallback) {
       const uploadDir = path.join(process.cwd(), 'public', 'uploads', path.dirname(key).replace(/^uploads\//, ''));
@@ -83,7 +88,16 @@ export async function POST(request: Request) {
       await writeFile(targetPath, buffer);
       const relativeDir = path.dirname(key).replace(/^uploads\//, '');
       const url = `/uploads/${relativeDir}/${filename}`;
-      return NextResponse.json({ url });
+      let appUrl: string | undefined;
+      if (appBuffer && appKey) {
+        const appRelativeDir = path.dirname(appKey).replace(/^uploads\//, '');
+        const appFilename = path.basename(appKey);
+        const appTargetDir = path.join(process.cwd(), 'public', 'uploads', appRelativeDir);
+        await mkdir(appTargetDir, { recursive: true });
+        await writeFile(path.join(appTargetDir, appFilename), appBuffer);
+        appUrl = `/uploads/${appRelativeDir}/${appFilename}`;
+      }
+      return NextResponse.json({ url, ...(appUrl ? { appUrl } : {}) });
     }
 
     if (!s3) {
@@ -102,8 +116,22 @@ export async function POST(request: Request) {
       }),
     );
 
+    if (appBuffer && appKey) {
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: process.env.AWS_S3_BUCKET!,
+          Key: appKey,
+          Body: appBuffer,
+          ContentType: WATERMARKED_IMAGE_CONTENT_TYPE,
+        }),
+      );
+    }
+
     const url = `https://${process.env.AWS_S3_BUCKET!}.s3.${process.env.AWS_S3_REGION!}.amazonaws.com/${key}`;
-    return NextResponse.json({ url });
+    const appUrl = appKey
+      ? `https://${process.env.AWS_S3_BUCKET!}.s3.${process.env.AWS_S3_REGION!}.amazonaws.com/${appKey}`
+      : undefined;
+    return NextResponse.json({ url, ...(appUrl ? { appUrl } : {}) });
   } catch (error) {
     console.error('[S3_UPLOAD_ERROR]', error);
     if (error instanceof z.ZodError) {

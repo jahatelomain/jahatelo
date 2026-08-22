@@ -49,5 +49,20 @@ export async function watermarkUploadedImage(input: Buffer, mimeType: string) {
     .toBuffer();
 }
 
+/**
+ * Variante limpia optimizada para las apps nativas. No se usa en la web
+ * pública, donde se conserva la variante marcada.
+ */
+export async function optimizeImageForApp(input: Buffer, mimeType: string) {
+  if (!SUPPORTED_IMAGE_TYPES.has(mimeType.toLowerCase())) {
+    throw new Error('Solo se permiten fotos JPG, PNG, WebP o HEIC.');
+  }
+
+  return sharp(input, { animated: false })
+    .rotate()
+    .webp({ quality: 88, effort: 4 })
+    .toBuffer();
+}
+
 export const WATERMARKED_IMAGE_CONTENT_TYPE = 'image/webp';
 export const WATERMARKED_IMAGE_EXTENSION = 'webp';

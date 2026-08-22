@@ -199,7 +199,9 @@ export function mapMotelToListItem(motel: MotelForList) {
  * Mapea un RoomType al formato para mobile (detalle)
  */
 export function mapRoomForMobile(room: RoomWithRelations) {
-  const photoUrls = room.roomPhotos.map((photo) => photo.url);
+  // Las apps reciben la variante limpia cuando existe. La web pública siempre
+  // continúa usando `url`, que es la variante con marca de agua.
+  const photoUrls = room.roomPhotos.map((photo) => photo.appUrl || photo.url);
 
   const dayGroup = getCurrentDayGroup();
   const effectivePrices = getEffectivePrices(room, dayGroup);
