@@ -100,6 +100,18 @@ export async function GET(request: NextRequest) {
       orderBy: {
         timestamp: 'desc',
       },
+      // Estas son exactamente las columnas usadas para métricas, gráficos y
+      // eventos recientes. Evitamos transferir metadata y países que esta
+      // pantalla no consume, sin cambiar su respuesta pública.
+      select: {
+        id: true,
+        motelId: true,
+        eventType: true,
+        timestamp: true,
+        source: true,
+        userCity: true,
+        deviceType: true,
+      },
     });
 
     // Calcular métricas agregadas

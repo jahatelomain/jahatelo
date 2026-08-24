@@ -52,23 +52,28 @@ async function getCityMotels(ciudad: string) {
     orderBy: [{ createdAt: 'desc' }],
   });
 
-  const motelsWithRatings = await Promise.all(
-    motels.map(async (motel) => {
-      const ratings = await prisma.review.aggregate({
-        where: { motelId: motel.id },
+  // Una sola agregación conserva el mismo cálculo de calificación sin ejecutar
+  // una consulta adicional por cada motel de la ciudad.
+  const motelIds = motels.map((motel) => motel.id);
+  const ratings = motelIds.length
+    ? await prisma.review.groupBy({
+        by: ['motelId'],
+        where: { motelId: { in: motelIds } },
         _avg: { score: true },
         _count: { score: true },
-      });
-
-      return {
-        ...motel,
-        ratingAvg: ratings._avg?.score,
-        ratingCount: ratings._count?.score,
-        thumbnail: motel.featuredPhotoWeb || motel.featuredPhoto || null,
-        featuredPhotoWeb: motel.featuredPhotoWeb || motel.featuredPhoto || null,
-      };
-    })
-  );
+      })
+    : [];
+  const ratingByMotelId = new Map(ratings.map((rating) => [rating.motelId, rating]));
+  const motelsWithRatings = motels.map((motel) => {
+    const rating = ratingByMotelId.get(motel.id);
+    return {
+      ...motel,
+      ratingAvg: rating?._avg.score ?? null,
+      ratingCount: rating?._count.score ?? 0,
+      thumbnail: motel.featuredPhotoWeb || motel.featuredPhoto || null,
+      featuredPhotoWeb: motel.featuredPhotoWeb || motel.featuredPhoto || null,
+    };
+  });
 
   return { motels: motelsWithRatings, cityName: normalizedCity };
 }

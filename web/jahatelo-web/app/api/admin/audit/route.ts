@@ -52,8 +52,6 @@ export async function GET(request: NextRequest) {
       where.id = { in: matchingIds };
     }
 
-    const total = await prisma.auditLog.count({ where });
-
     const findArgs: Prisma.AuditLogFindManyArgs = {
       orderBy: { createdAt: 'desc' },
       where,
@@ -75,7 +73,13 @@ export async function GET(request: NextRequest) {
       findArgs.take = 200;
     }
 
-    const logs = await prisma.auditLog.findMany(findArgs);
+    // El contador y la página solicitada son independientes. Ejecutarlos en
+    // paralelo acorta la respuesta del listado sin cambiar filtros, orden ni
+    // el contenido que recibe la interfaz.
+    const [total, logs] = await Promise.all([
+      prisma.auditLog.count({ where }),
+      prisma.auditLog.findMany(findArgs),
+    ]);
 
     if (!usePagination) {
       return NextResponse.json(logs);

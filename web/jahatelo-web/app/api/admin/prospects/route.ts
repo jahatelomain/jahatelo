@@ -44,16 +44,17 @@ export async function GET(request: NextRequest) {
       : null;
     const where = matches ? { id: { in: matches.map(({ id }) => id) } } : undefined;
 
-    const total = await prisma.motelProspect.count({ where });
-
-    const prospects = await prisma.motelProspect.findMany({
-      orderBy: [
-        { status: 'asc' },
-        { createdAt: 'desc' },
-      ],
-      where,
-      ...(usePagination ? { skip: (page - 1) * limit, take: limit } : {}),
-    });
+    const [total, prospects] = await Promise.all([
+      prisma.motelProspect.count({ where }),
+      prisma.motelProspect.findMany({
+        orderBy: [
+          { status: 'asc' },
+          { createdAt: 'desc' },
+        ],
+        where,
+        ...(usePagination ? { skip: (page - 1) * limit, take: limit } : {}),
+      }),
+    ]);
 
     if (!usePagination) {
       return NextResponse.json(prospects);

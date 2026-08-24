@@ -73,51 +73,54 @@ export async function GET(request: NextRequest) {
           ...(status ? { status } : {}),
           ...(active ? { isActive: active === 'true' } : {}),
         };
-    const total = await prisma.motel.count({ where: dataWhere });
+    const [total, statusSummary, activeSummary, motels] = await Promise.all([
+      prisma.motel.count({ where: dataWhere }),
+      isMotelAdmin
+        ? Promise.resolve([])
+        : prisma.motel.groupBy({
+            by: ['status'],
+            _count: { _all: true },
+            where: baseWhere,
+          }),
+      isMotelAdmin
+        ? Promise.resolve([])
+        : prisma.motel.groupBy({
+            by: ['isActive'],
+            _count: { _all: true },
+            where: baseWhere,
+          }),
+      prisma.motel.findMany({
+        where: dataWhere,
+        select: {
+          id: true,
+          name: true,
+          city: true,
+          billingDay: true,
+          paymentType: true,
+          financialStatus: true,
+          billingCompanyName: true,
+          billingTaxId: true,
+          adminContactName: true,
+          adminContactEmail: true,
+          adminContactPhone: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: [
+          { status: 'asc' },
+          { name: 'asc' },
+        ],
+        ...(usePagination ? { skip: (page - 1) * limit, take: limit } : {}),
+      }),
+    ]);
 
     const statusCounts: Record<string, number> = {};
     const activeCounts: Record<string, number> = {};
-    if (!isMotelAdmin) {
-      const statusSummary = await prisma.motel.groupBy({
-        by: ['status'],
-        _count: { _all: true },
-        where: baseWhere,
-      });
-      const activeSummary = await prisma.motel.groupBy({
-        by: ['isActive'],
-        _count: { _all: true },
-        where: baseWhere,
-      });
-      statusSummary.forEach((item) => {
-        statusCounts[item.status] = item._count?._all ?? 0;
-      });
-      activeSummary.forEach((item) => {
-        activeCounts[item.isActive ? 'active' : 'inactive'] = item._count?._all ?? 0;
-      });
-    }
-
-    const motels = await prisma.motel.findMany({
-      where: dataWhere,
-      select: {
-        id: true,
-        name: true,
-        city: true,
-        billingDay: true,
-        paymentType: true,
-        financialStatus: true,
-        billingCompanyName: true,
-        billingTaxId: true,
-        adminContactName: true,
-        adminContactEmail: true,
-        adminContactPhone: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      orderBy: [
-        { status: 'asc' },
-        { name: 'asc' },
-      ],
-      ...(usePagination ? { skip: (page - 1) * limit, take: limit } : {}),
+    statusSummary.forEach((item) => {
+      statusCounts[item.status] = item._count?._all ?? 0;
+    });
+    activeSummary.forEach((item) => {
+      activeCounts[item.isActive ? 'active' : 'inactive'] = item._count?._all ?? 0;
     });
 
     if (!usePagination || isMotelAdmin) {
