@@ -86,6 +86,16 @@ export async function GET(
       orderBy: {
         timestamp: 'desc',
       },
+      // Mantiene intactas las métricas y la respuesta de esta vista, pero no
+      // carga campos que no se utilizan en el panel.
+      select: {
+        id: true,
+        eventType: true,
+        timestamp: true,
+        source: true,
+        userCity: true,
+        deviceType: true,
+      },
     });
 
     // Calcular métricas agregadas

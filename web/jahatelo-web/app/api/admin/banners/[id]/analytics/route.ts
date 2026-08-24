@@ -35,6 +35,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
       orderBy: { timestamp: 'desc' },
       take: 2000,
+      // La vista solo calcula estos desgloses; excluir el resto reduce el
+      // volumen leído y transferido sin alterar los resultados mostrados.
+      select: {
+        id: true,
+        advertisementId: true,
+        eventType: true,
+        timestamp: true,
+        deviceType: true,
+        source: true,
+      },
     });
 
     const summary = {
