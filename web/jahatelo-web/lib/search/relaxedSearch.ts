@@ -17,5 +17,8 @@ export function normalizeRelaxedSearch(value?: string | null) {
 }
 
 export function relaxedSearchSql(column: Prisma.Sql) {
-  return Prisma.sql`REGEXP_REPLACE(LOWER(TRANSLATE(COALESCE(${column}, ''), ${SEARCH_ACCENT_FROM}, ${SEARCH_ACCENT_TO})), '[^a-z0-9]+', '', 'g')`;
+  // La función se crea por migración y es la misma normalización que usa el
+  // cliente. Centralizarla en PostgreSQL permite índices trigram sin cambiar
+  // resultados al ignorar acentos, espacios o símbolos.
+  return Prisma.sql`public.jahatelo_normalize_search(${column})`;
 }

@@ -124,8 +124,11 @@ export default function TermsPage() {
               <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">8. Limitación de Responsabilidad</h2>
               <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">8.1 Información de Terceros</h3>
               <p className="text-slate-700 leading-relaxed">
-                La información sobre moteles es proporcionada por los establecimientos. No garantizamos la
-                exactitud, integridad o actualidad de dicha información.
+                Jahatelo procura mantener actualizada la información publicada, incluidos precios,
+                disponibilidad, fotografías, servicios y datos de contacto. Sin embargo, dicha información
+                es proporcionada y debe ser revisada, actualizada o corregida oportunamente por cada
+                establecimiento respecto de su propio comercio. Por ello, Jahatelo no garantiza de forma
+                absoluta la exactitud, integridad o actualidad de la información, incluidos los precios.
               </p>
 
               <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">8.2 Exclusión de Garantías</h3>

@@ -34,8 +34,8 @@ const include = {
   },
 } satisfies Prisma.MotelInclude;
 
-type MotelWithListRelations = Prisma.MotelGetPayload<{ include: typeof include }>;
 type SearchId = { id: string };
+type MotelRank = Pick<Motel, 'id' | 'plan' | 'isFeatured' | 'ratingAvg' | 'createdAt'>;
 
 const normalize = (value?: string | null) => value?.trim() || undefined;
 const planPriority = (plan: Motel['plan']) => {
@@ -45,7 +45,7 @@ const planPriority = (plan: Motel['plan']) => {
   return 4;
 };
 
-const compareMotels = (a: MotelWithListRelations, b: MotelWithListRelations) =>
+const compareMotels = (a: MotelRank, b: MotelRank) =>
   planPriority(a.plan) - planPriority(b.plan) ||
   Number(b.isFeatured) - Number(a.isFeatured) ||
   (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0) ||
@@ -146,13 +146,31 @@ export async function GET(request: NextRequest) {
       ...(and.length > 0 ? { AND: and } : {}),
     };
 
-    // El volumen público es acotado. Ordenar antes de paginar garantiza el mismo
-    // ranking por plan en app y web, algo que Prisma no expresa para este enum.
-    const allMotels = await prisma.motel.findMany({ where, include });
-    allMotels.sort(compareMotels);
-    const total = allMotels.length;
+    // Conservamos exactamente el ranking público, pero primero leemos solo los
+    // campos necesarios para ordenar. Las relaciones pesadas se cargan únicamente
+    // para la página solicitada, no para todo el catálogo.
+    const rankedMotels = await prisma.motel.findMany({
+      where,
+      select: {
+        id: true,
+        plan: true,
+        isFeatured: true,
+        ratingAvg: true,
+        createdAt: true,
+      },
+    });
+    rankedMotels.sort(compareMotels);
+    const total = rankedMotels.length;
     const offset = (page - 1) * limit;
-    const motels = allMotels.slice(offset, offset + limit);
+    const pageIds = rankedMotels.slice(offset, offset + limit).map((motel) => motel.id);
+    const positions = new Map(pageIds.map((id, index) => [id, index]));
+    const motels = pageIds.length
+      ? await prisma.motel.findMany({
+          where: { id: { in: pageIds } },
+          include,
+        })
+      : [];
+    motels.sort((a, b) => (positions.get(a.id) ?? 0) - (positions.get(b.id) ?? 0));
 
     const headersList = await headers();
     const host = headersList.get('x-forwarded-host') || headersList.get('host');

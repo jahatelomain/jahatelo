@@ -30,6 +30,11 @@ Marcas, diseños y contenidos de la plataforma pertenecen a Jahatelo, salvo indi
 El servicio se ofrece "tal cual". No garantizamos resultados específicos. No somos responsables
 por daños indirectos, perdida de datos o lucro cesante.
 
+La información de cada motel, incluidos precios, disponibilidad, fotografías, servicios y datos de
+contacto, es proporcionada por el establecimiento. Jahatelo procura mantenerla actualizada, pero es
+responsabilidad de cada comercio revisar, actualizar o corregir oportunamente la información de su
+propio perfil. Por ello, Jahatelo no garantiza de forma absoluta su exactitud, integridad o actualidad.
+
 8. Suspensión o terminación
 Podemos suspender cuentas por incumplimiento de estos términos.
 
