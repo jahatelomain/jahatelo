@@ -95,14 +95,15 @@ export default function AdCarouselItem({
     }
   };
 
-  // Usar imagen del anuncio o imagen grande si existe
-  const image = ad.imageUrl || ad.largeImageUrl || 'https://via.placeholder.com/400x300';
+  // Mantener un fallback local para no depender de un servicio externo.
+  const image = ad.imageUrl || ad.largeImageUrl;
+  const imageSource = image ? { uri: image } : require('../assets/motel-placeholder.png');
 
   return (
     <Animated.View style={[styles.cardWrapper, animatedStyle]}>
       <TouchableOpacity activeOpacity={0.9} onPress={handleAdPress}>
         <ImageBackground
-          source={{ uri: image }}
+          source={imageSource}
           style={styles.card}
           imageStyle={styles.cardImage}
         >

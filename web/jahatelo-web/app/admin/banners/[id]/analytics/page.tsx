@@ -53,10 +53,12 @@ export default function AdvertisementAnalyticsPage() {
     }
   };
 
+  // El identificador y el periodo controlan explícitamente la recarga.
   useEffect(() => {
     if (!id) return;
     fetchTitle();
     fetchAnalytics(period);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, period]);
 
   if (loading && !data) return <TableSkeleton />;

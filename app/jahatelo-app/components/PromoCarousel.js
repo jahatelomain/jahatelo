@@ -41,30 +41,35 @@ const resolveImageUrl = (value) => {
   return null;
 };
 
-const getMotelImageUrl = (motel) => {
-  if (!motel) return null;
+const getMotelImageUrls = (motel) => {
+  if (!motel) return [];
   const candidates = [
     motel.thumbnail,
+    motel.featuredPhotoApp,
+    motel.featuredPhotoWeb,
+    motel.featuredPhoto,
     motel.photoUrl,
     motel.imageUrl,
     motel.imagen,
+    motel.photos?.[0],
     motel.fotos?.[0],
   ];
-  for (const candidate of candidates) {
-    const resolved = resolveImageUrl(candidate);
-    if (resolved) return resolved;
-  }
-  return null;
+  return [...new Set(candidates.map(resolveImageUrl).filter(Boolean))];
 };
 
 const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badgeIconName = 'pricetag' }) => {
   const fallbackPattern = require('../assets/motel-placeholder.png');
-  const imageUrl = getMotelImageUrl(motel);
-  const [imageFailed, setImageFailed] = useState(false);
-  const resolvedImageUrl = imageFailed ? null : imageUrl;
+  const imageUrls = getMotelImageUrls(motel);
+  const imageKey = imageUrls.join('|');
+  const [imageIndex, setImageIndex] = useState(0);
+  const resolvedImageUrl = imageUrls[imageIndex] || null;
   const imageSource = resolvedImageUrl ? { uri: resolvedImageUrl } : fallbackPattern;
   const isPlaceholder = !resolvedImageUrl;
   const hasPlanGlow = hasMotelPlanGlow(motel?.plan);
+
+  useEffect(() => {
+    setImageIndex(0);
+  }, [imageKey]);
 
   const inputRange = [
     (index - 1) * (CARD_WIDTH + SPACING),
@@ -99,7 +104,7 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
         source={imageSource}
         style={styles.card}
         imageStyle={[styles.cardImage, isPlaceholder && styles.placeholderImage]}
-        onError={() => setImageFailed(true)}
+        onError={() => setImageIndex((current) => current + 1)}
       >
         {motel?.logoUrl ? (
           <View style={styles.motelLogoBadge} pointerEvents="none">

@@ -366,7 +366,8 @@ No ejecutar migraciones destructivas, restauraciones ni scripts de limpieza sin 
 3. Confirmar cuenta GitHub y Vercel de Jahatelo.
 4. Hacer commit en `staging`, push, PR hacia `main`, esperar checks y fusionar desde GitHub.
 5. Verificar el despliegue asociado y probar el caso funcional en producción.
-6. No hacer commit, push, merge ni deploy sin confirmación explícita. “CPM” significa este flujo completo cuando el responsable lo solicita.
+6. No hacer commit, push, merge, rebuild ni deploy sin confirmación explícita.
+7. **CMPR** significa **commit, push, merge y rebuild**. Cuando el responsable escribe “CMPR”, autoriza expresamente a ejecutar ese flujo completo para los cambios actuales, respetando los checks y verificaciones de producción.
 
 ## 18. Runbook de incidencias
 

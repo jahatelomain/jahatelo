@@ -87,8 +87,10 @@ export default function InboxPage() {
     }
   };
 
+  // La verificación de acceso se ejecuta una sola vez al montar la pantalla.
   useEffect(() => {
     checkAccess();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

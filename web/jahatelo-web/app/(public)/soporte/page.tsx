@@ -43,8 +43,11 @@ export default function SupportPage() {
                   <div className="rounded-xl border border-slate-200 p-4">
                     <p className="font-medium text-slate-900">Quiero eliminar mi cuenta</p>
                     <p className="text-sm text-slate-600 mt-1">
-                      Escribinos desde el email registrado y te ayudamos.
+                      Consultá los pasos para solicitar la eliminación de tu cuenta y datos.
                     </p>
+                    <a href="/eliminar-cuenta" className="mt-2 inline-block text-sm font-medium text-purple-600 underline">
+                      Ver instrucciones de eliminación
+                    </a>
                   </div>
                   <div className="rounded-xl border border-slate-200 p-4">
                     <p className="font-medium text-slate-900">Problemas con favoritos</p>
@@ -89,6 +92,11 @@ export default function SupportPage() {
                   <li>
                     <a href="/privacidad" className="text-purple-600 hover:text-purple-700 underline">
                       Política de Privacidad
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/eliminar-cuenta" className="text-purple-600 hover:text-purple-700 underline">
+                      Eliminar cuenta y datos
                     </a>
                   </li>
                 </ul>

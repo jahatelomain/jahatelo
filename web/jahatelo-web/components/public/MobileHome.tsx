@@ -71,7 +71,7 @@ export default function MobileHome({ featuredMotels, cities }: { featuredMotels:
       <header className="rounded-b-[28px] bg-purple-600 px-4 pb-4 pt-4 text-white shadow-sm">
         <div className="flex items-center justify-between">
           <Link href="/nearby" className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-sm font-semibold text-slate-800"><MapPin size={16} fill="currentColor" />Cerca mío</Link>
-          <button type="button" aria-label="Notificaciones" className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-800"><Bell size={18} /></button>
+          <Link href="/notificaciones" aria-label="Configurar notificaciones" className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-800"><Bell size={18} /></Link>
         </div>
         <div className="mt-4"><h1 className="text-xl font-bold">¡Hola!</h1><p className="mt-0.5 text-sm text-purple-200">Encontrá tu próximo destino</p></div>
         <form onSubmit={submit} className="mt-3 flex items-center gap-2 rounded-xl bg-white p-1.5 text-slate-700 shadow-sm">

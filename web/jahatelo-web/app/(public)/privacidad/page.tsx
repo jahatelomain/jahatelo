@@ -116,6 +116,12 @@ export default function PrivacyPage() {
               <p className="text-slate-700 leading-relaxed mt-4">
                 Para ejercer estos derechos, contáctenos en: <strong>info@jahatelo.com</strong>
               </p>
+              <p className="text-slate-700 leading-relaxed mt-3">
+                Consulte los pasos, datos eliminados y plazos en nuestra página de{' '}
+                <a href="/eliminar-cuenta" className="font-medium text-purple-600 underline">
+                  eliminación de cuenta y datos
+                </a>.
+              </p>
             </section>
 
             <section>
@@ -212,7 +218,6 @@ export default function PrivacyPage() {
                 <li><strong>Email de Privacidad:</strong> info@jahatelo.com</li>
                 <li><strong>Email General:</strong> info@jahatelo.com</li>
                 <li><strong>Teléfono:</strong> 0992 284 941</li>
-                <li><strong>Dirección:</strong> Del Maestro 2850</li>
               </ul>
             </section>
 

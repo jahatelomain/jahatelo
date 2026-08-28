@@ -63,8 +63,10 @@ export default function GlobalAnalyticsPage() {
   const [deviceFilter, setDeviceFilter] = useState<string>('');
   const [eventTypeFilter, setEventTypeFilter] = useState<string>('');
 
+  // La verificación de acceso se ejecuta una sola vez al montar la pantalla.
   useEffect(() => {
     checkAccess();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -76,6 +78,7 @@ export default function GlobalAnalyticsPage() {
   useEffect(() => {
     if (!currentUser) return;
     fetchAnalytics(period, selectedMotelId, sourceFilter, deviceFilter, eventTypeFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period, selectedMotelId, sourceFilter, deviceFilter, eventTypeFilter, currentUser]);
 
   const checkAccess = async () => {

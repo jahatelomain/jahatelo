@@ -347,6 +347,20 @@ export default function ProfileScreen() {
               title="Política de privacidad"
               onPress={() => handleOpenExternalLink('https://www.jahatelo.com/privacidad')}
             />
+            {isAuthenticated && (
+              <>
+                <OptionRow
+                  icon="document-outline"
+                  title="Solicitar eliminación de datos"
+                  onPress={() => handleOpenExternalLink('https://www.jahatelo.com/eliminar-cuenta#eliminar-datos')}
+                />
+                <OptionRow
+                  icon="person-remove-outline"
+                  title="Solicitar eliminación de cuenta"
+                  onPress={() => handleOpenExternalLink('https://www.jahatelo.com/eliminar-cuenta')}
+                />
+              </>
+            )}
           </View>
         </View>
 
