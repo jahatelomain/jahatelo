@@ -3,18 +3,18 @@
     "apps": [],
     "details": [
       {
-        "appID": "W8X3Y9Z123.app.jahatelo.mobile",
+        "appID": "3ZDK3XQPXY.app.jahatelo.mobile",
         "paths": [
           "/motels/*",
-          "/ciudades",
-          "/ciudades/*",
           "/search",
-          "/search/*"
+          "/search/*",
+          "/mapa",
+          "/nearby"
         ]
       }
     ]
   },
   "webcredentials": {
-    "apps": ["W8X3Y9Z123.app.jahatelo.mobile"]
+    "apps": ["3ZDK3XQPXY.app.jahatelo.mobile"]
   }
 }

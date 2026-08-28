@@ -75,8 +75,10 @@ export default function FinancieroPage() {
   const filtersKeyRef = useRef('');
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
+  // La verificación de acceso se ejecuta una sola vez al montar la pantalla.
   useEffect(() => {
     checkAccess();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

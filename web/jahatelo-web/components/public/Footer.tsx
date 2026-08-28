@@ -32,6 +32,7 @@ export default function Footer() {
                 { href: '/search', label: 'Buscar moteles' },
                 { href: '/soporte', label: 'Soporte' },
                 { href: '/privacidad', label: 'Privacidad' },
+                { href: '/eliminar-cuenta', label: 'Eliminar cuenta y datos' },
                 { href: '/terminos', label: 'Términos' },
               ].map(({ href, label }) => (
                 <li key={href}>

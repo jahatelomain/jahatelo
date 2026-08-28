@@ -36,7 +36,6 @@ export default function LoginScreen({ navigation }) {
   const [resendSeconds, setResendSeconds] = useState(0);
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendVerifLoading, setResendVerifLoading] = useState(false);
-  const isAppleAvailable = Platform.OS === 'ios';
 
   // Google Sign-In
   const { request: googleRequest, response: googleResponse, promptAsync: promptGoogleAsync } = useGoogleAuth();
@@ -174,10 +173,6 @@ export default function LoginScreen({ navigation }) {
     } finally {
       setOtpVerifyLoading(false);
     }
-  };
-
-  const handleAppleLogin = () => {
-    Alert.alert('Apple', 'Login con Apple pendiente de configuración');
   };
 
   const handleGoogleLogin = async (accessToken) => {
@@ -469,15 +464,6 @@ export default function LoginScreen({ navigation }) {
               >
                 <Ionicons name="logo-google" size={24} color="#DB4437" />
               </TouchableOpacity>
-              {isAppleAvailable && (
-                <TouchableOpacity
-                  style={[styles.oauthButton, isLoading && styles.oauthButtonDisabled]}
-                  onPress={handleAppleLogin}
-                  disabled={isLoading}
-                >
-                  <Ionicons name="logo-apple" size={24} color="#000" />
-                </TouchableOpacity>
-              )}
             </View>
 
             {/* Registro */}

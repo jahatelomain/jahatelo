@@ -19,7 +19,10 @@ export default function MotelLogoHeart({ uri, size = 42, scale = 1 }) {
     >
       <Image
         source={{ uri }}
-        style={[styles.logo, { transform: [{ scale: normalizedScale }] }]}
+        style={[
+          styles.logo,
+          { borderRadius: size / 2, transform: [{ scale: normalizedScale }] },
+        ]}
         resizeMode="contain"
         onError={() => setFailed(true)}
       />
@@ -42,7 +45,8 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   logo: {
-    height: '88%',
-    width: '88%',
+    height: '100%',
+    width: '100%',
+    overflow: 'hidden',
   },
 });

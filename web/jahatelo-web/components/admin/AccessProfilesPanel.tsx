@@ -44,6 +44,8 @@ export default function AccessProfilesPanel() {
     }
   };
 
+  // La carga inicial se ejecuta una sola vez al montar el panel.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { void loadProfiles(); }, []);
 
   const selectedModules = useMemo(() => new Map(form.permissions.map((item) => [item.module, item.actions])), [form.permissions]);

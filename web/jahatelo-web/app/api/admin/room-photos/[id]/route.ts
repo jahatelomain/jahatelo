@@ -28,7 +28,10 @@ export async function DELETE(
       select: { id: true, roomTypeId: true, url: true, appUrl: true, roomType: { select: { motelId: true } } },
     });
     if (!roomPhoto) {
-      return NextResponse.json({ error: 'Foto no encontrada' }, { status: 404 });
+      // DELETE es idempotente: si una doble interacción o una respuesta tardía
+      // llega después del primer borrado, el resultado deseado (foto ausente)
+      // ya se alcanzó. Evitamos devolver un 404 engañoso al admin.
+      return NextResponse.json({ success: true, alreadyDeleted: true });
     }
     if (access.user?.role === 'MOTEL_ADMIN' && roomPhoto.roomType?.motelId !== access.user.motelId) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });

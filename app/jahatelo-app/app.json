@@ -20,6 +20,7 @@
       "bundleIdentifier": "app.jahatelo.mobile",
       "associatedDomains": [
         "applinks:jahatelo.com",
+        "applinks:www.jahatelo.com",
         "webcredentials:jahatelo.com"
       ],
       "infoPlist": {
@@ -63,12 +64,37 @@
             {
               "scheme": "https",
               "host": "jahatelo.com",
-              "pathPrefix": "/ciudades"
+              "pathPrefix": "/search"
             },
             {
               "scheme": "https",
               "host": "jahatelo.com",
+              "pathPrefix": "/mapa"
+            },
+            {
+              "scheme": "https",
+              "host": "jahatelo.com",
+              "pathPrefix": "/nearby"
+            },
+            {
+              "scheme": "https",
+              "host": "www.jahatelo.com",
+              "pathPrefix": "/motels"
+            },
+            {
+              "scheme": "https",
+              "host": "www.jahatelo.com",
               "pathPrefix": "/search"
+            },
+            {
+              "scheme": "https",
+              "host": "www.jahatelo.com",
+              "pathPrefix": "/mapa"
+            },
+            {
+              "scheme": "https",
+              "host": "www.jahatelo.com",
+              "pathPrefix": "/nearby"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]

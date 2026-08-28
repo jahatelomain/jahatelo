@@ -32,6 +32,19 @@ import {
   setStagingCredentials,
 } from './services/stagingAuthService';
 
+const linking = {
+  prefixes: ['jahatelo://', 'https://jahatelo.com', 'https://www.jahatelo.com'],
+  config: {
+    screens: {
+      MotelDetail: 'motels/:motelSlug',
+      Search: 'search',
+      Map: 'mapa',
+      NearbyMotels: 'nearby',
+      RegisterMotel: 'registrar-motel',
+    },
+  },
+};
+
 // Prevenir que el splash nativo se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
 
@@ -160,7 +173,7 @@ function AppContent() {
   }, []);
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer ref={navigationRef} linking={linking}>
       <RootNavigation />
       <OfflineIndicator />
     </NavigationContainer>
