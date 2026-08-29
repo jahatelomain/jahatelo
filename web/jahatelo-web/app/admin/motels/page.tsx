@@ -8,6 +8,7 @@ import MotelCard from '../components/MotelCard';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import { useToast } from '@/contexts/ToastContext';
 import { useDebounce } from '@/hooks/useDebounce';
+import { usePersistentAdminFilters } from '@/hooks/usePersistentAdminFilters';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -41,12 +42,12 @@ export default function MotelsAdminPage() {
   const [motels, setMotels] = useState<Motel[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<MotelStatus | 'ALL'>('ALL');
-  const [activeFilter, setActiveFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = usePersistentAdminFilters<MotelStatus | 'ALL'>('motels-status', 'ALL');
+  const [activeFilter, setActiveFilter] = usePersistentAdminFilters<'ALL' | 'ACTIVE' | 'INACTIVE'>('motels-active', 'ALL');
+  const [searchQuery, setSearchQuery] = usePersistentAdminFilters('motels-search', '');
   const [searchSuggestions, setSearchSuggestions] = useState<Motel[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = usePersistentAdminFilters<'list' | 'grid'>('motels-view', 'list');
   const [selectedMotels, setSelectedMotels] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{

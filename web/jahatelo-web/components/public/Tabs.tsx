@@ -24,7 +24,8 @@ export default function Tabs({ tabs, defaultTab }: TabsProps) {
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   const scrollToTab = useCallback((tabId: string, behavior: ScrollBehavior = 'smooth') => {
-    sectionRefs.current[tabId]?.scrollIntoView({ behavior, block: 'start' });
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    sectionRefs.current[tabId]?.scrollIntoView({ behavior: reducedMotion ? 'auto' : behavior, block: 'start' });
     setActiveTab(tabId);
     window.history.replaceState(null, '', `#${tabId}`);
   }, []);
@@ -82,8 +83,12 @@ export default function Tabs({ tabs, defaultTab }: TabsProps) {
         <nav className="flex gap-8 overflow-x-auto" aria-label="Secciones del motel">
           {tabs.map((tab) => (
             <button
+              type="button"
               key={tab.id}
+              id={`tab-${tab.id}`}
               onClick={() => scrollToTab(tab.id)}
+              aria-current={activeTab === tab.id ? 'location' : undefined}
+              aria-controls={tab.id}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'border-purple-600 text-purple-600'
@@ -101,6 +106,7 @@ export default function Tabs({ tabs, defaultTab }: TabsProps) {
           <section
             key={tab.id}
             id={tab.id}
+            aria-labelledby={`tab-${tab.id}`}
             ref={(element) => { sectionRefs.current[tab.id] = element; }}
             className="scroll-mt-24 border-b border-gray-100 py-6 last:border-b-0 md:scroll-mt-40 md:py-8"
           >

@@ -153,9 +153,9 @@ function RegisterForm() {
   }, [resendSeconds]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-800 px-4 py-6 md:flex md:items-center md:justify-center md:px-4 md:py-12">
+    <main className="public-page bg-gradient-to-br from-purple-600 to-purple-800 px-4 py-6 md:flex md:items-center md:justify-center md:px-4 md:py-12">
       <div className="mx-auto w-full max-w-md">
-        <div className="bg-white p-6 shadow-2xl sm:rounded-2xl sm:p-8">
+        <div className="public-card p-6 sm:p-8">
           {/* Header */}
           <div className="mb-7 text-center md:mb-8">
             <div className="flex items-center justify-center gap-0 mb-4">
@@ -168,9 +168,9 @@ function RegisterForm() {
                 className="-ml-0.5 h-8 w-auto object-contain md:h-9"
               />
             </div>
-            <h2 className="mb-1 text-2xl font-bold text-slate-900 md:mb-2 md:text-xl md:font-semibold">
+            <h1 className="mb-1 text-2xl font-bold text-slate-900 md:mb-2 md:font-semibold">
               Crear Cuenta
-            </h2>
+            </h1>
             <p className="text-sm text-slate-600 md:text-base">
               Regístrate para guardar tus favoritos y más
             </p>
@@ -178,7 +178,7 @@ function RegisterForm() {
 
           {/* Error message */}
           {error && (
-            <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 md:mb-6 md:rounded-lg md:p-4">
+            <div id="register-error" role="alert" className="public-status public-status-error mb-5 md:mb-6">
               <p className="text-sm text-red-600">
                 {error}
               </p>
@@ -187,9 +187,10 @@ function RegisterForm() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="flex items-center gap-2 rounded-xl bg-slate-100 p-1 md:rounded-lg">
+            <div className="flex items-center gap-2 rounded-xl bg-slate-100 p-1" role="group" aria-label="Método de registro">
               <button
                 type="button"
+                aria-pressed={registerMethod === 'sms'}
                 onClick={() => {
                   setRegisterMethod('sms');
                   setError('');
@@ -208,6 +209,7 @@ function RegisterForm() {
               </button>
               <button
                 type="button"
+                aria-pressed={registerMethod === 'email'}
                 onClick={() => {
                   setRegisterMethod('email');
                   setError('');
@@ -232,6 +234,7 @@ function RegisterForm() {
               <input
                 id="name"
                 type="text"
+                autoComplete="nickname"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
@@ -251,6 +254,8 @@ function RegisterForm() {
                   <input
                     id="phone"
                     type="tel"
+                    autoComplete="tel"
+                    aria-describedby={error ? 'register-error' : undefined}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     required
@@ -295,6 +300,8 @@ function RegisterForm() {
                   <input
                     id="email"
                     type="email"
+                    autoComplete="email"
+                    aria-describedby={error ? 'register-error' : undefined}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -313,6 +320,8 @@ function RegisterForm() {
                   <input
                     id="password"
                     type="password"
+                    autoComplete="new-password"
+                    aria-describedby={error ? 'register-error' : undefined}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -398,7 +407,7 @@ function RegisterForm() {
           </Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }
 

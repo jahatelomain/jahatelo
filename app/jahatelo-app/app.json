@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/app-icon-1024.png",
     "scheme": "jahatelo",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "primaryColor": "#822DE2",
     "splash": {

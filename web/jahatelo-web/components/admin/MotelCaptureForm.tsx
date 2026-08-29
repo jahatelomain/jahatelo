@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { extractCoordinatesFromGoogleMapsUrl, formatCoordinates, normalizeGoogleMapsUrl } from '@/lib/utils/coordinates';
+import { normalizeGoogleMapsUrl } from '@/lib/utils/coordinates';
 import LocationSelectFields from '@/components/admin/LocationSelectFields';
 
 type Amenity = { id: string; name: string; icon?: string | null };
@@ -38,7 +38,6 @@ export default function MotelCaptureForm() {
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [prospectError, setProspectError] = useState('');
-  const coordinates = extractCoordinatesFromGoogleMapsUrl(form.googleMapsUrl);
 
   useEffect(() => {
     if (!prospectId) return;
@@ -115,7 +114,6 @@ export default function MotelCaptureForm() {
         <Field label={`Dirección${prospectId ? ' *' : ''}`}><input required={Boolean(prospectId)} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputClass} /></Field>
       </div>
       <Field label={`Link o iframe de Google Maps${prospectId ? ' *' : ''}`} extra={prospectId ? 'Obligatorio al convertir un prospecto; se guardan las coordenadas.' : 'Opcional al crear; si lo pegás, se guardan las coordenadas.'}><input required={Boolean(prospectId)} value={form.googleMapsUrl} onChange={(e) => setForm({ ...form, googleMapsUrl: e.target.value })} className={inputClass} placeholder="Pegá el link o iframe de Google Maps" /></Field>
-      {form.googleMapsUrl && <p className={`mt-2 text-sm ${coordinates ? 'text-emerald-700' : 'text-amber-700'}`}>{coordinates ? `Coordenadas: ${formatCoordinates(coordinates.lat, coordinates.lng)}` : 'No se pudieron leer las coordenadas; podés guardar y corregirlo luego.'}</p>}
     </section>
 
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><Field label="Slogan"><textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className={inputClass} placeholder="Opcional; se puede completar luego." /></Field></section>

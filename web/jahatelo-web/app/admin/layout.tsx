@@ -154,6 +154,8 @@ export default function AdminLayout({
     if (pathname.startsWith('/admin/banners')) return 'Banners Publicitarios';
     if (pathname.startsWith('/admin/audit')) return 'Auditoría';
     if (pathname.startsWith('/admin/inbox')) return 'Inbox';
+    if (pathname.startsWith('/admin/reports')) return 'Reportes';
+    if (pathname.startsWith('/admin/operations')) return 'Bandeja operativa';
     if (pathname.startsWith('/admin/configuracion')) return 'Ajustes Generales';
     return 'Admin';
   };
@@ -215,6 +217,8 @@ export default function AdminLayout({
       ],
     },
     { href: '/admin/inbox', label: 'Inbox', roles: ['SUPERADMIN'] },
+    { href: '/admin/reports', label: 'Reportes', roles: ['SUPERADMIN'] },
+    { href: '/admin/operations', label: 'Bandeja operativa', roles: ['SUPERADMIN'] },
     {
       section: 'Configuración',
       collapsible: true,
@@ -247,6 +251,8 @@ export default function AdminLayout({
     if (path.startsWith('/admin/banners')) return 'banners';
     if (path.startsWith('/admin/audit')) return 'audit';
     if (path.startsWith('/admin/inbox')) return 'inbox';
+    if (path.startsWith('/admin/reports')) return 'inbox';
+    if (path.startsWith('/admin/operations')) return 'dashboard';
     if (path.startsWith('/admin/configuracion')) return 'configuracion';
     return null;
   };
@@ -309,6 +315,8 @@ export default function AdminLayout({
     if (href.startsWith('/admin/notifications')) return Bell;
     if (href.startsWith('/admin/banners')) return ImageIcon;
     if (href.startsWith('/admin/inbox')) return Inbox;
+    if (href.startsWith('/admin/reports')) return Inbox;
+    if (href.startsWith('/admin/operations')) return Inbox;
     return Settings2;
   };
 

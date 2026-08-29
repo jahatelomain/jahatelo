@@ -6,14 +6,14 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { COLORS } from '../../constants/theme';
+import { COLORS, STATUS_COLORS } from '../../constants/theme';
 import useReviews from '../../hooks/useReviews';
+import { showMessage } from '../../utils/appFeedback';
 
 export default function ReviewsTab({ route, navigation, embedded = false }) {
   const { motel } = route.params || {};
@@ -39,7 +39,7 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
 
   const handleSubmitReview = async () => {
     if (!isAuthenticated) {
-      Alert.alert(
+      showMessage(
         'Inicia sesión',
         'Necesitas una cuenta para dejar una reseña',
         [
@@ -51,12 +51,12 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
     }
 
     if (rating === 0) {
-      Alert.alert('Error', 'Por favor selecciona una calificación');
+      showMessage('Error', 'Por favor selecciona una calificación');
       return;
     }
 
     if (comment.trim().length < 10) {
-      Alert.alert('Error', 'La reseña debe tener al menos 10 caracteres');
+      showMessage('Error', 'La reseña debe tener al menos 10 caracteres');
       return;
     }
 
@@ -78,11 +78,14 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
             onPress={() => onPress && onPress(star)}
             disabled={!onPress}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={`${star} estrellas`}
+            accessibilityState={{ selected: star <= rating, disabled: !onPress }}
           >
             <Ionicons
               name={star <= score ? 'star' : 'star-outline'}
               size={size}
-              color="#FFD700"
+              color={STATUS_COLORS.star}
               style={styles.star}
             />
           </TouchableOpacity>
@@ -189,6 +192,7 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
             <View style={styles.formSection}>
               <Text style={styles.formLabel}>Comentario *</Text>
               <TextInput
+                accessibilityLabel="Comentario de la reseña"
                 style={styles.commentInput}
                 placeholder="Comparte tu experiencia (mínimo 10 caracteres)"
                 placeholderTextColor={COLORS.textLight}
@@ -205,6 +209,9 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
               style={styles.anonymousToggle}
               onPress={() => setIsAnonymous(!isAnonymous)}
               activeOpacity={0.7}
+              accessibilityRole="checkbox"
+              accessibilityLabel="Publicar como anónimo"
+              accessibilityState={{ checked: isAnonymous }}
             >
               <View style={styles.checkboxContainer}>
                 <Ionicons
@@ -268,7 +275,7 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
                           </Text>
                           {review.isVerified && (
                             <View style={styles.verifiedBadge}>
-                              <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                              <Ionicons name="checkmark-circle" size={14} color={COLORS.success} />
                               <Text style={styles.verifiedText}>Verificado</Text>
                             </View>
                           )}
@@ -283,8 +290,10 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
                           onPress={() => handleDeleteReview(review.id)}
                           style={styles.deleteButton}
                           activeOpacity={0.7}
+                          accessibilityRole="button"
+                          accessibilityLabel="Eliminar reseña"
                         >
-                          <Ionicons name="trash-outline" size={16} color="#dc2626" />
+                          <Ionicons name="trash-outline" size={16} color={STATUS_COLORS.danger} />
                         </TouchableOpacity>
                       )}
                     </View>
@@ -405,7 +414,7 @@ const styles = StyleSheet.create({
   cooldownContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF3C7',
+    backgroundColor: STATUS_COLORS.warningSurface,
     borderRadius: 12,
     padding: 14,
     marginBottom: 16,
@@ -573,7 +582,7 @@ const styles = StyleSheet.create({
   verifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#D1FAE5',
+    backgroundColor: STATUS_COLORS.successSurface,
     borderRadius: 12,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -582,7 +591,7 @@ const styles = StyleSheet.create({
   verifiedText: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#10B981',
+    color: COLORS.success,
   },
   reviewDate: {
     fontSize: 12,

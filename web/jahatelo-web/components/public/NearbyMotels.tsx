@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import MotelCard from './MotelCard';
 import type { PublicMotelListItem, PublicMotelListResponse } from '@/lib/domain/motels/publicListItem';
+import PublicState from './PublicState';
 
 const GoogleMapComponent = dynamic(() => import('./GoogleMapComponent'), {
   ssr: false,
@@ -139,10 +140,7 @@ export default function NearbyMotels() {
   if (locationPermission === 'pending' || loading) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12 lg:px-8">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
-          <p className="text-gray-600">Obteniendo tu ubicación...</p>
-        </div>
+        <PublicState kind="loading" title="Obteniendo tu ubicación…" description="El navegador puede pedirte permiso para continuar." />
       </div>
     );
   }
@@ -150,25 +148,17 @@ export default function NearbyMotels() {
   if (locationPermission === 'denied' || error) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12 lg:px-8">
-        <div className="rounded-2xl border border-gray-200 bg-white p-7 text-center shadow-sm md:rounded-lg md:p-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+        <PublicState kind="error" title="Ubicación no disponible" description={error || 'Necesitamos acceso a tu ubicación para mostrar moteles cercanos.'} icon={<div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
             <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            Ubicación no disponible
-          </h3>
-          <p className="text-gray-600 mb-6">
-            {error || 'Necesitamos acceso a tu ubicación para mostrar moteles cercanos.'}
-          </p>
-          <button
+          </div>} action={<button
+            type="button"
             onClick={handleRequestLocation}
-            className="inline-block px-6 py-3 border-2 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white font-medium rounded-lg transition-colors"
+            className="public-primary-action"
           >
             Permitir acceso a ubicación
-          </button>
-        </div>
+          </button>} />
       </div>
     );
   }
@@ -183,8 +173,10 @@ export default function NearbyMotels() {
         <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] md:flex-wrap md:gap-3">
           {RADIUS_OPTIONS.map((option) => (
             <button
+              type="button"
               key={option.value}
               onClick={() => setSelectedRadius(option.value)}
+              aria-pressed={selectedRadius === option.value}
               className={`shrink-0 rounded-xl px-4 py-2 text-sm font-medium transition-all md:rounded-lg md:px-6 md:py-3 md:text-base ${
                 selectedRadius === option.value
                   ? 'bg-purple-600 text-white shadow-md'
@@ -255,19 +247,11 @@ export default function NearbyMotels() {
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+        <PublicState title="No hay moteles cercanos" description="Probá aumentando el radio de búsqueda." icon={<div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
             <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            No hay moteles cercanos
-          </h3>
-          <p className="text-gray-600 mb-6">
-            Intenta aumentar el radio de búsqueda
-          </p>
-        </div>
+          </div>} />
       )}
     </div>
   );

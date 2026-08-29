@@ -7,6 +7,7 @@ import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import DirtyBanner from '@/components/admin/DirtyBanner';
 import { useDebounce } from '@/hooks/useDebounce';
+import { usePersistentAdminFilters } from '@/hooks/usePersistentAdminFilters';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { BadgeCheck, Pencil, Power, Ticket, Trash2 } from 'lucide-react';
 import SearchableSelect from '@/components/admin/SearchableSelect';
@@ -87,9 +88,9 @@ export default function PromosAdminPage() {
   const formRef = useRef<HTMLDivElement | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [formDirty, setFormDirty] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
-  const [filterType, setFilterType] = useState<'ALL' | 'GLOBAL' | 'SPECIFIC'>('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = usePersistentAdminFilters<'ALL' | 'ACTIVE' | 'INACTIVE'>('promos-status', 'ALL');
+  const [filterType, setFilterType] = usePersistentAdminFilters<'ALL' | 'GLOBAL' | 'SPECIFIC'>('promos-type', 'ALL');
+  const [searchQuery, setSearchQuery] = usePersistentAdminFilters('promos-search', '');
   const formSnapshotRef = useRef('');
   const [confirmAction, setConfirmAction] = useState<{
     title: string;

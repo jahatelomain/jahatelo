@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { AccessibilityInfo, View, Text, StyleSheet, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
@@ -9,19 +9,26 @@ import Animated, {
   withTiming,
   withSpring,
 } from 'react-native-reanimated';
-
-const COLORS = {
-  primary: '#7B2CBF',
-  secondary: '#C239B3',
-  accent: '#FF6B9D',
-  white: '#FFFFFF',
-};
+import { COLORS } from '../constants/theme';
 
 export default function LoadingScreen({ message = 'Cargando...' }) {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0.7);
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      scale.value = 1;
+      opacity.value = 1;
+      return;
+    }
+
     // Animación de pulso
     scale.value = withRepeat(
       withSequence(
@@ -41,7 +48,7 @@ export default function LoadingScreen({ message = 'Cargando...' }) {
       -1,
       false
     );
-  }, [opacity, scale]);
+  }, [opacity, reduceMotion, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -51,15 +58,15 @@ export default function LoadingScreen({ message = 'Cargando...' }) {
   }));
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessible accessibilityRole="progressbar" accessibilityLiveRegion="polite" accessibilityLabel={message}>
       <LinearGradient
-        colors={[COLORS.primary, COLORS.secondary, COLORS.accent]}
+        colors={[COLORS.primaryDark, COLORS.primary, COLORS.primaryLight]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.background}
       >
         <Animated.View style={[styles.logoContainer, animatedStyle]}>
-          <Image source={require('../assets/logo-icon.png')} style={styles.logo} />
+          <Image source={require('../assets/logo-icon.png')} style={styles.logo} accessibilityIgnoresInvertColors />
         </Animated.View>
 
         <View style={styles.loadingContainer}>

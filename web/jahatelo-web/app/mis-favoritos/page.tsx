@@ -10,6 +10,7 @@ import { PRICE_UPDATING_MESSAGE } from '@/lib/domain/motels/pricePresentation';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import MobilePageHeader from '@/components/public/MobilePageHeader';
+import PublicState from '@/components/public/PublicState';
 
 interface Motel {
   id: string;
@@ -112,8 +113,8 @@ export default function MisFavoritosPage() {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-purple-600">Cargando...</div>
+        <div className="public-page flex items-center justify-center px-4">
+          <PublicState title="Cargando favoritos…" kind="loading" />
         </div>
       </>
     );
@@ -122,7 +123,7 @@ export default function MisFavoritosPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gray-50">
+      <main className="public-page">
       <MobilePageHeader title="Mis favoritos" subtitle={loading ? 'Cargando…' : `${favorites.length} ${favorites.length === 1 ? 'motel' : 'moteles'}`} />
       {/* Header */}
       <div className="hidden bg-gradient-to-r from-purple-600 to-purple-800 text-white md:block">
@@ -130,6 +131,7 @@ export default function MisFavoritosPage() {
           <div className="flex items-center gap-4 mb-4">
             <Link
               href="/"
+              aria-label="Volver al inicio"
               className="text-white/80 hover:text-white transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,40 +151,13 @@ export default function MisFavoritosPage() {
       {/* Content */}
       <div className="mx-auto max-w-6xl px-4 py-5 md:py-8">
         {/* Error message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
+        {error && <PublicState kind="error" title="No pudimos cargar tus favoritos" description={error} action={<button type="button" onClick={loadFavorites} className="public-primary-action">Intentar nuevamente</button>} />}
 
         {/* Loading state */}
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-          </div>
-        )}
+        {loading && <PublicState kind="loading" title="Cargando favoritos…" />}
 
         {/* Empty state */}
-        {!loading && favorites.length === 0 && (
-          <div className="rounded-2xl bg-white p-8 text-center shadow-sm md:rounded-xl md:p-12">
-            <svg className="w-20 h-20 mx-auto text-gray-300 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">
-              Sin favoritos aún
-            </h3>
-            <p className="text-slate-600 mb-6">
-              Todavía no agregaste moteles a favoritos.<br />
-              Toca el corazón en cualquier motel para guardarlo aquí.
-            </p>
-            <Link
-              href="/search"
-              className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
-            >
-              Buscar Moteles
-            </Link>
-          </div>
-        )}
+        {!loading && !error && favorites.length === 0 && <PublicState title="Sin favoritos todavía" description="Agregá moteles con el botón de corazón para encontrarlos rápidamente acá." action={<Link href="/search" className="public-primary-action">Buscar moteles</Link>} />}
 
         {/* Favorites Grid */}
         {!loading && favorites.length > 0 && (
@@ -200,6 +175,8 @@ export default function MisFavoritosPage() {
                   <button
                     onClick={() => handleRemoveFavorite(motel.id)}
                     disabled={removingId === motel.id}
+                    aria-label={`Quitar ${motel.nombre} de favoritos`}
+                    aria-busy={removingId === motel.id}
                     className="absolute top-2 right-2 z-10 bg-white/90 hover:bg-white text-red-500 hover:text-red-600 rounded-full p-2 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Eliminar de favoritos"
                   >
@@ -289,7 +266,7 @@ export default function MisFavoritosPage() {
           </div>
         )}
       </div>
-      </div>
+      </main>
       <Footer />
     </>
   );

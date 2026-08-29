@@ -6,6 +6,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import { useDebounce } from '@/hooks/useDebounce';
+import { usePersistentAdminFilters } from '@/hooks/usePersistentAdminFilters';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import SearchableSelect from '@/components/admin/SearchableSelect';
 import { KeyRound, Pencil, Power, Trash2 } from 'lucide-react';
@@ -77,9 +78,9 @@ export default function UsersPage() {
     inactiveCount: 0,
     roleCounts: {},
   });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<UserRole | 'ALL'>('ALL');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  const [searchQuery, setSearchQuery] = usePersistentAdminFilters('users-search', '');
+  const [roleFilter, setRoleFilter] = usePersistentAdminFilters<UserRole | 'ALL'>('users-role', 'ALL');
+  const [statusFilter, setStatusFilter] = usePersistentAdminFilters<'ALL' | 'ACTIVE' | 'INACTIVE'>('users-status', 'ALL');
   const pageSize = 20;
   const filtersKeyRef = useRef('');
   const debouncedSearchQuery = useDebounce(searchQuery, 400);

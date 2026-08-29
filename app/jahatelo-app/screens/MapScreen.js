@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   StatusBar,
   Platform,
 } from 'react-native';
@@ -19,6 +18,8 @@ import { useNavigation } from '@react-navigation/native';
 import { getApiRoot } from '../services/apiBaseUrl';
 import { withCachedMapMarkerImages } from '../services/mapMarkerCache';
 import { useOnlineRetry } from '../hooks/useOnlineRetry';
+import AppStateView from '../components/AppStateView';
+import { showErrorMessage } from '../utils/appFeedback';
 
 const API_URL = getApiRoot();
 const MAP_REQUEST_TIMEOUT_MS = 10000;
@@ -227,11 +228,7 @@ export default function MapScreen() {
       const { status } = await Location.requestForegroundPermissionsAsync();
 
       if (status !== 'granted') {
-        Alert.alert(
-          'Permiso denegado',
-          'Necesitamos acceso a tu ubicación para centrarte en el mapa.',
-          [{ text: 'OK' }]
-        );
+        showErrorMessage('Necesitamos acceso a tu ubicación para centrarte en el mapa.');
         return;
       }
 
@@ -252,11 +249,7 @@ export default function MapScreen() {
       mapRef.current?.animateToRegion(newRegion, 1000);
     } catch (error) {
       debugLog('Error getting location:', error);
-      Alert.alert(
-        'Error',
-        'No pudimos obtener tu ubicación. Verifica que el GPS esté activado.',
-        [{ text: 'OK' }]
-      );
+      showErrorMessage('No pudimos obtener tu ubicación. Verificá que el GPS esté activado.');
     }
   };
 
@@ -276,14 +269,12 @@ export default function MapScreen() {
       <>
         <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={64} color={COLORS.error} />
-          <Text style={styles.errorTitle}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchMapData}>
-            <Text style={styles.retryButtonText}>Reintentar</Text>
-          </TouchableOpacity>
+          <AppStateView type="error" title="No pudimos cargar el mapa" message={error} actionLabel="Reintentar" onAction={fetchMapData} />
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
+            accessibilityRole="button"
+            accessibilityLabel="Volver"
           >
             <Text style={styles.backButtonText}>Volver</Text>
           </TouchableOpacity>
@@ -303,6 +294,8 @@ export default function MapScreen() {
         <TouchableOpacity
           style={styles.backIcon}
           onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Volver"
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
@@ -346,6 +339,9 @@ export default function MapScreen() {
       <TouchableOpacity
         style={styles.centerButton}
         onPress={handleCenterOnMe}
+        accessibilityRole="button"
+        accessibilityLabel="Centrar mapa en mi ubicación"
+        accessibilityHint="Solicita permiso de ubicación si todavía no fue concedido"
       >
         <Ionicons name="locate" size={24} color={COLORS.white} />
         <Text style={styles.centerButtonText}>Centrar en mí</Text>

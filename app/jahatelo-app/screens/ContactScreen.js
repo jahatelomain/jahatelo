@@ -6,15 +6,15 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../constants/theme';
+import { COLORS, STATUS_COLORS } from '../constants/theme';
 import { getApiRoot } from '../services/apiBaseUrl';
+import { showMessage } from '../utils/appFeedback';
 
 const API_URL = getApiRoot();
 
@@ -27,22 +27,22 @@ export default function ContactScreen({ navigation }) {
   const handleSubmit = async () => {
     // Validaciones
     if (!name.trim() || !message.trim()) {
-      Alert.alert('Error', 'Por favor completa todos los campos requeridos');
+      showMessage('Error', 'Por favor completa todos los campos requeridos');
       return;
     }
 
     if (name.length < 2 || name.length > 100) {
-      Alert.alert('Error', 'El nombre debe tener entre 2 y 100 caracteres');
+      showMessage('Error', 'El nombre debe tener entre 2 y 100 caracteres');
       return;
     }
 
     if (message.length < 10 || message.length > 1000) {
-      Alert.alert('Error', 'El mensaje debe tener entre 10 y 1000 caracteres');
+      showMessage('Error', 'El mensaje debe tener entre 10 y 1000 caracteres');
       return;
     }
 
     if (phone && phone.length > 50) {
-      Alert.alert('Error', 'El teléfono es demasiado largo');
+      showMessage('Error', 'El teléfono es demasiado largo');
       return;
     }
 
@@ -78,7 +78,7 @@ export default function ContactScreen({ navigation }) {
         throw new Error(data.error || 'Error al enviar el mensaje');
       }
 
-      Alert.alert(
+      showMessage(
         '¡Mensaje enviado!',
         'Gracias por contactarnos. Nos pondremos en contacto pronto.',
         [
@@ -95,7 +95,7 @@ export default function ContactScreen({ navigation }) {
         ]
       );
     } catch (error) {
-      Alert.alert(
+      showMessage(
         'Error',
         error.message || 'No se pudo enviar el mensaje. Intenta nuevamente.'
       );
@@ -113,6 +113,8 @@ export default function ContactScreen({ navigation }) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Volver"
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
@@ -152,6 +154,7 @@ export default function ContactScreen({ navigation }) {
               <View style={styles.inputContainer}>
                 <Ionicons name="person-outline" size={20} color={COLORS.textLight} />
                 <TextInput
+                  accessibilityLabel="Nombre completo"
                   style={styles.input}
                   placeholder="Tu nombre completo"
                   placeholderTextColor={COLORS.placeholder}
@@ -172,6 +175,7 @@ export default function ContactScreen({ navigation }) {
               <View style={styles.inputContainer}>
                 <Ionicons name="call-outline" size={20} color={COLORS.textLight} />
                 <TextInput
+                  accessibilityLabel="Número de teléfono"
                   style={styles.input}
                   placeholder="+595 xxx xxx xxx"
                   placeholderTextColor={COLORS.placeholder}
@@ -192,6 +196,7 @@ export default function ContactScreen({ navigation }) {
               </Text>
               <View style={[styles.inputContainer, styles.textAreaContainer]}>
                 <TextInput
+                  accessibilityLabel="Mensaje"
                   style={[styles.input, styles.textArea]}
                   placeholder="Escribe tu mensaje aquí..."
                   placeholderTextColor={COLORS.placeholder}
@@ -215,6 +220,9 @@ export default function ContactScreen({ navigation }) {
               onPress={handleSubmit}
               disabled={loading}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={loading ? 'Enviando mensaje' : 'Enviar mensaje'}
+              accessibilityState={{ disabled: loading, busy: loading }}
             >
               {loading ? (
                 <ActivityIndicator size="small" color={COLORS.white} />
@@ -337,7 +345,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   required: {
-    color: '#FF6B6B',
+    color: STATUS_COLORS.dangerSoft,
   },
   optional: {
     color: COLORS.textLight,

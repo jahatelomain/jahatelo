@@ -1,155 +1,94 @@
 # Pendientes de Jahatelo
 
-Este documento es la única lista canónica de trabajo pendiente del proyecto Jahatelo.
-Incluye web pública, panel administrativo, backend y aplicaciones iOS/Android.
+Única lista canónica de trabajo para la web pública, panel administrativo, backend y aplicaciones iOS/Android.
 
-## Criterios de trabajo
+## Reglas
 
-- Mantener cada pendiente en una sola sección.
-- Marcar como completado únicamente después de verificarlo en las plataformas afectadas.
-- Agregar criterios de aceptación antes de comenzar una funcionalidad grande.
-- No usar documentos separados de pendientes dentro de `web/` o `app/`.
+- Cada pendiente principal tiene un ID permanente `JH-###`; nunca se renumera.
+- Al completar o eliminar un punto, se mueve a **Completados** conservando su ID.
+- Las subtareas no se cuentan como pendientes principales nuevos.
+- Todo punto nuevo se agrega primero en este archivo con un ID nuevo.
+- Las funcionalidades de usuario deben mantener paridad entre web, iOS y Android, salvo indicación explícita.
+- CMPR, despliegues y verificaciones externas se informan aparte; no generan pendientes duplicados.
+- Después de completar tareas de esta lista, responder siempre con la lista completa y actualizada de pendientes activos.
 
-## Prioridad inmediata
-
-### Controles y funciones incompletas
-
-- [x] Dar funcionalidad a la campana de notificaciones del home web móvil o esconderla hasta que exista el flujo.
-- [x] Configurar correctamente el inicio de sesión con Apple en iOS o esconder la opción de login y registro hasta que esté disponible. Apple Login permanece oculto temporalmente.
-- [x] Reemplazar el placeholder remoto de anuncios de la app por un recurso local de Jahatelo.
-- [x] Corregir las advertencias de dependencias de `useEffect` detectadas por ESLint en el admin.
+## Pendientes activos
 
 ### Preparación para producción
 
-- [x] Completar el Team ID real en `web/jahatelo-web/public/.well-known/apple-app-site-association`.
-- [ ] Completar el SHA256 real en `web/jahatelo-web/public/.well-known/assetlinks.json`.
-- [x] Completar la configuración disponible para el envío de iOS en `app/jahatelo-app/eas.json`: Team ID real configurado y placeholders inválidos eliminados. App Store Connect solicitará la cuenta y aplicación al enviar mientras no se configuren valores opcionales de automatización.
-- [ ] Configurar y verificar las variables de Sentry en Vercel y EAS.
-- [ ] Verificar universal links y app links desde web hacia iOS y Android.
-  - [x] Configurar la navegación interna de la app para detalle, búsqueda, mapa y cercanía.
-  - [x] Corregir dominios, rutas y Team ID para iOS.
-  - [x] Corregir dominios y rutas declaradas para Android.
-  - [ ] Completar el SHA256 del certificado Android de producción en `assetlinks.json`.
-  - [ ] Validar los enlaces contra los archivos publicados en producción y dispositivos físicos.
+- [ ] **JH-001 — Android App Links:** completar el SHA256 del certificado Android de producción en `web/jahatelo-web/public/.well-known/assetlinks.json` y validarlo en un dispositivo físico.
+- [ ] **JH-003 — Enlaces universales:** validar universal links y app links contra los archivos publicados en producción, iOS y Android físicos. La navegación y los dominios ya están configurados.
 
-## Producto
+### Reportes y catálogo
 
-### Reportes y actualización del catálogo
-
-- [ ] Permitir reportar desde web, iOS y Android información desactualizada de un motel.
-- [ ] Incluir motivos: precio incorrecto, foto incorrecta, ubicación o contacto incorrecto, motel cerrado, información incorrecta u otro.
-- [ ] Permitir comentario y evidencia opcional.
-- [ ] Permitir recomendar un motel que todavía no esté publicado en Jahatelo.
-- [ ] Registrar motel, usuario opcional, fecha, detalle, evidencia, responsable y estado del reporte.
-- [ ] Crear una bandeja exclusiva para SUPERADMIN con estados pendiente, en revisión, resuelto y descartado.
-- [ ] Permitir asignación, notas internas y trazabilidad completa.
-- [ ] Auditar los cambios realizados como consecuencia de un reporte.
-- [ ] Impedir que el administrador de un motel cierre o modifique reportes sobre su propio establecimiento.
-- [ ] Medir tiempo de resolución y moteles con reportes recurrentes.
-
-### Aviso de actualización de las apps
-
-- [ ] Crear una configuración remota para versión mínima obligatoria y versión recomendada.
-- [ ] Mostrar un aviso in-app cuando exista una versión nueva.
-- [ ] Permitir mensaje, modalidad opcional u obligatoria y enlaces de cada store.
-- [ ] Registrar en analytics las acciones mostrar, actualizar y omitir.
-
-### Contacto y captación comercial
-
-- [ ] Reservar `/contacto` para consultas generales y soporte.
-- [ ] Reservar `/registrar-motel` para propietarios interesados en publicar su motel.
-- [ ] Evitar formularios duplicados y reutilizar componentes y validaciones.
-- [ ] Registrar origen, campaña, consentimiento y seguimiento comercial de cada prospect.
-
-## Web pública
-
-### Experiencia visual
-
-- [ ] Unificar el lenguaje visual entre desktop, web móvil y apps: colores, radios, sombras, tipografía, espaciado y estados.
-- [ ] Definir tokens visuales compartidos y documentar su uso.
-- [ ] Unificar skeletons, placeholders, estados vacíos, errores y acciones de reintento.
-- [ ] Mantener consistencia visual entre `/contacto`, `/registrar-motel`, autenticación y páginas de catálogo.
-- [ ] Respetar `prefers-reduced-motion` en animaciones y efectos decorativos.
-
-### Accesibilidad
-
-- [ ] Revisar contraste de texto, botones, overlays y estados deshabilitados.
-- [ ] Garantizar foco visible y navegación completa con teclado.
-- [ ] Revisar nombres accesibles de iconos, botones y controles interactivos.
-- [ ] Verificar jerarquía de encabezados y mensajes de error anunciables.
+- [ ] **JH-009 — Métricas de reportes:** medir tiempo de resolución y moteles con reportes recurrentes.
 
 ### SEO y adquisición
 
-- [ ] Completar la auditoría SEO técnica y de contenido.
-- [ ] Verificar metadata, canonicals, sitemap, robots, datos estructurados y páginas por ciudad y barrio.
-- [ ] Configurar Google Search Console con una identidad técnica y permisos mínimos.
-- [ ] Guardar credenciales exclusivamente como secretos de entorno.
-- [ ] Crear un panel SUPERADMIN para indexación, sitemap, errores, impresiones, clics, consultas y posiciones.
-- [ ] Documentar revocación, rotación de credenciales y responsable operativo.
+- [ ] **JH-018 — Google Search Console:** configurar una identidad técnica con permisos mínimos y guardar sus credenciales únicamente como secretos.
+- [ ] **JH-019 — Panel SEO SUPERADMIN:** mostrar indexación, sitemap, errores, impresiones, clics, consultas y posiciones.
+- [ ] **JH-020 — Operación de Search Console:** documentar revocación, rotación de credenciales y responsable operativo.
 
 ### Mapa web
 
-- [ ] Diagnosticar el fondo gris antes de aplicar cambios visuales.
-- [ ] Verificar API key, restricciones, Map ID, estilo vectorial, facturación y dominios autorizados.
-- [ ] Verificar carga, errores, permisos de ubicación y estados sin resultados.
-- [ ] Validar la experiencia en desktop y navegadores móviles.
+- [ ] **JH-021 — Configuración externa del mapa:** verificar en Google Cloud la API key, restricciones, Map ID, estilo vectorial, facturación y dominios; confirmar si esto origina el fondo gris.
+- [ ] **JH-022 — Validación real del mapa:** la ruta de producción responde HTTP 200 y se verificó su render automatizado; falta confirmar ubicación y gestos en dispositivos físicos iOS/Android y resolver cualquier hallazgo.
 
-## Aplicaciones iOS y Android
+### Aplicaciones iOS y Android
 
-### Experiencia visual y consistencia
+- [ ] **JH-028 — Texto ampliado:** la revisión de código ya retiró cortes de una línea, preserva escalado y scroll en formularios; falta ejecutar y registrar la matriz con el tamaño máximo en dispositivos físicos.
+- [ ] **JH-029 — Lectores de pantalla:** ejecutar la matriz documentada con VoiceOver y TalkBack en dispositivos físicos.
 
-- [ ] Centralizar colores y estilos que actualmente están hardcodeados en pantallas y componentes.
-- [ ] Terminar la integración del modo oscuro existente o retirar el código no utilizado.
-- [ ] Unificar navegación, iconos, nombres y estados con la web móvil.
-- [ ] Unificar alerts, errores inline, toasts, banners y modales según el tipo de mensaje.
-- [ ] Revisar skeletons, placeholders, fotos y logos en cards, búsquedas, mapas, promos y detalle.
+### Panel administrativo
 
-### Accesibilidad móvil
 
-- [ ] Agregar etiquetas, roles, hints y estados accesibles a controles interactivos.
-- [ ] Revisar áreas táctiles mínimas y orden de lectura.
-- [ ] Verificar texto ampliado y evitar cortes en tamaños de fuente grandes.
-- [ ] Probar VoiceOver en iOS y TalkBack en Android.
+## En pausa
 
-### Estados y conectividad
-
-- [ ] Revisar comportamiento offline y de reconexión en todos los flujos principales.
-- [ ] Estandarizar errores de red y acciones de reintento.
-- [ ] Verificar que anuncios, fotos y placeholders no dependan de recursos externos innecesarios.
-
-## Panel administrativo
-
-### Operación diaria
-
-- [ ] Crear una bandeja operativa con aprobaciones pendientes, reportes, prospects sin atender, datos incompletos y errores de media.
-- [ ] Mostrar claramente los estados guardado, cambios sin guardar, publicado y visible en web/apps.
-- [ ] Incorporar previsualización web y app antes de publicar fichas, fotos, promociones y banners.
-- [ ] Crear un indicador de calidad del catálogo por motel: ubicación, precios, horarios, fotos, habitaciones, amenities, contacto y última revisión.
-
-### Formularios y navegación
-
-- [ ] Dividir formularios extensos en secciones claras con progreso y resumen previo a publicación.
-- [ ] Unificar validaciones inline, mensajes, confirmaciones y estados de carga.
-- [ ] Homogeneizar tablas, filtros persistentes, paginación, acciones masivas y exportación.
-- [ ] Dividir páginas y componentes demasiado grandes para facilitar mantenimiento y consistencia.
-
-## Media
-
-- [ ] Definir la especificación de imagen para portada web, portada app, miniatura, habitación, promo, banner y logo.
-- [ ] Documentar por uso: relación de aspecto, resolución mínima, peso máximo, recorte, safe area y marca de agua.
-- [ ] Validar los archivos antes de subirlos y explicar el problema al operador.
-- [ ] Mostrar previsualización del recorte final para web, iOS y Android.
-- [ ] Automatizar conversión, orientación, compresión y variantes cuando corresponda.
-- [ ] Crear una guía breve para las personas que cargan fotos.
-
-## Calidad y mantenimiento
-
-- [ ] Aumentar pruebas de flujos móviles; actualmente la cobertura se concentra en pocos componentes y hooks.
-- [ ] Agregar pruebas de integración para autenticación, búsqueda, favoritos, reportes, actualización y conectividad.
-- [ ] Mantener lint sin errores ni advertencias en app, web y admin.
-- [ ] Agregar pruebas visuales o capturas de referencia para pantallas críticas.
-- [ ] Revisar periódicamente componentes, temas y documentación sin uso.
+- [ ] **JH-002 — Sentry:** pausado por decisión de producto hasta disponer de presupuesto para el servicio.
 
 ## Completados
 
-Mover aquí los pendientes terminados indicando fecha, plataformas verificadas y referencia al cambio correspondiente.
+### 2026-08-29
+
+- [x] **JH-023 — Estilos hardcodeados:** los colores semánticos de pantallas activas se centralizaron en el tema; solo permanecen locales las paletas decorativas de ilustraciones.
+- [x] **JH-025 — Mensajes móviles:** las pantallas activas dejaron de invocar alertas directamente y todos los diálogos pasan por el helper común.
+- [x] **JH-027 — Controles accesibles:** completada la pasada de formularios, switches, botones de icono, estrellas, cards y acciones con nombre, rol, estado y contexto accesible.
+- [x] **JH-030 — Bandeja operativa:** creada para SUPERADMIN con aprobaciones, reportes, prospects sin atender, fichas incompletas y problemas de media.
+- [x] **JH-031 — Estados editoriales:** el editor distingue cambios sin guardar, guardado exitoso, aprobación, habilitación y visibilidad efectiva en web/apps.
+- [x] **JH-032 — Previsualización:** incorporada vista comparativa web 16:9 y app 4:5 para fichas; fotos, promociones y banners conservan sus previews antes de guardar o publicar.
+- [x] **JH-033 — Calidad del catálogo:** cada motel tiene un porcentaje calculado sobre ubicación, contacto, portadas, habitaciones, fotos, precios, horarios y amenities, con fecha de última revisión.
+- [x] **JH-004 — Datos operativos del reporte:** incorporados responsable, estado, resolución, fecha de cierre y datos de gestión.
+- [x] **JH-005 — Bandeja de reportes:** creada la bandeja de reportes con búsqueda, filtros, detalle y estados operativos, visible solo para SUPERADMIN.
+- [x] **JH-006 — Gestión del reporte:** implementadas asignación, notas internas, historial y auditoría de cada operación.
+- [x] **JH-007 — Auditoría de correcciones:** las ediciones abiertas desde un reporte conservan el ID del reporte origen en el log de auditoría del catálogo.
+- [x] **JH-008 — Restricción por motel:** APIs, página y navegación de reportes exigen SUPERADMIN; los administradores de motel no pueden ver ni operar reportes.
+- [x] **JH-017 — Auditoría SEO de contenido:** revisadas las rutas públicas, documentada la matriz y añadidos `noindex` a autenticación y áreas personales.
+- [x] **JH-026 — Media móvil:** promos, detalle, cards y skeleton usan el resolver y fallback compartidos para imágenes remotas ausentes o fallidas.
+- [x] **JH-024 — Navegación móvil:** unificados Inicio, Favoritos y Perfil, iconos activos/inactivos, etiquetas accesibles y nombres compartidos sin cambiar las rutas internas.
+- [x] **JH-010 — Canal del prospect:** los dos formularios registran su procedencia como `WEB` o `APP`, y el panel permite su seguimiento por estado; no se agregan campañas ni consentimientos innecesarios.
+- [x] **JH-011 — Consistencia visual integral:** unificadas las superficies, tarjetas, formularios, acciones y estados principales de desktop y web móvil con el sistema visual compartido con apps.
+- [x] **JH-012 — Adopción de tokens:** agregadas primitivas públicas para página, tarjeta, input, acciones y estados; documentación visual vigente.
+- [x] **JH-013 — Estados públicos:** centralizados carga, vacío, error y reintento en búsqueda, favoritos, cercanía y mapa; eliminado el estado de carga duplicado de búsqueda.
+- [x] **JH-014 — Autenticación y catálogo:** login, registro, perfil, favoritos, contacto, registro comercial y catálogo usan jerarquía y superficies consistentes.
+- [x] **JH-015 — Movimiento reducido:** las animaciones y el scroll de tabs respetan `prefers-reduced-motion`; referencias visuales se ejecutan con movimiento reducido.
+- [x] **JH-016 — Accesibilidad web:** incorporados foco visible, objetivos mínimos, nombres y estados accesibles, mensajes anunciables, labels/autocomplete y jerarquía semántica en flujos públicos.
+- [x] **JH-034 — Reportes desde catálogo:** implementados en web, iOS y Android con motivos y comentario opcional; la evidencia fue eliminada por decisión de producto.
+- [x] **JH-035 — Recomendación de moteles:** implementada en web, iOS y Android solicitando nombre y ciudad.
+- [x] **JH-036 — Actualizaciones de apps:** configuración remota, versión mínima/recomendada, modalidad opcional/obligatoria, enlaces y analytics implementados.
+- [x] **JH-037 — Contacto y registro comercial:** `/contacto` quedó para soporte y `/registrar-motel` para propietarios.
+- [x] **JH-038 — SEO técnico base:** agregados canonicals, sitemap, robots, locale y datos estructurados de sitio, motel, ciudad y breadcrumbs.
+- [x] **JH-039 — Estados del mapa:** implementados carga, error recuperable, permisos, vacío general, vacío por filtros y controles responsive.
+- [x] **JH-040 — Tema oscuro incompleto:** retirados el contexto, hooks y código sin uso.
+- [x] **JH-041 — Sistema visual y media:** creados tokens base, documentación visual, especificaciones, validación y guía de imágenes.
+- [x] **JH-042 — Calidad automatizada:** lint integral, pruebas de servicios y componentes, y capturas visuales de referencia incorporadas.
+- [x] **JH-043 — Administración base:** formularios extensos divididos, validaciones unificadas, filtros persistentes, paginación, acciones masivas y módulos de media reutilizables.
+- [x] **JH-044 — Conectividad móvil:** comportamiento offline, reintentos y errores de red compartidos verificados.
+
+### Completados anteriores
+
+- [x] **JH-045 — Campana web móvil:** funcional u oculta según disponibilidad del flujo.
+- [x] **JH-046 — Apple Login:** oculto temporalmente hasta completar su configuración.
+- [x] **JH-047 — Placeholder de anuncios:** reemplazado por un recurso local de Jahatelo.
+- [x] **JH-048 — ESLint admin:** corregidas las dependencias de `useEffect`.
+- [x] **JH-049 — iOS Associated Domains:** Team ID real configurado.
+- [x] **JH-050 — Configuración de envío iOS:** `eas.json` preparado sin placeholders inválidos.

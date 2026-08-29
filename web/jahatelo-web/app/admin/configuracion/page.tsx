@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import AccessProfilesPanel from '@/components/admin/AccessProfilesPanel';
 import LocationCatalogPanel from '@/components/admin/LocationCatalogPanel';
+import { AdminPageHeader } from '@/components/admin/AdminUi';
 
 type TabId = 'varios' | 'perfiles' | 'ubicaciones';
 
@@ -15,6 +16,11 @@ export default function ConfiguracionPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [ageGateEnabled, setAgeGateEnabled] = useState(false);
+  const [appMinimumVersion, setAppMinimumVersion] = useState('1.0.0');
+  const [appRecommendedVersion, setAppRecommendedVersion] = useState('1.0.0');
+  const [appUpdateMessage, setAppUpdateMessage] = useState('Actualizá Jahatelo para disfrutar mejoras y correcciones.');
+  const [iosStoreUrl, setIosStoreUrl] = useState('');
+  const [androidStoreUrl, setAndroidStoreUrl] = useState('https://play.google.com/store/apps/details?id=app.jahatelo.mobile');
 
   const checkAccess = useCallback(async () => {
     try {
@@ -39,6 +45,11 @@ export default function ConfiguracionPage() {
         // Cargar el valor de age_gate_enabled
         const ageGateValue = data.settings?.age_gate_enabled?.value;
         setAgeGateEnabled(ageGateValue === 'true');
+        setAppMinimumVersion(data.settings?.app_minimum_version?.value || '1.0.0');
+        setAppRecommendedVersion(data.settings?.app_recommended_version?.value || '1.0.0');
+        setAppUpdateMessage(data.settings?.app_update_message?.value || 'Actualizá Jahatelo para disfrutar mejoras y correcciones.');
+        setIosStoreUrl(data.settings?.app_ios_store_url?.value || '');
+        setAndroidStoreUrl(data.settings?.app_android_store_url?.value || 'https://play.google.com/store/apps/details?id=app.jahatelo.mobile');
       } else {
         toast.error('Error al cargar configuraciones');
       }
@@ -63,6 +74,11 @@ export default function ConfiguracionPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           age_gate_enabled: ageGateEnabled,
+          app_minimum_version: appMinimumVersion.trim(),
+          app_recommended_version: appRecommendedVersion.trim(),
+          app_update_message: appUpdateMessage.trim(),
+          app_ios_store_url: iosStoreUrl.trim(),
+          app_android_store_url: androidStoreUrl.trim(),
         }),
       });
 
@@ -92,12 +108,7 @@ export default function ConfiguracionPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Ajustes Generales</h1>
-        <p className="text-slate-600 mt-2">
-          Configura opciones generales de la plataforma
-        </p>
-      </div>
+      <AdminPageHeader title="Ajustes Generales" description="Configura opciones generales de la plataforma" />
 
       {/* Tabs */}
       <div className="border-b border-slate-200">
@@ -183,6 +194,27 @@ export default function ConfiguracionPage() {
             </div>
 
             {/* Agregar más configuraciones aquí en el futuro */}
+            <div className="rounded-xl border border-slate-200 p-5">
+              <h3 className="text-base font-semibold text-slate-900">Actualización de las apps</h3>
+              <p className="mt-1 text-sm text-slate-600">Controla el aviso recomendado u obligatorio para iOS y Android sin publicar nuevamente la app.</p>
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <label className="text-sm font-medium text-slate-700">Versión mínima obligatoria
+                  <input value={appMinimumVersion} onChange={(event) => setAppMinimumVersion(event.target.value)} placeholder="1.0.0" className="mt-2 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                </label>
+                <label className="text-sm font-medium text-slate-700">Versión recomendada
+                  <input value={appRecommendedVersion} onChange={(event) => setAppRecommendedVersion(event.target.value)} placeholder="1.1.0" className="mt-2 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                </label>
+                <label className="text-sm font-medium text-slate-700 md:col-span-2">Mensaje del aviso
+                  <textarea value={appUpdateMessage} onChange={(event) => setAppUpdateMessage(event.target.value)} rows={3} maxLength={300} className="mt-2 w-full rounded-lg border border-slate-300 p-3 text-slate-900 focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                </label>
+                <label className="text-sm font-medium text-slate-700">Enlace de App Store
+                  <input type="url" value={iosStoreUrl} onChange={(event) => setIosStoreUrl(event.target.value)} placeholder="https://apps.apple.com/..." className="mt-2 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                </label>
+                <label className="text-sm font-medium text-slate-700">Enlace de Google Play
+                  <input type="url" value={androidStoreUrl} onChange={(event) => setAndroidStoreUrl(event.target.value)} className="mt-2 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                </label>
+              </div>
+            </div>
           </div>
 
           {/* Save Button */}

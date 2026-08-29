@@ -8,6 +8,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { COLORS, BORDER_RADIUS, SHADOWS, SPACING } from '../constants/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -67,15 +68,11 @@ export default function MotelCardSkeleton() {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: COLORS.card,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.lg,
+    marginBottom: SPACING.lg,
+    ...SHADOWS.card,
     overflow: 'hidden',
   },
   header: {
@@ -87,26 +84,26 @@ const styles = StyleSheet.create({
   titleSkeleton: {
     width: '70%',
     height: 20,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: COLORS.skeleton,
     borderRadius: 4,
   },
   iconSkeleton: {
     width: 24,
     height: 24,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: COLORS.skeleton,
     borderRadius: 12,
   },
   locationSkeleton: {
     width: '50%',
     height: 14,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: COLORS.skeleton,
     borderRadius: 4,
     marginBottom: 12,
   },
   priceSkeleton: {
     width: '40%',
     height: 24,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: COLORS.skeleton,
     borderRadius: 4,
     marginBottom: 12,
   },
@@ -117,7 +114,7 @@ const styles = StyleSheet.create({
   amenityPillSkeleton: {
     width: 70,
     height: 24,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: COLORS.skeleton,
     borderRadius: 12,
     marginRight: 6,
   },

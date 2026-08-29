@@ -176,9 +176,9 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-800 px-4 py-6 md:flex md:items-center md:justify-center md:px-4 md:py-0">
+    <main className="public-page bg-gradient-to-br from-purple-600 to-purple-800 px-4 py-6 md:flex md:items-center md:justify-center md:px-4 md:py-0">
       <div className="mx-auto w-full max-w-md">
-        <div className="bg-white p-6 shadow-2xl sm:rounded-2xl sm:p-8">
+        <div className="public-card p-6 sm:p-8">
           {/* Header */}
           <div className="mb-7 text-center md:mb-8">
             <div className="flex items-center justify-center gap-0 mb-4">
@@ -191,9 +191,9 @@ function LoginForm() {
                 className="-ml-0.5 h-8 w-auto object-contain md:h-9"
               />
             </div>
-            <h2 className="mb-1 text-2xl font-bold text-slate-900 md:mb-2 md:text-xl md:font-semibold">
+            <h1 className="mb-1 text-2xl font-bold text-slate-900 md:mb-2 md:font-semibold">
               Iniciar Sesión
-            </h2>
+            </h1>
             <p className="text-sm text-slate-600 md:text-base">
               Ingresa tus credenciales para continuar
             </p>
@@ -201,14 +201,14 @@ function LoginForm() {
 
           {/* Error message */}
           {error && (
-            <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 md:mb-6 md:rounded-lg md:p-4">
+            <div id="login-error" role="alert" className="public-status public-status-error mb-5 md:mb-6">
               <p className="text-sm text-red-600">
                 {error}
               </p>
             </div>
           )}
           {infoMessage && (
-            <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 md:mb-6 md:rounded-lg md:p-4">
+            <div role="status" aria-live="polite" className="public-status public-status-success mb-5 md:mb-6">
               <p className="text-sm text-emerald-700">
                 {infoMessage}
               </p>
@@ -216,9 +216,10 @@ function LoginForm() {
           )}
 
           {/* Form */}
-          <div className="mb-5 flex items-center gap-2 rounded-xl bg-slate-100 p-1 md:mb-6 md:rounded-lg">
+          <div className="mb-5 flex items-center gap-2 rounded-xl bg-slate-100 p-1 md:mb-6" role="group" aria-label="Método de inicio de sesión">
             <button
               type="button"
+              aria-pressed={loginMethod === 'email'}
               onClick={() => {
                 setLoginMethod('email');
                 setError('');
@@ -236,6 +237,7 @@ function LoginForm() {
             </button>
             <button
               type="button"
+              aria-pressed={loginMethod === 'whatsapp'}
               onClick={() => {
                 setLoginMethod('whatsapp');
                 setError('');
@@ -266,6 +268,8 @@ function LoginForm() {
                 <input
                   id="email"
                   type="email"
+                  autoComplete="email"
+                  aria-describedby={error ? 'login-error' : undefined}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -284,6 +288,8 @@ function LoginForm() {
                 <input
                   id="password"
                   type="password"
+                  autoComplete="current-password"
+                  aria-describedby={error ? 'login-error' : undefined}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -323,6 +329,8 @@ function LoginForm() {
                 <input
                   id="phone"
                   type="tel"
+                  autoComplete="tel"
+                  aria-describedby={error ? 'login-error' : undefined}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
@@ -438,7 +446,7 @@ function LoginForm() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

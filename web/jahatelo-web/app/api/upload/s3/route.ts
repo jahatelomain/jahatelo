@@ -9,6 +9,7 @@ import path from 'path';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { WATERMARKED_IMAGE_CONTENT_TYPE, WATERMARKED_IMAGE_EXTENSION, optimizeImageForApp, watermarkUploadedImage } from '@/lib/media/watermark';
 import { MAX_IMAGE_UPLOAD_BYTES, MAX_IMAGE_UPLOAD_LABEL } from '@/lib/media/uploadLimits';
+import { validateMediaDimensions, type MediaUsage } from '@/lib/media/specifications';
 
 export const runtime = 'nodejs';
 
@@ -69,6 +70,11 @@ export async function POST(request: Request) {
     }
 
     const originalBuffer = Buffer.from(await file.arrayBuffer());
+    const usage: MediaUsage = isMotelLogo ? 'motel-logo' : assetType === 'room-photo' ? 'room-photo' : 'motel-photo';
+    const dimensionValidation = await validateMediaDimensions(originalBuffer, usage);
+    if (!dimensionValidation.valid) {
+      return NextResponse.json({ error: dimensionValidation.error }, { status: 400 });
+    }
     // Los logos son identidad de marca: se optimizan a WebP, pero no reciben
     // marca de agua. El resto de imágenes conserva la protección habitual.
     const buffer = isMotelLogo
@@ -97,7 +103,7 @@ export async function POST(request: Request) {
         await writeFile(path.join(appTargetDir, appFilename), appBuffer);
         appUrl = `/uploads/${appRelativeDir}/${appFilename}`;
       }
-      return NextResponse.json({ url, ...(appUrl ? { appUrl } : {}) });
+      return NextResponse.json({ url, ...(appUrl ? { appUrl } : {}), media: dimensionValidation });
     }
 
     if (!s3) {
@@ -131,7 +137,7 @@ export async function POST(request: Request) {
     const appUrl = appKey
       ? `https://${process.env.AWS_S3_BUCKET!}.s3.${process.env.AWS_S3_REGION!}.amazonaws.com/${appKey}`
       : undefined;
-    return NextResponse.json({ url, ...(appUrl ? { appUrl } : {}) });
+    return NextResponse.json({ url, ...(appUrl ? { appUrl } : {}), media: dimensionValidation });
   } catch (error) {
     console.error('[S3_UPLOAD_ERROR]', error);
     if (error instanceof z.ZodError) {

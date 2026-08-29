@@ -17,6 +17,8 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import NotificationPreferencesScreen from '../screens/NotificationPreferencesScreen';
 import PromoHistoryScreen from '../screens/PromoHistoryScreen';
+import RecommendMotelScreen from '../screens/RecommendMotelScreen';
+import ReportMotelScreen from '../screens/ReportMotelScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -39,6 +41,8 @@ export default function RootNavigation() {
       <Stack.Screen name="Map" component={MapScreen} />
       <Stack.Screen name="NearbyMotels" component={NearbyMotelsScreen} />
       <Stack.Screen name="RegisterMotel" component={RegisterMotelScreen} />
+      <Stack.Screen name="RecommendMotel" component={RecommendMotelScreen} />
+      <Stack.Screen name="ReportMotel" component={ReportMotelScreen} />
       <Stack.Screen name="Legal" component={LegalScreen} />
       <Stack.Screen name="Contact" component={ContactScreen} />
       <Stack.Screen name="CitySelector" component={CitySelectorScreen} />

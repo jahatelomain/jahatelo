@@ -147,6 +147,28 @@ enum PromoCodeStatus {
   USED
 }
 
+enum MotelReportReason {
+  PRICE
+  PHOTO
+  LOCATION_OR_CONTACT
+  CLOSED
+  INFORMATION
+  OTHER
+}
+
+enum MotelReportStatus {
+  PENDING
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum AppUpdateAction {
+  SHOWN
+  UPDATE_TAPPED
+  DISMISSED
+}
+
 // ============================================
 // MOTEL
 // ============================================
@@ -210,6 +232,7 @@ model Motel {
   users          User[] // Usuarios administradores del motel
   analytics      MotelAnalytics[] // Eventos de analytics
   paymentHistory PaymentHistory[]
+  reports        MotelReport[]
 
   @@index([status, isActive, createdAt])
   @@index([status, isActive, city])
@@ -508,10 +531,61 @@ model User {
   auditLogs               AuditLog[]
   notificationPreferences UserNotificationPreferences?
   pushTokens              PushToken[]
+  motelReports            MotelReport[]     @relation("MotelReportReporter")
+  assignedMotelReports    MotelReport[]     @relation("MotelReportAssignee")
+  motelReportNotes        MotelReportNote[]
 
   @@index([email])
   @@index([provider, providerId])
   @@index([accessProfileId])
+}
+
+model MotelReport {
+  id        String            @id @default(cuid())
+  motel     Motel             @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId   String
+  user      User?             @relation("MotelReportReporter", fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+  assignedTo User?            @relation("MotelReportAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedToId String?
+  reason    MotelReportReason
+  comment   String?
+  status    MotelReportStatus @default(PENDING)
+  resolutionSummary String?
+  resolvedAt DateTime?
+  notes     MotelReportNote[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([status, createdAt])
+  @@index([motelId, createdAt])
+  @@index([userId, createdAt])
+  @@index([assignedToId, status])
+}
+
+model MotelReportNote {
+  id        String      @id @default(cuid())
+  report    MotelReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  reportId  String
+  author    User        @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  authorId  String
+  body      String
+  createdAt DateTime    @default(now())
+
+  @@index([reportId, createdAt])
+  @@index([authorId, createdAt])
+}
+
+model AppUpdateEvent {
+  id            String          @id @default(cuid())
+  action        AppUpdateAction
+  platform      String
+  currentVersion String
+  targetVersion String?
+  createdAt     DateTime        @default(now())
+
+  @@index([action, createdAt])
+  @@index([platform, currentVersion, createdAt])
 }
 
 // Perfiles configurables. Los roles del enum se conservan como clasificación

@@ -9,7 +9,6 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +17,7 @@ import { requestSmsOtp, verifySmsOtp } from '../services/authApi';
 import { getApiRoot } from '../services/apiBaseUrl';
 import { COLORS } from '../constants/theme';
 import { useGoogleAuth, getGoogleUserInfo, isGoogleConfigured } from '../services/googleAuthService';
+import { showErrorMessage, showSuccessMessage } from '../utils/appFeedback';
 
 export default function LoginScreen({ navigation }) {
   const { login, loginWithOAuth, isLoading: authLoading } = useAuth();
@@ -48,7 +48,7 @@ export default function LoginScreen({ navigation }) {
       handleGoogleLogin(authentication.accessToken);
     } else if (googleResponse?.type === 'error') {
       console.error('Google OAuth Error:', googleResponse.error);
-      Alert.alert('Error', `Error al iniciar sesión con Google: ${googleResponse.error?.message || googleResponse.error}`);
+      showErrorMessage(`Error al iniciar sesión con Google: ${googleResponse.error?.message || googleResponse.error}`);
     } else if (googleResponse?.type === 'dismiss') {
       console.log('User dismissed login');
     }
@@ -106,10 +106,10 @@ export default function LoginScreen({ navigation }) {
       } else if (result.needsVerification) {
         setNeedsVerification(true);
       } else {
-        Alert.alert('Error', result.error || 'Error al iniciar sesión');
+        showErrorMessage(result.error || 'Error al iniciar sesión');
       }
     } catch (error) {
-      Alert.alert('Error', error.message || 'Error al iniciar sesión');
+      showErrorMessage(error.message || 'Error al iniciar sesión');
     } finally {
       setIsLoading(false);
     }
@@ -126,13 +126,13 @@ export default function LoginScreen({ navigation }) {
         body: JSON.stringify({ email: email.trim() }),
       });
       if (res.ok) {
-        Alert.alert('Enviado', 'Revisá tu bandeja de entrada y hacé clic en el enlace de verificación.');
+        showSuccessMessage('Enviado', 'Revisá tu bandeja de entrada y hacé clic en el enlace de verificación.');
       } else {
         const data = await res.json();
-        Alert.alert('Error', data.error || 'No se pudo enviar el correo');
+        showErrorMessage(data.error || 'No se pudo enviar el correo');
       }
     } catch {
-      Alert.alert('Error', 'Error de conexión');
+      showErrorMessage('Error de conexión');
     } finally {
       setResendVerifLoading(false);
     }
@@ -149,7 +149,7 @@ export default function LoginScreen({ navigation }) {
         setOtpCode(String(data.debugCode));
       }
     } catch (error) {
-      Alert.alert('Error', error.message || 'No se pudo enviar el código');
+      showErrorMessage(error.message || 'No se pudo enviar el código');
     } finally {
       setOtpLoading(false);
     }
@@ -165,11 +165,11 @@ export default function LoginScreen({ navigation }) {
         name: otpName.trim() || undefined,
       });
       if (result?.success) {
-        Alert.alert('¡Bienvenido!', 'Sesión iniciada correctamente');
+        showSuccessMessage('¡Bienvenido!', 'Sesión iniciada correctamente');
         navigation.goBack();
       }
     } catch (error) {
-      Alert.alert('Error', error.message || 'Código inválido');
+      showErrorMessage(error.message || 'Código inválido');
     } finally {
       setOtpVerifyLoading(false);
     }
@@ -182,7 +182,7 @@ export default function LoginScreen({ navigation }) {
       // Obtener info del usuario de Google
       const userInfo = await getGoogleUserInfo(accessToken);
       if (!userInfo) {
-        Alert.alert('Error', 'No se pudo obtener información de Google');
+        showErrorMessage('No se pudo obtener información de Google');
         return;
       }
 
@@ -195,14 +195,14 @@ export default function LoginScreen({ navigation }) {
       });
 
       if (result.success) {
-        Alert.alert('¡Bienvenido!', `Hola ${userInfo.name || userInfo.email}`);
+        showSuccessMessage('¡Bienvenido!', `Hola ${userInfo.name || userInfo.email}`);
         navigation.goBack();
       } else {
-        Alert.alert('Error', result.error || 'Error al iniciar sesión con Google');
+        showErrorMessage(result.error || 'Error al iniciar sesión con Google');
       }
     } catch (error) {
       console.error('Error in handleGoogleLogin:', error);
-      Alert.alert('Error', error.message || 'Error al iniciar sesión con Google');
+      showErrorMessage(error.message || 'Error al iniciar sesión con Google');
     } finally {
       setIsLoading(false);
     }
@@ -223,6 +223,8 @@ export default function LoginScreen({ navigation }) {
             <TouchableOpacity
               style={styles.backButton}
               onPress={() => navigation.goBack()}
+              accessibilityRole="button"
+              accessibilityLabel="Volver"
             >
               <Ionicons name="arrow-back" size={24} color={COLORS.text} />
             </TouchableOpacity>
@@ -250,6 +252,8 @@ export default function LoginScreen({ navigation }) {
                   setOtpName('');
                   setResendSeconds(0);
                 }}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: loginMethod === 'email' }}
               >
                 <Text style={[styles.toggleText, loginMethod === 'email' && styles.toggleTextActive]}>
                   Email
@@ -267,6 +271,8 @@ export default function LoginScreen({ navigation }) {
                   setOtpName('');
                   setResendSeconds(0);
                 }}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: loginMethod === 'sms' }}
               >
                 <Text style={[styles.toggleText, loginMethod === 'sms' && styles.toggleTextActive]}>
                   SMS
@@ -292,6 +298,8 @@ export default function LoginScreen({ navigation }) {
                       autoCapitalize="none"
                       keyboardType="email-address"
                       autoComplete="email"
+                      accessibilityLabel="Correo electrónico"
+                      accessibilityState={{ disabled: isLoading }}
                       editable={!isLoading}
                     />
                   </View>
@@ -313,11 +321,15 @@ export default function LoginScreen({ navigation }) {
                       }}
                       secureTextEntry={!showPassword}
                       autoComplete="password"
+                      accessibilityLabel="Contraseña"
+                      accessibilityState={{ disabled: isLoading }}
                       editable={!isLoading}
                     />
                     <TouchableOpacity
                       onPress={() => setShowPassword(!showPassword)}
                       style={styles.eyeButton}
+                      accessibilityRole="button"
+                      accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                     >
                       <Ionicons
                         name={showPassword ? 'eye-outline' : 'eye-off-outline'}
@@ -353,6 +365,8 @@ export default function LoginScreen({ navigation }) {
                   style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
                   onPress={handleLogin}
                   disabled={isLoading}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: isLoading, busy: isLoading }}
                 >
                   {isLoading ? (
                     <ActivityIndicator size="small" color={COLORS.white} />

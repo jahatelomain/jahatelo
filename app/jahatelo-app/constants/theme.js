@@ -17,10 +17,15 @@ export const COLORS = {
   // Colores de fondo
   background: '#FFFFFF',
   backgroundDark: '#F8F9FA',
+  backgroundSoft: '#F8F5FC',
 
   // Colores de tarjetas y superficies
   card: '#FFFFFF',
   cardBorder: '#F0F0F0',
+  cardBorderSoft: '#ECE4F4',
+  inputBorder: '#DDD3E8',
+  inputBackground: '#FCFAFE',
+  skeleton: '#E0E0E0',
 
   // Colores de texto
   text: '#2E0338',
@@ -54,57 +59,16 @@ export const COLORS = {
   border: '#E5E7EB',
   divider: '#F0F0F0',
   disabled: '#D1D5DB',
-};
-
-// COLORES MODO OSCURO
-export const COLORS_DARK = {
-  // Color principal de la marca
-  primary: '#A855F7', // Más claro para mejor contraste en dark
-
-  // Variantes del color principal
-  primaryLight: '#C084FC',
-  primaryDark: '#9333EA',
-
-  // Colores de fondo
-  background: '#0F172A', // slate-900
-  backgroundDark: '#1E293B', // slate-800
-
-  // Colores de tarjetas y superficies
-  card: '#1E293B',
-  cardBorder: '#334155',
-
-  // Colores de texto
-  text: '#F1F5F9', // slate-100
-  textLight: '#CBD5E1', // slate-300
-  textMuted: '#64748B', // slate-500
-  muted: '#64748B',
-
-  // Colores de acento
-  accent: '#A855F7',
-  accentLight: '#312E81',
-  accentLighter: '#1E1B4B',
-
-  // Colores semánticos
-  success: '#10B981',
-  warning: '#F59E0B',
-  error: '#EF4444',
-  info: '#3B82F6',
-
-  // Colores neutros
-  white: '#FFFFFF',
-  black: '#000000',
-  gray: '#64748B',
-  grayLight: '#475569',
-  grayDark: '#94A3B8',
-
-  // Overlays y sombras
-  overlay: 'rgba(0, 0, 0, 0.7)',
-  shadow: '#000000',
-
-  // Colores específicos
-  border: '#334155',
-  divider: '#334155',
-  disabled: '#475569',
+  surfaceMuted: '#F5F5F5',
+  surfaceSubtle: '#F1F5F9',
+  surfaceRaised: '#FDFDFD',
+  borderMuted: '#E0E0E0',
+  borderBrandSoft: '#F0E6F5',
+  textBrandDark: '#2A0038',
+  textSecondary: '#6A5E6E',
+  textTertiary: '#9C8BA5',
+  brandSoft: '#F5E6FA',
+  brandHighlight: '#FFE4F1',
 };
 
 export const SPACING = {
@@ -137,9 +101,57 @@ export const BORDER_RADIUS = {
   round: 9999,
 };
 
+export const SHADOWS = {
+  card: {
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 3,
+  },
+};
+
+export const TOUCH_TARGET = 44;
+
+export const STATUS_COLORS = {
+  successDark: '#047857',
+  warningDark: '#B45309',
+  errorDark: '#B91C1C',
+  whatsapp: '#25D366',
+  iosLink: '#007AFF',
+  danger: '#DC2626',
+  dangerSoft: '#FF6B6B',
+  successSurface: '#DCFCE7',
+  successText: '#166534',
+  warningSurface: '#FEF3C7',
+  warningText: '#92400E',
+  google: '#DB4437',
+  star: '#FFD700',
+};
+
+export const PLAN_COLORS = {
+  gold: '#F59E0B',
+  diamond: '#22D3EE',
+  diamondLight: '#BAE6FD',
+  diamondDark: '#0EA5E9',
+  diamondSoft: '#7DD3FC',
+};
+
+export const DARK_SURFACES = {
+  card: '#1F0F2E',
+  text: '#FFFFFF',
+  muted: '#C5C5C5',
+  accent: '#FF2E93',
+};
+
 export default {
   COLORS,
   SPACING,
   FONT_SIZES,
   BORDER_RADIUS,
+  SHADOWS,
+  TOUCH_TARGET,
+  STATUS_COLORS,
+  PLAN_COLORS,
+  DARK_SURFACES,
 };

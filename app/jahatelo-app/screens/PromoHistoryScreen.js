@@ -6,16 +6,16 @@ import {
   FlatList,
   TouchableOpacity,
   Clipboard,
-  Alert,
   Modal,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { COLORS } from '../constants/theme';
+import { COLORS, STATUS_COLORS } from '../constants/theme';
 import { getApiRoot } from '../services/apiBaseUrl';
 import { getOrCreateDeviceId } from '../services/analyticsService';
+import { showMessage } from '../utils/appFeedback';
 
 const CLAIMED_CODES_KEY = 'jahatelo_claimed_promo_codes';
 
@@ -60,7 +60,7 @@ export default function PromoHistoryScreen({ navigation }) {
 
   const handleCopy = (code) => {
     Clipboard.setString(code);
-    Alert.alert('¡Copiado!', 'El código fue copiado al portapapeles.');
+    showMessage('¡Copiado!', 'El código fue copiado al portapapeles.');
   };
 
   const handleRefresh = useCallback(async () => {
@@ -73,7 +73,7 @@ export default function PromoHistoryScreen({ navigation }) {
   }, [loadCodes]);
 
   const handleDelete = (promoId) => {
-    Alert.alert(
+    showMessage(
       'Eliminar código',
       '¿Querés eliminar este código de tu historial?',
       [
@@ -89,7 +89,7 @@ export default function PromoHistoryScreen({ navigation }) {
               await AsyncStorage.setItem(CLAIMED_CODES_KEY, JSON.stringify(map));
               setCodes(prev => prev.filter(c => c.promoId !== promoId));
             } catch {
-              Alert.alert('Error', 'No se pudo eliminar el código');
+              showMessage('Error', 'No se pudo eliminar el código');
             }
           },
         },
@@ -102,11 +102,13 @@ export default function PromoHistoryScreen({ navigation }) {
       style={styles.card}
       onPress={() => setSelectedCode(item)}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={`Ver código ${item.title}`}
     >
       <View style={styles.cardLeft}>
         <Ionicons name="ticket-outline" size={24} color={COLORS.primary} />
         <View style={styles.cardInfo}>
-          <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+          <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
           <Text style={styles.cardCode}>{item.code}</Text>
           <Text style={[styles.status, item.status === 'USED' ? styles.statusUsed : styles.statusPending]}>{item.status === 'USED' ? 'Canjeado' : 'Pendiente de canje'}</Text>
         </View>
@@ -115,8 +117,10 @@ export default function PromoHistoryScreen({ navigation }) {
         onPress={() => handleDelete(item.promoId)}
         style={styles.deleteBtn}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityRole="button"
+        accessibilityLabel={`Eliminar código ${item.title}`}
       >
-        <Ionicons name="trash-outline" size={18} color="#dc2626" />
+        <Ionicons name="trash-outline" size={18} color={STATUS_COLORS.danger} />
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -125,7 +129,7 @@ export default function PromoHistoryScreen({ navigation }) {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Volver">
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Mis códigos de promo</Text>
@@ -193,17 +197,17 @@ export default function PromoHistoryScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.surfaceMuted,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: COLORS.borderMuted,
   },
   backBtn: {
     width: 40,
@@ -212,21 +216,21 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#2A0038',
+    color: COLORS.textBrandDark,
   },
   list: {
     padding: 16,
     gap: 12,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderRadius: 14,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: '#F0E6F5',
+    borderColor: COLORS.borderBrandSoft,
     shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 6,
@@ -244,7 +248,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#2A0038',
+    color: COLORS.textBrandDark,
     marginBottom: 4,
   },
   cardCode: {
@@ -263,8 +267,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  statusPending: { backgroundColor: '#FEF3C7', color: '#92400E' },
-  statusUsed: { backgroundColor: '#DCFCE7', color: '#166534' },
+  statusPending: { backgroundColor: STATUS_COLORS.warningSurface, color: STATUS_COLORS.warningText },
+  statusUsed: { backgroundColor: STATUS_COLORS.successSurface, color: STATUS_COLORS.successText },
   deleteBtn: {
     padding: 4,
     marginLeft: 12,
@@ -279,11 +283,11 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#2A0038',
+    color: COLORS.textBrandDark,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#6A5E6E',
+    color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -306,24 +310,24 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#2A0038',
+    color: COLORS.textBrandDark,
     textAlign: 'center',
   },
   modalDescription: {
     fontSize: 14,
-    color: '#6A5E6E',
+    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   modalCodeLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#9C8BA5',
+    color: COLORS.textTertiary,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginTop: 8,
   },
   codeBox: {
-    backgroundColor: '#F5E6FA',
+    backgroundColor: COLORS.brandSoft,
     borderWidth: 2,
     borderColor: COLORS.primary,
     borderStyle: 'dashed',
@@ -340,7 +344,7 @@ const styles = StyleSheet.create({
   },
   codeHint: {
     fontSize: 13,
-    color: '#9C8BA5',
+    color: COLORS.textTertiary,
     textAlign: 'center',
   },
   copyBtn: {
@@ -363,7 +367,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeBtnText: {
-    color: '#9C8BA5',
+    color: COLORS.textTertiary,
     fontSize: 14,
     fontWeight: '600',
   },

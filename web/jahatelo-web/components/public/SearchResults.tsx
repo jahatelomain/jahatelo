@@ -58,6 +58,12 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
   const [citiesLoading, setCitiesLoading] = useState(false);
   const [quickAmenities, setQuickAmenities] = useState<QuickAmenity[]>([]);
   const [quickAmenitiesLoading, setQuickAmenitiesLoading] = useState(false);
+  const [recommendationOpen, setRecommendationOpen] = useState(false);
+  const [recommendationName, setRecommendationName] = useState(initialParams.q || '');
+  const [recommendationCity, setRecommendationCity] = useState(initialParams.city || '');
+  const [recommendationSubmitting, setRecommendationSubmitting] = useState(false);
+  const [recommendationError, setRecommendationError] = useState('');
+  const [recommendationSent, setRecommendationSent] = useState(false);
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   // Nearby (Cerca de mí) state
@@ -229,6 +235,41 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     }
   };
 
+  const openRecommendation = () => {
+    setRecommendationName(searchQuery.trim());
+    setRecommendationCity(selectedCity);
+    setRecommendationError('');
+    setRecommendationSent(false);
+    setRecommendationOpen(true);
+  };
+
+  const submitRecommendation = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const motelName = recommendationName.trim();
+    const city = recommendationCity.trim();
+    if (motelName.length < 2 || city.length < 2) {
+      setRecommendationError('Completá el nombre del motel y la ciudad.');
+      return;
+    }
+
+    setRecommendationSubmitting(true);
+    setRecommendationError('');
+    try {
+      const response = await fetch('/api/mobile/motel-recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motelName, city }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'No pudimos enviar la recomendación.');
+      setRecommendationSent(true);
+    } catch (error) {
+      setRecommendationError(error instanceof Error ? error.message : 'No pudimos enviar la recomendación.');
+    } finally {
+      setRecommendationSubmitting(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-5 md:px-6 md:py-8 lg:px-8">
       {/* Search Bar */}
@@ -236,6 +277,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
         <div className="relative max-w-3xl mx-auto">
           <input
             type="text"
+            aria-label="Buscar moteles"
             placeholder="Buscar moteles por nombre, ciudad, amenidades..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -388,7 +430,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
           {searchQuery && (
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
               <span>{`“${searchQuery}”`}</span>
-              <button onClick={() => setSearchQuery('')} className="hover:text-purple-900">
+              <button type="button" onClick={() => setSearchQuery('')} aria-label="Quitar texto de búsqueda" className="hover:text-purple-900">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -398,7 +440,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
           {selectedCity && (
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
               <span>{selectedCity}</span>
-              <button onClick={() => setSelectedCity('')} className="hover:text-purple-900">
+              <button type="button" onClick={() => setSelectedCity('')} aria-label={`Quitar filtro de ciudad ${selectedCity}`} className="hover:text-purple-900">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -410,7 +452,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
               <span>
                 {quickAmenities.find((a) => a.id === selectedAmenity)?.name || selectedAmenity}
               </span>
-              <button onClick={() => setSelectedAmenity('')} className="hover:text-purple-900">
+              <button type="button" onClick={() => setSelectedAmenity('')} aria-label="Quitar filtro de amenidad" className="hover:text-purple-900">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -420,7 +462,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
           {onlyPromos && (
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
               <span>Promos</span>
-              <button onClick={() => setOnlyPromos(false)} className="hover:text-purple-900">
+              <button type="button" onClick={() => setOnlyPromos(false)} aria-label="Quitar filtro de promociones" className="hover:text-purple-900">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -430,7 +472,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
           {onlyFeatured && (
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
               <span>Destacados</span>
-              <button onClick={() => setOnlyFeatured(false)} className="hover:text-purple-900">
+              <button type="button" onClick={() => setOnlyFeatured(false)} aria-label="Quitar filtro de destacados" className="hover:text-purple-900">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -440,7 +482,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
           {nearbyEnabled && (
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
               <span>Cerca de mí {nearbyRadius !== null ? `(${nearbyRadius} km)` : ''}</span>
-              <button onClick={() => setNearbyEnabled(false)} className="hover:text-purple-900">
+              <button type="button" onClick={() => setNearbyEnabled(false)} aria-label="Quitar filtro de cercanía" className="hover:text-purple-900">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -453,14 +495,6 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
           >
             Limpiar todo
           </button>
-        </div>
-      )}
-
-      {/* Loading State */}
-      {loading && (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-          <p className="mt-4 text-gray-600">Buscando moteles...</p>
         </div>
       )}
 
@@ -485,7 +519,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+            <section className="public-card p-8 text-center md:p-12" role="status" aria-live="polite">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
                 <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -506,19 +540,27 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
                   : 'Usá la barra de búsqueda o seleccioná una búsqueda popular'}
               </p>
               {(searchQuery || selectedCity) && (
-                <button
-                  onClick={clearSearch}
-                  className="inline-block px-6 py-2 border-2 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white font-medium rounded-lg transition-colors"
-                >
-                  Limpiar búsqueda
-                </button>
+                <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                  <button
+                    onClick={openRecommendation}
+                    className="inline-flex min-h-11 items-center justify-center rounded-xl bg-purple-600 px-6 py-2.5 font-semibold text-white transition-colors hover:bg-purple-700"
+                  >
+                    Recomendar motel
+                  </button>
+                  <button
+                    onClick={clearSearch}
+                    className="inline-flex min-h-11 items-center justify-center rounded-xl border-2 border-purple-600 px-6 py-2 text-purple-600 transition-colors hover:bg-purple-50"
+                  >
+                    Limpiar búsqueda
+                  </button>
+                </div>
               )}
-            </div>
+            </section>
           )}
         </>
       )}
       {loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3" role="status" aria-live="polite" aria-label="Buscando moteles">
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={`search-skeleton-${index}`}
@@ -530,6 +572,93 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
               <div className="h-6 bg-gray-200 rounded w-1/3" />
             </div>
           ))}
+        </div>
+      )}
+
+      {recommendationOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="recommendation-title"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target && !recommendationSubmitting) setRecommendationOpen(false);
+          }}
+        >
+          <div className="w-full rounded-t-3xl bg-white p-6 shadow-2xl sm:max-w-md sm:rounded-3xl sm:p-7">
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <h2 id="recommendation-title" className="text-2xl font-bold text-slate-950">
+                  Recomendar un motel
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Pasanos estos dos datos y revisaremos la recomendación.
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Cerrar"
+                onClick={() => setRecommendationOpen(false)}
+                disabled={recommendationSubmitting}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xl text-slate-600 hover:bg-slate-200"
+              >
+                ×
+              </button>
+            </div>
+
+            {recommendationSent ? (
+              <div className="py-5 text-center" role="status">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl text-emerald-600">✓</div>
+                <h3 className="mt-4 text-xl font-bold text-slate-950">¡Gracias!</h3>
+                <p className="mt-2 text-slate-600">Revisaremos tu recomendación.</p>
+                <button
+                  type="button"
+                  onClick={() => setRecommendationOpen(false)}
+                  className="mt-6 min-h-11 w-full rounded-xl bg-purple-600 px-5 py-3 font-semibold text-white hover:bg-purple-700"
+                >
+                  Cerrar
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={submitRecommendation} className="space-y-5">
+                <div>
+                  <label htmlFor="recommendation-name" className="mb-2 block text-sm font-semibold text-slate-800">
+                    Nombre del motel
+                  </label>
+                  <input
+                    id="recommendation-name"
+                    value={recommendationName}
+                    onChange={(event) => setRecommendationName(event.target.value)}
+                    maxLength={100}
+                    autoFocus
+                    className="min-h-12 w-full rounded-xl border border-slate-300 px-4 text-slate-950 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-200"
+                    placeholder="Ej.: Motel Paraíso"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="recommendation-city" className="mb-2 block text-sm font-semibold text-slate-800">
+                    Ciudad
+                  </label>
+                  <input
+                    id="recommendation-city"
+                    value={recommendationCity}
+                    onChange={(event) => setRecommendationCity(event.target.value)}
+                    maxLength={100}
+                    className="min-h-12 w-full rounded-xl border border-slate-300 px-4 text-slate-950 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-200"
+                    placeholder="Ej.: Asunción"
+                  />
+                </div>
+                {recommendationError && <p className="text-sm font-medium text-red-600" role="alert">{recommendationError}</p>}
+                <button
+                  type="submit"
+                  disabled={recommendationSubmitting}
+                  className="min-h-12 w-full rounded-xl bg-purple-600 px-5 py-3 font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {recommendationSubmitting ? 'Enviando…' : 'Enviar recomendación'}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       )}
     </div>

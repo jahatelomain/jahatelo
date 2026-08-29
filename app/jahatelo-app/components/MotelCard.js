@@ -17,7 +17,7 @@ import { formatPrice, formatDistance } from '../services/motelsApi';
 import { useFavorites } from '../hooks/useFavorites';
 import { prefetchMotelDetails } from '../services/prefetchService';
 import { getAmenityIconConfig } from '../constants/amenityIcons';
-import { COLORS } from '../constants/theme';
+import { COLORS, PLAN_COLORS } from '../constants/theme';
 import { PRICE_UPDATING_MESSAGE } from '../constants/motelPrices';
 import { hasMotelPlanGlow, isMotelPlanMuted, normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
 import { trackFavoriteAdd, trackFavoriteRemove } from '../services/analyticsService';
@@ -208,6 +208,8 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
                 onPress={handleFavoritePress}
                 style={styles.actionButton}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={isFavorite(motel.id) ? `Quitar ${motel.nombre} de favoritos` : `Agregar ${motel.nombre} a favoritos`}
               >
                 <Animated.View style={animatedHeartStyle}>
                   <Ionicons
@@ -302,11 +304,12 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       accessibilityRole="button"
-      accessibilityState={{ disabled: false }}
+      accessibilityLabel={`${motel.nombre}, ${motel.ciudad || 'sin ciudad'}`}
+      accessibilityHint="Abre los detalles del motel"
     >
       {isDiamond ? (
         <LinearGradient
-          colors={['#22D3EE', '#BAE6FD', '#0EA5E9', '#7DD3FC']}
+          colors={[PLAN_COLORS.diamond, PLAN_COLORS.diamondLight, PLAN_COLORS.diamondDark, PLAN_COLORS.diamondSoft]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.diamondFrame}

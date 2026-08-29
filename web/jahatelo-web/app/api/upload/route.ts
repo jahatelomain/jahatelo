@@ -9,6 +9,7 @@ import { requireAdminAccess } from '@/lib/adminAccess';
 import type { AdminModule } from '@/lib/adminModules';
 import { WATERMARKED_IMAGE_CONTENT_TYPE, WATERMARKED_IMAGE_EXTENSION, watermarkUploadedImage } from '@/lib/media/watermark';
 import { MAX_IMAGE_UPLOAD_BYTES, MAX_IMAGE_UPLOAD_LABEL } from '@/lib/media/uploadLimits';
+import { validateMediaDimensions } from '@/lib/media/specifications';
 
 export const runtime = 'nodejs';
 
@@ -80,7 +81,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const buffer = await watermarkUploadedImage(Buffer.from(await file.arrayBuffer()), file.type);
+    const originalBuffer = Buffer.from(await file.arrayBuffer());
+    const mediaUsage = validated.folder === 'advertisements' ? 'banner' : 'promo';
+    const dimensionValidation = await validateMediaDimensions(originalBuffer, mediaUsage);
+    if (!dimensionValidation.valid) {
+      return NextResponse.json({ error: dimensionValidation.error }, { status: 400 });
+    }
+    const buffer = await watermarkUploadedImage(originalBuffer, file.type);
     const key = createObjectKey(validated.folder ?? undefined);
 
     // Fallback local: guarda en public/uploads/... y devuelve URL relativa
@@ -96,7 +103,7 @@ export async function POST(request: Request) {
       await writeFile(path.join(uploadDir, filename), buffer);
       const relativeDir = path.dirname(key).replace(/^uploads\//, '');
       const url = `/uploads/${relativeDir}/${filename}`;
-      return NextResponse.json({ url });
+      return NextResponse.json({ url, media: dimensionValidation });
     }
 
     if (!s3) {
@@ -116,7 +123,7 @@ export async function POST(request: Request) {
     );
 
     const url = `https://${process.env.AWS_S3_BUCKET!}.s3.${process.env.AWS_S3_REGION!}.amazonaws.com/${key}`;
-    return NextResponse.json({ url });
+    return NextResponse.json({ url, media: dimensionValidation });
   } catch (error) {
     console.error('[UPLOAD_ERROR]', error);
     if (error instanceof z.ZodError) {

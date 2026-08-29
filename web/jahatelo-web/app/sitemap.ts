@@ -21,6 +21,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     {
+      url: `${BASE_URL}/search`,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/nearby`,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/contacto`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
       url: `${BASE_URL}/registrar-motel`,
       lastModified: now,
       changeFrequency: 'monthly',
@@ -82,7 +100,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       where: {
         status: 'APPROVED',
         isActive: true,
-        city: { not: undefined },
+        city: { not: '' },
       },
       select: {
         city: true,
@@ -94,7 +112,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     cityRoutes = cities
       .filter((m) => m.city)
       .map((city) => ({
-        url: `${BASE_URL}/ciudad/${city.city!.toLowerCase().replace(/\s+/g, '-')}`,
+        url: `${BASE_URL}/ciudad/${encodeURIComponent(city.city!.trim().toLowerCase().replace(/\s+/g, '-'))}`,
         lastModified: city.updatedAt,
         changeFrequency: 'daily' as const,
         priority: 0.8,

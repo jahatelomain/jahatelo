@@ -25,13 +25,14 @@ export default function BottomTabs() {
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarInactiveTintColor: COLORS.textMuted,
         headerShown: false,
+        tabBarLabelStyle: { fontSize: 12 },
       })}
     >
-      <Tab.Screen name="Home" component={HomeTabs} />
-      <Tab.Screen name="Favoritos" component={FavoritesScreen} />
-      <Tab.Screen name="Perfil" component={ProfileScreen} />
+      <Tab.Screen name="Home" component={HomeTabs} options={{ tabBarLabel: 'Inicio', tabBarAccessibilityLabel: 'Inicio' }} />
+      <Tab.Screen name="Favoritos" component={FavoritesScreen} options={{ tabBarAccessibilityLabel: 'Favoritos' }} />
+      <Tab.Screen name="Perfil" component={ProfileScreen} options={{ tabBarAccessibilityLabel: 'Perfil' }} />
     </Tab.Navigator>
   );
 }

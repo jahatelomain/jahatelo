@@ -6,6 +6,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { TableSkeleton } from '@/components/SkeletonLoader';
 import Link from 'next/link';
 import { useDebounce } from '@/hooks/useDebounce';
+import { usePersistentAdminFilters } from '@/hooks/usePersistentAdminFilters';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 type PaymentType = 'DIRECT_DEBIT' | 'TRANSFER' | 'EXCHANGE';
@@ -59,11 +60,11 @@ export default function FinancieroPage() {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = usePersistentAdminFilters('financial-search', '');
   const [searchSuggestions, setSearchSuggestions] = useState<Motel[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'ALL' | MotelStatus>('ALL');
-  const [activeFilter, setActiveFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  const [statusFilter, setStatusFilter] = usePersistentAdminFilters<'ALL' | MotelStatus>('financial-status', 'ALL');
+  const [activeFilter, setActiveFilter] = usePersistentAdminFilters<'ALL' | 'ACTIVE' | 'INACTIVE'>('financial-active', 'ALL');
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [summary, setSummary] = useState<{

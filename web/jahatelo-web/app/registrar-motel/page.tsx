@@ -3,9 +3,19 @@ import Footer from '@/components/public/Footer';
 import RegisterMotelForm from '@/components/public/RegisterMotelForm';
 import MobilePageHeader from '@/components/public/MobilePageHeader';
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
+
 export const metadata = {
   title: 'Registrar un motel - Jahatelo',
   description: 'Registrá tu motel en Jahatelo y empezá a recibir más clientes',
+  alternates: { canonical: `${BASE_URL}/registrar-motel` },
+  openGraph: {
+    title: 'Registrar un motel - Jahatelo',
+    description: 'Publicá tu motel en Jahatelo y llegá a más clientes.',
+    url: `${BASE_URL}/registrar-motel`,
+    locale: 'es_PY',
+    type: 'website',
+  },
 };
 
 export default function RegistrarMotelPage() {
@@ -13,7 +23,7 @@ export default function RegistrarMotelPage() {
     <>
       <Navbar />
       <MobilePageHeader title="Registrar motel" />
-      <div className="min-h-screen bg-gray-50 px-4 py-7 md:px-0 md:py-12">
+      <main className="public-page px-4 py-7 md:px-0 md:py-12">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="mb-8 text-center md:mb-12">
@@ -43,7 +53,7 @@ export default function RegistrarMotelPage() {
           {/* Form Component */}
           <RegisterMotelForm />
         </div>
-      </div>
+      </main>
       <Footer />
     </>
   );

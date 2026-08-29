@@ -11,6 +11,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { hasMotelPlanGlow } from '../constants/motelPlans';
 import MotelLogoHeart from './MotelLogoHeart';
+import { getMotelImageSource, hasRemoteMotelImage } from '../utils/mediaSource';
+import { PLAN_COLORS } from '../constants/theme';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.75;
@@ -58,13 +60,12 @@ const getMotelImageUrls = (motel) => {
 };
 
 const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badgeIconName = 'pricetag' }) => {
-  const fallbackPattern = require('../assets/motel-placeholder.png');
   const imageUrls = getMotelImageUrls(motel);
   const imageKey = imageUrls.join('|');
   const [imageIndex, setImageIndex] = useState(0);
   const resolvedImageUrl = imageUrls[imageIndex] || null;
-  const imageSource = resolvedImageUrl ? { uri: resolvedImageUrl } : fallbackPattern;
-  const isPlaceholder = !resolvedImageUrl;
+  const imageSource = getMotelImageSource(resolvedImageUrl);
+  const isPlaceholder = !hasRemoteMotelImage(resolvedImageUrl);
   const hasPlanGlow = hasMotelPlanGlow(motel?.plan);
 
   useEffect(() => {
@@ -140,7 +141,7 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
     <Animated.View style={[styles.cardWrapper, animatedStyle]}>
       {hasPlanGlow ? (
         <LinearGradient
-          colors={['#22D3EE', '#BAE6FD', '#0EA5E9', '#7DD3FC']}
+          colors={[PLAN_COLORS.diamond, PLAN_COLORS.diamondLight, PLAN_COLORS.diamondDark, PLAN_COLORS.diamondSoft]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.planGlowFrame}
@@ -163,10 +164,9 @@ const AdCard = ({ ad, onPress, index, scrollX, onTrackView }) => {
     }
   }, [ad, onTrackView]);
 
-  const fallbackPattern = require('../assets/motel-placeholder.png');
   const image = ad.imageUrl || null;
-  const imageSource = image ? { uri: image } : fallbackPattern;
-  const isPlaceholder = !image;
+  const imageSource = getMotelImageSource(image);
+  const isPlaceholder = !hasRemoteMotelImage(image);
 
   const inputRange = [
     (index - 1) * (CARD_WIDTH + SPACING),
