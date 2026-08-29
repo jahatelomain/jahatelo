@@ -10,6 +10,7 @@ import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import DirtyBanner from '@/components/admin/DirtyBanner';
 import { useDebounce } from '@/hooks/useDebounce';
+import { usePersistentAdminFilters } from '@/hooks/usePersistentAdminFilters';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 type Amenity = {
@@ -51,7 +52,7 @@ export default function AmenitiesPage() {
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = usePersistentAdminFilters('amenities-search', '');
   const pageSize = 20;
   const hasMore = amenities.length < totalItems;
   const filtersKeyRef = useRef('');

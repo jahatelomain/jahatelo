@@ -6,7 +6,6 @@ import {
   FlatList,
   TouchableOpacity,
   ImageBackground,
-  Alert,
   Modal,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,6 +29,7 @@ import { useAdvertisements } from '../hooks/useAdvertisements';
 import { mixAdvertisements } from '../utils/mixAdvertisements';
 import { COLORS } from '../constants/theme';
 import { filterMotelsByDistance } from '../utils/location';
+import { showMessage } from '../utils/appFeedback';
 
 const PROMO_RADIUS_OPTIONS = [
   { value: 2, label: '2 km' },
@@ -60,7 +60,7 @@ const AnimatedPromoCard = ({ item, index, onPress }) => {
 
   return (
     <Animated.View entering={FadeInDown.delay(index * 100).duration(500).springify()}>
-      <TouchableOpacity activeOpacity={0.9} onPress={() => onPress(item)}>
+      <TouchableOpacity activeOpacity={0.9} onPress={() => onPress(item)} accessibilityRole="button" accessibilityLabel={`Ver ${item.nombre || item.name || 'motel'}`}>
         <ImageBackground
           source={imageSource}
           style={styles.promoCard}
@@ -71,10 +71,10 @@ const AnimatedPromoCard = ({ item, index, onPress }) => {
             <Text style={styles.promoBadgeText}>PROMO</Text>
           </View>
           <View style={styles.promoOverlay}>
-            <Text style={styles.promoTitle} numberOfLines={1}>
+            <Text style={styles.promoTitle} numberOfLines={2}>
               {item?.promoTitle || 'Promoción especial'}
             </Text>
-            <Text style={styles.promoMotelName} numberOfLines={1}>
+            <Text style={styles.promoMotelName} numberOfLines={2}>
               {item?.nombre}
             </Text>
             {item?.promoDescription ? (
@@ -173,7 +173,7 @@ export default function MotelListScreen({ route, navigation }) {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(
+        showMessage(
           'Ubicación requerida',
           'Para ver promos cerca tuyo necesitamos acceso a tu ubicación. Puedes elegir "Todos".'
         );
@@ -248,6 +248,8 @@ export default function MotelListScreen({ route, navigation }) {
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Volver"
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
@@ -269,6 +271,8 @@ export default function MotelListScreen({ route, navigation }) {
               style={styles.locationBadge}
               onPress={() => setShowRadiusModal(true)}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={`Cambiar radio, actual ${selectedRadius} kilómetros`}
             >
               <Ionicons name="navigate" size={12} color={COLORS.primary} />
               <Text style={styles.locationText}>
@@ -557,12 +561,12 @@ const styles = StyleSheet.create({
   },
   promoMotelName: {
     fontSize: 13,
-    color: '#E5E5E5',
+    color: COLORS.grayLight,
     marginTop: 2,
   },
   promoDescription: {
     fontSize: 12,
-    color: '#F0F0F0',
+    color: COLORS.divider,
     marginTop: 6,
   },
   emptyText: {

@@ -27,6 +27,11 @@ export default defineConfig({
         storageState: './e2e/.auth/admin.json',
       },
     },
+    {
+      name: 'visual-public',
+      testMatch: /visual-public\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
 
   webServer: {

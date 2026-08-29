@@ -45,7 +45,7 @@ export const metadata: Metadata = {
         alt: 'Jahatelo - Encuentra tu motel ideal',
       },
     ],
-    locale: 'es_CO',
+    locale: 'es_PY',
     type: 'website',
   },
   twitter: {
@@ -80,6 +80,22 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${lato.variable} antialiased bg-white text-slate-900`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'Jahatelo',
+              url: process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: `${process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com'}/search?q={search_term_string}`,
+                'query-input': 'required name=search_term_string',
+              },
+            }),
+          }}
+        />
         <GoogleAuthProvider>
           <AuthProvider>
             <ToastProvider>

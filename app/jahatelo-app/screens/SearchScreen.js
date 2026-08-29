@@ -20,6 +20,7 @@ import AdDetailModal from '../components/AdDetailModal';
 import { prefetchMotelDetails, prefetchThumbnails } from '../services/prefetchService';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { mixAdvertisements } from '../utils/mixAdvertisements';
+import { COLORS } from '../constants/theme';
 
 // Filtros rápidos por amenities comunes
 const QUICK_FILTERS = [
@@ -80,7 +81,7 @@ export default function SearchScreen({ route }) {
       -1,
       false
     );
-  }, []);
+  }, [emptyIconOpacity, emptyIconScale]);
 
   // Función para cargar resultados
   const loadResults = async (query, amenity) => {
@@ -437,6 +438,26 @@ export default function SearchScreen({ route }) {
                 <Text style={styles.emptyText}>
                   Intenta con otros términos de búsqueda o filtros
                 </Text>
+                {searchQuery.trim().length > 1 && (
+                  <View style={styles.recommendCard}>
+                    <View style={styles.recommendIcon}>
+                      <Ionicons name="location-outline" size={26} color={COLORS.primary} />
+                    </View>
+                    <Text style={styles.recommendTitle}>¿No encontraste el motel?</Text>
+                    <Text style={styles.recommendText}>
+                      Recomendanos un lugar y lo sumamos a Jahatelo.
+                    </Text>
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel="Recomendar motel"
+                      style={styles.recommendButton}
+                      onPress={() => navigation.navigate('RecommendMotel', { motelName: searchQuery.trim() })}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={styles.recommendButtonText}>Recomendar motel</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             }
           />
@@ -577,6 +598,51 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     textAlign: 'center',
+  },
+  recommendCard: {
+    width: '100%',
+    marginTop: 28,
+    padding: 20,
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E8DDF3',
+    backgroundColor: '#FFFFFF',
+  },
+  recommendIcon: {
+    width: 50,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 25,
+    backgroundColor: COLORS.accentLight,
+  },
+  recommendTitle: {
+    marginTop: 14,
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+  recommendText: {
+    marginTop: 7,
+    fontSize: 14,
+    lineHeight: 20,
+    color: COLORS.textLight,
+    textAlign: 'center',
+  },
+  recommendButton: {
+    width: '100%',
+    minHeight: 48,
+    marginTop: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
+  },
+  recommendButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
   },
   suggestionsContainer: {
     position: 'absolute',

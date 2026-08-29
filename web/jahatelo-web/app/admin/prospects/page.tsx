@@ -8,6 +8,7 @@ import { TableSkeleton } from '@/components/SkeletonLoader';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useDebounce } from '@/hooks/useDebounce';
+import { usePersistentAdminFilters } from '@/hooks/usePersistentAdminFilters';
 import { Building2, FileText, MoreHorizontal, Search, Trash2, X } from 'lucide-react';
 
 type ProspectStatus = 'NEW' | 'CONTACTED' | 'IN_NEGOTIATION' | 'WON' | 'LOST';
@@ -82,7 +83,7 @@ export default function ProspectsPage() {
   } | null>(null);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = usePersistentAdminFilters('prospects-search', '');
   const [highlightedProspectId, setHighlightedProspectId] = useState<string | null>(null);
   const searchKeyRef = useRef('');
   const pageSize = 20;

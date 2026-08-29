@@ -63,8 +63,8 @@ export default function PerfilPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-purple-600">Cargando...</div>
+      <div className="public-page flex items-center justify-center" role="status" aria-live="polite">
+        <div className="text-purple-700">Cargando perfil…</div>
       </div>
     );
   }
@@ -75,7 +75,7 @@ export default function PerfilPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <main className="public-page">
       <MobilePageHeader title="Mi perfil" />
       {/* Header */}
       <div className="hidden bg-gradient-to-r from-purple-600 to-purple-800 text-white md:block">
@@ -83,6 +83,7 @@ export default function PerfilPage() {
           <div className="flex items-center gap-4 mb-4">
             <Link
               href="/"
+              aria-label="Volver al inicio"
               className="text-white/80 hover:text-white transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,11 +114,11 @@ export default function PerfilPage() {
           {/* Main Content */}
           <div className="md:col-span-2 space-y-6">
             {/* Profile Information Card */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <section className="public-card p-6" aria-labelledby="profile-information-title">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-slate-900">
+                <h2 id="profile-information-title" className="text-xl font-semibold text-slate-900">
                   Información del Perfil
-                </h3>
+                </h2>
                 {!editMode && (
                   <button
                     onClick={() => setEditMode(true)}
@@ -130,12 +131,12 @@ export default function PerfilPage() {
 
               {/* Success/Error messages */}
               {success && (
-                <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="public-status public-status-success mb-4" role="status" aria-live="polite">
                   <p className="text-sm text-green-600">{success}</p>
                 </div>
               )}
               {error && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="public-status public-status-error mb-4" role="alert">
                   <p className="text-sm text-red-600">{error}</p>
                 </div>
               )}
@@ -143,11 +144,13 @@ export default function PerfilPage() {
               {editMode ? (
                 <form onSubmit={handleSaveProfile} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <label htmlFor="profile-name" className="block text-sm font-medium text-slate-700 mb-2">
                       Nombre
                     </label>
                     <input
+                      id="profile-name"
                       type="text"
+                      autoComplete="name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent text-gray-900"
@@ -156,10 +159,11 @@ export default function PerfilPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <label htmlFor="profile-email" className="block text-sm font-medium text-slate-700 mb-2">
                       Email
                     </label>
                     <input
+                      id="profile-email"
                       type="email"
                       value={user?.email || ''}
                       disabled
@@ -171,11 +175,13 @@ export default function PerfilPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <label htmlFor="profile-phone" className="block text-sm font-medium text-slate-700 mb-2">
                       Teléfono (opcional)
                     </label>
                     <input
+                      id="profile-phone"
                       type="tel"
+                      autoComplete="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent text-gray-900"
@@ -228,7 +234,7 @@ export default function PerfilPage() {
                   </div>
                 </div>
               )}
-            </div>
+            </section>
 
             {/* Account Actions Card */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -371,6 +377,6 @@ export default function PerfilPage() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

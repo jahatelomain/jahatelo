@@ -12,13 +12,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { hasMotelPlanGlow } from '../constants/motelPlans';
 import MotelLogoHeart from './MotelLogoHeart';
-
-const COLORS = {
-  white: '#FFFFFF',
-  muted: '#C5C5C5',
-  primary: '#FF2E93',
-  card: '#1F0F2E',
-};
+import { DARK_SURFACES, PLAN_COLORS } from '../constants/theme';
+import { getMotelImageSource, hasRemoteMotelImage } from '../utils/mediaSource';
 
 export default function MotelCardSmall({ motel, onPress }) {
   // isDiamond con null safety — debe estar antes de los hooks
@@ -68,10 +63,9 @@ export default function MotelCardSmall({ motel, onPress }) {
   // Early return después de todos los hooks
   if (!motel) return null;
 
-  const fallbackPattern = require('../assets/motel-placeholder.png');
   const image = motel.thumbnail || null;
-  const imageSource = image ? { uri: image } : fallbackPattern;
-  const isPlaceholder = !image;
+  const imageSource = getMotelImageSource(image);
+  const isPlaceholder = !hasRemoteMotelImage(image);
   const ratingText =
     typeof motel.rating === 'number' && motel.rating > 0
       ? motel.rating.toFixed(1)
@@ -82,6 +76,9 @@ export default function MotelCardSmall({ motel, onPress }) {
       style={[styles.container, isDiamond && styles.containerNoMargin]}
       onPress={onPress}
       activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityLabel={`${motel.nombre}. Calificación ${ratingText}`}
+      accessibilityHint="Abre los detalles del motel"
     >
       <View style={styles.imageContainer}>
         <Image source={imageSource} style={[styles.image, isPlaceholder && styles.placeholderImage]} />
@@ -96,7 +93,7 @@ export default function MotelCardSmall({ motel, onPress }) {
           {motel.nombre}
         </Text>
         <View style={styles.ratingRow}>
-          <Ionicons name="star" size={14} color={COLORS.primary} />
+          <Ionicons name="star" size={14} color={DARK_SURFACES.accent} />
           <Text style={styles.rating}>{ratingText}</Text>
         </View>
       </View>
@@ -107,7 +104,7 @@ export default function MotelCardSmall({ motel, onPress }) {
 
   return (
     <LinearGradient
-      colors={['#22D3EE', '#BAE6FD', '#0EA5E9', '#7DD3FC']}
+      colors={[PLAN_COLORS.diamond, PLAN_COLORS.diamondLight, PLAN_COLORS.diamondDark, PLAN_COLORS.diamondSoft]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.diamondFrame}
@@ -134,7 +131,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
     borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: COLORS.card,
+    backgroundColor: DARK_SURFACES.card,
   },
   containerNoMargin: {
     marginRight: 0,
@@ -143,7 +140,7 @@ const styles = StyleSheet.create({
     padding: 2,
     borderRadius: 16,
     marginRight: 16,
-    shadowColor: '#22D3EE',
+    shadowColor: PLAN_COLORS.diamond,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
@@ -181,7 +178,7 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 3,
     backgroundColor: 'rgba(255,255,255,0.95)',
-    shadowColor: '#BAE6FD',
+    shadowColor: PLAN_COLORS.diamondLight,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 4,
@@ -207,7 +204,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   name: {
-    color: COLORS.white,
+    color: DARK_SURFACES.text,
     fontWeight: '600',
   },
   ratingRow: {
@@ -216,7 +213,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   rating: {
-    color: COLORS.muted,
+    color: DARK_SURFACES.muted,
     marginLeft: 4,
     fontSize: 12,
   },

@@ -191,7 +191,7 @@ export async function generateStaticParams() {
     where: {
       status: 'APPROVED',
       isActive: true,
-      city: { not: undefined },
+      city: { not: '' },
     },
     select: { city: true },
     distinct: ['city'],

@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useOnlineRetry } from '../hooks/useOnlineRetry';
 import {
   ActivityIndicator,
-  Alert,
   Platform,
   RefreshControl,
   ScrollView,
@@ -15,6 +14,7 @@ import {
 } from 'react-native';
 import { fetchMotels, fetchFeaturedMotels } from '../services/motelsApi';
 import { clearStoredStagingCredentials, isStagingEnvironment } from '../services/stagingAuthService';
+import { showMessage } from '../utils/appFeedback';
 
 import HomeCategoriesGrid from '../components/HomeCategoriesGrid';
 import HomeHeader from '../components/HomeHeader';
@@ -72,7 +72,7 @@ export default function HomeScreen() {
         console.warn('⚠️ [HomeScreen] Error 401 - Limpiando credenciales inválidas');
         await clearStoredStagingCredentials();
 
-        Alert.alert(
+        showMessage(
           'Credenciales inválidas',
           'Las credenciales de staging no son válidas. Por favor, reinicia la app e ingresa nuevamente.',
           [

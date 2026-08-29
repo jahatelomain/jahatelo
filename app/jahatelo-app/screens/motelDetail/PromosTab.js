@@ -9,13 +9,13 @@ import {
   Modal,
   ActivityIndicator,
   Clipboard,
-  Alert,
   RefreshControl,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { COLORS } from '../../constants/theme';
+import { COLORS, STATUS_COLORS } from '../../constants/theme';
 import { getApiRoot } from '../../services/apiBaseUrl';
 import { getOrCreateDeviceId } from '../../services/analyticsService';
+import { showMessage } from '../../utils/appFeedback';
 
 const CLAIMED_CODES_KEY = 'jahatelo_claimed_promo_codes';
 
@@ -95,7 +95,7 @@ export default function PromosTab({ route, refreshing, onRefresh, embedded = fal
   const handleCopy = () => {
     if (codeModal?.code) {
       Clipboard.setString(codeModal.code);
-      Alert.alert('¡Copiado!', 'El código fue copiado al portapapeles.');
+      showMessage('¡Copiado!', 'El código fue copiado al portapapeles.');
     }
   };
 
@@ -231,7 +231,7 @@ export default function PromosTab({ route, refreshing, onRefresh, embedded = fal
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
   },
   content: {
     padding: 16,
@@ -242,24 +242,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
   },
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#2A0038',
+    color: COLORS.textBrandDark,
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#6A5E6E',
+    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   card: {
     borderRadius: 16,
-    backgroundColor: '#FDFDFD',
+    backgroundColor: COLORS.surfaceRaised,
     borderWidth: 1,
-    borderColor: '#F0E6F5',
+    borderColor: COLORS.borderBrandSoft,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOpacity: 0.05,
@@ -271,12 +271,12 @@ const styles = StyleSheet.create({
     height: 160,
   },
   imagePlaceholder: {
-    backgroundColor: '#F5E6FA',
+    backgroundColor: COLORS.brandSoft,
     justifyContent: 'center',
     alignItems: 'center',
   },
   imagePlaceholderText: {
-    color: '#9932CC',
+    color: COLORS.primary,
     fontWeight: '700',
     fontSize: 16,
   },
@@ -292,12 +292,12 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#2A0038',
+    color: COLORS.textBrandDark,
     flex: 1,
     marginRight: 12,
   },
   globalBadge: {
-    backgroundColor: '#FFE4F1',
+    backgroundColor: COLORS.brandHighlight,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
@@ -309,17 +309,17 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 14,
-    color: '#4A3E52',
+    color: COLORS.textSecondary,
   },
   descriptionMuted: {
     fontSize: 14,
-    color: '#9C8BA5',
+    color: COLORS.textTertiary,
     fontStyle: 'italic',
   },
   validity: {
     marginTop: 4,
     fontSize: 12,
-    color: '#9C8BA5',
+    color: COLORS.textTertiary,
   },
   claimSection: {
     marginTop: 12,
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   },
   claimError: {
     fontSize: 13,
-    color: '#dc2626',
+    color: STATUS_COLORS.danger,
     textAlign: 'center',
   },
   claimBtn: {
@@ -377,24 +377,24 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#2A0038',
+    color: COLORS.textBrandDark,
     textAlign: 'center',
   },
   modalDescription: {
     fontSize: 14,
-    color: '#6A5E6E',
+    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   modalCodeLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#9C8BA5',
+    color: COLORS.textTertiary,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginTop: 8,
   },
   codeBox: {
-    backgroundColor: '#F5E6FA',
+    backgroundColor: COLORS.brandSoft,
     borderWidth: 2,
     borderColor: COLORS.primary,
     borderStyle: 'dashed',
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
   },
   codeHint: {
     fontSize: 13,
-    color: '#9C8BA5',
+    color: COLORS.textTertiary,
     textAlign: 'center',
   },
   copyBtn: {
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeBtnText: {
-    color: '#9C8BA5',
+    color: COLORS.textTertiary,
     fontSize: 14,
     fontWeight: '600',
   },

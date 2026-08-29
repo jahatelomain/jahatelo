@@ -202,7 +202,6 @@ export async function PATCH(
     if (validated.featuredPhotoApp !== undefined) data.featuredPhotoApp = normalizeMediaUrlForStorage(validated.featuredPhotoApp);
     if (validated.logoUrl !== undefined) data.logoUrl = normalizeMediaUrlForStorage(validated.logoUrl);
 
-    let locationWarning: string | null = null;
     // La ubicación que aparece en un iframe es el centro de su vista, no
     // necesariamente el pin del negocio. Al cambiar el enlace, resolvemos la
     // ficha canónica con Places API y guardamos su Place ID y coordenadas.
@@ -226,11 +225,6 @@ export async function PATCH(
           data.longitude = place.longitude;
           // El enlace devuelto por Places abre la ficha del establecimiento.
           data.mapUrl = place.googleMapsUri || mapUrl;
-        } else {
-          // Guardamos el enlace, pero no sobrescribimos un pin previo con el
-          // centro del iframe. El administrador puede volver a intentarlo
-          // una vez habilitada Places API (New) o revisada la ficha.
-          locationWarning = 'Se guardó el enlace, pero no se pudo verificar el pin oficial de Google. Se conservó la ubicación anterior.';
         }
       }
     }
@@ -245,18 +239,19 @@ export async function PATCH(
       data,
     });
 
+    const sourceReportId = request.headers.get('x-jahatelo-report-id');
+    const sourceReport = sourceReportId && access.user?.role === 'SUPERADMIN'
+      ? await prisma.motelReport.findFirst({ where: { id: sourceReportId, motelId: motel.id }, select: { id: true } })
+      : null;
     await logAuditEvent({
       userId: access.user?.id,
       action: 'UPDATE',
       entityType: 'Motel',
       entityId: motel.id,
-      metadata: { name: motel.name },
+      metadata: { name: motel.name, sourceReportId: sourceReport?.id || null },
     });
 
-    return NextResponse.json({
-      ...normalizeMotelMedia(motel, getRequestBaseUrl(request)),
-      locationWarning,
-    });
+    return NextResponse.json(normalizeMotelMedia(motel, getRequestBaseUrl(request)));
   } catch (error) {
     // Errores de validación Zod
     if (error instanceof z.ZodError) {

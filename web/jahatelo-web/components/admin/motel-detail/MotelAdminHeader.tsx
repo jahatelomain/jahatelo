@@ -1,4 +1,5 @@
-import { Image as ImageIcon, MapPin, MessageCircle, Phone, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { Eye, Image as ImageIcon, MapPin, MessageCircle, Phone, Trash2 } from 'lucide-react';
 import type { Motel, MotelStatus } from './types';
 import AdminImage from './AdminImage';
 import { getGoogleMapsExternalUrl } from './formUtils';
@@ -59,6 +60,9 @@ export default function MotelAdminHeader({
                 {motel.plan}
               </span>
             )}
+            <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold ${motel.status === 'APPROVED' && motel.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+              {motel.status === 'APPROVED' && motel.isActive ? 'Visible en web y apps' : 'No visible al público'}
+            </span>
           </div>
 
           {isSuperAdmin && (
@@ -100,6 +104,9 @@ export default function MotelAdminHeader({
           </div>
 
           <div className="flex flex-wrap gap-2">
+            <Link href={`/admin/motels/${motel.id}/preview`} className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100">
+              <Eye className="h-3.5 w-3.5" /> Previsualizar web y app
+            </Link>
             {mapsLink && (
               <a href={mapsLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-purple-200 hover:text-purple-700 transition-colors">
                 <MapPin className="w-3.5 h-3.5" /> Ver mapa

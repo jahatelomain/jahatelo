@@ -77,11 +77,11 @@ export default function RegisterMotelForm() {
   return (
     <>
       {/* Form */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div className="public-card p-6 md:p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div id="prospect-error" role="alert" className="public-status public-status-error">
               {error}
             </div>
           )}
@@ -97,6 +97,8 @@ export default function RegisterMotelForm() {
             <input
               type="text"
               id="contactName"
+              autoComplete="name"
+              aria-describedby={error ? 'prospect-error' : undefined}
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
               placeholder="Ej: Juan Pérez"
@@ -116,6 +118,8 @@ export default function RegisterMotelForm() {
             <input
               type="tel"
               id="phone"
+              autoComplete="tel"
+              aria-describedby={error ? 'prospect-error' : undefined}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="Ej: 0981 123 456"
@@ -135,6 +139,7 @@ export default function RegisterMotelForm() {
             <input
               type="email"
               id="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Ej: contacto@mimotel.com"
@@ -154,6 +159,7 @@ export default function RegisterMotelForm() {
             <input
               type="text"
               id="motelName"
+              autoComplete="organization"
               value={motelName}
               onChange={(e) => setMotelName(e.target.value)}
               placeholder="Ej: Motel Paradise"
@@ -166,6 +172,7 @@ export default function RegisterMotelForm() {
           <button
             type="submit"
             disabled={loading}
+            aria-busy={loading}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
           >
             {loading ? (
@@ -216,8 +223,8 @@ export default function RegisterMotelForm() {
 
       {/* Success Modal */}
       {showSuccessModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="presentation">
+          <div className="public-card w-full max-w-md p-8 animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="prospect-success-title">
             <div className="text-center">
               {/* Success Icon */}
               <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
@@ -237,9 +244,9 @@ export default function RegisterMotelForm() {
               </div>
 
               {/* Title */}
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+              <h2 id="prospect-success-title" className="text-2xl font-bold text-gray-900 mb-3">
                 ¡Gracias por tus datos!
-              </h3>
+              </h2>
 
               {/* Message */}
               <p className="text-gray-600 mb-8 leading-relaxed">

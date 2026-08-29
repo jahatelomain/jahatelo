@@ -9,13 +9,13 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { requestSmsOtp, verifySmsOtp } from '../services/authApi';
-import { COLORS } from '../constants/theme';
+import { COLORS, STATUS_COLORS } from '../constants/theme';
+import { showMessage } from '../utils/appFeedback';
 
 export default function RegisterScreen({ navigation }) {
   const { register } = useAuth();
@@ -102,7 +102,7 @@ export default function RegisterScreen({ navigation }) {
         setOtpCode(String(data.debugCode));
       }
     } catch (error) {
-      Alert.alert('Error', error.message || 'No se pudo enviar el código');
+      showMessage('Error', error.message || 'No se pudo enviar el código');
     } finally {
       setOtpLoading(false);
     }
@@ -119,7 +119,7 @@ export default function RegisterScreen({ navigation }) {
       });
 
       if (result.success) {
-        Alert.alert(
+        showMessage(
           '¡Cuenta creada!',
           'Tu cuenta ha sido creada exitosamente.',
           [
@@ -130,10 +130,10 @@ export default function RegisterScreen({ navigation }) {
           ]
         );
       } else {
-        Alert.alert('Error', result.error || 'Error al crear cuenta');
+        showMessage('Error', result.error || 'Error al crear cuenta');
       }
     } catch (error) {
-      Alert.alert('Error', error.message || 'Error al crear cuenta');
+      showMessage('Error', error.message || 'Error al crear cuenta');
     } finally {
       setOtpVerifyLoading(false);
     }
@@ -160,7 +160,7 @@ export default function RegisterScreen({ navigation }) {
       });
 
       if (result.success) {
-        Alert.alert(
+        showMessage(
           '¡Cuenta creada!',
           'Te enviamos un correo de verificación. Revisá tu bandeja y hacé clic en el enlace antes de iniciar sesión.',
           [
@@ -171,10 +171,10 @@ export default function RegisterScreen({ navigation }) {
           ]
         );
       } else {
-        Alert.alert('Error', result.error || 'Error al crear cuenta');
+        showMessage('Error', result.error || 'Error al crear cuenta');
       }
     } catch (error) {
-      Alert.alert('Error', error.message || 'Error al crear cuenta');
+      showMessage('Error', error.message || 'Error al crear cuenta');
     } finally {
       setIsLoading(false);
     }
@@ -195,6 +195,8 @@ export default function RegisterScreen({ navigation }) {
             <TouchableOpacity
               style={styles.backButton}
               onPress={() => navigation.goBack()}
+              accessibilityRole="button"
+              accessibilityLabel="Volver"
             >
               <Ionicons name="arrow-back" size={24} color={COLORS.text} />
             </TouchableOpacity>
@@ -252,6 +254,7 @@ export default function RegisterScreen({ navigation }) {
               <View style={styles.inputWrapper}>
                 <Ionicons name="person-outline" size={20} color={COLORS.gray} style={styles.inputIcon} />
                 <TextInput
+                  accessibilityLabel="Nombre o apodo"
                   style={styles.input}
                   placeholder="Tu nick"
                   value={formData.name}
@@ -270,6 +273,7 @@ export default function RegisterScreen({ navigation }) {
                   <View style={[styles.inputWrapper, errors.phone && styles.inputError]}>
                     <Ionicons name="call-outline" size={20} color={COLORS.gray} style={styles.inputIcon} />
                     <TextInput
+                      accessibilityLabel="Número de teléfono"
                       style={styles.input}
                       placeholder="+595981234567"
                       value={phone}
@@ -291,6 +295,7 @@ export default function RegisterScreen({ navigation }) {
                     <View style={[styles.inputWrapper, errors.otpCode && styles.inputError]}>
                       <Ionicons name="key-outline" size={20} color={COLORS.gray} style={styles.inputIcon} />
                       <TextInput
+                        accessibilityLabel="Código de verificación"
                         style={styles.input}
                         placeholder="000000"
                         value={otpCode}
@@ -314,6 +319,7 @@ export default function RegisterScreen({ navigation }) {
                   <View style={[styles.inputWrapper, errors.email && styles.inputError]}>
                     <Ionicons name="mail-outline" size={20} color={COLORS.gray} style={styles.inputIcon} />
                     <TextInput
+                      accessibilityLabel="Correo electrónico"
                       style={styles.input}
                       placeholder="tu@email.com"
                       value={formData.email}
@@ -333,6 +339,7 @@ export default function RegisterScreen({ navigation }) {
                   <View style={[styles.inputWrapper, errors.password && styles.inputError]}>
                     <Ionicons name="lock-closed-outline" size={20} color={COLORS.gray} style={styles.inputIcon} />
                     <TextInput
+                      accessibilityLabel="Contraseña"
                       style={styles.input}
                       placeholder="Mínimo 6 caracteres"
                       value={formData.password}
@@ -344,6 +351,8 @@ export default function RegisterScreen({ navigation }) {
                     <TouchableOpacity
                       onPress={() => setShowPassword(!showPassword)}
                       style={styles.eyeButton}
+                      accessibilityRole="button"
+                      accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                     >
                       <Ionicons
                         name={showPassword ? 'eye-outline' : 'eye-off-outline'}
@@ -361,6 +370,7 @@ export default function RegisterScreen({ navigation }) {
                   <View style={[styles.inputWrapper, errors.confirmPassword && styles.inputError]}>
                     <Ionicons name="lock-closed-outline" size={20} color={COLORS.gray} style={styles.inputIcon} />
                     <TextInput
+                      accessibilityLabel="Confirmar contraseña"
                       style={styles.input}
                       placeholder="Confirma tu contraseña"
                       value={formData.confirmPassword}
@@ -372,6 +382,8 @@ export default function RegisterScreen({ navigation }) {
                     <TouchableOpacity
                       onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                       style={styles.eyeButton}
+                      accessibilityRole="button"
+                      accessibilityLabel={showConfirmPassword ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'}
                     >
                       <Ionicons
                         name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
@@ -431,7 +443,7 @@ export default function RegisterScreen({ navigation }) {
             {/* OAuth Buttons */}
             <View style={styles.oauthContainer}>
               <TouchableOpacity style={styles.oauthButton}>
-                <Ionicons name="logo-google" size={24} color="#DB4437" />
+                <Ionicons name="logo-google" size={24} color={STATUS_COLORS.google} />
               </TouchableOpacity>
             </View>
 
@@ -503,7 +515,7 @@ const styles = StyleSheet.create({
   },
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.surfaceSubtle,
     borderRadius: 10,
     padding: 4,
     marginBottom: 20,

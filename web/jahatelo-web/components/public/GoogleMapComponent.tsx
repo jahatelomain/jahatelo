@@ -273,6 +273,8 @@ export default function GoogleMapComponent({
     () => typeof window !== 'undefined' && Boolean(window.google?.maps),
   );
   const [error, setError] = useState<string | null>(GOOGLE_MAPS_API_KEY ? null : GOOGLE_MAPS_CONFIG_ERROR);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
 
   // Load Google Maps script
   useEffect(() => {
@@ -564,20 +566,26 @@ export default function GoogleMapComponent({
   });
 
   const handleLocateMe = () => {
+    setLocationError(null);
     if ('geolocation' in navigator) {
+      setLocating(true);
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
           const newLocation: [number, number] = [latitude, longitude];
           addUserMarker(newLocation);
+          setLocating(false);
         },
         (error) => {
           console.error('Error getting location:', error);
-          alert('No pudimos obtener tu ubicación. Verifica los permisos del navegador.');
+          setLocating(false);
+          setLocationError(error.code === error.PERMISSION_DENIED
+            ? 'El permiso de ubicación está desactivado. Podés habilitarlo en la configuración del navegador.'
+            : 'No pudimos obtener tu ubicación. Intentá nuevamente.');
         }
       );
     } else {
-      alert('Tu navegador no soporta geolocalización');
+      setLocationError('Este navegador no admite ubicación. El mapa se puede seguir explorando manualmente.');
     }
   };
 
@@ -604,18 +612,27 @@ export default function GoogleMapComponent({
     <div className="relative h-full w-full">
       {/* Locate Me Button */}
       <button
+        type="button"
         onClick={handleLocateMe}
-        className="absolute top-4 right-4 z-10 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg shadow-md border border-gray-200 font-medium flex items-center gap-2 transition-colors"
+        disabled={locating}
+        aria-describedby={locationError ? 'map-location-error' : undefined}
+        className="absolute right-3 top-3 z-10 flex min-h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-medium text-gray-700 shadow-md transition-colors hover:bg-gray-50 disabled:cursor-wait disabled:opacity-70 sm:right-4 sm:top-4 sm:px-4"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
-        Centrar en mí
+        {locating ? 'Buscando…' : 'Centrar en mí'}
       </button>
 
+      {locationError && (
+        <div id="map-location-error" role="alert" className="absolute left-3 right-3 top-16 z-10 rounded-xl border border-amber-200 bg-white/95 p-3 text-sm text-amber-900 shadow-md sm:left-auto sm:right-4 sm:max-w-sm">
+          {locationError}
+        </div>
+      )}
+
       {/* Map container */}
-      <div ref={mapRef} className="h-full w-full" />
+      <div ref={mapRef} className="h-full w-full" role="region" aria-label="Mapa interactivo de moteles" />
     </div>
   );
 }

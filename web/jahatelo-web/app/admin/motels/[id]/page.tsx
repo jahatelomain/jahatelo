@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, ChangeEvent, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import DirtyBanner from '@/components/admin/DirtyBanner';
@@ -67,6 +67,12 @@ export default function MotelDetailPage() {
     return value ?? '';
   }, [params]);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sourceReportId = searchParams.get('reportId');
+  const motelPatchHeaders = {
+    'Content-Type': 'application/json',
+    ...(sourceReportId ? { 'x-jahatelo-report-id': sourceReportId } : {}),
+  };
   const [motel, setMotel] = useState<Motel | null>(null);
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -380,7 +386,7 @@ export default function MotelDetailPage() {
     try {
       const res = await fetch(`/api/admin/promos/${promoId}/redeem`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: motelPatchHeaders,
         body: JSON.stringify({ code, confirm: false }),
       });
       const data = await res.json();
@@ -399,7 +405,7 @@ export default function MotelDetailPage() {
     try {
       const res = await fetch(`/api/admin/promos/${promoId}/redeem`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: motelPatchHeaders,
         body: JSON.stringify({ code, confirm: true }),
       });
       const data = await res.json();
@@ -479,7 +485,7 @@ export default function MotelDetailPage() {
       };
       const res = await fetch(`/api/admin/motels/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: motelPatchHeaders,
         body: JSON.stringify(payload),
       });
 
@@ -496,7 +502,6 @@ export default function MotelDetailPage() {
         await fetchMotel();
         setEditingMotel(false);
         setEditingCommercial(false);
-        if (updatedMotel?.locationWarning) toast.warning(updatedMotel.locationWarning);
         setSaveStatus('success');
         setTimeout(() => setSaveStatus('idle'), 2500);
       } else {
@@ -513,7 +518,7 @@ export default function MotelDetailPage() {
     try {
       const res = await fetch(`/api/admin/motels/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: motelPatchHeaders,
         body: JSON.stringify(updates),
       });
 

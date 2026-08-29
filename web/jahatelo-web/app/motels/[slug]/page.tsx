@@ -9,6 +9,7 @@ import PromosTab from '@/components/public/PromosTab';
 import RoomPhotoGallery from '@/components/public/RoomPhotoGallery';
 import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
 import ShareButton from '@/components/public/ShareButton';
+import ReportMotelButton from '@/components/public/ReportMotelButton';
 import ReviewsSection from '@/components/public/ReviewsSection';
 import PriceTable from '@/components/public/PriceTable';
 import AmenityList from '@/components/public/AmenityList';
@@ -559,8 +560,9 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
 
             <div className="flex items-center gap-1.5 md:gap-3">
               <ContactButtons motelId={motel.id} phone={motel.phone} whatsapp={motel.whatsapp} />
+              <ReportMotelButton motelId={motel.id} motelName={motel.name} />
               <FavoriteButtonClient motelId={motel.id} source="DETAIL" />
-      <ShareButton title={motel.name} url={`${BASE_URL}/motels/${motel.slug}`} />
+              <ShareButton title={motel.name} url={`${BASE_URL}/motels/${motel.slug}`} />
             </div>
           </div>
 

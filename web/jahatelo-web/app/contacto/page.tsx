@@ -1,54 +1,37 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
-import { useToast } from '@/contexts/ToastContext';
+import { FormEvent, useState } from 'react';
 import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
-import SectionWrapper from '@/components/public/SectionWrapper';
 import MobilePageHeader from '@/components/public/MobilePageHeader';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function ContactoPage() {
-  const [contactName, setContactName] = useState('');
+  const { showToast } = useToast();
+  const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [motelName, setMotelName] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const { showToast } = useToast();
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
-    if (!contactName.trim() || !phone.trim() || !motelName.trim()) {
-      showToast('Por favor completá los campos requeridos', 'error');
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (name.trim().length < 2 || message.trim().length < 5) {
+      showToast('Completá tu nombre y consulta.', 'error');
       return;
     }
-
     setLoading(true);
-
     try {
-      const response = await fetch('/api/prospects', {
+      const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contactName: contactName.trim(),
-          phone: phone.trim(),
-          email: email.trim() || undefined,
-          motelName: motelName.trim(),
-          channel: 'WEB',
-        }),
+        body: JSON.stringify({ name: name.trim(), phone: phone.trim() || undefined, message: message.trim() }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Error al enviar la solicitud');
-      }
-
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'No pudimos enviar tu consulta.');
       setSent(true);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error al enviar la solicitud';
-      showToast(errorMessage, 'error');
+      showToast(error instanceof Error ? error.message : 'No pudimos enviar tu consulta.', 'error');
     } finally {
       setLoading(false);
     }
@@ -57,148 +40,38 @@ export default function ContactoPage() {
   return (
     <>
       <Navbar />
-      <MobilePageHeader title="Sumá tu motel" />
-      <SectionWrapper className="min-h-screen px-4 py-8 sm:px-6 md:py-14 lg:px-8">
-        <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="mb-8 text-center animate-fade-up md:mb-12">
-            <span className="inline-block mb-4 text-xs font-semibold uppercase tracking-widest text-purple-300 bg-purple-900/40 border border-purple-700/50 px-4 py-1.5 rounded-full">
-              Sumá tu motel
-            </span>
-            <h1 className="mb-3 text-3xl font-extrabold text-white md:mb-4 md:text-4xl">¿Tenés un motel y querés publicarte en Jahatelo?</h1>
-            <p className="text-base text-purple-200/70 md:text-lg">
-              Dejanos tus datos y te contactamos para que tu motel aparezca en Jahatelo.
-            </p>
+      <MobilePageHeader title="Contacto y soporte" subtitle="Estamos para ayudarte" />
+      <main className="public-page px-4 py-8 md:py-14">
+        <div className="mx-auto max-w-2xl">
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-extrabold text-slate-950 md:text-4xl">¿En qué podemos ayudarte?</h1>
+            <p className="mt-3 text-slate-600">Esta sección es para consultas generales y soporte. Si administrás un motel y querés publicarlo, usá <a href="/registrar-motel" className="font-semibold text-purple-600 underline">Registrar un motel</a>.</p>
           </div>
-
-          {sent ? (
-            /* Estado de éxito */
-            <div className="animate-fade-up space-y-4 rounded-2xl border border-purple-800/40 bg-white/5 p-6 text-center backdrop-blur-sm md:p-10">
-              <div className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center mx-auto">
-                <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+          <div className="public-card p-6 md:p-8">
+            {sent ? (
+              <div className="py-8 text-center" role="status">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl text-emerald-600">✓</div>
+                <h2 className="mt-4 text-2xl font-bold text-slate-950">Consulta enviada</h2>
+                <p className="mt-2 text-slate-600">Nuestro equipo la revisará y se pondrá en contacto si es necesario.</p>
+                <button type="button" onClick={() => { setSent(false); setName(''); setPhone(''); setMessage(''); }} className="mt-6 min-h-11 rounded-xl border border-purple-600 px-5 font-semibold text-purple-600 hover:bg-purple-50">Enviar otra consulta</button>
               </div>
-              <h2 className="text-2xl font-bold text-white">¡Solicitud enviada!</h2>
-              <p className="text-purple-200/70">
-                Recibimos tus datos. Nuestro equipo se va a comunicar con vos al <strong className="text-white">{phone}</strong> a la brevedad.
-              </p>
-              <button
-                onClick={() => { setSent(false); setContactName(''); setPhone(''); setEmail(''); setMotelName(''); }}
-                className="mt-4 text-sm text-purple-400 hover:text-purple-300 transition-colors underline underline-offset-4"
-              >
-                Enviar otra solicitud
-              </button>
-            </div>
-          ) : (
-            /* Formulario */
-            <div className="animate-fade-up rounded-2xl border border-purple-800/40 bg-white/5 p-5 backdrop-blur-sm md:p-10">
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Nombre del motel */}
-                <div>
-                  <label htmlFor="motelName" className="block text-sm font-semibold text-purple-200 mb-2">
-                    Nombre del motel <span className="text-pink-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="motelName"
-                    value={motelName}
-                    onChange={(e) => setMotelName(e.target.value)}
-                    placeholder="Ej: Motel Los Pinos"
-                    className="w-full px-4 py-3 text-white bg-white/10 border border-purple-600/60 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all placeholder:text-purple-300/60 outline-none"
-                    required
-                    minLength={2}
-                    maxLength={100}
-                    disabled={loading}
-                  />
-                </div>
-
-                {/* Nombre de contacto */}
-                <div>
-                  <label htmlFor="contactName" className="block text-sm font-semibold text-purple-200 mb-2">
-                    Tu nombre <span className="text-pink-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="contactName"
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    placeholder="Nombre del responsable o propietario"
-                    className="w-full px-4 py-3 text-white bg-white/10 border border-purple-600/60 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all placeholder:text-purple-300/60 outline-none"
-                    required
-                    minLength={2}
-                    maxLength={100}
-                    disabled={loading}
-                  />
-                </div>
-
-                {/* Celular */}
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-semibold text-purple-200 mb-2">
-                    Nro de celular / WhatsApp <span className="text-pink-400">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+595 9xx xxx xxx"
-                    className="w-full px-4 py-3 text-white bg-white/10 border border-purple-600/60 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all placeholder:text-purple-300/60 outline-none"
-                    required
-                    maxLength={50}
-                    disabled={loading}
-                  />
-                  <p className="mt-1 text-xs text-purple-400/60">Ingresá un número donde podamos contactarte por WhatsApp</p>
-                </div>
-
-                {/* Email (opcional) */}
-                <div>
-                  <label htmlFor="email" className="block text-sm font-semibold text-purple-200 mb-2">
-                    Email <span className="text-purple-400/60">(opcional)</span>
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="tu@email.com"
-                    className="w-full px-4 py-3 text-white bg-white/10 border border-purple-600/60 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all placeholder:text-purple-300/60 outline-none"
-                    maxLength={100}
-                    disabled={loading}
-                  />
-                </div>
-
-                {/* Submit */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-4 px-6 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-purple-900/40 mt-2"
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                      Enviando...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                      </svg>
-                      Quiero sumar mi motel
-                    </>
-                  )}
-                </button>
+            ) : (
+              <form onSubmit={submit} className="space-y-5">
+                <label className="block text-sm font-semibold text-slate-800">Nombre
+                  <input autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} maxLength={100} className="public-input mt-2" placeholder="Tu nombre" />
+                </label>
+                <label className="block text-sm font-semibold text-slate-800">Teléfono <span className="font-normal text-slate-500">(opcional)</span>
+                  <input type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} maxLength={50} className="public-input mt-2" placeholder="0981 000 000" />
+                </label>
+                <label className="block text-sm font-semibold text-slate-800">Consulta
+                  <textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={2000} rows={6} className="mt-2 w-full rounded-xl border border-slate-300 p-4 text-slate-950 focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-200" placeholder="Contanos qué necesitás" />
+                </label>
+                <button type="submit" disabled={loading} className="min-h-12 w-full rounded-xl bg-purple-600 px-5 font-bold text-white hover:bg-purple-700 disabled:opacity-60">{loading ? 'Enviando…' : 'Enviar consulta'}</button>
               </form>
-
-              <div className="mt-8 pt-6 border-t border-purple-800/40 text-center">
-                <p className="text-sm text-purple-300/60">
-                  Nos comunicaremos con vos por teléfono o WhatsApp a la brevedad.
-                </p>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </SectionWrapper>
+      </main>
       <Footer />
     </>
   );

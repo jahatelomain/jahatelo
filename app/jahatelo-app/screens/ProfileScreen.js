@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Image, Linking, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity,  ActivityIndicator, Image, Linking, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../constants/theme';
+import { COLORS, STATUS_COLORS } from '../constants/theme';
 import { APP_BUILD_LABEL } from '../constants/appBuild';
+import { showMessage } from '../utils/appFeedback';
 import { useAuth } from '../contexts/AuthContext';
 import {
   clearCache,
@@ -69,12 +70,12 @@ export default function ProfileScreen() {
       await Linking.openURL(url);
     } catch (error) {
       console.error('Error opening external URL:', error);
-      Alert.alert('Error', 'No se pudo abrir el enlace');
+      showMessage('Error', 'No se pudo abrir el enlace');
     }
   };
 
   const handleClearCache = () => {
-    Alert.alert(
+    showMessage(
       'Limpiar caché',
       '¿Estás seguro de que quieres eliminar todos los datos guardados? Esto incluye moteles guardados, historial de búsquedas y vistos recientemente.\n\nTus favoritos NO serán eliminados.',
       [
@@ -86,10 +87,10 @@ export default function ProfileScreen() {
             setLoading(true);
             const success = await clearCache();
             if (success) {
-              Alert.alert('Éxito', 'Caché limpiado correctamente');
+              showMessage('Éxito', 'Caché limpiado correctamente');
               await loadCacheInfo();
             } else {
-              Alert.alert('Error', 'No se pudo limpiar el caché');
+              showMessage('Error', 'No se pudo limpiar el caché');
             }
             setLoading(false);
           },
@@ -99,7 +100,7 @@ export default function ProfileScreen() {
   };
 
   const handleClearSearchHistory = () => {
-    Alert.alert(
+    showMessage(
       'Limpiar historial',
       '¿Deseas eliminar tu historial de búsquedas?',
       [
@@ -110,7 +111,7 @@ export default function ProfileScreen() {
           onPress: async () => {
             const success = await clearSearchHistory();
             if (success) {
-              Alert.alert('Éxito', 'Historial de búsquedas limpiado');
+              showMessage('Éxito', 'Historial de búsquedas limpiado');
             }
           },
         },
@@ -119,7 +120,7 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
+    showMessage(
       'Cerrar Sesión',
       '¿Estás seguro que deseas cerrar sesión?',
       [
@@ -129,7 +130,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             await logout();
-            Alert.alert('Sesión cerrada', 'Has cerrado sesión exitosamente');
+            showMessage('Sesión cerrada', 'Has cerrado sesión exitosamente');
           },
         },
       ]
@@ -160,7 +161,7 @@ export default function ProfileScreen() {
             {isAuthenticated && user?.profilePhoto ? (
               <Image source={{ uri: user.profilePhoto }} style={styles.avatar} />
             ) : (
-              <Ionicons name="person" size={40} color="#FFFFFF" />
+              <Ionicons name="person" size={40} color={COLORS.white} />
             )}
           </View>
 
@@ -303,13 +304,13 @@ export default function ProfileScreen() {
               activeOpacity={0.7}
             >
               <View style={styles.optionLeft}>
-                <Ionicons name="trash-outline" size={24} color="#FF6B6B" />
-                <Text style={[styles.optionTitle, { color: '#FF6B6B' }]}>
+                <Ionicons name="trash-outline" size={24} color={STATUS_COLORS.dangerSoft} />
+                <Text style={[styles.optionTitle, { color: STATUS_COLORS.dangerSoft }]}>
                   Limpiar todos los datos guardados
                 </Text>
               </View>
               {loading ? (
-                <ActivityIndicator size="small" color="#FF6B6B" />
+                <ActivityIndicator size="small" color={STATUS_COLORS.dangerSoft} />
               ) : (
                 <Ionicons name="chevron-forward" size={20} color={COLORS.gray} />
               )}
@@ -387,7 +388,7 @@ export default function ProfileScreen() {
           <View style={styles.section}>
             <View style={styles.optionsContainer}>
               <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <Ionicons name="log-out-outline" size={24} color="#FF6B6B" />
+                <Ionicons name="log-out-outline" size={24} color={STATUS_COLORS.dangerSoft} />
                 <Text style={styles.logoutText}>Cerrar Sesión</Text>
               </TouchableOpacity>
             </View>
@@ -594,7 +595,7 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: 16,
-    color: '#FF6B6B',
+    color: STATUS_COLORS.dangerSoft,
     fontWeight: '600',
   },
   footer: {

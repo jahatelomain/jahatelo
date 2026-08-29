@@ -7,13 +7,13 @@ import {
   Switch,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/theme';
+import { showMessage } from '../utils/appFeedback';
 import {
   getSoundEffectsEnabled,
   setSoundEffectsEnabled,
@@ -93,7 +93,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
             contentType,
             url: response.url,
           });
-          Alert.alert('Error', 'No se pudieron cargar las preferencias');
+          showMessage('Error', 'No se pudieron cargar las preferencias');
           setLoading(false);
           return;
         }
@@ -116,11 +116,11 @@ export default function NotificationPreferencesScreen({ navigation }) {
           });
         }
       } else {
-        Alert.alert('Error', 'No se pudieron cargar las preferencias');
+        showMessage('Error', 'No se pudieron cargar las preferencias');
       }
     } catch (error) {
       console.error('Error al cargar preferencias:', error);
-      Alert.alert('Error', 'No se pudieron cargar las preferencias');
+      showMessage('Error', 'No se pudieron cargar las preferencias');
     } finally {
       setLoading(false);
     }
@@ -155,13 +155,13 @@ export default function NotificationPreferencesScreen({ navigation }) {
       if (!response.ok) {
         // Revertir cambio si falla
         setPreferences(prev => ({ ...prev, [key]: !value }));
-        Alert.alert('Error', 'No se pudo actualizar la preferencia');
+        showMessage('Error', 'No se pudo actualizar la preferencia');
       }
     } catch (error) {
       console.error('Error al actualizar preferencia:', error);
       // Revertir cambio si falla
       setPreferences(prev => ({ ...prev, [key]: !value }));
-      Alert.alert('Error', 'No se pudo actualizar la preferencia');
+      showMessage('Error', 'No se pudo actualizar la preferencia');
     } finally {
       setSaving(false);
     }
@@ -198,6 +198,8 @@ export default function NotificationPreferencesScreen({ navigation }) {
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Volver"
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
@@ -356,6 +358,9 @@ function PreferenceItem({ icon, title, description, value, onToggle, disabled, h
         </View>
       </View>
       <Switch
+        accessibilityRole="switch"
+        accessibilityLabel={title}
+        accessibilityState={{ checked: value, disabled }}
         value={value}
         onValueChange={onToggle}
         disabled={disabled}

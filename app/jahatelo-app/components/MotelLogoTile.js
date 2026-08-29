@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
+import { COLORS } from '../constants/theme';
 
 /**
  * Logo rectangular para listados. A diferencia del sello con forma de corazón
@@ -30,9 +31,9 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     overflow: 'hidden',
     borderRadius: 18,
-    backgroundColor: '#F5F3F7',
+    backgroundColor: COLORS.backgroundSoft,
     borderWidth: 1,
-    borderColor: '#EEE8F1',
+    borderColor: COLORS.cardBorderSoft,
   },
   image: {
     width: '100%',

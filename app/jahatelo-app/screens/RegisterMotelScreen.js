@@ -8,12 +8,12 @@ import {
   TextInput,
   ActivityIndicator,
   Modal,
-  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { getApiRoot } from '../services/apiBaseUrl';
+import { showErrorMessage, showValidationMessage } from '../utils/appFeedback';
 
 const API_URL = getApiRoot();
 
@@ -27,22 +27,22 @@ export default function RegisterMotelScreen({ navigation }) {
   const handleSubmit = async () => {
     // Validación básica
     if (!contactName.trim() || !phone.trim() || !motelName.trim()) {
-      Alert.alert('Error', 'Todos los campos son requeridos');
+      showValidationMessage('Todos los campos son requeridos');
       return;
     }
 
     if (contactName.trim().length < 2) {
-      Alert.alert('Error', 'El nombre de contacto debe tener al menos 2 caracteres');
+      showValidationMessage('El nombre de contacto debe tener al menos 2 caracteres');
       return;
     }
 
     if (phone.replace(/\D/g, '').length < 7) {
-      Alert.alert('Error', 'El teléfono debe tener al menos 7 dígitos');
+      showValidationMessage('El teléfono debe tener al menos 7 dígitos');
       return;
     }
 
     if (motelName.trim().length < 2) {
-      Alert.alert('Error', 'El nombre del motel debe tener al menos 2 caracteres');
+      showValidationMessage('El nombre del motel debe tener al menos 2 caracteres');
       return;
     }
 
@@ -70,7 +70,7 @@ export default function RegisterMotelScreen({ navigation }) {
           contentType,
           url: response.url,
         });
-        Alert.alert('Error', 'Error al enviar los datos. Intenta nuevamente.');
+        showErrorMessage('Error al enviar los datos. Intentá nuevamente.');
         setLoading(false);
         return;
       }
@@ -85,11 +85,11 @@ export default function RegisterMotelScreen({ navigation }) {
         // Mostrar modal de éxito
         setShowSuccessModal(true);
       } else {
-        Alert.alert('Error', data.error || 'Error al enviar los datos');
+        showErrorMessage(data.error || 'Error al enviar los datos');
       }
     } catch (error) {
       console.error('Error al enviar formulario:', error);
-      Alert.alert('Error', 'No se pudo conectar con el servidor. Verifica tu conexión a internet.');
+      showErrorMessage('No se pudo conectar con el servidor. Verificá tu conexión a internet.');
     } finally {
       setLoading(false);
     }
@@ -108,6 +108,8 @@ export default function RegisterMotelScreen({ navigation }) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Volver"
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
@@ -140,7 +142,9 @@ export default function RegisterMotelScreen({ navigation }) {
             <TextInput
               style={styles.input}
               placeholder="Ej: Juan Pérez"
-              placeholderTextColor="#999"
+              placeholderTextColor={COLORS.textMuted}
+              accessibilityLabel="Nombre de contacto"
+              autoComplete="name"
               value={contactName}
               onChangeText={setContactName}
               editable={!loading}
@@ -152,7 +156,9 @@ export default function RegisterMotelScreen({ navigation }) {
             <TextInput
               style={styles.input}
               placeholder="Ej: 0981 123 456"
-              placeholderTextColor="#999"
+              placeholderTextColor={COLORS.textMuted}
+              accessibilityLabel="Teléfono"
+              autoComplete="tel"
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
@@ -165,7 +171,9 @@ export default function RegisterMotelScreen({ navigation }) {
             <TextInput
               style={styles.input}
               placeholder="Ej: Motel Paradise"
-              placeholderTextColor="#999"
+              placeholderTextColor={COLORS.textMuted}
+              accessibilityLabel="Nombre del motel"
+              autoComplete="organization"
               value={motelName}
               onChangeText={setMotelName}
               editable={!loading}
@@ -179,12 +187,15 @@ export default function RegisterMotelScreen({ navigation }) {
           onPress={handleSubmit}
           activeOpacity={0.8}
           disabled={loading}
+          accessibilityRole="button"
+          accessibilityLabel="Enviar solicitud de registro"
+          accessibilityState={{ disabled: loading, busy: loading }}
         >
           {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={COLORS.white} />
           ) : (
             <>
-              <Ionicons name="send" size={20} color="#FFFFFF" style={styles.buttonIcon} />
+              <Ionicons name="send" size={20} color={COLORS.white} style={styles.buttonIcon} />
               <Text style={styles.actionButtonText}>Enviar</Text>
             </>
           )}
@@ -197,6 +208,7 @@ export default function RegisterMotelScreen({ navigation }) {
         transparent={true}
         animationType="fade"
         onRequestClose={handleCloseModal}
+        accessibilityViewIsModal
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -211,6 +223,8 @@ export default function RegisterMotelScreen({ navigation }) {
               style={styles.modalButton}
               onPress={handleCloseModal}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Cerrar confirmación"
             >
               <Text style={styles.modalButtonText}>Cerrar</Text>
             </TouchableOpacity>
@@ -224,7 +238,7 @@ export default function RegisterMotelScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.backgroundSoft,
   },
   header: {
     flexDirection: 'row',
@@ -232,9 +246,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: COLORS.border,
   },
   backButton: {
     padding: 4,
@@ -266,17 +280,17 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 16,
-    color: '#666',
+    color: COLORS.textLight,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
   },
   formContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderRadius: 12,
     padding: 20,
     marginBottom: 24,
-    shadowColor: '#000',
+    shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -293,13 +307,13 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: COLORS.border,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
     color: COLORS.text,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: COLORS.inputBackground,
   },
   actionButton: {
     backgroundColor: COLORS.primary,
@@ -324,7 +338,7 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: COLORS.white,
   },
   modalOverlay: {
     flex: 1,
@@ -334,13 +348,13 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderRadius: 20,
     padding: 32,
     width: '100%',
     maxWidth: 400,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
@@ -358,7 +372,7 @@ const styles = StyleSheet.create({
   },
   modalMessage: {
     fontSize: 16,
-    color: '#666',
+    color: COLORS.textLight,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 28,
@@ -373,7 +387,7 @@ const styles = StyleSheet.create({
   modalButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: COLORS.white,
     textAlign: 'center',
   },
 });

@@ -1,9 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { initSentry } from './services/sentryService';
 import { NavigationContainer } from '@react-navigation/native';
-
-// Inicializar Sentry antes de cualquier render (solo producción)
-initSentry();
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
@@ -19,6 +16,7 @@ import {
   View,
 } from 'react-native';
 import OfflineIndicator from './components/OfflineIndicator';
+import AppUpdateModal from './components/AppUpdateModal';
 import { FavoritesProvider } from './hooks/useFavorites';
 import { AuthProvider } from './contexts/AuthContext';
 import { NavigationProvider, useNavigationContext } from './contexts/NavigationContext';
@@ -31,6 +29,9 @@ import {
   loadStoredStagingCredentials,
   setStagingCredentials,
 } from './services/stagingAuthService';
+
+// Inicializar Sentry antes de renderizar la aplicación.
+initSentry();
 
 const linking = {
   prefixes: ['jahatelo://', 'https://jahatelo.com', 'https://www.jahatelo.com'],
@@ -53,19 +54,7 @@ function AppContent() {
   const cleanupRef = useRef(null);
   const notificationDataRef = useRef(null);
 
-  const handleNotificationNavigation = (data) => {
-    if (!data || !data.type) return;
-
-    // Guardar data para navegación después de que la app esté lista
-    notificationDataRef.current = data;
-
-    // Si navigationRef está listo, navegar inmediatamente
-    if (navigationRef.current && navigationRef.current.isReady()) {
-      performNavigation(data);
-    }
-  };
-
-  const performNavigation = (data) => {
+  const performNavigation = useCallback((data) => {
     try {
       switch (data.type) {
         case 'contact_message':
@@ -109,7 +98,15 @@ function AppContent() {
     } catch (error) {
       console.error('Error al navegar desde notificación:', error);
     }
-  };
+  }, [navigationRef]);
+
+  const handleNotificationNavigation = useCallback((data) => {
+    if (!data || !data.type) return;
+    notificationDataRef.current = data;
+    if (navigationRef.current && navigationRef.current.isReady()) {
+      performNavigation(data);
+    }
+  }, [navigationRef, performNavigation]);
 
   useEffect(() => {
     // El splash nativo se oculta en SplashScreen.js cuando AnimatedSplash ya está montado,
@@ -154,7 +151,7 @@ function AppContent() {
         cleanupRef.current();
       }
     };
-  }, []);
+  }, [handleNotificationNavigation]);
 
   // Effect para manejar navegación pendiente cuando el navegador esté listo
   useEffect(() => {
@@ -170,12 +167,13 @@ function AppContent() {
     });
 
     return unsubscribe;
-  }, []);
+  }, [navigationRef, performNavigation]);
 
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
       <RootNavigation />
       <OfflineIndicator />
+      <AppUpdateModal />
     </NavigationContainer>
   );
 }

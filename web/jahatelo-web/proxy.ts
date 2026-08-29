@@ -192,7 +192,7 @@ export async function proxy(request: NextRequest) {
 
   // 2.2. Chequeo de versión mínima para requests de la app móvil
   const MIN_APP_VERSION = process.env.MIN_APP_VERSION || '1.0.0';
-  if (pathname.startsWith('/api/mobile/')) {
+  if (pathname.startsWith('/api/mobile/') && pathname !== '/api/mobile/app-config') {
     const appVersion = request.headers.get('x-app-version');
     if (appVersion && appVersion !== 'dev') {
       const parseVersion = (v: string) => v.split('.').map(Number);

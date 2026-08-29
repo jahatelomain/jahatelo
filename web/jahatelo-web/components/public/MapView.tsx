@@ -37,6 +37,7 @@ export default function MapView() {
   const [error, setError] = useState<string | null>(null);
   const [showPromosOnly, setShowPromosOnly] = useState(false);
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
+  const [requestVersion, setRequestVersion] = useState(0);
 
   const getPlanOrder = (plan?: MapMotel['plan']) => {
     switch (plan) {
@@ -76,7 +77,13 @@ export default function MapView() {
 
     fetchMapData();
     return () => controller.abort();
-  }, []);
+  }, [requestVersion]);
+
+  const retry = () => {
+    setError(null);
+    setLoading(true);
+    setRequestVersion((version) => version + 1);
+  };
 
   if (loading) {
     return (
@@ -101,7 +108,8 @@ export default function MapView() {
           <h3 className="text-xl font-semibold text-gray-900 mb-2">Error al cargar el mapa</h3>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            type="button"
+            onClick={retry}
             className="inline-block px-6 py-2 bg-purple-600 hover:bg-purple-600 text-white font-medium rounded-lg transition-colors"
           >
             Intentar nuevamente
@@ -146,6 +154,7 @@ export default function MapView() {
           <button
             type="button"
             onClick={() => setShowPromosOnly((prev) => !prev)}
+            aria-pressed={showPromosOnly}
             className={`px-4 py-2 rounded-lg font-medium border-2 transition-colors ${
               showPromosOnly
                 ? 'bg-purple-600 text-white border-purple-600'
@@ -157,6 +166,7 @@ export default function MapView() {
           <button
             type="button"
             onClick={() => setShowFeaturedOnly((prev) => !prev)}
+            aria-pressed={showFeaturedOnly}
             className={`px-4 py-2 rounded-lg font-medium border-2 transition-colors ${
               showFeaturedOnly
                 ? 'bg-purple-600 text-white border-purple-600'
@@ -167,14 +177,14 @@ export default function MapView() {
           </button>
         </div>
 
-        <div className="flex items-center gap-3 text-sm text-gray-600">
+        <div className="flex items-center gap-3 text-sm text-gray-600" aria-label="Leyenda del mapa">
           <span className="inline-flex items-center gap-2">
             <span className="inline-block w-3 h-3 rounded-full bg-purple-600" />
             Moteles
           </span>
           <span className="inline-flex items-center gap-2">
             <span className="inline-block w-3 h-3 rounded-full bg-red-500" />
-            Tu ubicacion
+            Tu ubicación
           </span>
         </div>
       </div>

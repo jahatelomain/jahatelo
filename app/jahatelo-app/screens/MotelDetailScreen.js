@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Linking, Dimensions, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureDetector } from 'react-native-gesture-handler';
@@ -15,6 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../constants/theme';
+import { getMotelImageSource, hasRemoteMotelImage } from '../utils/mediaSource';
 import { normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
 import PromosTab from './motelDetail/PromosTab';
 import DetailsTab from './motelDetail/DetailsTab';
@@ -170,13 +171,13 @@ export default function MotelDetailScreen({ route, navigation }) {
 
   const plan = normalizeMotelPlan(motel?.plan);
   const isFreePlan = plan === MOTEL_PLANS.FREE;
-  const availableTabs = [
+  const availableTabs = useMemo(() => [
     { key: 'Detalles', name: 'Detalles', component: DetailsTab },
     ...(!isFreePlan && motel?.promos?.length ? [{ key: 'Promos', name: 'Promos', component: PromosTab }] : []),
     ...(!isFreePlan && motel?.rooms?.length ? [{ key: 'Habitaciones', name: 'Habitaciones', component: RoomsTab }] : []),
     ...(!isFreePlan && motel?.menu?.length ? [{ key: 'Menú', name: 'Menú', component: MenuTab }] : []),
     ...(!isFreePlan ? [{ key: 'Reseñas', name: 'Reseñas', component: ReviewsTab }] : []),
-  ];
+  ], [isFreePlan, motel]);
   const selectedTab = availableTabs.find((tab) => tab.name === activeTab) || availableTabs[0];
   const { tabSwipeGesture } = useMotelTabsGesture({
     tabs: availableTabs,
@@ -249,7 +250,6 @@ export default function MotelDetailScreen({ route, navigation }) {
   }
 
   // Obtener foto principal del motel o usar placeholder
-  const fallbackPattern = require('../assets/motel-placeholder.png');
   const mainPhoto =
     motel.thumbnail ||
     motel.featuredPhoto ||
@@ -258,8 +258,9 @@ export default function MotelDetailScreen({ route, navigation }) {
     typeof mainPhoto === 'string'
       ? mainPhoto
       : mainPhoto?.url || mainPhoto?.photoUrl || null;
-  const mainPhotoSource = mainPhotoUrl && !mainPhotoError ? { uri: mainPhotoUrl } : fallbackPattern;
-  const isPlaceholder = !mainPhotoUrl || mainPhotoError;
+  const validMainPhotoUrl = !mainPhotoError && hasRemoteMotelImage(mainPhotoUrl) ? mainPhotoUrl : null;
+  const mainPhotoSource = getMotelImageSource(validMainPhotoUrl);
+  const isPlaceholder = !validMainPhotoUrl;
 
   const photoHeight = 240 + insets.top;
 
@@ -314,19 +315,32 @@ export default function MotelDetailScreen({ route, navigation }) {
             </TouchableOpacity>
           </Animated.View>
           <Animated.View entering={FadeInDown.delay(250).duration(400)}>
-            <TouchableOpacity
-              style={styles.favoriteIconButton}
-              onPress={handleFavoritePress}
-              activeOpacity={0.7}
-            >
-              <Animated.View style={animatedHeartStyle}>
-                <Ionicons
-                  name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
-                  size={21}
-                  color={COLORS.primary}
-                />
-              </Animated.View>
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Reportar información incorrecta"
+                style={styles.favoriteIconButton}
+                onPress={() => navigation.navigate('ReportMotel', { motelId: motel.id, motelName: motel.nombre })}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="warning-outline" size={21} color={COLORS.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={isFavorite(motel.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                style={styles.favoriteIconButton}
+                onPress={handleFavoritePress}
+                activeOpacity={0.7}
+              >
+                <Animated.View style={animatedHeartStyle}>
+                  <Ionicons
+                    name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
+                    size={21}
+                    color={COLORS.primary}
+                  />
+                </Animated.View>
+              </TouchableOpacity>
+            </View>
           </Animated.View>
         </View>
       </Animated.View>
@@ -483,6 +497,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 8,
   },
   photoOverlay: {
     position: 'absolute',
