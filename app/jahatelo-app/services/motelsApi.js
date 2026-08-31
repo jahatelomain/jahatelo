@@ -105,7 +105,6 @@ const mapMotelSummary = (apiMotel) => {
     featuredPhotoApp: apiMotel.featuredPhotoApp || null,
     featuredPhotoWeb: apiMotel.featuredPhotoWeb || null,
     logoUrl: apiMotel.logoUrl || null,
-    logoScale: typeof apiMotel.logoScale === 'number' ? apiMotel.logoScale : 1,
   });
 };
 

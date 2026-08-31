@@ -84,7 +84,7 @@ export default function MotelCardSmall({ motel, onPress }) {
         <Image source={imageSource} style={[styles.image, isPlaceholder && styles.placeholderImage]} />
         {motel.logoUrl && (
           <View style={styles.logoBadge} pointerEvents="none">
-            <MotelLogoHeart uri={motel.logoUrl} size={36} scale={motel.logoScale} />
+            <MotelLogoHeart uri={motel.logoUrl} size={36} />
           </View>
         )}
       </View>

@@ -29,7 +29,6 @@ export interface MotelCardProps {
     featuredPhoto?: string | null;
     featuredPhotoWeb?: string | null;
     logoUrl?: string | null;
-    logoScale?: number | null;
     rooms?: Array<{
       price1h?: number | null;
       price1_5h?: number | null;
@@ -102,7 +101,7 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
     <article className={`flex gap-3 border-b border-slate-100 py-3 last:border-b-0 ${isDisabled ? 'opacity-40' : ''}`}>
       {motel.logoUrl ? (
         <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50">
-          <Image src={motel.logoUrl} alt={`Logo de ${motel.name}`} fill sizes="96px" className="object-contain" style={{ transform: `scale(${Math.min(1, Math.max(0.6, motel.logoScale ?? 1))})` }} />
+          <Image src={motel.logoUrl} alt={`Logo de ${motel.name}`} fill sizes="96px" className="object-contain" />
         </div>
       ) : null}
       <div className="min-w-0 flex-1 py-0.5">
@@ -152,7 +151,7 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
           ) : (
             <div className="w-full h-full bg-transparent" />
           )}
-          {motel.logoUrl && <MotelLogoHeart src={motel.logoUrl} alt={motel.name} scale={motel.logoScale} className="absolute left-3 top-3 h-12 w-14" />}
+          {motel.logoUrl && <MotelLogoHeart src={motel.logoUrl} alt={motel.name} className="absolute left-3 top-3 h-12 w-14" />}
           {showFavoriteAction && <div className={`absolute top-3 ${motel.logoUrl ? 'left-[4.25rem]' : 'left-3'}`}>
             <FavoriteButtonClient motelId={motel.id} source="LIST" size="small" />
           </div>}
