@@ -2,7 +2,7 @@ import type { ChangeEvent } from 'react';
 import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
 import AdminImage from './AdminImage';
 
-type PhotoForm = { featuredPhotoWeb: string; featuredPhotoApp: string; logoUrl: string; logoScale: number };
+type PhotoForm = { featuredPhotoWeb: string; featuredPhotoApp: string; logoUrl: string };
 type Props<T extends PhotoForm> = {
   form: T;
   uploadingAuto: boolean;
@@ -12,10 +12,9 @@ type Props<T extends PhotoForm> = {
   onAutoUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onVariantUpload: (variant: 'web' | 'app', event: ChangeEvent<HTMLInputElement>) => void;
   onLogoUpload: (event: ChangeEvent<HTMLInputElement>) => void;
-  onLogoScaleChange: (scale: number) => void;
 };
 
-export default function FeaturedPhotoFields<T extends PhotoForm>({ form, uploadingAuto, uploadingWeb, uploadingApp, uploadingLogo, onAutoUpload, onVariantUpload, onLogoUpload, onLogoScaleChange }: Props<T>) {
+export default function FeaturedPhotoFields<T extends PhotoForm>({ form, uploadingAuto, uploadingWeb, uploadingApp, uploadingLogo, onAutoUpload, onVariantUpload, onLogoUpload }: Props<T>) {
   return (
     <div>
       <div className="mb-6 rounded-xl border border-purple-100 bg-purple-50/50 p-4">
@@ -26,13 +25,8 @@ export default function FeaturedPhotoFields<T extends PhotoForm>({ form, uploadi
           {form.logoUrl && (
             <div className="flex items-center gap-3">
               <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-slate-950 p-1 shadow-sm">
-                <AdminImage src={normalizeLocalUrl(form.logoUrl) || ''} alt="Logo del motel" width={96} height={96} className="h-full w-full rounded-full object-contain" style={{ transform: `scale(${form.logoScale})` }} />
+                <AdminImage src={normalizeLocalUrl(form.logoUrl) || ''} alt="Logo del motel" width={96} height={96} className="h-full w-full rounded-full object-contain" />
               </div>
-              <label className="flex min-w-44 flex-col gap-1 text-xs font-medium text-slate-600">
-                Tamaño dentro del círculo ({Math.round(form.logoScale * 100)}%)
-                <input type="range" min="0.6" max="1" step="0.05" value={form.logoScale} onChange={(event) => onLogoScaleChange(Number(event.target.value))} className="accent-purple-600" />
-                <span className="font-normal text-slate-500">Mové a la izquierda para alejarlo.</span>
-              </label>
             </div>
           )}
         </div>

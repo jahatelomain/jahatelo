@@ -7,9 +7,8 @@ import { COLORS } from '../constants/theme';
  * usado sobre las fotos, este formato prioriza reconocer el negocio al escanear
  * una lista vertical.
  */
-export default function MotelLogoTile({ uri, size = 88, scale = 1 }) {
+export default function MotelLogoTile({ uri, size = 88 }) {
   const [failed, setFailed] = useState(false);
-  const normalizedScale = Math.min(1, Math.max(0.6, scale || 1));
 
   if (!uri || failed) return null;
 
@@ -17,7 +16,7 @@ export default function MotelLogoTile({ uri, size = 88, scale = 1 }) {
     <View style={[styles.frame, { width: size, height: size }]}>
       <Image
         source={{ uri }}
-        style={[styles.image, { transform: [{ scale: normalizedScale }] }]}
+        style={styles.image}
         resizeMode="contain"
         accessibilityLabel="Logo del motel"
         onError={() => setFailed(true)}

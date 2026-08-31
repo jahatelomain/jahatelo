@@ -113,7 +113,6 @@ export default function MotelDetailPage() {
     featuredPhotoWeb: '',
     featuredPhotoApp: '',
     logoUrl: '',
-    logoScale: 1,
   });
 
   const [showRoomForm, setShowRoomForm] = useState(false);
@@ -216,7 +215,6 @@ export default function MotelDetailPage() {
         featuredPhotoWeb: normalizeUploadUrl(data.featuredPhotoWeb || '') || '',
         featuredPhotoApp: normalizeUploadUrl(data.featuredPhotoApp || '') || '',
         logoUrl: normalizeUploadUrl(data.logoUrl || '') || '',
-        logoScale: typeof data.logoScale === 'number' ? data.logoScale : 1,
       });
     } catch (error) {
       console.error('Error fetching motel:', error);
@@ -459,7 +457,6 @@ export default function MotelDetailPage() {
         featuredPhotoWeb: normalizeUploadUrl(motelForm.featuredPhotoWeb || ''),
         featuredPhotoApp: normalizeUploadUrl(motelForm.featuredPhotoApp || ''),
         logoUrl: normalizeUploadUrl(motelForm.logoUrl || ''),
-        logoScale: motelForm.logoScale,
         // Los enlaces de ficha de Google Maps conservan el pin exacto aunque no
         // expongan coordenadas. En ese caso no se interrumpe el guardado ni se
         // borran coordenadas existentes de registros anteriores.
@@ -1192,7 +1189,6 @@ export default function MotelDetailPage() {
         featuredPhotoWeb={featuredPhotoWeb}
         featuredPhotoApp={featuredPhotoApp}
         logoUrl={normalizeLocalUrl(motel.logoUrl || null)}
-        logoScale={motel.logoScale}
         roomCount={rooms.length}
         promoCount={promos.length}
         onStatusChange={updateStatusFlags}
@@ -1380,7 +1376,6 @@ export default function MotelDetailPage() {
                     onAutoUpload={handleFeaturedFileChange}
                     onVariantUpload={handleFeaturedVariantFileChange}
                     onLogoUpload={handleLogoFileChange}
-                    onLogoScaleChange={(logoScale) => setMotelForm((previous) => ({ ...previous, logoScale }))}
                   />
                   <div className="flex items-center">
                     <label className="flex items-center gap-2 cursor-pointer">

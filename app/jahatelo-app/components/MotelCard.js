@@ -190,7 +190,7 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
   const cardBody = (
     <Animated.View style={[styles.card, animatedCardStyle, isMuted && styles.disabledCard, isDiamond && styles.cardNoMargin]}>
       <View style={styles.cardContentRow}>
-        {motel.logoUrl && <MotelLogoTile uri={motel.logoUrl} scale={motel.logoScale} />}
+        {motel.logoUrl && <MotelLogoTile uri={motel.logoUrl} />}
 
         <View style={styles.cardInfo}>
           {/* Header con nombre y favorito */}

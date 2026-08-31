@@ -193,7 +193,6 @@ model Motel {
   featuredPhotoWeb       String? // Portada 16:9 para web
   featuredPhotoApp       String? // Portada 4:5 para app
   logoUrl                String? // Logo independiente del motel para tarjetas públicas
-  logoScale              Float       @default(1) // Tamaño del logo dentro de su sello público (0.6 a 1)
   status                 MotelStatus @default(PENDING)
   isActive               Boolean     @default(false)
   contactName            String?

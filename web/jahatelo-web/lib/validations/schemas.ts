@@ -108,7 +108,6 @@ export const MotelSchema = z.object({
     )
     .optional()
     .nullable(),
-  logoScale: z.coerce.number().min(0.6).max(1).optional(),
   status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
   isActive: z.boolean().optional(),
   contactName: z.string().min(2).max(100).optional().nullable(),
