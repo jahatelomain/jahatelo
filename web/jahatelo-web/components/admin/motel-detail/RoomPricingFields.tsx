@@ -63,18 +63,18 @@ function SpecificDayRates({ rules, onChange }: { rules: WeekdayRateForm[]; onCha
     <h4 className="mb-1 text-sm font-semibold text-slate-900">Precios por tiempo</h4>
     <p className="mb-3 text-xs text-slate-500">Elegí los días, una duración y el precio. Usá “Todos” para aplicar la misma tarifa toda la semana. Ej.: Vie, Sáb y Dom · Dormida · Gs. 214.000.</p>
     <div className="rounded-xl border border-violet-200 bg-violet-50/50 p-3">
-      <div className="mb-3 flex flex-wrap gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={toggleAllDays}
           disabled={availableDays.length === 0}
-          className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors ${availableDays.length === 0 ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400' : allAvailableDaysSelected ? 'border-violet-700 bg-violet-700 text-white' : 'border-violet-300 bg-white text-violet-700 hover:border-violet-500 hover:bg-violet-100'}`}
+          className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border p-0 text-center text-xs font-semibold leading-none transition-colors ${availableDays.length === 0 ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400' : allAvailableDaysSelected ? 'border-violet-700 bg-violet-700 text-white' : 'border-violet-300 bg-white text-violet-700 hover:border-violet-500 hover:bg-violet-100'}`}
         >
           Todos
         </button>
         {DAYS.map(([day, label]) => {
           const reserved = isReserved(day);
-          return <label key={day} title={reserved ? 'Ya existe un precio para este día y duración' : undefined} className={`rounded-full border px-2.5 py-1 text-xs font-medium ${reserved ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400' : draft.weekdays.includes(day) ? 'cursor-pointer border-violet-600 bg-violet-600 text-white' : 'cursor-pointer border-slate-300 bg-white text-slate-600'}`}><input className="sr-only" type="checkbox" disabled={reserved} checked={draft.weekdays.includes(day)} onChange={() => toggleDay(day)} />{label}</label>;
+          return <label key={day} title={reserved ? 'Ya existe un precio para este día y duración' : undefined} className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border p-0 text-center text-xs font-medium leading-none ${reserved ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400' : draft.weekdays.includes(day) ? 'cursor-pointer border-violet-600 bg-violet-600 text-white' : 'cursor-pointer border-slate-300 bg-white text-slate-600'}`}><input className="sr-only" type="checkbox" disabled={reserved} checked={draft.weekdays.includes(day)} onChange={() => toggleDay(day)} />{label}</label>;
         })}
       </div>
       <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
