@@ -19,14 +19,9 @@
 - [ ] **JH-001 — Android App Links:** completar el SHA256 del certificado Android de producción en `web/jahatelo-web/public/.well-known/assetlinks.json` y validarlo en un dispositivo físico.
 - [ ] **JH-003 — Enlaces universales:** validar universal links y app links contra los archivos publicados en producción, iOS y Android físicos. La navegación y los dominios ya están configurados.
 
-### Reportes y catálogo
-
-- [ ] **JH-009 — Métricas de reportes:** medir tiempo de resolución y moteles con reportes recurrentes.
-
 ### SEO y adquisición
 
 - [ ] **JH-018 — Google Search Console:** configurar una identidad técnica con permisos mínimos y guardar sus credenciales únicamente como secretos.
-- [ ] **JH-019 — Panel SEO SUPERADMIN:** mostrar indexación, sitemap, errores, impresiones, clics, consultas y posiciones.
 - [ ] **JH-020 — Operación de Search Console:** documentar revocación, rotación de credenciales y responsable operativo.
 
 ### Mapa web
@@ -47,6 +42,11 @@
 - [ ] **JH-002 — Sentry:** pausado por decisión de producto hasta disponer de presupuesto para el servicio.
 
 ## Completados
+
+### 2026-09-01
+
+- [x] **JH-009 — Métricas de reportes:** el SUPERADMIN dispone de período, volumen, abiertos, cerrados, tiempo medio de resolución, motivos frecuentes y moteles con reportes recurrentes.
+- [x] **JH-019 — Panel SEO SUPERADMIN:** incorporado panel protegido con indexación declarada, sitemaps, errores, advertencias, impresiones, clics, CTR, consultas, páginas y posiciones; muestra un estado de conexión seguro mientras faltan credenciales externas.
 
 ### 2026-08-29
 
