@@ -6,7 +6,7 @@
 | Portada web | 1600×900 px | 16:9 | Sí |
 | Portada app | 1200×1500 px | 4:5 | Sí |
 | Miniatura | 800×600 px | 4:3 | Sí |
-| Habitación | 1200×800 px | 3:2 | Sí |
+| Habitación | 1200×800 px recomendado; tamaños menores se aceptan y ajustan | 3:2 | Sí |
 | Promoción | 1080×1080 px | 1:1 | Sí |
 | Banner | 1600×600 px | 8:3 | Sí |
 
