@@ -17,6 +17,7 @@ import {
   CreditCard,
   Image as ImageIcon,
   Inbox,
+  Globe2,
   LayoutDashboard,
   Megaphone,
   ScanLine,
@@ -94,7 +95,7 @@ export default function AdminLayout({
     if (pathname.startsWith('/admin/motels') || pathname.startsWith('/admin/amenities') || pathname.startsWith('/admin/promos')) {
       setExpandedSections(prev => ({ ...prev, 'Gestión de moteles': true }));
     }
-    if (pathname.startsWith('/admin/prospects') || pathname.startsWith('/admin/analytics')) {
+    if (pathname.startsWith('/admin/prospects') || pathname.startsWith('/admin/analytics') || pathname.startsWith('/admin/seo')) {
       setExpandedSections(prev => ({ ...prev, 'Comercial': true }));
     }
   }, [pathname]);
@@ -149,6 +150,7 @@ export default function AdminLayout({
     if (pathname.startsWith('/admin/prospects')) return 'Prospects';
     if (pathname.startsWith('/admin/financiero')) return 'Financiero';
     if (pathname.startsWith('/admin/analytics')) return 'Analytics';
+    if (pathname.startsWith('/admin/seo')) return 'SEO y Search Console';
     if (pathname.startsWith('/admin/canjear-codigo')) return 'Canjear código';
     if (pathname.startsWith('/admin/notifications')) return 'Notificaciones Masivas';
     if (pathname.startsWith('/admin/banners')) return 'Banners Publicitarios';
@@ -202,6 +204,7 @@ export default function AdminLayout({
             { href: '/admin/prospects', label: 'Prospects', roles: ['SUPERADMIN'] },
             { href: '/admin/analytics', label: 'Analytics', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
             { href: '/admin/analytics/visitors', label: 'Visitantes', roles: ['SUPERADMIN'] },
+            { href: '/admin/seo', label: 'SEO y Search Console', roles: ['SUPERADMIN'] },
           ],
         },
     ...(user?.role === 'MOTEL_ADMIN'
@@ -242,6 +245,7 @@ export default function AdminLayout({
     if (path.startsWith('/admin/users')) return 'users';
     if (path.startsWith('/admin/roles')) return 'configuracion';
     if (path.startsWith('/admin/prospects')) return 'prospects';
+    if (path.startsWith('/admin/seo')) return 'analytics';
     if (path.startsWith('/admin/financiero')) return 'financiero';
     // Para motel admin, Analytics se limita en API a su propio motel y usa el
     // permiso operativo de Moteles. Superadmin conserva acceso total.
@@ -310,6 +314,7 @@ export default function AdminLayout({
     if (href.startsWith('/admin/promos')) return Ticket;
     if (href.startsWith('/admin/prospects')) return Users;
     if (href.startsWith('/admin/analytics')) return BarChart3;
+    if (href.startsWith('/admin/seo')) return Globe2;
     if (href.startsWith('/admin/canjear-codigo')) return ScanLine;
     if (href.startsWith('/admin/financiero')) return CreditCard;
     if (href.startsWith('/admin/notifications')) return Bell;

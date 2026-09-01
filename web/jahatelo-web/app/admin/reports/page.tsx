@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { ReportMetricsPanel } from '@/components/admin/ReportMetricsPanel';
 
 type Person = { id: string; name: string | null; email: string };
 type Note = { id: string; body: string; createdAt: string; author: Person };
@@ -54,6 +55,7 @@ export default function ReportsPage() {
   return (
     <main className="space-y-6 p-4 md:p-8">
       <div><p className="text-sm font-semibold text-violet-600">Catálogo</p><h1 className="text-3xl font-bold text-slate-900">Reportes de usuarios</h1><p className="mt-1 text-slate-600">Bandeja interna exclusiva para superadministradores.</p></div>
+      <ReportMetricsPanel />
       <section className="grid gap-3 rounded-2xl border border-violet-100 bg-white p-4 shadow-sm md:grid-cols-[1fr_220px]">
         <input aria-label="Buscar motel" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por motel" className="min-h-11 rounded-xl border border-slate-200 px-4 outline-none focus:border-violet-500" />
         <select aria-label="Filtrar por estado" value={status} onChange={(e) => setStatus(e.target.value)} className="min-h-11 rounded-xl border border-slate-200 px-3"><option value="ALL">Todos los estados</option>{['PENDING','IN_REVIEW','RESOLVED','DISMISSED'].map((value) => <option key={value} value={value}>{labels[value]}</option>)}</select>
