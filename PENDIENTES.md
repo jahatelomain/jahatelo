@@ -45,6 +45,7 @@
 
 ### 2026-09-01
 
+- [x] **JH-051 — Carga flexible de fotos de habitación:** las fotos se aceptan independientemente de su resolución y se ajustan y optimizan automáticamente; 1200×800 queda únicamente como recomendación de calidad.
 - [x] **JH-009 — Métricas de reportes:** el SUPERADMIN dispone de período, volumen, abiertos, cerrados, tiempo medio de resolución, motivos frecuentes y moteles con reportes recurrentes.
 - [x] **JH-019 — Panel SEO SUPERADMIN:** incorporado panel protegido con indexación declarada, sitemaps, errores, advertencias, impresiones, clics, CTR, consultas, páginas y posiciones; muestra un estado de conexión seguro mientras faltan credenciales externas.
 

@@ -17,7 +17,9 @@ export const MEDIA_SPECIFICATIONS: Record<MediaUsage, MediaSpecification> = {
   // dimensiones son una recomendación y nunca bloquean la carga.
   'motel-photo': { label: 'Portada del motel', minWidth: 1200, minHeight: 800, aspectRatio: '16:9 web y 4:5 app', watermark: true, dimensionsAreRecommendation: true },
   thumbnail: { label: 'Miniatura', minWidth: 800, minHeight: 600, aspectRatio: '4:3', watermark: true },
-  'room-photo': { label: 'Foto de habitación', minWidth: 1200, minHeight: 800, aspectRatio: '3:2', watermark: true },
+  // Igual que la portada, la foto de habitación se procesa en servidor y
+  // genera su variante optimizada. La resolución sugerida no debe bloquearla.
+  'room-photo': { label: 'Foto de habitación', minWidth: 1200, minHeight: 800, aspectRatio: '3:2', watermark: true, dimensionsAreRecommendation: true },
   promo: { label: 'Promoción', minWidth: 1080, minHeight: 1080, aspectRatio: '1:1', watermark: true },
   banner: { label: 'Banner', minWidth: 1600, minHeight: 600, aspectRatio: '8:3', watermark: true },
 };
