@@ -8,6 +8,7 @@ import { COLORS } from '../../constants/theme';
 import { PRICE_UPDATING_MESSAGE } from '../../constants/motelPrices';
 import { normalizeMotelPlan, MOTEL_PLANS } from '../../constants/motelPlans';
 import { getGoogleMapsExternalUrl } from '../../utils/googleMaps';
+import { trackMapClick } from '../../services/analyticsService';
 
 export default function DetailsTab({ route, refreshing, onRefresh, embedded = false }) {
   const { motel } = route.params || {};
@@ -25,6 +26,7 @@ export default function DetailsTab({ route, refreshing, onRefresh, embedded = fa
   const mapsUrl = getGoogleMapsExternalUrl(motel.mapUrl, motel.location);
   const handleOpenMaps = () => {
     if (mapsUrl) {
+      if (motel.id) trackMapClick(motel.id, 'DETAIL');
       Linking.openURL(mapsUrl).catch(err => console.error('Error al abrir Google Maps:', err));
     }
   };

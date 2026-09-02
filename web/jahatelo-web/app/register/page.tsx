@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import { trackVisitor } from '@/lib/analytics';
 
 function RegisterForm() {
   const router = useRouter();
@@ -61,6 +62,7 @@ function RegisterForm() {
       });
 
       if (result.success) {
+        trackVisitor({ event: 'register_complete', path: '/register', metadata: { method: registerMethod } });
         if (registerMethod === 'email') {
           const target = `/login?sent=1&email=${encodeURIComponent(email)}`;
           router.push(target);

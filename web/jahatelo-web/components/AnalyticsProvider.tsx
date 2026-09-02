@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { trackVisitor, getOrCreateDeviceId } from '@/lib/analytics';
+import { trackVisitor } from '@/lib/analytics';
 
 /**
  * AnalyticsProvider
@@ -21,18 +21,9 @@ export default function AnalyticsProvider() {
     // No trackear rutas del panel admin
     if (pathname?.startsWith('/admin')) return;
 
-    getOrCreateDeviceId();
-
     if (!sessionTracked.current) {
       sessionTracked.current = true;
-      const lastActive = sessionStorage.getItem('jhtl_last_active');
-      const now = Date.now();
-      const SESSION_GAP = 30 * 60 * 1000;
-
-      if (!lastActive || now - parseInt(lastActive, 10) > SESSION_GAP) {
-        trackVisitor({ event: 'session_start', path: pathname });
-      }
-      sessionStorage.setItem('jhtl_last_active', String(now));
+      trackVisitor({ event: 'session_start', path: pathname });
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -47,7 +38,11 @@ export default function AnalyticsProvider() {
 
     trackVisitor({ event: 'page_view', path: pathname });
 
-    sessionStorage.setItem('jhtl_last_active', String(Date.now()));
+    if (pathname.startsWith('/buscar')) trackVisitor({ event: 'search', path: pathname, metadata: { query: window.location.search } });
+    if (pathname.startsWith('/ciudad/')) trackVisitor({ event: 'city_view', path: pathname });
+    if (pathname === '/mapa') trackVisitor({ event: 'map_view', path: pathname });
+    if (pathname === '/register') trackVisitor({ event: 'register_start', path: pathname });
+
   }, [pathname]);
 
   return null;

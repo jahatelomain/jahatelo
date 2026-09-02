@@ -43,6 +43,10 @@
 
 ## Completados
 
+### 2026-09-02
+
+- [x] **JH-052 — Visitantes y embudo unificados:** web, iOS y Android registran instalaciones anónimas, sesiones y eventos deduplicados; la identidad se vincula opcionalmente desde el token y SUPERADMIN dispone de resumen fiable, embudo, plataformas, recorridos e historial individual.
+
 ### 2026-09-01
 
 - [x] **JH-051 — Carga flexible de fotos de habitación:** las fotos se aceptan independientemente de su resolución y se ajustan y optimizan automáticamente; 1200×800 queda únicamente como recomendación de calidad.

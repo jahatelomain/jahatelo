@@ -14,7 +14,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, STATUS_COLORS } from '../../constants/theme';
 import { getApiRoot } from '../../services/apiBaseUrl';
-import { getOrCreateDeviceId } from '../../services/analyticsService';
+import { getOrCreateDeviceId, trackVisitor } from '../../services/analyticsService';
 import { showMessage } from '../../utils/appFeedback';
 
 const CLAIMED_CODES_KEY = 'jahatelo_claimed_promo_codes';
@@ -85,6 +85,7 @@ export default function PromosTab({ route, refreshing, onRefresh, embedded = fal
       await saveClaimedCode(promo.id, codeData);
       setClaimedCodes((prev) => ({ ...prev, [promo.id]: codeData }));
       setCodeModal(codeData);
+      trackVisitor('promo_claim', null, { promoId: promo.id, motelId: motel?.id });
     } catch {
       setClaimError((prev) => ({ ...prev, [promo.id]: 'Error de conexión' }));
     } finally {

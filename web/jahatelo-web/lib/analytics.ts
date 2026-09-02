@@ -5,6 +5,9 @@
  */
 
 const DEVICE_ID_KEY = 'jhtl_did';
+const SESSION_ID_KEY = 'jhtl_sid';
+const LAST_ACTIVE_KEY = 'jhtl_last_active';
+const SESSION_GAP = 30 * 60 * 1000;
 const COOKIE_DAYS = 730; // 2 años
 
 function generateUUID(): string {
@@ -65,7 +68,17 @@ export type VisitorEventType =
   | 'motel_view'
   | 'search'
   | 'city_view'
-  | 'map_view';
+  | 'map_view'
+  | 'favorite_add'
+  | 'favorite_remove'
+  | 'phone_click'
+  | 'whatsapp_click'
+  | 'map_click'
+  | 'website_click'
+  | 'promo_view'
+  | 'promo_claim'
+  | 'register_start'
+  | 'register_complete';
 
 interface TrackOptions {
   event: VisitorEventType;
@@ -80,21 +93,37 @@ export async function trackVisitor(opts: TrackOptions): Promise<void> {
   const deviceId = getOrCreateDeviceId();
   if (!deviceId) return;
 
+  const now = Date.now();
+  const lastActive = Number(sessionStorage.getItem(LAST_ACTIVE_KEY) || 0);
+  let sessionId = sessionStorage.getItem(SESSION_ID_KEY);
+  const isNewSession = !sessionId || !lastActive || now - lastActive > SESSION_GAP;
+  if (isNewSession) {
+    sessionId = generateUUID();
+    sessionStorage.setItem(SESSION_ID_KEY, sessionId);
+  }
+  sessionStorage.setItem(LAST_ACTIVE_KEY, String(now));
+
+  if (opts.event === 'session_start' && !isNewSession) return;
+
+  const send = (event: VisitorEventType, path = opts.path) => fetch('/api/analytics/visitor', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      eventId: generateUUID(),
+      deviceId,
+      sessionId,
+      platform: 'web',
+      event,
+      path,
+      referrer: opts.referrer ?? document.referrer ?? undefined,
+      metadata: opts.metadata,
+    }),
+    keepalive: true,
+  });
+
   try {
-    await fetch('/api/analytics/visitor', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        deviceId,
-        platform: 'web',
-        event: opts.event,
-        path: opts.path,
-        referrer: opts.referrer ?? document.referrer ?? undefined,
-        metadata: opts.metadata,
-      }),
-      // keepalive para que el request no se corte si el usuario navega
-      keepalive: true,
-    });
+    if (isNewSession && opts.event !== 'session_start') await send('session_start', opts.path);
+    await send(opts.event);
   } catch {
     // Silencioso
   }

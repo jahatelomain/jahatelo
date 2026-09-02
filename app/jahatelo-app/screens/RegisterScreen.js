@@ -16,6 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { requestSmsOtp, verifySmsOtp } from '../services/authApi';
 import { COLORS, STATUS_COLORS } from '../constants/theme';
 import { showMessage } from '../utils/appFeedback';
+import { trackVisitor } from '../services/analyticsService';
 
 export default function RegisterScreen({ navigation }) {
   const { register } = useAuth();
@@ -119,6 +120,7 @@ export default function RegisterScreen({ navigation }) {
       });
 
       if (result.success) {
+        trackVisitor('register_complete', 'Register', { method: 'sms' });
         showMessage(
           '¡Cuenta creada!',
           'Tu cuenta ha sido creada exitosamente.',
@@ -160,6 +162,7 @@ export default function RegisterScreen({ navigation }) {
       });
 
       if (result.success) {
+        trackVisitor('register_complete', 'Register', { method: 'email' });
         showMessage(
           '¡Cuenta creada!',
           'Te enviamos un correo de verificación. Revisá tu bandeja y hacé clic en el enlace antes de iniciar sesión.',

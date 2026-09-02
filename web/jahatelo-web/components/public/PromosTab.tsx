@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
-import { getOrCreateDeviceId } from '@/lib/analytics';
+import { getOrCreateDeviceId, trackVisitor } from '@/lib/analytics';
 
 interface Promo {
   id: string;
@@ -49,6 +49,7 @@ export default function PromosTab({ promos }: PromosTabProps) {
       const data = await res.json();
       if (res.ok) {
         setClaimedCodes((prev) => ({ ...prev, [promoId]: data }));
+        trackVisitor({ event: 'promo_claim', metadata: { promoId } });
       } else {
         setClaimError((prev) => ({ ...prev, [promoId]: data.error || 'Error al obtener código' }));
       }
