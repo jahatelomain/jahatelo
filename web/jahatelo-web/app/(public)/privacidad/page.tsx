@@ -130,7 +130,7 @@ export default function PrivacyPage() {
               <ul className="list-disc pl-6 text-slate-700 space-y-2">
                 <li><strong>Esenciales:</strong> mantener sesión, seguridad (no se pueden deshabilitar)</li>
                 <li><strong>Funcionales:</strong> recordar preferencias, idioma</li>
-                <li><strong>Analytics:</strong> entender uso de la plataforma</li>
+                <li><strong>Analytics:</strong> entender el uso de la plataforma mediante un identificador aleatorio de navegador o instalación y sesiones de navegación; no recopilamos IMEI, número de serie ni dirección MAC</li>
                 <li><strong>Marketing:</strong> mostrar anuncios relevantes (con consentimiento)</li>
               </ul>
 
@@ -164,7 +164,7 @@ export default function PrivacyPage() {
                 <li><strong>Cuentas eliminadas:</strong> 30 días (periodo de recuperación)</li>
                 <li><strong>Datos de facturación:</strong> 5 años (requisito legal)</li>
                 <li><strong>Logs de seguridad:</strong> 12 meses</li>
-                <li><strong>Datos anonimizados:</strong> indefinidamente (analytics)</li>
+                <li><strong>Eventos de analytics:</strong> hasta 90 días; pueden vincularse a su cuenta únicamente cuando inicia sesión</li>
               </ul>
             </section>
 

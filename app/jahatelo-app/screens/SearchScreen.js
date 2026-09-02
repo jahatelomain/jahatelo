@@ -21,6 +21,7 @@ import { prefetchMotelDetails, prefetchThumbnails } from '../services/prefetchSe
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { mixAdvertisements } from '../utils/mixAdvertisements';
 import { COLORS } from '../constants/theme';
+import { trackSearch } from '../services/analyticsService';
 
 // Filtros rápidos por amenities comunes
 const QUICK_FILTERS = [
@@ -94,6 +95,7 @@ export default function SearchScreen({ route }) {
       const data = await searchAndFilterMotels(query, amenity, { signal: controller.signal });
       if (controller.signal.aborted) return;
       setResults(data);
+      if (query?.trim() || amenity) trackSearch(query?.trim() || `amenity:${amenity}`);
 
       // Prefetch de los primeros 5 resultados en background
       if (data && data.length > 0) {

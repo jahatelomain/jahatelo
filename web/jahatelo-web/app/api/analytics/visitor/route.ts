@@ -3,9 +3,13 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { resolveAnalyticsEnvironment } from '@/lib/analyticsEnvironment';
+import { getTokenFromRequest, verifyToken } from '@/lib/auth';
+import { rateLimitUpstash } from '@/lib/rateLimit';
 
 const TrackSchema = z.object({
   deviceId: z.string().min(8).max(64),
+  sessionId: z.string().min(8).max(64).optional(),
+  eventId: z.string().min(8).max(64).optional(),
   platform: z.enum(['web', 'ios', 'android']),
   event: z.enum([
     'session_start',
@@ -15,6 +19,16 @@ const TrackSchema = z.object({
     'search',
     'city_view',
     'map_view',
+    'favorite_add',
+    'favorite_remove',
+    'phone_click',
+    'whatsapp_click',
+    'map_click',
+    'website_click',
+    'promo_view',
+    'promo_claim',
+    'register_start',
+    'register_complete',
   ]),
   path: z.string().max(500).optional(),
   referrer: z.string().max(500).optional(),
@@ -26,6 +40,9 @@ const TrackSchema = z.object({
 // Endpoint publico, no requiere autenticacion
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const limit = await rateLimitUpstash(`visitor-analytics:${ip}`, 180, 60_000);
+    if (!limit.success) return NextResponse.json({ ok: false }, { status: 429 });
     const body = await request.json();
     const parsed = TrackSchema.safeParse(body);
 
@@ -33,7 +50,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false }, { status: 400 });
     }
 
-    const { deviceId, platform, event, path, referrer, metadata } = parsed.data;
+    const { deviceId, sessionId, eventId, platform, event, path, referrer, metadata } = parsed.data;
+    const token = await getTokenFromRequest(request);
+    const authenticatedUser = token ? await verifyToken(token) : null;
     const environment = resolveAnalyticsEnvironment(request);
     const metadataWithEnvironment = {
       ...(metadata ?? {}),
@@ -43,6 +62,9 @@ export async function POST(request: NextRequest) {
     await prisma.visitorEvent.create({
       data: {
         deviceId,
+        sessionId: sessionId ?? null,
+        eventId: eventId ?? null,
+        userId: authenticatedUser?.id ?? null,
         platform,
         event,
         path: path ?? null,
@@ -52,7 +74,10 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json({ ok: true, duplicate: true });
+    }
     // Silencioso: el tracking nunca debe romper la experiencia del usuario
     return NextResponse.json({ ok: false }, { status: 500 });
   }

@@ -29,6 +29,7 @@ import {
   loadStoredStagingCredentials,
   setStagingCredentials,
 } from './services/stagingAuthService';
+import { trackAppOpen, trackScreenView } from './services/analyticsService';
 
 // Inicializar Sentry antes de renderizar la aplicación.
 initSentry();
@@ -53,6 +54,14 @@ function AppContent() {
   const { navigationRef } = useNavigationContext();
   const cleanupRef = useRef(null);
   const notificationDataRef = useRef(null);
+  const lastTrackedRouteRef = useRef(null);
+
+  const trackCurrentRoute = useCallback(() => {
+    const route = navigationRef.current?.getCurrentRoute();
+    if (!route?.name || route.name === lastTrackedRouteRef.current) return;
+    lastTrackedRouteRef.current = route.name;
+    trackScreenView(route.name, { params: route.params ? Object.keys(route.params) : [] });
+  }, [navigationRef]);
 
   const performNavigation = useCallback((data) => {
     try {
@@ -170,7 +179,12 @@ function AppContent() {
   }, [navigationRef, performNavigation]);
 
   return (
-    <NavigationContainer ref={navigationRef} linking={linking}>
+    <NavigationContainer
+      ref={navigationRef}
+      linking={linking}
+      onReady={async () => { await trackAppOpen(); trackCurrentRoute(); }}
+      onStateChange={trackCurrentRoute}
+    >
       <RootNavigation />
       <OfflineIndicator />
       <AppUpdateModal />

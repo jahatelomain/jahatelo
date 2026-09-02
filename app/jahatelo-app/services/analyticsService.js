@@ -7,6 +7,7 @@
 import { getApiRoot } from './apiBaseUrl';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { getStoredToken } from './authApi';
 
 const generateUUID = () =>
   'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -30,8 +31,18 @@ const debugLog = (...args) => {
  */
 export const trackEvent = async ({ motelId, eventType, source, metadata }) => {
   try {
+    const visitorEventByType = {
+      VIEW: 'motel_view',
+      CLICK_PHONE: 'phone_click',
+      CLICK_WHATSAPP: 'whatsapp_click',
+      CLICK_MAP: 'map_click',
+      CLICK_WEBSITE: 'website_click',
+      FAVORITE_ADD: 'favorite_add',
+      FAVORITE_REMOVE: 'favorite_remove',
+    };
+    const visitorTracking = trackVisitor(visitorEventByType[eventType], null, { ...metadata, motelId, source });
     // No bloquear la UI si falla el tracking
-    await fetch(`${API_URL}/api/analytics/track`, {
+    await Promise.all([visitorTracking, fetch(`${API_URL}/api/analytics/track`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -43,7 +54,7 @@ export const trackEvent = async ({ motelId, eventType, source, metadata }) => {
         deviceType: 'MOBILE',
         metadata,
       }),
-    });
+    })]);
   } catch (error) {
     // Silenciosamente fallar - no queremos interrumpir la experiencia del usuario
     debugLog('Analytics tracking failed (non-critical):', error.message);
@@ -133,6 +144,7 @@ export const trackFavoriteRemove = (motelId, source = 'LIST') => {
 
 const DEVICE_ID_KEY = 'jhtl_device_id';
 const SESSION_KEY = 'jhtl_session_ts';
+const SESSION_ID_KEY = 'jhtl_session_id';
 const SESSION_GAP = 30 * 60 * 1000; // 30 minutos
 
 /**
@@ -162,18 +174,36 @@ export const trackVisitor = async (event, screen, metadata) => {
   try {
     const deviceId = await getOrCreateDeviceId();
     const platform = Platform.OS; // 'ios' | 'android'
+    const now = Date.now();
+    const [lastTs, storedSessionId, token] = await Promise.all([
+      AsyncStorage.getItem(SESSION_KEY),
+      AsyncStorage.getItem(SESSION_ID_KEY),
+      getStoredToken(),
+    ]);
+    const isNewSession = !lastTs || !storedSessionId || now - parseInt(lastTs, 10) > SESSION_GAP;
+    const sessionId = isNewSession ? generateUUID() : storedSessionId;
+    await AsyncStorage.multiSet([[SESSION_KEY, String(now)], [SESSION_ID_KEY, sessionId]]);
+    if (event === 'session_start' && !isNewSession) return;
 
-    await fetch(`${getApiRoot()}/api/analytics/visitor`, {
+    const send = (eventName) => fetch(`${getApiRoot()}/api/analytics/visitor`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify({
+        eventId: generateUUID(),
         deviceId,
+        sessionId,
         platform,
-        event,
+        event: eventName,
         path: screen ?? null,
         metadata: metadata ?? null,
       }),
     });
+
+    if (isNewSession && event !== 'session_start') await send('session_start');
+    await send(event);
   } catch {
     // Silencioso
   }
@@ -184,19 +214,7 @@ export const trackVisitor = async (event, screen, metadata) => {
  * Detecta si es una nueva sesión y trackea session_start.
  */
 export const trackAppOpen = async () => {
-  try {
-    const now = Date.now();
-    const lastTs = await AsyncStorage.getItem(SESSION_KEY);
-    const isNewSession = !lastTs || now - parseInt(lastTs, 10) > SESSION_GAP;
-
-    await AsyncStorage.setItem(SESSION_KEY, String(now));
-
-    if (isNewSession) {
-      await trackVisitor('session_start');
-    }
-  } catch {
-    // Silencioso
-  }
+  return trackVisitor('session_start');
 };
 
 /**
@@ -204,7 +222,16 @@ export const trackAppOpen = async () => {
  * Llamar en el useEffect de cada screen principal.
  */
 export const trackScreenView = (screenName, metadata) => {
-  return trackVisitor('screen_view', screenName, metadata);
+  const eventByScreen = {
+    Search: 'search',
+    Map: 'map_view',
+    NearbyMotels: 'map_view',
+    CitySelector: 'city_view',
+    CityMotels: 'city_view',
+    Register: 'register_start',
+    RegisterMotel: 'register_start',
+  };
+  return trackVisitor(eventByScreen[screenName] || 'screen_view', screenName, metadata);
 };
 
 /**

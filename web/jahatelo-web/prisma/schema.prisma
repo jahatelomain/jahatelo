@@ -533,6 +533,7 @@ model User {
   motelReports            MotelReport[]     @relation("MotelReportReporter")
   assignedMotelReports    MotelReport[]     @relation("MotelReportAssignee")
   motelReportNotes        MotelReportNote[]
+  visitorEvents           VisitorEvent[]
 
   @@index([email])
   @@index([provider, providerId])
@@ -1036,6 +1037,10 @@ model Settings {
 model VisitorEvent {
   id        String   @id @default(cuid())
   deviceId  String // UUID anónimo por dispositivo/browser (persiste hasta desinstalar/limpiar datos)
+  sessionId String? // UUID renovado tras 30 minutos de inactividad
+  eventId   String?  @unique // UUID del cliente para deduplicar reintentos
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String? // Se obtiene del token autenticado, nunca del body público
   platform  String // "web" | "ios" | "android"
   event     String // "session_start" | "page_view" | "motel_view" | "search" | "screen_view"
   path      String? // Ruta web (ej: "/moteles/hotel-abc") o nombre de pantalla en app
@@ -1048,5 +1053,7 @@ model VisitorEvent {
   @@index([platform])
   @@index([createdAt])
   @@index([deviceId, createdAt])
+  @@index([sessionId, createdAt])
+  @@index([userId, createdAt])
   @@index([event, createdAt])
 }
