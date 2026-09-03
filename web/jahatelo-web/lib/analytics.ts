@@ -10,7 +10,7 @@ const LAST_ACTIVE_KEY = 'jhtl_last_active';
 const SESSION_GAP = 30 * 60 * 1000;
 const COOKIE_DAYS = 730; // 2 años
 
-function generateUUID(): string {
+export function generateAnalyticsId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
@@ -47,7 +47,7 @@ export function getOrCreateDeviceId(): string {
   }
 
   if (!id) {
-    id = generateUUID();
+    id = generateAnalyticsId();
   }
 
   // Persistir en ambos
@@ -85,31 +85,49 @@ interface TrackOptions {
   path?: string;
   referrer?: string;
   metadata?: Record<string, unknown>;
+  eventId?: string;
+  context?: AnalyticsContext;
 }
 
-export async function trackVisitor(opts: TrackOptions): Promise<void> {
-  if (typeof window === 'undefined') return;
+export type AnalyticsContext = {
+  deviceId: string;
+  sessionId: string;
+  isNewSession: boolean;
+};
 
+export function getAnalyticsContext(): AnalyticsContext | null {
+  if (typeof window === 'undefined') return null;
   const deviceId = getOrCreateDeviceId();
-  if (!deviceId) return;
+  if (!deviceId) return null;
 
   const now = Date.now();
   const lastActive = Number(sessionStorage.getItem(LAST_ACTIVE_KEY) || 0);
   let sessionId = sessionStorage.getItem(SESSION_ID_KEY);
   const isNewSession = !sessionId || !lastActive || now - lastActive > SESSION_GAP;
   if (isNewSession) {
-    sessionId = generateUUID();
+    sessionId = generateAnalyticsId();
     sessionStorage.setItem(SESSION_ID_KEY, sessionId);
   }
   sessionStorage.setItem(LAST_ACTIVE_KEY, String(now));
+  if (!sessionId) return null;
+
+  return { deviceId, sessionId, isNewSession };
+}
+
+export async function trackVisitor(opts: TrackOptions): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  const context = opts.context ?? getAnalyticsContext();
+  if (!context) return;
+  const { deviceId, sessionId, isNewSession } = context;
 
   if (opts.event === 'session_start' && !isNewSession) return;
 
-  const send = (event: VisitorEventType, path = opts.path) => fetch('/api/analytics/visitor', {
+  const send = (event: VisitorEventType, path = opts.path, eventId = generateAnalyticsId()) => fetch('/api/analytics/visitor', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      eventId: generateUUID(),
+      eventId,
       deviceId,
       sessionId,
       platform: 'web',
@@ -123,7 +141,7 @@ export async function trackVisitor(opts: TrackOptions): Promise<void> {
 
   try {
     if (isNewSession && opts.event !== 'session_start') await send('session_start', opts.path);
-    await send(opts.event);
+    await send(opts.event, opts.path, opts.eventId);
   } catch {
     // Silencioso
   }

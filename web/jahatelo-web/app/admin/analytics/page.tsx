@@ -1,465 +1,124 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Activity, ArrowDownRight, ArrowUpRight, Eye, Heart, MousePointerClick, RefreshCw, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@/contexts/ToastContext';
 import SearchableSelect from '@/components/admin/SearchableSelect';
 
-interface AnalyticsData {
-  motel: {
-    id: string;
-    name: string;
-  } | null;
+type Trend = number | null;
+type AnalyticsData = {
+  motel: { id: string; name: string } | null;
   isGlobal: boolean;
   analyticsAccess: 'SUMMARY' | 'FULL';
-  period: {
-    days: number;
-    startDate: string;
-    endDate: string;
-  };
+  period: { days: number; startDate: string; endDate: string };
   summary: {
-    totalViews: number;
-    totalClicksPhone: number;
-    totalClicksWhatsApp: number;
-    totalClicksMap: number;
-    totalClicksWebsite: number;
-    totalClicks: number;
-    totalFavoritesAdded: number;
-    totalFavoritesRemoved: number;
-    netFavorites: number;
-    conversionRate: number;
+    totalViews: number; totalContacts: number; totalClicksPhone: number; totalClicksWhatsApp: number; totalClicksMap: number; totalClicksWebsite: number;
+    totalFavoritesAdded: number; totalFavoritesRemoved: number; netFavorites: number; identifiedViewers: number; uniqueContacts: number; conversionRate: number | null;
   };
+  comparison: { views: Trend; contacts: Trend; favorites: Trend; conversion: Trend };
   charts: {
-    viewsByDay: { date: string; count: number }[];
-    bySource: { source: string; count: number }[];
-    byDevice: { device: string; count: number }[];
+    daily: { date: string; views: number; contacts: number; favorites: number }[];
+    bySource: { source: string; count: number }[]; byDevice: { device: string; count: number }[];
     topCities: { city: string; count: number }[];
-    topMotels?: { motelId: string; motelName: string; count: number }[];
+    topMotels: { motelId: string; motelName: string; views: number; contacts: number; conversionRate: number | null }[];
   };
-}
+  recentEvents: { id: string; motelId: string; eventType: string; timestamp: string; source: string | null; userCity: string | null; deviceType: string | null; deviceId: string | null }[];
+};
+type Motel = { id: string; name: string };
+type CurrentUser = { role: 'SUPERADMIN' | 'MOTEL_ADMIN'; motelId?: string | null };
 
-interface Motel {
-  id: string;
-  name: string;
-}
+const ranges = [{ label: '7 días', value: '7' }, { label: '30 días', value: '30' }, { label: '90 días', value: '90' }];
+const number = new Intl.NumberFormat('es-PY');
+const eventLabels: Record<string, string> = { VIEW: 'Vista', CLICK_PHONE: 'Llamada', CLICK_WHATSAPP: 'WhatsApp', CLICK_MAP: 'Mapa', CLICK_WEBSITE: 'Sitio web', FAVORITE_ADD: 'Favorito agregado', FAVORITE_REMOVE: 'Favorito quitado' };
+const sourceLabels: Record<string, string> = { HOME: 'Inicio', LIST: 'Listado', SEARCH: 'Búsqueda', DETAIL: 'Detalle', MAP: 'Mapa', MOBILE: 'App móvil' };
+const deviceLabels: Record<string, string> = { WEB: 'Web', MOBILE: 'App móvil' };
 
-interface CurrentUser {
-  id: string;
-  role: 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
-  motelId?: string | null;
-  motelPlan?: 'FREE' | 'BASIC' | 'GOLD' | 'DIAMOND';
-}
-
-export default function GlobalAnalyticsPage() {
+export default function AnalyticsPage() {
   const router = useRouter();
-  const toast = useToast();
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [user, setUser] = useState<CurrentUser | null>(null);
   const [motels, setMotels] = useState<Motel[]>([]);
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('30');
-  const [selectedMotelId, setSelectedMotelId] = useState<string>('');
-  const [sourceFilter, setSourceFilter] = useState<string>('');
-  const [deviceFilter, setDeviceFilter] = useState<string>('');
-  const [eventTypeFilter, setEventTypeFilter] = useState<string>('');
-
-  // La verificación de acceso se ejecuta una sola vez al montar la pantalla.
-  useEffect(() => {
-    checkAccess();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [motelId, setMotelId] = useState('');
+  const [source, setSource] = useState('');
+  const [device, setDevice] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!currentUser) return;
-    fetchMotels();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
+    fetch('/api/auth/me').then((response) => response.json()).then((payload) => {
+      if (!payload.user || !['SUPERADMIN', 'MOTEL_ADMIN'].includes(payload.user.role) || (payload.user.role === 'MOTEL_ADMIN' && !payload.user.motelId)) return router.replace('/admin');
+      setUser(payload.user);
+      if (payload.user.role === 'MOTEL_ADMIN') setMotelId(payload.user.motelId);
+    }).catch(() => router.replace('/admin'));
+  }, [router]);
 
   useEffect(() => {
-    if (!currentUser) return;
-    fetchAnalytics(period, selectedMotelId, sourceFilter, deviceFilter, eventTypeFilter);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, selectedMotelId, sourceFilter, deviceFilter, eventTypeFilter, currentUser]);
+    if (user?.role !== 'SUPERADMIN') return;
+    fetch('/api/admin/motels').then((response) => response.ok ? response.json() : []).then(setMotels).catch(() => setMotels([]));
+  }, [user]);
 
-  const checkAccess = async () => {
+  const load = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
     try {
-      const response = await fetch('/api/auth/me');
-      const data = await response.json();
+      const params = new URLSearchParams({ period });
+      if (motelId) params.set('motelId', motelId);
+      if (source) params.set('source', source);
+      if (device) params.set('deviceType', device);
+      const response = await fetch(`/api/admin/analytics?${params}`, { cache: 'no-store' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'No se pudieron cargar las estadísticas');
+      setData(payload); setError('');
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'No se pudieron cargar las estadísticas'); }
+    finally { setLoading(false); }
+  }, [device, motelId, period, source, user]);
 
-      if (!data.user || !['SUPERADMIN', 'MOTEL_ADMIN'].includes(data.user.role)) {
-        router.push('/admin');
-        return;
-      }
-      if (data.user.role === 'MOTEL_ADMIN' && !data.user.motelId) {
-        router.push('/admin');
-        return;
-      }
-      setCurrentUser(data.user);
-      if (data.user.role === 'MOTEL_ADMIN') setSelectedMotelId(data.user.motelId);
-    } catch (error) {
-      console.error('Error checking access:', error);
-      router.push('/admin');
-    }
-  };
+  useEffect(() => { load(); }, [load]);
 
-  const fetchMotels = async () => {
-    if (!currentUser || currentUser.role !== 'SUPERADMIN') return;
-    try {
-      const response = await fetch('/api/admin/motels');
-      if (response.ok) {
-        const data = await response.json();
-        setMotels(data);
-      }
-    } catch (error) {
-      console.error('Error fetching motels:', error);
-    }
-  };
+  return <main className="space-y-6 p-4 md:p-8">
+    <header className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+      <div><p className="text-sm font-semibold text-violet-600">Rendimiento del catálogo</p><h1 className="text-3xl font-bold text-slate-900">{data?.isGlobal === false ? `Analytics · ${data.motel?.name}` : 'Analytics'}</h1><p className="mt-1 max-w-3xl text-sm text-slate-600">Vistas e intenciones de contacto de los moteles. Visitantes mide el tráfico general; esta pantalla mide el rendimiento comercial del catálogo.</p></div>
+      <div className="flex rounded-xl border border-slate-200 bg-white p-1">{ranges.map((range) => <button key={range.value} onClick={() => setPeriod(range.value)} className={`min-h-10 rounded-lg px-3 text-sm font-semibold ${period === range.value ? 'bg-violet-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>{range.label}</button>)}</div>
+    </header>
 
-  const fetchAnalytics = async (
-    periodDays: string,
-    motelId: string,
-    source: string,
-    deviceType: string,
-    eventType: string
-  ) => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({ period: periodDays });
-      if (motelId) {
-        params.append('motelId', motelId);
-      }
-      if (source) {
-        params.append('source', source);
-      }
-      if (deviceType) {
-        params.append('deviceType', deviceType);
-      }
-      if (eventType) {
-        params.append('eventType', eventType);
-      }
+    <section aria-label="Filtros de Analytics" className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-3">
+      {user?.role === 'SUPERADMIN' ? <SearchableSelect value={motelId} onChange={setMotelId} placeholder="Todos los moteles" options={[{ value: '', label: 'Todos los moteles' }, ...motels.map((motel) => ({ value: motel.id, label: motel.name }))]} /> : <div className="text-sm font-semibold text-slate-700">{data?.motel?.name}</div>}
+      <select aria-label="Filtrar por origen" value={source} onChange={(event) => setSource(event.target.value)} className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm"><option value="">Todos los orígenes</option>{Object.entries(sourceLabels).filter(([value]) => value !== 'MOBILE').map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+      <select aria-label="Filtrar por plataforma" value={device} onChange={(event) => setDevice(event.target.value)} className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm"><option value="">Todas las plataformas</option><option value="WEB">Web</option><option value="MOBILE">App móvil</option></select>
+    </section>
 
-      const response = await fetch(`/api/admin/analytics?${params.toString()}`);
-      if (response.ok) {
-        const data = await response.json();
-        setAnalytics(data);
-      } else if (response.status === 403) {
-        toast?.showToast('Analytics no está incluido en el plan de este motel', 'error');
-        router.replace('/admin');
-      } else {
-        toast?.showToast('Error al cargar estadísticas', 'error');
-      }
-    } catch (error) {
-      console.error('Error fetching analytics:', error);
-      toast?.showToast('Error al cargar estadísticas', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 bg-slate-200 rounded-xl"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!analytics) {
-    return (
-      <div className="space-y-6">
-        <div className="text-center text-slate-500">No se pudieron cargar las estadísticas</div>
-      </div>
-    );
-  }
-
-  const isSummary = analytics.analyticsAccess === 'SUMMARY';
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900">
-            {analytics.isGlobal ? 'Analytics Global' : `Analytics - ${analytics.motel?.name}`}
-            </h1>
-            <p className="text-sm text-slate-600 mt-1">
-              {analytics.isGlobal
-                ? 'Estadísticas y métricas de todos los moteles'
-                : 'Estadísticas filtradas por motel seleccionado'}
-            </p>
-          </div>
-
-          {/* Filtros + Exportar */}
-          <div className="flex flex-wrap gap-3">
-            {currentUser?.role === 'SUPERADMIN' && <a
-              href="/api/admin/export?type=analytics"
-              download
-              className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium flex items-center gap-2 shadow-sm text-sm"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Exportar CSV
-            </a>}
-            {/* Selector de Motel */}
-            {currentUser?.role === 'SUPERADMIN' && <div className="min-w-64">
-              <SearchableSelect
-              value={selectedMotelId}
-              onChange={setSelectedMotelId}
-              placeholder="Buscar motel..."
-              options={[
-                { value: '', label: 'Todos los moteles' },
-                ...motels.map((motel) => ({ value: motel.id, label: motel.name })),
-              ]}
-              />
-            </div>}
-
-            {/* Selector de período */}
-            {!isSummary && <select
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-            >
-              <option value="7">Últimos 7 días</option>
-              <option value="30">Últimos 30 días</option>
-              <option value="90">Últimos 90 días</option>
-            </select>}
-
-            {!isSummary && <select
-              value={eventTypeFilter}
-              onChange={(e) => setEventTypeFilter(e.target.value)}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-            >
-              <option value="">Todos los eventos</option>
-              <option value="VIEW">Vistas</option>
-              <option value="CLICK_PHONE">Click Teléfono</option>
-              <option value="CLICK_WHATSAPP">Click WhatsApp</option>
-              <option value="CLICK_MAP">Click Mapa</option>
-              <option value="CLICK_WEBSITE">Click Web</option>
-              <option value="FAVORITE_ADD">Favorito agregado</option>
-              <option value="FAVORITE_REMOVE">Favorito removido</option>
-            </select>}
-
-            {!isSummary && <select
-              value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value)}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-            >
-              <option value="">Todas las fuentes</option>
-              <option value="HOME">Pantalla de Inicio</option>
-              <option value="LIST">Pantalla de Listado</option>
-              <option value="SEARCH">Pantalla de Búsqueda</option>
-              <option value="DETAIL">Pantalla de Detalles</option>
-              <option value="MAP">Pantalla de Mapa</option>
-            </select>}
-
-            {!isSummary && <select
-              value={deviceFilter}
-              onChange={(e) => setDeviceFilter(e.target.value)}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-            >
-              <option value="">Todos los dispositivos</option>
-              <option value="WEB">Web</option>
-              <option value="MOBILE">Móvil</option>
-            </select>}
-          </div>
-        </div>
-      </div>
-
-      {/* KPIs principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-600 mb-1">Vistas Totales</p>
-              <p className="text-3xl font-semibold text-slate-900">{analytics.summary.totalViews.toLocaleString()}</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-600 mb-1">Clicks Totales</p>
-              <p className="text-3xl font-semibold text-slate-900">{analytics.summary.totalClicks.toLocaleString()}</p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {!isSummary && <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-600 mb-1">Tasa de Conversión</p>
-              <p className="text-3xl font-semibold text-slate-900">{analytics.summary.conversionRate}%</p>
-            </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-            </div>
-          </div>
-        </div>}
-
-        {!isSummary && <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-600 mb-1">Favoritos Netos</p>
-              <p className="text-3xl font-semibold text-slate-900">{analytics.summary.netFavorites >= 0 ? '+' : ''}{analytics.summary.netFavorites}</p>
-            </div>
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
-            </div>
-          </div>
-        </div>}
-      </div>
-
-      {!isSummary && <>
-      {/* Desglose de Clicks */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Clicks por Tipo</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-slate-600">📞 Teléfono</span>
-              <span className="font-semibold">{analytics.summary.totalClicksPhone}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-600">💬 WhatsApp</span>
-              <span className="font-semibold">{analytics.summary.totalClicksWhatsApp}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-600">🗺️ Mapa</span>
-              <span className="font-semibold">{analytics.summary.totalClicksMap}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-600">🌐 Sitio Web</span>
-              <span className="font-semibold">{analytics.summary.totalClicksWebsite}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Favoritos</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-slate-600">❤️ Agregados</span>
-              <span className="font-semibold text-green-600">+{analytics.summary.totalFavoritesAdded}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-600">💔 Removidos</span>
-              <span className="font-semibold text-red-600">-{analytics.summary.totalFavoritesRemoved}</span>
-            </div>
-            <div className="pt-3 border-t border-slate-200">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-900 font-medium">Balance</span>
-                <span className={`font-bold ${analytics.summary.netFavorites >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {analytics.summary.netFavorites >= 0 ? '+' : ''}{analytics.summary.netFavorites}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Top Moteles (solo en vista global) */}
-      {analytics.isGlobal && analytics.charts.topMotels && analytics.charts.topMotels.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Top 10 Moteles</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {analytics.charts.topMotels.slice(0, 10).map((motel, index) => (
-              <div key={index} className="text-center p-4 bg-purple-50 rounded-xl">
-                <p className="text-2xl font-bold text-purple-600">{motel.count}</p>
-                <p className="text-sm text-slate-700 mt-1 truncate" title={motel.motelName}>
-                  {motel.motelName}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Top Ciudades */}
-      {analytics.charts.topCities.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Top Ciudades</h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {analytics.charts.topCities.slice(0, 5).map((city, index) => (
-              <div key={index} className="text-center">
-                <p className="text-2xl font-bold text-purple-600">{city.count}</p>
-                <p className="text-sm text-slate-600">{city.city}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Fuentes de Tráfico */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {analytics.charts.bySource.length > 0 && (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Por Fuente</h3>
-            <div className="space-y-3">
-              {analytics.charts.bySource.map((item, index) => (
-                <div key={index} className="flex justify-between items-center">
-                  <span className="text-slate-600 capitalize">{item.source?.toLowerCase()}</span>
-                  <span className="font-semibold">{item.count}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {analytics.charts.byDevice.length > 0 && (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Por Dispositivo</h3>
-            <div className="space-y-3">
-              {analytics.charts.byDevice.map((item, index) => (
-                <div key={index} className="flex justify-between items-center">
-                  <span className="text-slate-600">{item.device === 'MOBILE' ? '📱 Móvil' : '💻 Web'}</span>
-                  <span className="font-semibold">{item.count}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Nota informativa */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <p className="text-sm text-blue-800">
-          <strong>💡 Tip:</strong> {analytics.isGlobal
-            ? 'Estas métricas te muestran el rendimiento general de toda la plataforma. Selecciona un motel específico para ver sus estadísticas individuales.'
-            : 'Estas métricas muestran el rendimiento del motel seleccionado. Selecciona "Todos los moteles" para ver estadísticas globales.'}
-        </p>
-      </div>
-      </>}
-
-      {isSummary && (
-        <div className="rounded-xl border border-purple-200 bg-purple-50 p-4 text-sm text-purple-800">
-          <strong>Resumen mensual incluido en BASIC.</strong> Actualizá a Gold o Diamond para acceder a períodos, filtros y desgloses avanzados.
-        </div>
-      )}
-    </div>
-  );
+    {loading ? <Loading /> : error ? <ErrorState message={error} retry={load} /> : data ? <Dashboard data={data} /> : null}
+  </main>;
 }
+
+function Dashboard({ data }: { data: AnalyticsData }) {
+  const cards = [
+    { label: 'Vistas de moteles', value: data.summary.totalViews, trend: data.comparison.views, help: 'Aperturas de una ficha', Icon: Eye },
+    { label: 'Acciones de contacto', value: data.summary.totalContacts, trend: data.comparison.contacts, help: 'Llamada, WhatsApp, mapa o web', Icon: MousePointerClick },
+    { label: 'Visitantes medidos', value: data.summary.identifiedViewers, trend: null, help: 'Navegadores o instalaciones con ID', Icon: Users },
+    { label: 'Favoritos agregados', value: data.summary.totalFavoritesAdded, trend: data.comparison.favorites, help: `Balance neto: ${data.summary.netFavorites >= 0 ? '+' : ''}${data.summary.netFavorites}`, Icon: Heart },
+    { label: 'Conversión a contacto', value: data.summary.conversionRate === null ? '—' : `${data.summary.conversionRate}%`, trend: data.comparison.conversion, help: 'Personas que vieron y contactaron', Icon: Activity },
+  ];
+  if (data.analyticsAccess === 'SUMMARY') return <><section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{cards.slice(0, 2).map((card) => <MetricCard key={card.label} {...card} trend={null} />)}</section><p className="rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-800">El plan BASIC incluye el resumen mensual. Gold y Diamond habilitan tendencias y desgloses.</p></>;
+  return <div className="space-y-5">
+    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{cards.map((card) => <MetricCard key={card.label} {...card} />)}</section>
+    {data.summary.identifiedViewers === 0 && <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">Todavía no hay eventos con identidad anónima en este período. Las vistas históricas se conservan, pero la conversión por persona comenzará a calcularse con la nueva medición.</p>}
+    <DailyChart rows={data.charts.daily} />
+    <section className="grid gap-5 xl:grid-cols-2"><ContactBreakdown data={data} /><Breakdown title="Vistas por plataforma" rows={data.charts.byDevice.map((item) => ({ label: deviceLabels[item.device] || item.device, count: item.count }))} /></section>
+    {data.isGlobal && <TopMotels rows={data.charts.topMotels} />}
+    <section className="grid gap-5 xl:grid-cols-2"><Breakdown title="Vistas por origen" rows={data.charts.bySource.map((item) => ({ label: sourceLabels[item.source] || item.source, count: item.count }))} /><Breakdown title="Ciudades de las vistas" rows={data.charts.topCities.map((item) => ({ label: item.city, count: item.count }))} empty="Aún no se recibe ciudad suficiente para este desglose." /></section>
+    <RecentEvents rows={data.recentEvents} />
+  </div>;
+}
+
+function MetricCard({ label, value, trend, help, Icon }: { label: string; value: number | string; trend: Trend; help: string; Icon: typeof Eye }) { return <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><Icon className="mb-3 h-5 w-5 text-violet-600" /><div className="flex items-end justify-between gap-2"><p className="text-2xl font-bold text-slate-900">{typeof value === 'number' ? number.format(value) : value}</p><Trend value={trend} /></div><p className="text-sm font-semibold text-slate-700">{label}</p><p className="mt-1 text-xs text-slate-400">{help}</p></article>; }
+function Trend({ value }: { value: Trend }) { if (value === null) return <span className="text-[10px] text-slate-400">Sin base anterior</span>; const positive = value >= 0; return <span className={`inline-flex items-center text-xs font-semibold ${positive ? 'text-emerald-600' : 'text-rose-600'}`}>{positive ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}{Math.abs(value)}%</span>; }
+
+function DailyChart({ rows }: { rows: AnalyticsData['charts']['daily'] }) { const max = Math.max(...rows.map((item) => Math.max(item.views, item.contacts)), 1); return <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-5"><h2 className="font-bold text-slate-900">Actividad por día</h2><p className="text-xs text-slate-500">Violeta: vistas · Verde: acciones de contacto. Se muestran también los días sin actividad.</p></div><div className="flex h-56 items-end gap-1">{rows.map((item) => <div key={item.date} title={`${item.date}: ${item.views} vistas, ${item.contacts} contactos`} className="flex min-w-0 flex-1 items-end justify-center gap-px"><div className="w-1/2 rounded-t bg-violet-500" style={{ height: `${Math.max(item.views / max * 180, item.views ? 3 : 1)}px` }} /><div className="w-1/2 rounded-t bg-emerald-500" style={{ height: `${Math.max(item.contacts / max * 180, item.contacts ? 3 : 1)}px` }} /></div>)}</div></section>; }
+function ContactBreakdown({ data }: { data: AnalyticsData }) { return <Breakdown title="Acciones de contacto" rows={[{ label: 'WhatsApp', count: data.summary.totalClicksWhatsApp }, { label: 'Llamadas', count: data.summary.totalClicksPhone }, { label: 'Indicaciones', count: data.summary.totalClicksMap }, { label: 'Sitio web', count: data.summary.totalClicksWebsite }]} />; }
+function Breakdown({ title, rows, empty = 'No hay datos para este período.' }: { title: string; rows: { label: string; count: number }[]; empty?: string }) { const filtered = rows.filter((row) => row.count > 0); const max = Math.max(...filtered.map((row) => row.count), 1); return <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="font-bold text-slate-900">{title}</h2>{filtered.length ? <div className="mt-4 space-y-3">{filtered.map((row) => <div key={row.label}><div className="mb-1 flex justify-between text-sm"><span>{row.label}</span><strong>{number.format(row.count)}</strong></div><div className="h-2 rounded-full bg-slate-100"><div className="h-full rounded-full bg-violet-500" style={{ width: `${row.count / max * 100}%` }} /></div></div>)}</div> : <p className="mt-4 text-sm text-slate-500">{empty}</p>}</section>; }
+function TopMotels({ rows }: { rows: AnalyticsData['charts']['topMotels'] }) { return <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="p-5"><h2 className="font-bold text-slate-900">Moteles con más vistas</h2><p className="text-xs text-slate-500">El ranking utiliza solamente aperturas de ficha, no la suma de todos los eventos.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[650px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-5 py-3">Motel</th><th className="px-3 py-3">Vistas</th><th className="px-3 py-3">Contactos</th><th className="px-5 py-3">Conversión</th></tr></thead><tbody className="divide-y divide-slate-100">{rows.map((row, index) => <tr key={row.motelId}><td className="px-5 py-3 font-semibold">{index + 1}. {row.motelName}</td><td className="px-3 py-3">{row.views}</td><td className="px-3 py-3">{row.contacts}</td><td className="px-5 py-3">{row.conversionRate === null ? '—' : `${row.conversionRate}%`}</td></tr>)}</tbody></table>{rows.length === 0 && <p className="p-6 text-sm text-slate-500">No hay actividad en este período.</p>}</div></section>; }
+function RecentEvents({ rows }: { rows: AnalyticsData['recentEvents'] }) { return <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="p-5"><h2 className="font-bold text-slate-900">Actividad reciente</h2><p className="text-xs text-slate-500">Sirve para verificar qué eventos están llegando y desde dónde.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-5 py-3">Evento</th><th className="px-3 py-3">Plataforma</th><th className="px-3 py-3">Origen</th><th className="px-3 py-3">Visitante</th><th className="px-5 py-3">Fecha</th></tr></thead><tbody className="divide-y divide-slate-100">{rows.slice(0, 20).map((row) => <tr key={row.id}><td className="px-5 py-3 font-semibold">{eventLabels[row.eventType] || row.eventType}</td><td className="px-3 py-3">{row.deviceType ? deviceLabels[row.deviceType] || row.deviceType : '—'}</td><td className="px-3 py-3">{row.source ? sourceLabels[row.source] || row.source : '—'}</td><td className="px-3 py-3 font-mono text-xs text-slate-500">{row.deviceId || 'histórico'}</td><td className="px-5 py-3">{new Date(row.timestamp).toLocaleString('es-PY', { dateStyle: 'short', timeStyle: 'short' })}</td></tr>)}</tbody></table>{rows.length === 0 && <p className="p-6 text-sm text-slate-500">No hay eventos recientes.</p>}</div></section>; }
+function Loading() { return <div className="space-y-4" aria-label="Cargando Analytics"><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{Array.from({ length: 5 }, (_, index) => <div key={index} className="h-36 animate-pulse rounded-2xl bg-slate-200" />)}</div><div className="h-72 animate-pulse rounded-2xl bg-slate-200" /></div>; }
+function ErrorState({ message, retry }: { message: string; retry: () => void }) { return <section role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-6"><h2 className="font-bold text-rose-900">No pudimos cargar Analytics</h2><p className="mt-1 text-sm text-rose-700">{message}</p><button onClick={retry} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-rose-700 px-4 text-sm font-semibold text-white"><RefreshCw className="h-4 w-4" />Reintentar</button></section>; }

@@ -45,6 +45,7 @@
 
 ### 2026-09-02
 
+- [x] **JH-053 — Analytics comercial confiable:** unificadas y deduplicadas las mediciones web/app, separados los entornos, corregidas vistas, contactos, favoritos, conversión por visitante y rankings; el panel SUPERADMIN muestra tendencias, evolución diaria, plataformas, fuentes, ciudades y actividad reciente.
 - [x] **JH-052 — Visitantes y embudo unificados:** web, iOS y Android registran instalaciones anónimas, sesiones y eventos deduplicados; la identidad se vincula opcionalmente desde el token y SUPERADMIN dispone de resumen fiable, embudo, plataformas, recorridos e historial individual.
 
 ### 2026-09-01

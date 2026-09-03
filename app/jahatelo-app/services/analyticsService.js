@@ -31,6 +31,9 @@ const debugLog = (...args) => {
  */
 export const trackEvent = async ({ motelId, eventType, source, metadata }) => {
   try {
+    const eventId = generateUUID();
+    const deviceId = await getOrCreateDeviceId();
+    const token = await getStoredToken();
     const visitorEventByType = {
       VIEW: 'motel_view',
       CLICK_PHONE: 'phone_click',
@@ -42,19 +45,23 @@ export const trackEvent = async ({ motelId, eventType, source, metadata }) => {
     };
     const visitorTracking = trackVisitor(visitorEventByType[eventType], null, { ...metadata, motelId, source });
     // No bloquear la UI si falla el tracking
-    await Promise.all([visitorTracking, fetch(`${API_URL}/api/analytics/track`, {
+    const isFavoriteEvent = eventType === 'FAVORITE_ADD' || eventType === 'FAVORITE_REMOVE';
+    const motelTracking = isFavoriteEvent && token ? Promise.resolve() : fetch(`${API_URL}/api/analytics/track`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         motelId,
+        eventId,
+        deviceId,
         eventType,
         source,
         deviceType: 'MOBILE',
         metadata,
       }),
-    })]);
+    });
+    await Promise.all([visitorTracking, motelTracking]);
   } catch (error) {
     // Silenciosamente fallar - no queremos interrumpir la experiencia del usuario
     debugLog('Analytics tracking failed (non-critical):', error.message);

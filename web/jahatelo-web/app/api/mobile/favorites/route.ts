@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { resolveAnalyticsEnvironment } from '@/lib/analyticsEnvironment';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
@@ -243,6 +244,7 @@ export async function POST(request: NextRequest) {
         eventType: 'FAVORITE_ADD',
         source: 'MOBILE',
         deviceType: 'MOBILE',
+        environment: resolveAnalyticsEnvironment(request),
       },
     });
 
@@ -336,6 +338,7 @@ export async function DELETE(request: NextRequest) {
         eventType: 'FAVORITE_REMOVE',
         source: 'MOBILE',
         deviceType: 'MOBILE',
+        environment: resolveAnalyticsEnvironment(request),
       },
     });
 

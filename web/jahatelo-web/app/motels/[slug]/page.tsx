@@ -25,6 +25,7 @@ import { normalizeLocalUploadPath } from '@/lib/normalizeLocalUrl';
 import { getEffectivePrices } from '@/app/api/mobile/mappers';
 import { getGoogleMapsExternalUrl } from '@/components/admin/motel-detail/formUtils';
 import { PRICE_UPDATING_MESSAGE } from '@/lib/domain/motels/pricePresentation';
+import { MotelDetailViewTracker, TrackedMotelLink } from '@/components/public/MotelAnalyticsTracker';
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -484,6 +485,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
 
   return (
     <>
+      <MotelDetailViewTracker motelId={motel.id} />
       <JsonLd data={[motelSchema, breadcrumbSchema]} />
       <Navbar />
       <MobilePageHeader title={motel.name} subtitle={motel.city} />
@@ -580,17 +582,17 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 md:gap-4">
                 <span>{motel.address}</span>
                 {mapsHref && (
-                  <a
+                  <TrackedMotelLink
+                    motelId={motel.id}
+                    kind="map"
                     href={mapsHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-600 font-medium"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
                     Ver en Google Maps
-                  </a>
+                  </TrackedMotelLink>
                 )}
               </div>
             );

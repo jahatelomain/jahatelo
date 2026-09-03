@@ -857,6 +857,10 @@ model MotelAnalytics {
   motelId   String
   eventType AnalyticsEventType
   timestamp DateTime           @default(now())
+  eventId   String?            @unique
+  deviceId  String?
+  sessionId String?
+  environment String           @default("production")
 
   // Metadatos del evento
   source      String? // 'MAP', 'LIST', 'SEARCH', 'HOME', 'DETAIL'
@@ -871,6 +875,9 @@ model MotelAnalytics {
   @@index([motelId, eventType])
   @@index([motelId, eventType, timestamp])
   @@index([timestamp])
+  @@index([environment, timestamp])
+  @@index([motelId, environment, timestamp])
+  @@index([deviceId, timestamp])
 }
 
 // ============================================
