@@ -78,7 +78,14 @@ export async function POST(request: Request) {
     // Los logos son identidad de marca: se optimizan a WebP, pero no reciben
     // marca de agua. El resto de imágenes conserva la protección habitual.
     const buffer = isMotelLogo
-      ? await sharp(originalBuffer).rotate().webp({ quality: 88 }).toBuffer()
+      ? await sharp(originalBuffer)
+          .rotate()
+          .resize(512, 512, {
+            fit: 'contain',
+            background: { r: 0, g: 0, b: 0, alpha: 0 },
+          })
+          .webp({ quality: 88, alphaQuality: 100 })
+          .toBuffer()
       : await watermarkUploadedImage(originalBuffer, file.type);
     const appBuffer = needsAppVariant
       ? await optimizeImageForApp(originalBuffer, file.type)

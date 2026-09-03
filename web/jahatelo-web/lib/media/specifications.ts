@@ -12,7 +12,9 @@ type MediaSpecification = {
 };
 
 export const MEDIA_SPECIFICATIONS: Record<MediaUsage, MediaSpecification> = {
-  'motel-logo': { label: 'Logo', minWidth: 512, minHeight: 512, aspectRatio: '1:1', watermark: false },
+  // El servidor centra el archivo dentro de un lienzo cuadrado. La resolución
+  // y la proporción originales son una recomendación, nunca un bloqueo.
+  'motel-logo': { label: 'Logo', minWidth: 512, minHeight: 512, aspectRatio: '1:1', watermark: false, dimensionsAreRecommendation: true },
   // El editor genera y optimiza las variantes finales. Para la portada estas
   // dimensiones son una recomendación y nunca bloquean la carga.
   'motel-photo': { label: 'Portada del motel', minWidth: 1200, minHeight: 800, aspectRatio: '16:9 web y 4:5 app', watermark: true, dimensionsAreRecommendation: true },

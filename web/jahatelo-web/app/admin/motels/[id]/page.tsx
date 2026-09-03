@@ -1038,7 +1038,7 @@ export default function MotelDetailPage() {
       toast.success('Logo cargado. Guardá los cambios para publicarlo.');
     } catch (error) {
       console.error('Error uploading motel logo:', error);
-      toast.error('No se pudo subir el logo. Intentá nuevamente.');
+      toast.error(error instanceof Error ? error.message : 'No se pudo subir el logo. Intentá nuevamente.');
     } finally {
       setUploadingLogo(false);
       event.target.value = '';
