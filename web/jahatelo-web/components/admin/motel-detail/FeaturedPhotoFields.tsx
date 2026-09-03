@@ -21,7 +21,7 @@ export default function FeaturedPhotoFields<T extends PhotoForm>({ form, uploadi
         <p className="mb-2 text-sm font-medium text-slate-700">Logo del motel</p>
         <div className="flex flex-wrap items-center gap-4">
           <UploadButton uploading={uploadingLogo} label={form.logoUrl ? 'Reemplazar logo' : 'Subir logo'} onChange={onLogoUpload} />
-          <p className="text-xs text-slate-500">Usá preferentemente una imagen cuadrada. Aparecerá dentro de un sello circular en las tarjetas.</p>
+          <p className="text-xs text-slate-500">Podés subirlo en cualquier tamaño o proporción. Se centrará sin deformarse dentro del sello circular.</p>
           {form.logoUrl && (
             <div className="flex items-center gap-3">
               <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-slate-950 p-1 shadow-sm">
