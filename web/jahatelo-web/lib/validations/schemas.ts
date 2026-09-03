@@ -349,7 +349,7 @@ export const TrackAdvertisementSchema = z.object({
 });
 
 export const AdvertisementTrackSchema = TrackAdvertisementSchema.extend({
-  deviceType: z.string().max(50).optional().nullable(),
+  deviceType: z.enum(['WEB', 'MOBILE']).optional().nullable(),
   userCity: z.string().max(100).optional().nullable(),
   userCountry: z.string().max(100).optional().nullable(),
   source: z.string().max(50).optional().nullable(),
@@ -532,6 +532,9 @@ export const CoordinatesSchema = z.object({
 
 export const AnalyticsTrackSchema = z.object({
   motelId: IdSchema,
+  eventId: z.string().uuid().optional(),
+  deviceId: z.string().min(8).max(64).optional(),
+  sessionId: z.string().min(8).max(64).optional(),
   eventType: z.enum([
     'VIEW',
     'CLICK_PHONE',
@@ -646,7 +649,7 @@ export const AdminAnalyticsQuerySchema = z.object({
   motelId: IdSchema.optional(),
   source: z.string().max(50).optional(),
   deviceType: z.string().max(50).optional(),
-  eventType: z.string().max(50).optional(),
+  eventType: z.enum(['VIEW', 'CLICK_PHONE', 'CLICK_WHATSAPP', 'CLICK_MAP', 'CLICK_WEBSITE', 'FAVORITE_ADD', 'FAVORITE_REMOVE']).optional(),
 });
 
 export const MotelAnalyticsQuerySchema = z.object({

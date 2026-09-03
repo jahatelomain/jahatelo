@@ -5,6 +5,7 @@ import { AnalyticsTrackSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { resolveAnalyticsEnvironment } from '@/lib/analyticsEnvironment';
 import { z } from 'zod';
+import { rateLimitUpstash } from '@/lib/rateLimit';
 
 /**
  * POST /api/analytics/track
@@ -13,11 +14,17 @@ import { z } from 'zod';
  */
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const limit = await rateLimitUpstash(`motel-analytics:${ip}`, 180, 60_000);
+    if (!limit.success) return NextResponse.json({ success: false }, { status: 429 });
     const body = await request.json();
     const sanitized = sanitizeObject(body);
-    const { motelId, eventType, source, userCity, userCountry, deviceType, metadata } =
+    const { motelId, eventId, deviceId, sessionId, eventType, source, userCity, userCountry, deviceType, metadata } =
       AnalyticsTrackSchema.parse(sanitized);
     const environment = resolveAnalyticsEnvironment(request);
+    const edgeCity = request.headers.get('x-vercel-ip-city');
+    const resolvedCity = userCity || (edgeCity ? decodeURIComponent(edgeCity) : null);
+    const resolvedCountry = userCountry || request.headers.get('x-vercel-ip-country');
     const metadataValue: Prisma.InputJsonValue = {
       ...(metadata ? (metadata as Record<string, unknown>) : {}),
       environment,
@@ -40,10 +47,14 @@ export async function POST(request: NextRequest) {
     const analyticsEvent = await prisma.motelAnalytics.create({
       data: {
         motelId,
+        eventId: eventId || null,
+        deviceId: deviceId || null,
+        sessionId: sessionId || null,
+        environment,
         eventType,
         source: source || null,
-        userCity: userCity || null,
-        userCountry: userCountry || null,
+        userCity: resolvedCity,
+        userCountry: resolvedCountry,
         deviceType: deviceType || null,
         metadata: metadataValue,
       },
@@ -54,6 +65,9 @@ export async function POST(request: NextRequest) {
       eventId: analyticsEvent.id,
     });
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json({ success: true, duplicate: true });
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {

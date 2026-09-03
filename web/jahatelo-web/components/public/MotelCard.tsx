@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import * as LucideIcons from 'lucide-react';
-import { trackMotelView } from '@/lib/analyticsService';
 import FavoriteButtonClient from '@/components/public/FavoriteButtonClient';
 import MotelLogoHeart from '@/components/public/MotelLogoHeart';
 import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
@@ -56,11 +55,6 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
   const [imageFailed, setImageFailed] = useState(false);
   const photoUrl = imageFailed ? null : realPhotoUrl;
   const isPlaceholder = !photoUrl;
-
-  // Track vista cuando se hace click en la card
-  const handleClick = () => {
-    trackMotelView(motel.id, 'LIST');
-  };
 
   const legacyPrices = !isCanonical
     ? (motel.rooms ?? [])
@@ -327,7 +321,7 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
   );
 
   return (
-    <Link href={`/motels/${motel.slug}`} onClick={handleClick}>
+    <Link href={`/motels/${motel.slug}`}>
       <div className="md:hidden">{mobileListCard}</div>
       <div className="hidden md:block">{cardContent}</div>
     </Link>

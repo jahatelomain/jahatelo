@@ -5,6 +5,8 @@ import {
   removeLocalFavorite,
 } from '@/lib/favoritesService';
 import { useAuth } from '@/contexts/AuthContext';
+import { trackFavoriteAdd, trackFavoriteRemove } from '@/lib/analyticsService';
+import { trackVisitor } from '@/lib/analytics';
 
 /**
  * Hook personalizado para manejar favoritos
@@ -59,6 +61,7 @@ export const useFavorites = (authenticatedOverride?: boolean) => {
 
           if (response.ok) {
             setFavorites((prev) => [...prev, motelId]);
+            void trackVisitor({ event: 'favorite_add', metadata: { motelId, source: _source } });
             return true;
           }
           return false;
@@ -70,6 +73,7 @@ export const useFavorites = (authenticatedOverride?: boolean) => {
         // Usuario no autenticado - usar localStorage
         addLocalFavorite(motelId);
         setFavorites((prev) => [...prev, motelId]);
+        void trackFavoriteAdd(motelId, _source);
         return true;
       }
     },
@@ -89,6 +93,7 @@ export const useFavorites = (authenticatedOverride?: boolean) => {
 
           if (response.ok) {
             setFavorites((prev) => prev.filter((id) => id !== motelId));
+            void trackVisitor({ event: 'favorite_remove', metadata: { motelId, source: _source } });
             return true;
           }
           return false;
@@ -100,6 +105,7 @@ export const useFavorites = (authenticatedOverride?: boolean) => {
         // Usuario no autenticado - usar localStorage
         removeLocalFavorite(motelId);
         setFavorites((prev) => prev.filter((id) => id !== motelId));
+        void trackFavoriteRemove(motelId, _source);
         return true;
       }
     },

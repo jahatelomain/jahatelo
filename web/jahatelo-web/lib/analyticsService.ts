@@ -10,7 +10,7 @@ interface TrackEventParams {
   metadata?: Record<string, unknown>;
 }
 
-import { trackVisitor, type VisitorEventType } from '@/lib/analytics';
+import { generateAnalyticsId, getAnalyticsContext, trackVisitor, type VisitorEventType } from '@/lib/analytics';
 
 const VISITOR_EVENT_BY_MOTEL_EVENT: Record<TrackEventParams['eventType'], VisitorEventType> = {
   VIEW: 'motel_view',
@@ -27,9 +27,14 @@ const VISITOR_EVENT_BY_MOTEL_EVENT: Record<TrackEventParams['eventType'], Visito
  */
 export const trackEvent = async ({ motelId, eventType, source, metadata }: TrackEventParams) => {
   try {
+    const context = getAnalyticsContext();
+    if (!context) return;
+    const eventId = generateAnalyticsId();
     const visitorTracking = trackVisitor({
       event: VISITOR_EVENT_BY_MOTEL_EVENT[eventType],
       metadata: { ...metadata, motelId, source },
+      eventId,
+      context,
     });
     // No bloquear la UI si falla el tracking
     await Promise.all([visitorTracking, fetch('/api/analytics/track', {
@@ -39,6 +44,9 @@ export const trackEvent = async ({ motelId, eventType, source, metadata }: Track
       },
       body: JSON.stringify({
         motelId,
+        eventId,
+        deviceId: context.deviceId,
+        sessionId: context.sessionId,
         eventType,
         source,
         deviceType: 'WEB',
