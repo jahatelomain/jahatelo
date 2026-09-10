@@ -301,8 +301,8 @@ export default function ProspectsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contactName: newContactName.trim(),
-          phone: newPhone.trim(),
+          contactName: newContactName.trim() || null,
+          phone: newPhone.trim() || null,
           motelName: newMotelName.trim(),
           notes: newNotes.trim() || null,
           channel: 'MANUAL',
@@ -320,7 +320,8 @@ export default function ProspectsPage() {
         fetchProspects();
       } else {
         const data = await response.json();
-        toast?.showToast(data.error || 'Error al crear prospect', 'error');
+        const detail = Array.isArray(data.details) ? data.details[0]?.message : null;
+        toast?.showToast(detail || data.error || 'Error al crear prospect', 'error');
       }
     } catch (error) {
       console.error('Error creating prospect:', error);
