@@ -18,7 +18,7 @@ export default function ContactButtons({ motelId, phone, whatsapp, variant = 'ho
         <a
           href={`tel:${phone}`}
           onClick={() => trackPhoneClick(motelId, 'DETAIL')}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
+          className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 font-semibold text-white transition hover:bg-purple-700"
         >
           📞 Llamar
         </a>
@@ -29,7 +29,7 @@ export default function ContactButtons({ motelId, phone, whatsapp, variant = 'ho
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackWhatsAppClick(motelId, 'DETAIL')}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition"
+          className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-white transition hover:bg-emerald-600"
         >
           💬 WhatsApp
         </a>

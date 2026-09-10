@@ -402,15 +402,16 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
       content: (
         <div>
           {motel.menuCategories.length > 0 ? (
-            <div className="space-y-8">
+            <div className="space-y-3">
               {motel.menuCategories.map((category) => (
-                <div key={category.id}>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                    {category.name || category.title || 'Sin categoría'}
-                  </h3>
+                <details key={category.id} className="group rounded-xl border border-gray-200 bg-white" open={motel.menuCategories.length === 1}>
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 font-bold text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500">
+                    <span>{category.name || category.title || 'Sin categoría'}</span>
+                    <span className="text-sm font-medium text-gray-500">{category.items.length} {category.items.length === 1 ? 'producto' : 'productos'} <span className="ml-2 inline-block transition-transform group-open:rotate-180">⌄</span></span>
+                  </summary>
 
                   {category.items.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-3 border-t border-gray-100 p-4 md:grid-cols-2">
                       {category.items.map((item) => (
                         <div key={item.id} className="bg-white border border-gray-200 rounded-lg p-4 flex gap-4">
                           {item.photoUrl && (
@@ -443,7 +444,7 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
                   ) : (
                     <p className="text-gray-500">Sin items en esta categoría</p>
                   )}
-                </div>
+                </details>
               ))}
             </div>
           ) : (
@@ -527,6 +528,11 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
           )}
         </div>
       </div>
+      {(motel.phone || motel.whatsapp) && (
+        <div className="fixed inset-x-0 bottom-16 z-40 border-t border-gray-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(15,23,42,0.12)] backdrop-blur md:hidden">
+          <ContactButtons motelId={motel.id} phone={motel.phone} whatsapp={motel.whatsapp} />
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="relative z-10 mx-auto -mt-8 max-w-7xl px-4 pb-8 md:-mt-20 md:px-6 md:pb-16 lg:px-8">
@@ -561,7 +567,9 @@ export default async function MotelDetailPage({ params }: MotelDetailPageProps) 
             </div>
 
             <div className="flex items-center gap-1.5 md:gap-3">
-              <ContactButtons motelId={motel.id} phone={motel.phone} whatsapp={motel.whatsapp} />
+              <div className="hidden md:block">
+                <ContactButtons motelId={motel.id} phone={motel.phone} whatsapp={motel.whatsapp} />
+              </div>
               <ReportMotelButton motelId={motel.id} motelName={motel.name} />
               <FavoriteButtonClient motelId={motel.id} source="DETAIL" />
               <ShareButton title={motel.name} url={`${BASE_URL}/motels/${motel.slug}`} />

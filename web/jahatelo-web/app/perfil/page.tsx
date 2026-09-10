@@ -40,23 +40,23 @@ export default function PerfilPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess('Perfil actualizado exitosamente');
+        setSuccess('Tu perfil se actualizó correctamente.');
         setEditMode(false);
         // Refresh user data
         window.location.reload();
       } else {
-        setError(data.error || 'Error al actualizar perfil');
+        setError(data.error || 'No pudimos actualizar tu perfil.');
       }
     } catch (err) {
       console.error('Update profile error:', err);
-      setError('Error al conectar con el servidor');
+      setError('No pudimos conectarnos. Revisá tu conexión e intentá nuevamente.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleLogout = async () => {
-    if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+    if (confirm('¿Querés cerrar sesión?')) {
       await logout();
     }
   };
@@ -90,7 +90,7 @@ export default function PerfilPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </Link>
-            <h1 className="text-3xl font-bold">Mi Perfil</h1>
+            <h1 className="text-3xl font-bold">Mi perfil</h1>
           </div>
 
           {/* Avatar and name */}
@@ -117,7 +117,7 @@ export default function PerfilPage() {
             <section className="public-card p-6" aria-labelledby="profile-information-title">
               <div className="flex items-center justify-between mb-6">
                 <h2 id="profile-information-title" className="text-xl font-semibold text-slate-900">
-                  Información del Perfil
+                  Información personal
                 </h2>
                 {!editMode && (
                   <button
@@ -160,7 +160,7 @@ export default function PerfilPage() {
 
                   <div>
                     <label htmlFor="profile-email" className="block text-sm font-medium text-slate-700 mb-2">
-                      Email
+                      Correo electrónico
                     </label>
                     <input
                       id="profile-email"
@@ -170,7 +170,7 @@ export default function PerfilPage() {
                       className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-gray-50 text-gray-500"
                     />
                     <p className="mt-1 text-xs text-slate-500">
-                      El email no puede ser modificado
+                      El correo electrónico no se puede modificar desde aquí.
                     </p>
                   </div>
 
@@ -195,7 +195,7 @@ export default function PerfilPage() {
                       disabled={saving}
                       className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
                     >
-                      {saving ? 'Guardando...' : 'Guardar Cambios'}
+                      {saving ? 'Guardando…' : 'Guardar cambios'}
                     </button>
                     <button
                       type="button"
@@ -222,7 +222,7 @@ export default function PerfilPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-500 mb-1">
-                      Email
+                      Correo electrónico
                     </label>
                     <p className="text-slate-900">{user?.email}</p>
                   </div>
@@ -250,8 +250,8 @@ export default function PerfilPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
                   <div className="flex-1">
-                    <p className="font-medium text-red-600">Cerrar Sesión</p>
-                    <p className="text-sm text-slate-500">Salir de tu cuenta</p>
+                    <p className="font-medium text-red-600">Cerrar sesión</p>
+                    <p className="text-sm text-slate-500">Salir de esta cuenta</p>
                   </div>
                   <svg className="w-5 h-5 text-slate-400 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -285,20 +285,6 @@ export default function PerfilPage() {
                 </Link>
 
                 <Link
-                  href="/contacto"
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 transition-colors group"
-                >
-                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  <span className="flex-1 text-slate-700 group-hover:text-purple-700">
-                    Contactanos
-                  </span>
-                  <svg className="w-4 h-4 text-slate-400 group-hover:text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
-                <Link
                   href="/soporte"
                   className="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 transition-colors group"
                 >
@@ -321,7 +307,7 @@ export default function PerfilPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                   <span className="flex-1 text-slate-700 group-hover:text-purple-700">
-                    Registrar Motel
+                    Registrar un motel
                   </span>
                   <svg className="w-4 h-4 text-slate-400 group-hover:text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -349,7 +335,7 @@ export default function PerfilPage() {
                   href="/terminos"
                   className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
                 >
-                  <span className="text-slate-700">Términos y Condiciones</span>
+                  <span className="text-slate-700">Términos y condiciones</span>
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -358,16 +344,7 @@ export default function PerfilPage() {
                   href="/privacidad"
                   className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
                 >
-                  <span className="text-slate-700">Política de Privacidad</span>
-                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
-                <Link
-                  href="/soporte"
-                  className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
-                >
-                  <span className="text-slate-700">Soporte</span>
+                  <span className="text-slate-700">Política de privacidad</span>
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>

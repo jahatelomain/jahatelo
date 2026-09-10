@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatPrice } from '../../services/motelsApi';
 import { COLORS } from '../../constants/theme';
@@ -20,6 +20,7 @@ const getCategoryIcon = (title = '') => {
 
 export default function MenuTab({ route, refreshing, onRefresh, embedded = false }) {
   const { motel } = route.params || {};
+  const [expandedCategories, setExpandedCategories] = useState(() => new Set());
 
   if (!motel || !motel.menu || motel.menu.length === 0) {
     const EmptyContainer = embedded ? View : ScrollView;
@@ -47,18 +48,34 @@ export default function MenuTab({ route, refreshing, onRefresh, embedded = false
         refreshControl: <RefreshControl refreshing={Boolean(refreshing)} onRefresh={onRefresh} colors={[COLORS.primary]} />,
       })}
     >
-      {motel.menu.map((category) => (
+      {motel.menu.map((category) => {
+        const expanded = expandedCategories.has(category.id);
+        const toggleCategory = () => setExpandedCategories((current) => {
+          const next = new Set(current);
+          if (next.has(category.id)) next.delete(category.id);
+          else next.add(category.id);
+          return next;
+        });
+        return (
         <View key={category.id} style={styles.menuCategory}>
           {/* Header de categoría */}
-          <View style={styles.categoryHeader}>
+          <TouchableOpacity
+            style={styles.categoryHeader}
+            onPress={toggleCategory}
+            accessibilityRole="button"
+            accessibilityLabel={`${category.title}, ${category.items?.length || 0} productos`}
+            accessibilityState={{ expanded }}
+          >
             <View style={styles.categoryIconContainer}>
               <Ionicons name={getCategoryIcon(category.title)} size={18} color={COLORS.white} />
             </View>
             <Text style={styles.categoryTitle}>{category.title}</Text>
-          </View>
+            <Text style={styles.categoryCount}>{category.items?.length || 0}</Text>
+            <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color={COLORS.white} />
+          </TouchableOpacity>
 
           {/* Items */}
-          {category.items && category.items.length > 0 ? (
+          {expanded && category.items && category.items.length > 0 ? (
             category.items.map((item, idx) => (
               <View
                 key={item.id}
@@ -76,11 +93,11 @@ export default function MenuTab({ route, refreshing, onRefresh, embedded = false
                 ) : null}
               </View>
             ))
-          ) : (
+          ) : expanded ? (
             <Text style={styles.emptyCategoryText}>Sin items en esta categoría</Text>
-          )}
+          ) : null}
         </View>
-      ))}
+      )})}
     </Container>
   );
 }
@@ -123,6 +140,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.white,
     flex: 1,
+  },
+  categoryCount: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: '700',
+    opacity: 0.85,
   },
   menuItem: {
     paddingVertical: 12,

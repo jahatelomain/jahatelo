@@ -317,7 +317,7 @@ export default function SearchScreen({ route }) {
           <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Buscar por nombre o ciudad..."
+            placeholder="Buscar por motel, ciudad o amenidad"
             value={searchQuery}
             onChangeText={setSearchQuery}
             onFocus={handleSearchFocus}
@@ -404,7 +404,20 @@ export default function SearchScreen({ route }) {
           <Text style={styles.resultsCount}>
             {results.length} {results.length === 1 ? 'resultado' : 'resultados'}
           </Text>
-          {loading && <ActivityIndicator size="small" color="#FF2E93" />}
+          <View style={styles.resultsHeaderActions}>
+            {loading && <ActivityIndicator size="small" color="#FF2E93" />}
+            {results.length > 0 && (
+              <TouchableOpacity
+                style={styles.mapViewButton}
+                onPress={() => navigation.navigate('Map', { motelIds: results.map((motel) => motel.id) })}
+                accessibilityRole="button"
+                accessibilityLabel={`Ver ${results.length} resultados en el mapa`}
+              >
+                <Ionicons name="map-outline" size={17} color={COLORS.primary} />
+                <Text style={styles.mapViewButtonText}>Mapa</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {error && (
@@ -554,6 +567,26 @@ const styles = StyleSheet.create({
   },
   resultsSection: {
     flex: 1,
+  },
+  resultsHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  mapViewButton: {
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+  },
+  mapViewButtonText: {
+    color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: '700',
   },
   resultsHeader: {
     flexDirection: 'row',

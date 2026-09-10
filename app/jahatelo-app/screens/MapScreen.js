@@ -108,7 +108,7 @@ let cachedMapData = null;
 let cacheTimestamp = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
-export default function MapScreen() {
+export default function MapScreen({ route }) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const [motels, setMotels] = useState([]);
@@ -122,14 +122,17 @@ export default function MapScreen() {
     longitudeDelta: 0.5,
   });
   const mapRef = React.useRef(null);
+  const resultIds = route?.params?.motelIds;
+  const resultIdSet = useMemo(() => Array.isArray(resultIds) ? new Set(resultIds) : null, [resultIds]);
 
   const sortedMotels = useMemo(() => {
-    return [...motels].sort((a, b) => {
+    const visibleMotels = resultIdSet ? motels.filter((motel) => resultIdSet.has(motel.id)) : motels;
+    return [...visibleMotels].sort((a, b) => {
       const planDiff = getPlanOrder(a.plan) - getPlanOrder(b.plan);
       if (planDiff !== 0) return planDiff;
       return (a.name || '').localeCompare(b.name || '');
     });
-  }, [motels]);
+  }, [motels, resultIdSet]);
 
   useEffect(() => {
     fetchMapData();
@@ -299,7 +302,7 @@ export default function MapScreen() {
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mapa de Moteles</Text>
+        <Text style={styles.headerTitle}>{resultIdSet ? 'Resultados en el mapa' : 'Mapa de moteles'}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -350,7 +353,7 @@ export default function MapScreen() {
       {/* Info Badge */}
       <View style={styles.infoBadge}>
         <Text style={styles.infoBadgeText}>
-          {motels.length} motel{motels.length !== 1 ? 'es' : ''} en el mapa
+          {sortedMotels.length} motel{sortedMotels.length !== 1 ? 'es' : ''} en el mapa
         </Text>
       </View>
     </SafeAreaView>

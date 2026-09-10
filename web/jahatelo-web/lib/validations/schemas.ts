@@ -483,6 +483,7 @@ export const PublicProspectSchema = z.object({
   phone: z.string().max(50),
   email: z.string().email().optional().or(z.literal('')),
   motelName: z.string().min(2).max(100),
+  city: z.string().trim().min(2).max(100).optional(),
   channel: z.enum(['WEB', 'APP', 'MANUAL']).optional(),
 }).refine(
   (data) => data.phone.replace(/\D/g, '').length >= 7,

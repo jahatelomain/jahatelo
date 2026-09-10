@@ -36,12 +36,24 @@
 
 ### Panel administrativo
 
+### Optimización integral UI/UX
+
+- [ ] **JH-062 — Verificación visual autenticada:** recorrer y validar las pantallas de SUPERADMIN y administradores de moteles con datos reales después de completar la reorganización.
+
 
 ## En pausa
 
 - [ ] **JH-002 — Sentry:** pausado por decisión de producto hasta disponer de presupuesto para el servicio.
 
 ## Completados
+
+### 2026-09-10
+
+- [x] **JH-057 — Descubrimiento y navegación pública:** búsqueda y mapa funcionan como vistas del mismo conjunto filtrado en web, iOS y Android; la navegación conserva el contexto y se redujo la carga inicial del inicio.
+- [x] **JH-058 — Ficha pública del motel:** menú agrupado por categorías, secciones navegables y acciones de llamada y WhatsApp persistentes durante la exploración en web y apps.
+- [x] **JH-059 — Perfil y accesos personales:** simplificada la navegación, ocultadas las herramientas técnicas hasta solicitarlas, agrupados los controles legales y de datos, eliminados accesos duplicados y normalizado el tono en web, iOS y Android.
+- [x] **JH-060 — Operación administrativa:** SUPERADMIN dispone de una bandeja única con aprobaciones, reportes, prospectos, fichas incompletas y problemas de media, con accesos directos a cada resolución.
+- [x] **JH-061 — Analítica orientada a decisiones:** Analítica separa rendimiento comercial de tráfico general y Visitantes presenta identidad anónima, recurrencia, plataformas, embudo y recorrido individual.
 
 ### 2026-09-02
 

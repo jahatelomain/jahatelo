@@ -68,7 +68,7 @@ export default function Navbar() {
                   : 'text-gray-600 hover:text-purple-600'
               }`}
             >
-              Cerca mío
+              Cerca de mí
             </Link>
             <Link
               href="/mapa"
@@ -147,7 +147,7 @@ export default function Navbar() {
                   href="/login"
                   className="font-medium text-gray-600 hover:text-purple-600 transition-colors"
                 >
-                  Iniciar Sesión
+                  Iniciar sesión
                 </Link>
                 <Link
                   href="/register"
@@ -202,7 +202,7 @@ export default function Navbar() {
                     : 'text-gray-600 hover:text-purple-600'
                 }`}
               >
-                Cerca mío
+                Cerca de mí
               </Link>
               <Link
                 href="/mapa"
@@ -272,7 +272,7 @@ export default function Navbar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="font-medium text-center py-2 text-purple-600 border border-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
                   >
-                    Iniciar Sesión
+                    Iniciar sesión
                   </Link>
                   <Link
                     href="/register"

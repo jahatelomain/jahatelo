@@ -70,13 +70,13 @@ export default function MobileHome({ featuredMotels, cities }: { featuredMotels:
     <main className="min-h-screen bg-[#f8f5fa] pb-4 md:hidden">
       <header className="rounded-b-[28px] bg-purple-600 px-4 pb-4 pt-4 text-white shadow-sm">
         <div className="flex items-center justify-between">
-          <Link href="/nearby" className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-sm font-semibold text-slate-800"><MapPin size={16} fill="currentColor" />Cerca mío</Link>
+          <Link href="/nearby" className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-sm font-semibold text-slate-800"><MapPin size={16} fill="currentColor" />Cerca de mí</Link>
           <Link href="/notificaciones" aria-label="Configurar notificaciones" className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-800"><Bell size={18} /></Link>
         </div>
-        <div className="mt-4"><h1 className="text-xl font-bold">¡Hola!</h1><p className="mt-0.5 text-sm text-purple-200">Encontrá tu próximo destino</p></div>
+        <div className="mt-4"><h1 className="text-xl font-bold">Encontrá el motel ideal para vos</h1><p className="mt-0.5 text-sm text-purple-200">Compará opciones y elegí dónde ir</p></div>
         <form onSubmit={submit} className="mt-3 flex items-center gap-2 rounded-xl bg-white p-1.5 text-slate-700 shadow-sm">
           <Search className="ml-2 text-slate-400" size={18} />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar moteles, ciudades o amenities" className="min-w-0 flex-1 bg-transparent py-2 text-sm font-medium outline-none placeholder:text-slate-400" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por motel, ciudad o amenidad" className="min-w-0 flex-1 bg-transparent py-2 text-sm font-medium outline-none placeholder:text-slate-400" />
           <button aria-label="Buscar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-purple-600 text-white"><ArrowRight size={17} /></button>
         </form>
       </header>
@@ -103,8 +103,8 @@ export default function MobileHome({ featuredMotels, cities }: { featuredMotels:
       </section>
 
       {cities.length > 0 && <section id="cities" className="px-4 py-2">
-        <div className="mb-2 flex items-center justify-between"><h2 className="text-lg font-bold text-slate-900">Moteles por ciudad</h2><Link href="/search" className="text-sm font-semibold text-purple-600">Ver todos</Link></div>
-        <div className="space-y-2">{cities.map((city) => {
+        <div className="mb-2 flex items-center justify-between"><h2 className="text-lg font-bold text-slate-900">Explorar por ciudad</h2><Link href="/search" className="text-sm font-semibold text-purple-600">Ver todas</Link></div>
+        <div className="space-y-2">{cities.slice(0, 5).map((city) => {
           const isExpanded = expandedCity === city.name;
           const motels = motelsByCity[city.name] || [];
           return <section key={city.name} className="overflow-hidden rounded-2xl bg-white shadow-[0_4px_12px_rgba(42,0,56,0.07)]"><button type="button" onClick={() => void toggleCity(city)} aria-expanded={isExpanded} className="flex w-full items-center gap-3 p-3.5 text-left"><span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-purple-600"><MapPin size={18} /></span><span className="flex-1"><span className="block font-semibold text-slate-900">{city.name}</span><span className="mt-0.5 block text-xs text-slate-500">{city.total} {city.total === 1 ? 'motel' : 'moteles'}</span></span><ChevronDown className={`text-purple-600 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} size={20} /></button>{isExpanded && <div className="border-t border-slate-100 p-3">{loadingCity === city.name ? <div className="flex items-center justify-center gap-2 py-5 text-sm text-slate-500"><LoaderCircle className="animate-spin" size={17} />Cargando moteles…</div> : motels.length ? <div className="grid gap-3">{motels.map((motel) => <MotelCard key={motel.id} motel={motel} showFavoriteAction={false} />)}</div> : <p className="py-4 text-center text-sm text-slate-500">No hay moteles publicados en esta ciudad.</p>}</div>}</section>;

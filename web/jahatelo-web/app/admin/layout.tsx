@@ -98,6 +98,9 @@ export default function AdminLayout({
     if (pathname.startsWith('/admin/prospects') || pathname.startsWith('/admin/analytics') || pathname.startsWith('/admin/seo')) {
       setExpandedSections(prev => ({ ...prev, 'Comercial': true }));
     }
+    if (pathname.startsWith('/admin/operations') || pathname.startsWith('/admin/inbox') || pathname.startsWith('/admin/reports')) {
+      setExpandedSections(prev => ({ ...prev, 'Operación': true }));
+    }
   }, [pathname]);
 
   const handleLogout = async () => {
@@ -142,23 +145,23 @@ export default function AdminLayout({
   };
 
   const getBreadcrumb = () => {
-    if (pathname === '/admin') return 'Dashboard';
+    if (pathname === '/admin') return 'Inicio';
     if (pathname.startsWith('/admin/motels')) return 'Moteles';
     if (pathname.startsWith('/admin/amenities')) return 'Amenities';
     if (pathname.startsWith('/admin/users')) return 'Usuarios';
     if (pathname.startsWith('/admin/roles')) return 'Perfiles de acceso';
-    if (pathname.startsWith('/admin/prospects')) return 'Prospects';
+    if (pathname.startsWith('/admin/prospects')) return 'Prospectos';
     if (pathname.startsWith('/admin/financiero')) return 'Financiero';
-    if (pathname.startsWith('/admin/analytics')) return 'Analytics';
+    if (pathname.startsWith('/admin/analytics')) return 'Analítica';
     if (pathname.startsWith('/admin/seo')) return 'SEO y Search Console';
     if (pathname.startsWith('/admin/canjear-codigo')) return 'Canjear código';
-    if (pathname.startsWith('/admin/notifications')) return 'Notificaciones Masivas';
-    if (pathname.startsWith('/admin/banners')) return 'Banners Publicitarios';
+    if (pathname.startsWith('/admin/notifications')) return 'Notificaciones';
+    if (pathname.startsWith('/admin/banners')) return 'Anuncios destacados';
     if (pathname.startsWith('/admin/audit')) return 'Auditoría';
-    if (pathname.startsWith('/admin/inbox')) return 'Inbox';
+    if (pathname.startsWith('/admin/inbox')) return 'Mensajes';
     if (pathname.startsWith('/admin/reports')) return 'Reportes';
     if (pathname.startsWith('/admin/operations')) return 'Bandeja operativa';
-    if (pathname.startsWith('/admin/configuracion')) return 'Ajustes Generales';
+    if (pathname.startsWith('/admin/configuracion')) return 'Configuración';
     return 'Admin';
   };
 
@@ -177,7 +180,7 @@ export default function AdminLayout({
   type NavElement = NavItem | NavSection;
 
   const navStructure: Array<NavElement | null> = [
-    { href: '/admin', label: 'Dashboard', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
+    { href: '/admin', label: 'Inicio', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
     user?.role === 'MOTEL_ADMIN' && user.motelId
       ? {
           href: `/admin/motels/${user.motelId}`,
@@ -194,15 +197,15 @@ export default function AdminLayout({
           ],
         },
     user?.role === 'MOTEL_ADMIN' && getMotelAnalyticsAccess(user.motelPlan) !== 'NONE'
-      ? { href: '/admin/analytics', label: 'Analytics', roles: ['MOTEL_ADMIN'] }
+      ? { href: '/admin/analytics', label: 'Analítica', roles: ['MOTEL_ADMIN'] }
       : user?.role === 'MOTEL_ADMIN'
         ? null
       : {
           section: 'Comercial',
           collapsible: true,
           items: [
-            { href: '/admin/prospects', label: 'Prospects', roles: ['SUPERADMIN'] },
-            { href: '/admin/analytics', label: 'Analytics', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
+            { href: '/admin/prospects', label: 'Prospectos', roles: ['SUPERADMIN'] },
+            { href: '/admin/analytics', label: 'Analítica', roles: ['SUPERADMIN', 'MOTEL_ADMIN'] },
             { href: '/admin/analytics/visitors', label: 'Visitantes', roles: ['SUPERADMIN'] },
             { href: '/admin/seo', label: 'SEO y Search Console', roles: ['SUPERADMIN'] },
           ],
@@ -215,20 +218,26 @@ export default function AdminLayout({
       section: 'Publicidad',
       collapsible: true,
       items: [
-        { href: '/admin/notifications', label: 'Notificaciones Masivas', roles: ['SUPERADMIN'] },
-        { href: '/admin/banners', label: 'Banners Publicitarios', roles: ['SUPERADMIN'] },
+        { href: '/admin/notifications', label: 'Notificaciones', roles: ['SUPERADMIN'] },
+        { href: '/admin/banners', label: 'Anuncios destacados', roles: ['SUPERADMIN'] },
       ],
     },
-    { href: '/admin/inbox', label: 'Inbox', roles: ['SUPERADMIN'] },
-    { href: '/admin/reports', label: 'Reportes', roles: ['SUPERADMIN'] },
-    { href: '/admin/operations', label: 'Bandeja operativa', roles: ['SUPERADMIN'] },
+    {
+      section: 'Operación',
+      collapsible: true,
+      items: [
+        { href: '/admin/operations', label: 'Tareas pendientes', roles: ['SUPERADMIN'] },
+        { href: '/admin/inbox', label: 'Mensajes', roles: ['SUPERADMIN'] },
+        { href: '/admin/reports', label: 'Reportes', roles: ['SUPERADMIN'] },
+      ],
+    },
     {
       section: 'Configuración',
       collapsible: true,
       items: [
         { href: '/admin/users', label: 'Usuarios', roles: ['SUPERADMIN'] },
         { href: '/admin/audit', label: 'Auditoría', roles: ['SUPERADMIN'] },
-        { href: '/admin/configuracion', label: 'Ajustes Generales', roles: ['SUPERADMIN'] },
+        { href: '/admin/configuracion', label: 'Configuración', roles: ['SUPERADMIN'] },
       ],
     },
   ];

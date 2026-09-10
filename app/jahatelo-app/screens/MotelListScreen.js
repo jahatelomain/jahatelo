@@ -272,7 +272,7 @@ export default function MotelListScreen({ route, navigation }) {
               onPress={() => setShowRadiusModal(true)}
               activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel={`Cambiar radio, actual ${selectedRadius} kilómetros`}
+              accessibilityLabel={`Cambiar distancia, actual ${selectedRadius} kilómetros`}
             >
               <Ionicons name="navigate" size={12} color={COLORS.primary} />
               <Text style={styles.locationText}>

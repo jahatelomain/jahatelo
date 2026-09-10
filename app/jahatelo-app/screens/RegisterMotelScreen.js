@@ -21,13 +21,14 @@ export default function RegisterMotelScreen({ navigation }) {
   const [contactName, setContactName] = useState('');
   const [phone, setPhone] = useState('');
   const [motelName, setMotelName] = useState('');
+  const [city, setCity] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handleSubmit = async () => {
     // Validación básica
-    if (!contactName.trim() || !phone.trim() || !motelName.trim()) {
-      showValidationMessage('Todos los campos son requeridos');
+    if (!contactName.trim() || !phone.trim() || !motelName.trim() || !city.trim()) {
+      showValidationMessage('Completá nombre, teléfono, motel y ciudad.');
       return;
     }
 
@@ -58,6 +59,7 @@ export default function RegisterMotelScreen({ navigation }) {
           contactName: contactName.trim(),
           phone: phone.trim(),
           motelName: motelName.trim(),
+          city: city.trim(),
           channel: 'APP',
         }),
       });
@@ -82,6 +84,7 @@ export default function RegisterMotelScreen({ navigation }) {
         setContactName('');
         setPhone('');
         setMotelName('');
+        setCity('');
         // Mostrar modal de éxito
         setShowSuccessModal(true);
       } else {
@@ -113,7 +116,7 @@ export default function RegisterMotelScreen({ navigation }) {
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Registrar un motel</Text>
+        <Text style={styles.headerTitle}>Registrar mi motel</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -132,7 +135,7 @@ export default function RegisterMotelScreen({ navigation }) {
 
         {/* Description */}
         <Text style={styles.description}>
-          Completá los siguientes datos y nos contactaremos en la brevedad posible.
+          Dejanos tus datos y nos comunicaremos para completar el registro.
         </Text>
 
         {/* Form */}
@@ -176,6 +179,20 @@ export default function RegisterMotelScreen({ navigation }) {
               autoComplete="organization"
               value={motelName}
               onChangeText={setMotelName}
+              editable={!loading}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Ciudad</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej.: Asunción"
+              placeholderTextColor={COLORS.textMuted}
+              accessibilityLabel="Ciudad"
+              autoComplete="address-level2"
+              value={city}
+              onChangeText={setCity}
               editable={!loading}
             />
           </View>

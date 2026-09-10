@@ -7,6 +7,7 @@ export default function RegisterMotelForm() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [motelName, setMotelName] = useState('');
+  const [city, setCity] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [error, setError] = useState('');
@@ -16,8 +17,8 @@ export default function RegisterMotelForm() {
     setError('');
 
     // Validación básica
-    if (!contactName.trim() || !phone.trim() || !motelName.trim()) {
-      setError('Todos los campos son requeridos');
+    if (!contactName.trim() || !phone.trim() || !motelName.trim() || !city.trim()) {
+      setError('Completá nombre, teléfono, motel y ciudad.');
       return;
     }
 
@@ -49,6 +50,7 @@ export default function RegisterMotelForm() {
           phone: phone.trim(),
           email: email.trim() || undefined,
           motelName: motelName.trim(),
+          city: city.trim(),
           channel: 'WEB',
         }),
       });
@@ -61,6 +63,7 @@ export default function RegisterMotelForm() {
         setPhone('');
         setEmail('');
         setMotelName('');
+        setCity('');
         // Mostrar modal de éxito
         setShowSuccessModal(true);
       } else {
@@ -134,7 +137,7 @@ export default function RegisterMotelForm() {
               htmlFor="email"
               className="block text-sm font-semibold text-gray-700 mb-2"
             >
-              Email <span className="text-gray-400 font-normal">(opcional)</span>
+              Correo electrónico <span className="text-gray-400 font-normal">(opcional)</span>
             </label>
             <input
               type="email"
@@ -146,6 +149,11 @@ export default function RegisterMotelForm() {
               disabled={loading}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors text-gray-900"
             />
+          </div>
+
+          <div>
+            <label htmlFor="city" className="block text-sm font-semibold text-gray-700 mb-2">Ciudad</label>
+            <input type="text" id="city" autoComplete="address-level2" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Ej.: Asunción" disabled={loading} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors text-gray-900" />
           </div>
 
           {/* Nombre del motel */}
@@ -214,7 +222,7 @@ export default function RegisterMotelForm() {
                     d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
                   />
                 </svg>
-                <span>Enviar</span>
+                <span>Enviar solicitud</span>
               </>
             )}
           </button>

@@ -24,6 +24,7 @@ export default function ProfileScreen() {
   const [lastSyncDate, setLastSyncDate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showDataTools, setShowDataTools] = useState(false);
 
   // Cargar información del caché al montar
   useEffect(() => {
@@ -191,7 +192,7 @@ export default function ProfileScreen() {
             <>
               <Text style={styles.headerTitle}>Modo invitado</Text>
               <Text style={styles.headerSubtitle}>
-                Inicia sesión para sincronizar favoritos y más
+                Iniciá sesión para sincronizar tus favoritos
               </Text>
 
               {/* Login/Register buttons for guest */}
@@ -200,14 +201,14 @@ export default function ProfileScreen() {
                   style={styles.loginButton}
                   onPress={() => navigation.navigate('Login')}
                 >
-                  <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+                  <Text style={styles.loginButtonText}>Iniciar sesión</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   style={styles.registerButton}
                   onPress={() => navigation.navigate('Register')}
                 >
-                  <Text style={styles.registerButtonText}>Crear Cuenta</Text>
+                  <Text style={styles.registerButtonText}>Crear cuenta</Text>
                 </TouchableOpacity>
               </View>
             </>
@@ -216,6 +217,7 @@ export default function ProfileScreen() {
 
         {/* Registrar tu motel */}
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Para moteles</Text>
           <View style={styles.optionsContainer}>
             <OptionRow
               icon="business"
@@ -227,6 +229,7 @@ export default function ProfileScreen() {
 
         {/* Preferencias */}
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Preferencias y actividad</Text>
           <View style={styles.optionsContainer}>
             <OptionRow
               icon="settings-outline"
@@ -241,10 +244,25 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Almacenamiento y datos Section */}
+        {/* Herramientas secundarias: ocultas hasta que el usuario las necesite. */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Almacenamiento y datos</Text>
           <View style={styles.optionsContainer}>
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={() => setShowDataTools((current) => !current)}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: showDataTools }}
+              accessibilityLabel="Datos y almacenamiento"
+            >
+              <View style={styles.optionLeft}>
+                <Ionicons name="archive-outline" size={24} color={COLORS.primary} />
+                <Text style={styles.optionTitle}>Datos y almacenamiento</Text>
+              </View>
+              <Ionicons name={showDataTools ? 'chevron-up' : 'chevron-down'} size={20} color={COLORS.gray} />
+            </TouchableOpacity>
+
+            {showDataTools && (
+              <>
             {/* Info Row - Cache Size */}
             <View style={styles.infoRow}>
               <View style={styles.optionLeft}>
@@ -315,11 +333,14 @@ export default function ProfileScreen() {
                 <Ionicons name="chevron-forward" size={20} color={COLORS.gray} />
               )}
             </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
 
-        {/* Contáctanos */}
+        {/* Ayuda y privacidad */}
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Ayuda y privacidad</Text>
           <View style={styles.optionsContainer}>
             <OptionRow
               icon="mail-outline"
@@ -329,20 +350,15 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Bases y condiciones */}
+        {/* Información legal y control de datos */}
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Legal y datos</Text>
           <View style={styles.optionsContainer}>
             <OptionRow
               icon="document-text-outline"
-              title="Bases y condiciones"
+              title="Términos y condiciones"
               onPress={() => handleOpenExternalLink('https://www.jahatelo.com/terminos')}
             />
-          </View>
-        </View>
-
-        {/* Política de privacidad */}
-        <View style={styles.section}>
-          <View style={styles.optionsContainer}>
             <OptionRow
               icon="shield-checkmark-outline"
               title="Política de privacidad"
@@ -373,7 +389,7 @@ export default function ProfileScreen() {
               title="Sobre Jahatelo"
               onPress={() => handleLegalPress(
                 'Sobre Jahatelo',
-                `Jahatelo es la plataforma líder para descubrir y reservar moteles en Paraguay.\n\nNuestra misión es facilitar el acceso a información confiable sobre moteles, ayudando a los usuarios a encontrar el lugar perfecto para sus momentos especiales.\n\nVersión instalada: ${APP_BUILD_LABEL}`
+                `Jahatelo te ayuda a descubrir y comparar moteles en Paraguay.\n\nReunimos información útil para que encuentres una opción adecuada de forma rápida y discreta.\n\nVersión instalada: ${APP_BUILD_LABEL}`
               )}
             />
           </View>
@@ -389,7 +405,7 @@ export default function ProfileScreen() {
             <View style={styles.optionsContainer}>
               <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                 <Ionicons name="log-out-outline" size={24} color={STATUS_COLORS.dangerSoft} />
-                <Text style={styles.logoutText}>Cerrar Sesión</Text>
+                <Text style={styles.logoutText}>Cerrar sesión</Text>
               </TouchableOpacity>
             </View>
           </View>

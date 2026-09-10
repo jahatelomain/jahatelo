@@ -5,10 +5,10 @@ import { Plus, Pencil, Power, ShieldCheck, X } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 
 const MODULES = [
-  ['dashboard', 'Dashboard'], ['motels', 'Moteles'], ['promos', 'Promos'], ['amenities', 'Amenities'],
-  ['users', 'Usuarios'], ['roles', 'Perfiles'], ['prospects', 'Prospects'], ['financiero', 'Financiero'],
-  ['analytics', 'Analytics'], ['notifications', 'Notificaciones'], ['banners', 'Banners'], ['audit', 'Auditoría'],
-  ['inbox', 'Inbox'], ['configuracion', 'Configuración'], ['export', 'Exportaciones'],
+  ['dashboard', 'Inicio'], ['motels', 'Moteles'], ['promos', 'Promociones'], ['amenities', 'Amenidades'],
+  ['users', 'Usuarios'], ['roles', 'Perfiles'], ['prospects', 'Prospectos'], ['financiero', 'Financiero'],
+  ['analytics', 'Analítica'], ['notifications', 'Notificaciones'], ['banners', 'Anuncios'], ['audit', 'Auditoría'],
+  ['inbox', 'Mensajes'], ['configuracion', 'Configuración'], ['export', 'Exportaciones'],
 ] as const;
 
 const ACTIONS = ['VIEW', 'CREATE', 'UPDATE', 'DELETE', 'EXPORT', 'MANAGE'] as const;
