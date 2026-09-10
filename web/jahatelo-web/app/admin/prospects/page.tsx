@@ -301,8 +301,8 @@ export default function ProspectsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contactName: newContactName.trim(),
-          phone: newPhone.trim(),
+          contactName: newContactName.trim() || null,
+          phone: newPhone.trim() || null,
           motelName: newMotelName.trim(),
           notes: newNotes.trim() || null,
           channel: 'MANUAL',
@@ -320,7 +320,8 @@ export default function ProspectsPage() {
         fetchProspects();
       } else {
         const data = await response.json();
-        toast?.showToast(data.error || 'Error al crear prospect', 'error');
+        const detail = Array.isArray(data.details) ? data.details[0]?.message : null;
+        toast?.showToast(detail || data.error || 'Error al crear prospect', 'error');
       }
     } catch (error) {
       console.error('Error creating prospect:', error);
@@ -338,7 +339,7 @@ export default function ProspectsPage() {
   if (loading || !currentUser) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold text-slate-900">Prospects</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">Prospectos</h1>
         <TableSkeleton />
       </div>
     );
@@ -349,7 +350,7 @@ export default function ProspectsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Prospects</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">Prospectos</h1>
           <p className="text-sm text-slate-600 mt-1">
             Gestión de leads de moteles registrados
           </p>

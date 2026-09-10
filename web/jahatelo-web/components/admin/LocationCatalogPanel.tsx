@@ -201,11 +201,13 @@ export default function LocationCatalogPanel() {
 
               <div className="p-5">
                 {country.cities.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {country.cities.map((city) => (
-                      <div key={city.id} className={`group inline-flex items-center gap-2 rounded-xl border py-1.5 pl-3 pr-1.5 text-sm transition ${city.isActive ? 'border-slate-200 bg-white text-slate-700 hover:border-purple-200' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
-                        <MapPin size={14} className={city.isActive ? 'text-purple-500' : 'text-slate-400'} />
-                        <span className={city.isActive ? '' : 'line-through'}>{city.name}</span>
+                      <div key={city.id} className={`group flex min-h-12 min-w-0 items-center gap-3 rounded-xl border px-3 py-2 text-sm transition ${city.isActive ? 'border-slate-200 bg-white text-slate-700 hover:border-purple-200 hover:shadow-sm' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
+                        <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${city.isActive ? 'bg-purple-50 text-purple-600' : 'bg-slate-100 text-slate-400'}`}>
+                          <MapPin size={15} />
+                        </span>
+                        <span className={`min-w-0 flex-1 font-medium ${city.isActive ? '' : 'line-through'}`}>{city.name}</span>
                         <button type="button" onClick={() => void toggle('setCityActive', city.id, city.isActive)} disabled={Boolean(saving)} className={`inline-flex h-7 w-7 items-center justify-center rounded-lg transition disabled:opacity-45 ${city.isActive ? 'text-slate-400 hover:bg-red-50 hover:text-red-600' : 'text-emerald-600 hover:bg-emerald-100'}`} title={city.isActive ? `Desactivar ${city.name}` : `Activar ${city.name}`} aria-label={city.isActive ? `Desactivar ${city.name}` : `Activar ${city.name}`}>
                           {saving === city.id ? <Loader2 className="animate-spin" size={14} /> : city.isActive ? <Power size={14} /> : <RotateCcw size={14} />}
                         </button>

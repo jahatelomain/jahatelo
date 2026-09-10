@@ -183,7 +183,7 @@ export default function InboxPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Inbox</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Mensajes</h1>
           <p className="text-slate-600 mt-1">
             Mensajes de contacto recibidos ({summary.unreadCount} sin leer)
           </p>

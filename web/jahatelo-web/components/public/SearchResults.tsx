@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
 import MotelCard from './MotelCard';
+import GoogleMapComponent from './GoogleMapComponent';
 import type { PublicMotelListItem, PublicMotelListResponse } from '@/lib/domain/motels/publicListItem';
 
 // Haversine formula – same as app's utils/location.js
@@ -64,6 +65,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
   const [recommendationSubmitting, setRecommendationSubmitting] = useState(false);
   const [recommendationError, setRecommendationError] = useState('');
   const [recommendationSent, setRecommendationSent] = useState(false);
+  const [resultView, setResultView] = useState<'list' | 'map'>('list');
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   // Nearby (Cerca de mí) state
@@ -227,6 +229,23 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     return filtered.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
   }, [motels, nearbyEnabled, userLocation, nearbyRadius]);
 
+  const mapMotels = useMemo(() => displayedMotels.flatMap((motel) => {
+    if (!motel.location) return [];
+    return [{
+      id: motel.id,
+      name: motel.name,
+      slug: motel.slug,
+      city: motel.city,
+      latitude: motel.location.lat,
+      longitude: motel.location.lng,
+      featuredPhoto: motel.featuredPhoto || null,
+      featuredPhotoWeb: motel.featuredPhotoWeb || null,
+      hasPromo: motel.hasPromo,
+      isFeatured: motel.isFeatured,
+      plan: motel.plan,
+    }];
+  }), [displayedMotels]);
+
   const toggleAmenity = (amenityValue: string) => {
     if (selectedAmenity === amenityValue) {
       setSelectedAmenity('');
@@ -278,7 +297,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
           <input
             type="text"
             aria-label="Buscar moteles"
-            placeholder="Buscar moteles por nombre, ciudad, amenidades..."
+            placeholder="Buscar por motel, ciudad o amenidad"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full rounded-xl border-2 border-gray-300 px-4 py-3 pr-12 text-base text-gray-900 transition-all focus:border-purple-600 focus:ring-2 focus:ring-purple-600 md:rounded-2xl md:px-6 md:py-4 md:text-lg"
@@ -501,6 +520,15 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
       {/* Results */}
       {!loading && (
         <>
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <p className="text-sm font-medium text-gray-600">
+              {displayedMotels.length} {displayedMotels.length === 1 ? 'resultado' : 'resultados'}
+            </p>
+            <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1" aria-label="Vista de resultados">
+              <button type="button" onClick={() => setResultView('list')} aria-pressed={resultView === 'list'} className={`min-h-10 rounded-lg px-4 text-sm font-semibold ${resultView === 'list' ? 'bg-purple-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>Lista</button>
+              <button type="button" onClick={() => setResultView('map')} aria-pressed={resultView === 'map'} className={`min-h-10 rounded-lg px-4 text-sm font-semibold ${resultView === 'map' ? 'bg-purple-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>Mapa</button>
+            </div>
+          </div>
           {/* Results Count */}
           {(searchQuery || selectedCity || nearbyEnabled) && (
             <div className="mb-6">
@@ -512,7 +540,19 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
           )}
 
           {/* Motels Grid */}
-          {displayedMotels.length > 0 ? (
+          {displayedMotels.length > 0 && resultView === 'map' ? (
+            mapMotels.length > 0 ? (
+              <div className="h-[65vh] min-h-[440px] overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+                <GoogleMapComponent motels={mapMotels} />
+              </div>
+            ) : (
+              <section className="public-card p-8 text-center" role="status">
+                <h3 className="text-lg font-semibold text-gray-900">Estos resultados no tienen ubicación disponible</h3>
+                <p className="mt-2 text-gray-600">Podés seguir explorándolos desde la vista de lista.</p>
+                <button type="button" onClick={() => setResultView('list')} className="mt-4 rounded-xl bg-purple-600 px-5 py-2.5 font-semibold text-white">Ver lista</button>
+              </section>
+            )
+          ) : displayedMotels.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayedMotels.map((motel) => (
                 <MotelCard key={motel.id} motel={motel} />
@@ -536,7 +576,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
                 {nearbyEnabled
                   ? 'Intentá ampliar el radio de búsqueda'
                   : searchQuery || selectedCity
-                  ? 'Intenta con otros términos o filtros'
+                  ? 'Intentá con otros términos o filtros'
                   : 'Usá la barra de búsqueda o seleccioná una búsqueda popular'}
               </p>
               {(searchQuery || selectedCity) && (

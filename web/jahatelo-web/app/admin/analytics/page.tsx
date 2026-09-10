@@ -78,7 +78,7 @@ export default function AnalyticsPage() {
 
   return <main className="space-y-6 p-4 md:p-8">
     <header className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-      <div><p className="text-sm font-semibold text-violet-600">Rendimiento del catálogo</p><h1 className="text-3xl font-bold text-slate-900">{data?.isGlobal === false ? `Analytics · ${data.motel?.name}` : 'Analytics'}</h1><p className="mt-1 max-w-3xl text-sm text-slate-600">Vistas e intenciones de contacto de los moteles. Visitantes mide el tráfico general; esta pantalla mide el rendimiento comercial del catálogo.</p></div>
+      <div><p className="text-sm font-semibold text-violet-600">Rendimiento del catálogo</p><h1 className="text-3xl font-bold text-slate-900">{data?.isGlobal === false ? `Analítica · ${data.motel?.name}` : 'Analítica'}</h1><p className="mt-1 max-w-3xl text-sm text-slate-600">Vistas e intenciones de contacto de los moteles. Visitantes mide el tráfico general; esta pantalla mide el rendimiento comercial del catálogo.</p></div>
       <div className="flex rounded-xl border border-slate-200 bg-white p-1">{ranges.map((range) => <button key={range.value} onClick={() => setPeriod(range.value)} className={`min-h-10 rounded-lg px-3 text-sm font-semibold ${period === range.value ? 'bg-violet-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>{range.label}</button>)}</div>
     </header>
 

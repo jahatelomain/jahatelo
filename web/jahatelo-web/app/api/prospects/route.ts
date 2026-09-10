@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const sanitized = sanitizeObject(body);
     const validated = PublicProspectSchema.parse(sanitized);
-    const { contactName, phone, email, motelName, channel } = validated;
+    const { contactName, phone, email, motelName, city, channel } = validated;
     const finalChannel = channel || 'WEB';
     const contactEmail = email && email.trim() !== '' ? email.trim() : null;
 
@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
         phone: phone.trim(),
         email: contactEmail,
         motelName: motelName.trim(),
+        notes: city ? `Ciudad declarada: ${city}` : null,
         channel: finalChannel,
       },
     });
@@ -51,6 +52,7 @@ export async function POST(request: NextRequest) {
                     <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Contacto</td>
                     <td style="padding: 8px 0; font-weight: 600; color: #111827;">${contactName}</td>
                   </tr>
+                  ${city ? `<tr><td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Ciudad</td><td style="padding: 8px 0; font-weight: 600; color: #111827;">${city}</td></tr>` : ''}
                   <tr>
                     <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Teléfono</td>
                     <td style="padding: 8px 0; font-weight: 600; color: #111827;">${phone}</td>

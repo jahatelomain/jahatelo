@@ -122,7 +122,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating prospect:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validación fallida', details: error.issues }, { status: 400 });
+      return NextResponse.json({
+        error: error.issues[0]?.message || 'Revisá los datos ingresados',
+        details: error.issues.map((issue) => ({ field: issue.path.join('.'), message: issue.message })),
+      }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Error al crear prospect' },

@@ -101,13 +101,6 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Redes sociales */}
-        <section className="bg-white border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            <SocialLinks />
-          </div>
-        </section>
-
         {featuredMotels.length > 0 && <FeaturedMotels motels={featuredMotels} />}
         {cities.length > 0 && (
           <SectionWrapper className="py-14">
@@ -162,6 +155,11 @@ export default async function HomePage() {
             </div>
           </SectionWrapper>
         )}
+        <section className="bg-white border-b border-gray-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <SocialLinks />
+          </div>
+        </section>
       </main>
       <Footer />
     </>

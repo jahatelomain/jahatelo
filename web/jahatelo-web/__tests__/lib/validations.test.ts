@@ -1,5 +1,6 @@
 import {
   AdvertisementSchema,
+  AdminProspectCreateSchema,
   BulkIdsSchema,
   MobileMotelsQuerySchema,
 } from '@/lib/validations/schemas';
@@ -41,5 +42,24 @@ describe('validation schemas', () => {
     expect(query.page).toBe(2);
     expect(query.limit).toBe(10);
     expect(query.featured).toBe(true);
+  });
+
+  it('accepts a manual prospect with optional fields empty', () => {
+    expect(AdminProspectCreateSchema.parse({
+      motelName: 'Motel Prueba',
+      contactName: null,
+      phone: null,
+      notes: null,
+      channel: 'MANUAL',
+    })).toMatchObject({ motelName: 'Motel Prueba', contactName: null, phone: null });
+  });
+
+  it('accepts legacy empty strings in optional prospect fields', () => {
+    expect(() => AdminProspectCreateSchema.parse({
+      motelName: 'Motel Prueba',
+      contactName: '',
+      phone: '',
+      notes: '',
+    })).not.toThrow();
   });
 });

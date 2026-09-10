@@ -483,6 +483,7 @@ export const PublicProspectSchema = z.object({
   phone: z.string().max(50),
   email: z.string().email().optional().or(z.literal('')),
   motelName: z.string().min(2).max(100),
+  city: z.string().trim().min(2).max(100).optional(),
   channel: z.enum(['WEB', 'APP', 'MANUAL']).optional(),
 }).refine(
   (data) => data.phone.replace(/\D/g, '').length >= 7,
@@ -490,11 +491,11 @@ export const PublicProspectSchema = z.object({
 );
 
 export const AdminProspectCreateSchema = z.object({
-  contactName: z.string().min(2).max(100).optional().nullable(),
-  phone: z.string().max(50).optional().nullable(),
-  motelName: z.string().min(2).max(100),
+  contactName: z.string().trim().max(100).refine((value) => value.length === 0 || value.length >= 2, 'El nombre de contacto debe tener al menos 2 caracteres').optional().nullable(),
+  phone: z.string().trim().max(50).optional().nullable(),
+  motelName: z.string().trim().min(2, 'El nombre del motel debe tener al menos 2 caracteres').max(100),
   channel: z.enum(['WEB', 'APP', 'MANUAL']).optional(),
-  notes: z.string().max(1000).optional().nullable(),
+  notes: z.string().trim().max(1000).optional().nullable(),
 });
 
 export const AdminProspectUpdateSchema = z.object({
