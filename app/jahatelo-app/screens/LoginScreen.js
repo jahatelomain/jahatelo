@@ -16,7 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { requestSmsOtp, verifySmsOtp } from '../services/authApi';
 import { getApiRoot } from '../services/apiBaseUrl';
 import { COLORS } from '../constants/theme';
-import { useGoogleAuth, getGoogleUserInfo, isGoogleConfigured } from '../services/googleAuthService';
+import { useGoogleAuth, isGoogleConfigured } from '../services/googleAuthService';
 import { showErrorMessage, showSuccessMessage } from '../utils/appFeedback';
 
 export default function LoginScreen({ navigation }) {
@@ -42,10 +42,8 @@ export default function LoginScreen({ navigation }) {
 
   // Manejar respuesta de Google OAuth
   useEffect(() => {
-    console.log('Google Response:', googleResponse);
     if (googleResponse?.type === 'success') {
-      const { authentication } = googleResponse;
-      handleGoogleLogin(authentication.accessToken);
+      handleGoogleLogin(googleResponse.authentication?.idToken || googleResponse.params?.id_token);
     } else if (googleResponse?.type === 'error') {
       console.error('Google OAuth Error:', googleResponse.error);
       showErrorMessage(`Error al iniciar sesión con Google: ${googleResponse.error?.message || googleResponse.error}`);
@@ -175,27 +173,23 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  const handleGoogleLogin = async (accessToken) => {
+  const handleGoogleLogin = async (idToken) => {
     try {
       setIsLoading(true);
 
-      // Obtener info del usuario de Google
-      const userInfo = await getGoogleUserInfo(accessToken);
-      if (!userInfo) {
-        showErrorMessage('No se pudo obtener información de Google');
+      if (!idToken) {
+        showErrorMessage('Google no devolvió una credencial válida');
         return;
       }
 
       // Login con backend de Jahatelo usando OAuth
       const result = await loginWithOAuth({
         provider: 'google',
-        providerId: userInfo.id,
-        email: userInfo.email,
-        name: userInfo.name,
+        idToken,
       });
 
       if (result.success) {
-        showSuccessMessage('¡Bienvenido!', `Hola ${userInfo.name || userInfo.email}`);
+        showSuccessMessage('¡Bienvenido!', `Hola ${result.user.name || result.user.email}`);
         navigation.goBack();
       } else {
         showErrorMessage(result.error || 'Error al iniciar sesión con Google');

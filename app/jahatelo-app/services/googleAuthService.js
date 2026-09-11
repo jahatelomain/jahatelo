@@ -38,12 +38,15 @@ export const useGoogleAuth = () => {
   );
 
   // En Expo Go: clientId genérico + redirectUri manual (Desktop app client)
-  // En build nativo: iosClientId/androidClientId → expo-auth-session deriva
-  //   automáticamente el redirect URI como com.googleusercontent.apps.XXX:/oauth2redirect/google
-  const [request, response, promptAsync] = Google.useAuthRequest(
+  // Native: code + PKCE, auto-exchanged to authentication.idToken by Expo.
+  // Web: ID-token response in params.id_token. No client secret belongs here.
+  // The installed Expo version defaults native redirects to applicationId:/oauthredirect;
+  // validate registered schemes/Google Console for each standalone build.
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest(
     isExpoGo
       ? { clientId, scopes: ['profile', 'email'], redirectUri }
       : {
+          webClientId: WEB_CLIENT_ID,
           iosClientId: IOS_CLIENT_ID,
           androidClientId: ANDROID_CLIENT_ID,
           scopes: ['profile', 'email'],

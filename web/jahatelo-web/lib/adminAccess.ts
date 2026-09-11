@@ -39,6 +39,7 @@ export async function requireAdminAccess(
     where: { id: user.id },
     select: {
       role: true,
+      isActive: true,
       modulePermissions: true,
       motelId: true,
       accessProfile: {
@@ -51,6 +52,10 @@ export async function requireAdminAccess(
     },
   });
 
+  if (!dbUser?.isActive) {
+    return { error: NextResponse.json({ error: 'Acceso denegado' }, { status: 403 }) };
+  }
+
   // Un perfil activo es la fuente de permisos preferida. El arreglo legacy se
   // conserva como fallback mientras se migran usuarios existentes.
   const profileModules = dbUser?.accessProfile?.isActive
@@ -61,9 +66,9 @@ export async function requireAdminAccess(
 
   const effectiveUser = {
     ...user,
-    role: dbUser?.role || user.role,
-    motelId: dbUser?.motelId || user.motelId,
-    modulePermissions: profileModules ?? dbUser?.modulePermissions ?? user.modulePermissions ?? [],
+    role: dbUser.role,
+    motelId: dbUser.motelId ?? undefined,
+    modulePermissions: profileModules ?? dbUser.modulePermissions ?? [],
   };
 
   const auditAccess = async (statusCode: number) => {

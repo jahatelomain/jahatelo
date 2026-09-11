@@ -3,22 +3,20 @@ import { prisma } from '@/lib/prisma';
 import { createToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import logger from '@/lib/logger';
+import { GoogleAuthError, verifyGoogleIdToken } from '@/lib/googleAuth';
 
 interface GoogleCallbackBody {
   provider: 'google';
-  providerId: string;
-  email: string;
-  name?: string;
+  idToken: string;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: GoogleCallbackBody = await request.json();
-    const { provider, providerId, email, name } = body;
-
-    if (provider !== 'google' || !providerId || !email) {
+    if (body.provider !== 'google') {
       return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
     }
+    const { providerId, email, name } = await verifyGoogleIdToken(body.idToken, 'web');
 
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -46,6 +44,12 @@ export async function POST(request: NextRequest) {
         },
       });
     } else {
+      if (!user.isActive) {
+        return NextResponse.json({ error: 'Cuenta desactivada' }, { status: 403 });
+      }
+      if (user.provider === 'google' && user.providerId && user.providerId !== providerId) {
+        return NextResponse.json({ error: 'Cuenta Google ya vinculada' }, { status: 409 });
+      }
       // Vincular cuenta existente (email match) con Google si aún no está vinculada
       if (!user.providerId || user.provider !== 'google') {
         user = await prisma.user.update({
@@ -96,6 +100,9 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof GoogleAuthError) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
     logger.error({
       message: 'Google OAuth callback error',
       error: error instanceof Error ? error.message : String(error),
