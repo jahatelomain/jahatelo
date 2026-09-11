@@ -20,6 +20,7 @@ import {
   getAdvertisingPushEnabled,
   setAdvertisingPushEnabled,
 } from '../services/preferencesService';
+import LoadingScreen from '../components/LoadingScreen';
 import { getApiRoot } from '../services/apiBaseUrl';
 
 const API_URL = getApiRoot();
@@ -181,14 +182,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
   }, [isAuthenticated, token]);
 
   if (loading) {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Cargando preferencias...</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <LoadingScreen message="Cargando preferencias" />;
   }
 
   return (

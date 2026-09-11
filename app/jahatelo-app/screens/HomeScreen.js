@@ -23,6 +23,7 @@ import AdPopup from '../components/AdPopup';
 import AdDetailModal from '../components/AdDetailModal';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { COLORS } from '../constants/theme';
+import LoadingScreen from '../components/LoadingScreen';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -155,21 +156,7 @@ export default function HomeScreen() {
   // para no perder destacados que no caigan en el top-20 de la lista general
 
   if (loading && !refreshing) {
-    return (
-      <>
-        <StatusBar
-          barStyle="light-content"
-          backgroundColor={colors.primary}
-          translucent={Platform.OS === 'android'}
-        />
-        <View style={[styles.screen, { backgroundColor: colors.background }]}>
-          <View style={[styles.centerContainer, { backgroundColor: colors.primary }]}>
-            <ActivityIndicator size="large" color={colors.white} />
-            <Text style={[styles.centerText, { color: colors.white }]}>Cargando moteles...</Text>
-          </View>
-        </View>
-      </>
-    );
+    return <LoadingScreen message="Cargando moteles" />;
   }
 
   if (error && !refreshing) {

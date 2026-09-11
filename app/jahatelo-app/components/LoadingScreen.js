@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AccessibilityInfo, View, Text, StyleSheet, Image } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { AccessibilityInfo, View, StyleSheet, Image } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -59,20 +58,11 @@ export default function LoadingScreen({ message = 'Cargando...' }) {
 
   return (
     <View style={styles.container} accessible accessibilityRole="progressbar" accessibilityLiveRegion="polite" accessibilityLabel={message}>
-      <LinearGradient
-        colors={[COLORS.primaryDark, COLORS.primary, COLORS.primaryLight]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.background}
-      >
+      <View style={styles.background}>
         <Animated.View style={[styles.logoContainer, animatedStyle]}>
           <Image source={require('../assets/logo-icon.png')} style={styles.logo} accessibilityIgnoresInvertColors />
         </Animated.View>
-
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>{message}</Text>
-        </View>
-      </LinearGradient>
+      </View>
     </View>
   );
 }
@@ -80,6 +70,7 @@ export default function LoadingScreen({ message = 'Cargando...' }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.white,
   },
   background: {
     flex: 1,
@@ -87,21 +78,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoContainer: {
-    marginBottom: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   logo: {
-    width: 88,
-    height: 88,
+    width: 176,
+    height: 176,
     resizeMode: 'contain',
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.white,
-    marginTop: 8,
   },
 });

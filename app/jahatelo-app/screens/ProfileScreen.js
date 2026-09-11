@@ -15,6 +15,7 @@ import {
   getLastSync,
   getRecentViews,
 } from '../services/cacheService';
+import LoadingScreen from '../components/LoadingScreen';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
@@ -140,13 +141,7 @@ export default function ProfileScreen() {
 
   // Loading state
   if (authLoading) {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-      </SafeAreaView>
-    );
+    return <LoadingScreen message="Cargando perfil" />;
   }
 
   return (

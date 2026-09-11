@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,7 @@ import { useFavorites } from '../hooks/useFavorites';
 import { fetchMotelBySlug } from '../services/motelsApi';
 import MotelCard from '../components/MotelCard';
 import { COLORS } from '../constants/theme';
+import LoadingScreen from '../components/LoadingScreen';
 
 export default function FavoritesScreen() {
   const navigation = useNavigation();
@@ -118,14 +119,7 @@ export default function FavoritesScreen() {
 
   // Mostrar loading mientras completa favoritos
   if (loading) {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Cargando favoritos...</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <LoadingScreen message="Cargando favoritos" />;
   }
 
   // Mostrar mensaje cuando no hay favoritos

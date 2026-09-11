@@ -49,6 +49,7 @@
 
 ### 2026-09-10
 
+- [x] **JH-068 — Cargas y etiquetas del mapa:** los estados de carga principales usan fondo blanco y únicamente el logo al doble de tamaño; los rótulos del mapa ajustan su ancho al nombre e invalidan automáticamente las versiones antiguas.
 - [x] **JH-067 — Amenities populares en búsqueda:** eliminados los filtros escritos a mano; app y web muestran los cinco amenities presentes en más moteles activos, calculados por el backend.
 - [x] **JH-066 — Resultados completos en el mapa:** la búsqueda móvil recorre todas las páginas del API y envía al mapa el conjunto completo; eliminada además la precarga masiva de detalles que consumía cuota sin interacción.
 - [x] **JH-065 — Campana del inicio móvil:** conectada a la pantalla de configuración de notificaciones y completada su identificación accesible.
