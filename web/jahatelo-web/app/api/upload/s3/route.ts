@@ -38,6 +38,9 @@ export async function POST(request: Request) {
     const missing = requiredEnv.filter((key) => !process.env[key]);
     const forceLocal = process.env.UPLOADS_USE_LOCAL === '1';
     const useLocalFallback = isDev && (forceLocal || missing.length > 0);
+    if (!useLocalFallback && missing.length > 0) {
+      return NextResponse.json({ error: 'Upload storage unavailable' }, { status: 503 });
+    }
     const s3 = useLocalFallback
       ? null
       : new S3Client({
@@ -69,7 +72,23 @@ export async function POST(request: Request) {
       );
     }
 
+    const formats: Record<string, string> = {
+      'image/jpeg': 'jpeg', 'image/png': 'png', 'image/webp': 'webp',
+      'image/heic': 'heif', 'image/heif': 'heif',
+    };
+    const expectedFormat = formats[file.type.toLowerCase()];
+    if (!expectedFormat) {
+      return NextResponse.json({ error: 'Solo se permiten fotos JPG, PNG, WebP o HEIC.' }, { status: 400 });
+    }
     const originalBuffer = Buffer.from(await file.arrayBuffer());
+    try {
+      const metadata = await sharp(originalBuffer, { animated: false }).metadata();
+      if (metadata.format !== expectedFormat || !metadata.width || !metadata.height) {
+        return NextResponse.json({ error: 'Formato de imagen inválido.' }, { status: 400 });
+      }
+    } catch {
+      return NextResponse.json({ error: 'Contenido de imagen inválido.' }, { status: 400 });
+    }
     const usage: MediaUsage = isMotelLogo ? 'motel-logo' : assetType === 'room-photo' ? 'room-photo' : 'motel-photo';
     const dimensionValidation = await validateMediaDimensions(originalBuffer, usage);
     if (!dimensionValidation.valid) {

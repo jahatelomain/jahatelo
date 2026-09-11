@@ -1,0 +1,1 @@
+module.exports = { rootDir: '../..', testEnvironment: 'node', testMatch: ['<rootDir>/tests/google-auth/**/*.test.ts*'], transform: { '^.+\\.[jt]sx?$': '<rootDir>/tests/google-auth/transform.cjs' }, transformIgnorePatterns: ['/node_modules/(?!jose/)'], moduleNameMapper: { '^@/(.*)$': '<rootDir>/$1' } };

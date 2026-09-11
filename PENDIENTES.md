@@ -14,6 +14,16 @@
 
 ## Pendientes activos
 
+### Incidencias reportadas
+
+- [ ] **JH-072 — Error 500 al cargar una imagen del motel:** captura muestra fallo en `/api/admin/motels/...` (URL truncada). No hay errores 500 disponibles en los logs consultados de Vercel de las últimas 24 h. Falta confirmar entorno, método HTTP y respuesta/log del servidor; no atribuirlo al upload sin reproducción.
+
+### Seguridad y autenticación
+
+- [ ] **JH-069 — Endurecimiento de autenticación y uploads:** integrar verificación real de Google en web/apps, sesiones administrativas con estado/permisos actuales, JWT sin secreto fijo y validación segura de imágenes. Implementación local y pruebas dirigidas disponibles; falta cierre de integración y verificación de publicación. Detalle: `web/jahatelo-web/tests/SECURITY-CHECKPOINT.md`.
+- [ ] **JH-070 — Revalidar hallazgos de seguridad y sesión sobre la versión actual:** comprobar autorización y propiedad de push tokens, cron sin secreto, límites de login móvil, secreto de verificación de email, contexto OTP/reenvío de email y logout por fallo de red. Los hallazgos originales se hicieron sobre una copia antigua; no asumir que siguen vigentes.
+- [ ] **JH-071 — Revalidar concurrencia de promociones y entrega push:** comprobar cupos/canje atómico, inicio de vigencia, duplicados, reintentos y frecuencia de programación sobre la versión actual. Corregir únicamente problemas reproducidos.
+
 ### Preparación para producción
 
 - [ ] **JH-001 — Android App Links:** completar el SHA256 del certificado Android de producción en `web/jahatelo-web/public/.well-known/assetlinks.json` y validarlo en un dispositivo físico.

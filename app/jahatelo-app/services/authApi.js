@@ -115,15 +115,13 @@ export async function login({ email, password, pushToken, deviceInfo }) {
 /**
  * Login con OAuth (Google, Apple)
  */
-export async function loginWithOAuth({ provider, providerId, email, name, pushToken, deviceInfo }) {
+export async function loginWithOAuth({ provider, idToken, pushToken, deviceInfo }) {
   try {
     const data = await fetchWithTimeout(`${API_URL}/api/mobile/auth/login`, {
       method: 'POST',
       body: JSON.stringify({
         provider,
-        providerId,
-        email,
-        name,
+        idToken,
         pushToken,
         deviceInfo,
       }),

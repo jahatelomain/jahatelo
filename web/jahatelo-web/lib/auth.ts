@@ -4,9 +4,13 @@ import { NextRequest } from 'next/server';
 
 // Nota: Instalar dependencias con: npm install jose bcryptjs @types/bcryptjs
 
-const secret = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key-change-in-production'
-);
+function sessionSecret() {
+  const value = process.env.JWT_SECRET;
+  if (!value || value === 'your-secret-key-change-in-production') {
+    throw new Error('JWT_SECRET must be configured');
+  }
+  return new TextEncoder().encode(value);
+}
 
 export interface UserPayload extends JWTPayload {
   id: string;
@@ -26,7 +30,7 @@ export async function createToken(payload: UserPayload): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d') // 7 días
-    .sign(secret);
+    .sign(sessionSecret());
 }
 
 /**
@@ -34,10 +38,9 @@ export async function createToken(payload: UserPayload): Promise<string> {
  */
 export async function verifyToken(token: string): Promise<UserPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, sessionSecret());
     return payload as unknown as UserPayload;
-  } catch (error) {
-    console.error('Error verifying token:', error);
+  } catch {
     return null;
   }
 }

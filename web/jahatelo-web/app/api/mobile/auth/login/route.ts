@@ -5,6 +5,7 @@ import { createToken } from '@/lib/auth';
 import { LoginSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
+import { GoogleAuthError, verifyGoogleIdToken } from '@/lib/googleAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,13 +13,13 @@ export const dynamic = 'force-dynamic';
  * POST /api/mobile/auth/login
  *
  * Login de usuarios
- * Body: { email, password } o { provider, providerId, email, name }
+ * Body: { email, password } o { provider: 'google', idToken }
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const sanitized = sanitizeObject(body);
-    const { provider, providerId, name, pushToken, deviceInfo } = sanitized;
+    const { provider, pushToken, deviceInfo } = sanitized;
 
     // Login con email/password
     if (!provider || provider === 'email') {
@@ -112,16 +113,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Login con OAuth (Google, Apple)
-    if (provider && providerId) {
-      // Validación básica para OAuth
-      const email = sanitized.email;
-      if (!email || email.trim().length === 0) {
-        return NextResponse.json(
-          { error: 'El email es requerido' },
-          { status: 400 }
-        );
-      }
+    // Solo Google tiene un verificador implementado.
+    if (provider !== 'google' || typeof body.idToken !== 'string' || !body.idToken) {
+      return NextResponse.json({ error: 'Token de Google requerido' }, { status: 401 });
+    }
+
+    if (provider === 'google') {
+      const { providerId, email, name } = await verifyGoogleIdToken(body.idToken, 'mobile');
 
       const emailLower = email.toLowerCase().trim();
 
@@ -134,6 +132,14 @@ export async function POST(request: NextRequest) {
           notificationPreferences: true,
         },
       });
+
+      // Match the web callback: link a verified Google identity to an existing email.
+      if (!user) {
+        user = await prisma.user.findUnique({
+          where: { email: emailLower },
+          include: { notificationPreferences: true },
+        });
+      }
 
       // Si no existe, crear cuenta nueva (auto-registro)
       if (!user) {
@@ -163,6 +169,19 @@ export async function POST(request: NextRequest) {
           });
         }
       } else {
+        if (!user.isActive) {
+          return NextResponse.json({ error: 'Cuenta desactivada' }, { status: 403 });
+        }
+        if (user.provider === 'google' && user.providerId && user.providerId !== providerId) {
+          return NextResponse.json({ error: 'Cuenta Google ya vinculada' }, { status: 409 });
+        }
+        if (!user.providerId || user.provider !== 'google') {
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: { provider: 'google', providerId, isEmailVerified: true },
+            include: { notificationPreferences: true },
+          });
+        }
         // Actualizar pushToken y deviceInfo
         if (pushToken || deviceInfo) {
           await prisma.user.update({
@@ -215,6 +234,9 @@ export async function POST(request: NextRequest) {
     );
 
   } catch (error) {
+    if (error instanceof GoogleAuthError) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
     // Errores de validación Zod
     if (error instanceof z.ZodError) {
       return NextResponse.json(
