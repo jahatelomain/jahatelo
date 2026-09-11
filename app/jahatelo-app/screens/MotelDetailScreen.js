@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Linking, Dimensions, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Linking, Dimensions, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { fetchMotelBySlug } from '../services/motelsApi';
@@ -27,6 +27,7 @@ import { shareMotel } from '../utils/share';
 import MotelHeader from '../components/motelDetail/MotelHeader';
 import MotelTabBar from '../components/motelDetail/MotelTabBar';
 import useMotelTabsGesture from '../hooks/useMotelTabsGesture';
+import LoadingScreen from '../components/LoadingScreen';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -213,14 +214,7 @@ export default function MotelDetailScreen({ route, navigation }) {
   }, [activeTab, availableTabs]);
 
   if (loading) {
-    return (
-      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="COLORS.primary" />
-          <Text style={styles.loadingText}>Cargando motel...</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <LoadingScreen message="Cargando motel" />;
   }
 
   // Mostrar error con botón para reintentar
