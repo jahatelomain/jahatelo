@@ -11,31 +11,24 @@ import Animated, {
   withRepeat,
   withSequence,
 } from 'react-native-reanimated';
-import { searchAndFilterMotels } from '../services/motelsApi';
+import { fetchPopularAmenities, searchAndFilterMotels } from '../services/motelsApi';
 import { getApiRoot } from '../services/apiBaseUrl';
 import MotelCard from '../components/MotelCard';
 import MotelCardSkeleton from '../components/MotelCardSkeleton';
 import AdListItem from '../components/AdListItem';
 import AdDetailModal from '../components/AdDetailModal';
-import { prefetchMotelDetails, prefetchThumbnails } from '../services/prefetchService';
+import { prefetchThumbnails } from '../services/prefetchService';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { mixAdvertisements } from '../utils/mixAdvertisements';
 import { COLORS } from '../constants/theme';
 import { trackSearch } from '../services/analyticsService';
-
-// Filtros rápidos por amenities comunes
-const QUICK_FILTERS = [
-  'Jacuzzi',
-  'Room service',
-  'WiFi gratis',
-  'A/C',
-];
 
 export default function SearchScreen({ route }) {
   const navigation = useNavigation();
   const initialQuery = route?.params?.initialQuery ?? '';
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [selectedAmenity, setSelectedAmenity] = useState('');
+  const [quickAmenities, setQuickAmenities] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -50,6 +43,18 @@ export default function SearchScreen({ route }) {
   const suggestionsTimerRef = useRef(null);
   const resultsAbortRef = useRef(null);
   const suggestionsAbortRef = useRef(null);
+
+  useEffect(() => {
+    let active = true;
+    fetchPopularAmenities(5)
+      .then((amenities) => {
+        if (active) setQuickAmenities(amenities);
+      })
+      .catch(() => {
+        if (active) setQuickAmenities([]);
+      });
+    return () => { active = false; };
+  }, []);
 
   // Cargar anuncios de lista
   const { ads: listAds, trackAdEvent } = useAdvertisements('LIST_INLINE');
@@ -97,11 +102,11 @@ export default function SearchScreen({ route }) {
       setResults(data);
       if (query?.trim() || amenity) trackSearch(query?.trim() || `amenity:${amenity}`);
 
-      // Prefetch de los primeros 5 resultados en background
+      // Precargar solo imágenes. Descargar detalles de cada resultado agotaba
+      // la cuota sin que el usuario hubiera abierto esas fichas.
       if (data && data.length > 0) {
         setTimeout(() => {
           const topResults = data.slice(0, 5);
-          prefetchMotelDetails(topResults);
           prefetchThumbnails(topResults);
         }, 300);
       }
@@ -277,11 +282,10 @@ export default function SearchScreen({ route }) {
       // Obtener índice del último item visible
       const lastVisibleIndex = Math.max(...viewableItems.map(item => item.index || 0));
 
-      // Prefetch los próximos 3 items
+      // Precargar las imágenes de los próximos 3 items.
       const nextItems = results.slice(lastVisibleIndex + 1, lastVisibleIndex + 4);
       if (nextItems.length > 0) {
         setTimeout(() => {
-          prefetchMotelDetails(nextItems);
           prefetchThumbnails(nextItems);
         }, 100);
       }
@@ -364,23 +368,23 @@ export default function SearchScreen({ route }) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filtersScrollContent}
         >
-          {QUICK_FILTERS.map((amenity) => (
+          {quickAmenities.map((amenity) => (
             <TouchableOpacity
-              key={amenity}
+              key={amenity.id}
               style={[
                 styles.filterChip,
-                selectedAmenity === amenity && styles.filterChipActive,
+                selectedAmenity === amenity.id && styles.filterChipActive,
               ]}
-              onPress={() => handleAmenityPress(amenity)}
+              onPress={() => handleAmenityPress(amenity.id)}
               activeOpacity={0.7}
             >
               <Text
                 style={[
                   styles.filterChipText,
-                  selectedAmenity === amenity && styles.filterChipTextActive,
+                  selectedAmenity === amenity.id && styles.filterChipTextActive,
                 ]}
               >
-                {amenity}
+                {amenity.name}
               </Text>
             </TouchableOpacity>
           ))}

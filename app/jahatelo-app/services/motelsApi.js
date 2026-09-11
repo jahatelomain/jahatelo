@@ -8,7 +8,7 @@ import {
   addToRecentViews,
   updateLastSync,
 } from './cacheService';
-import { getMobileApiBase } from './apiBaseUrl';
+import { getApiRoot, getMobileApiBase } from './apiBaseUrl';
 import { fetchWithTimeout } from '../utils/fetchWithTimeout';
 
 /**
@@ -264,6 +264,13 @@ export const fetchCities = async () => {
   return response.cities || [];
 };
 
+/** Obtiene los amenities presentes en más moteles activos. */
+export const fetchPopularAmenities = async (limit = 5) => {
+  const baseUrl = getApiRoot();
+  const response = await fetchJson(`${baseUrl}/api/amenities/active?limit=${limit}`);
+  return Array.isArray(response.data) ? response.data : [];
+};
+
 /**
  * Obtiene el detalle de un motel por slug o ID
  * @param {string} slugOrId - Slug o ID del motel
@@ -334,7 +341,16 @@ export const searchAndFilterMotels = async (query, amenity, requestOptions = {})
   if (query) params.search = query;
   if (amenity) params.amenity = amenity;
 
-  return fetchMotels(params, false, requestOptions);
+  // La API pagina el catálogo. La búsqueda y su vista de mapa deben trabajar
+  // con el mismo conjunto completo, no solamente con la primera página de 20.
+  const pageSize = 50;
+  const allMotels = [];
+  for (let page = 1; page <= 20; page += 1) {
+    const pageMotels = await fetchMotels({ ...params, page, limit: pageSize }, false, requestOptions);
+    allMotels.push(...pageMotels);
+    if (pageMotels.length < pageSize) break;
+  }
+  return allMotels;
 };
 
 /**

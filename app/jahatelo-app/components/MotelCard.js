@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
@@ -7,15 +7,11 @@ import Animated, {
   interpolate,
   withSpring,
   withTiming,
-  withRepeat,
-  withSequence,
-  Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { formatPrice, formatDistance } from '../services/motelsApi';
 import { useFavorites } from '../hooks/useFavorites';
-import { prefetchMotelDetails } from '../services/prefetchService';
 import { getAmenityIconConfig } from '../constants/amenityIcons';
 import { COLORS, PLAN_COLORS } from '../constants/theme';
 import { PRICE_UPDATING_MESSAGE } from '../constants/motelPrices';
@@ -43,44 +39,6 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
   const promoBadgeScale = useSharedValue(1);
   const diamondOrbit = useSharedValue(0);
   const diamondShimmer = useSharedValue(-1);
-
-  // Todos los useEffect ANTES del early return
-  useEffect(() => {
-    if (motel?.tienePromo) {
-      promoBadgeScale.value = withRepeat(
-        withSequence(
-          withTiming(1.08, { duration: 1000 }),
-          withTiming(1, { duration: 1000 })
-        ),
-        -1,
-        false
-      );
-    }
-  }, [motel?.tienePromo, promoBadgeScale]);
-
-  useEffect(() => {
-    if (!isDiamond) return;
-    diamondOrbit.value = withRepeat(
-      withTiming(360, { duration: 4200, easing: Easing.linear }),
-      -1,
-      false
-    );
-    return () => {
-      diamondOrbit.value = 0;
-    };
-  }, [isDiamond, diamondOrbit]);
-
-  useEffect(() => {
-    if (!isDiamond) return;
-    diamondShimmer.value = withRepeat(
-      withTiming(1, { duration: 7000, easing: Easing.linear }),
-      -1,
-      false
-    );
-    return () => {
-      diamondShimmer.value = -1;
-    };
-  }, [isDiamond, diamondShimmer]);
 
   // Todos los useAnimatedStyle ANTES del early return
   const animatedCardStyle = useAnimatedStyle(() => {
@@ -158,14 +116,9 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
   };
 
   const handlePress = () => {
-    // La navegación de la card siempre es prioritaria. FREE se muestra con
-    // menor énfasis, pero sigue siendo navegable y no necesita precarga de
-    // módulos que su detalle no publica.
+    // El detalle realiza su propia carga. Prefetchearlo al mismo tiempo que la
+    // navegación duplicaba la solicitud y consumía innecesariamente la cuota.
     onPress?.();
-
-    if (!isMuted) {
-      void prefetchMotelDetails([motel]);
-    }
   };
 
   const handlePressIn = () => {

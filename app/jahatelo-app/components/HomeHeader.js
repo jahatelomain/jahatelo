@@ -13,6 +13,10 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
     navigation?.navigate('NearbyMotels');
   };
 
+  const handleNotificationsPress = () => {
+    navigation?.navigate('NotificationPreferences');
+  };
+
   const triggerSearch = () => {
     const trimmed = searchValue.trim();
     onSearch?.(trimmed);
@@ -39,7 +43,14 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
           <Text style={[styles.cityText, { color: colors.text }]}>Cerca de mí</Text>
         </TouchableOpacity>
         <View style={styles.rightButtons}>
-          <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.white }]}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.white }]}
+            activeOpacity={0.85}
+            onPress={handleNotificationsPress}
+            accessibilityRole="button"
+            accessibilityLabel="Notificaciones"
+            accessibilityHint="Abre la configuración de notificaciones"
+          >
             <Ionicons name="notifications-outline" size={18} color={colors.text} />
           </TouchableOpacity>
         </View>

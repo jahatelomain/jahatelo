@@ -98,7 +98,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     const fetchQuickAmenities = async () => {
       setQuickAmenitiesLoading(true);
       try {
-        const response = await fetch('/api/amenities/active');
+        const response = await fetch('/api/amenities/active?limit=5');
         const data = await response.json();
         const list: QuickAmenity[] = Array.isArray(data?.data) ? data.data : [];
         setQuickAmenities(list);

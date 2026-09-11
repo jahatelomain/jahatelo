@@ -75,8 +75,13 @@ export async function fetchWithTimeout(url, options = {}, retryCount = 0) {
       throw new Error('Tiempo de espera agotado después de varios intentos. Verifica tu conexión.');
     }
 
-    // Otros errores de red - reintentar si quedan intentos y no es 401
-    if (retryCount < MAX_RETRIES && !error.message.includes('401')) {
+    // Reintentar únicamente fallos transitorios. Los 4xx (en especial 429)
+    // son respuestas válidas del servidor: repetirlas consume todavía más del
+    // límite y retrasa la recuperación.
+    const status = Number(error?.status || 0);
+    const isRetryableHttpError = status >= 500;
+    const isNetworkError = !status && error instanceof TypeError;
+    if (retryCount < MAX_RETRIES && (isRetryableHttpError || isNetworkError)) {
       debugLog(`🔄 [FETCH] Error de red - reintentando (${retryCount + 1}/${MAX_RETRIES})...`);
       clearTimeout(timeoutId);
       await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));

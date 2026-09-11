@@ -1,14 +1,6 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSequence,
-  withSpring,
-  withTiming,
-  withDelay,
-} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import Svg, { Defs, Pattern, Rect, Path, Circle, Line } from 'react-native-svg';
 
@@ -170,114 +162,34 @@ const PATTERN_THEMES = {
 };
 
 export default function HomeCategoryCard({ label, iconName = 'ellipse', onPress, isHorizontal = false }) {
-  // Valores animados
-  const iconScale = useSharedValue(1);
-  const iconRotate = useSharedValue(0);
-  const glowOpacity = useSharedValue(0);
-  const cardScale = useSharedValue(1);
-  const intervalRef = useRef(null);
-
   // Obtener tema de patrón según el ícono
   const theme = PATTERN_THEMES[iconName] || PATTERN_THEMES.default;
   const PatternComponent = theme.PatternComponent;
-
-  // Animación de pulso/wave automática
-  const triggerPulseAnimation = useCallback(() => {
-    // Pulso del ícono con rotación sutil
-    iconScale.value = withSequence(
-      withSpring(1.15, { damping: 8, stiffness: 200 }),
-      withSpring(1.08, { damping: 10 }),
-      withSpring(1, { damping: 12 })
-    );
-
-    iconRotate.value = withSequence(
-      withTiming(5, { duration: 200 }),
-      withTiming(-5, { duration: 300 }),
-      withTiming(0, { duration: 200 })
-    );
-
-    // Efecto de glow
-    glowOpacity.value = withSequence(
-      withTiming(0.6, { duration: 400 }),
-      withDelay(200, withTiming(0, { duration: 600 }))
-    );
-  }, [iconScale, iconRotate, glowOpacity]);
-
-  useEffect(() => {
-    // Animación inicial al montar (después de 500ms)
-    const initialTimeout = setTimeout(() => {
-      triggerPulseAnimation();
-    }, 500);
-
-    // Animación cada 20 segundos
-    intervalRef.current = setInterval(() => {
-      triggerPulseAnimation();
-    }, 20000);
-
-    return () => {
-      clearTimeout(initialTimeout);
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [triggerPulseAnimation]);
-
-  const handlePressIn = () => {
-    cardScale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
-  };
-
-  const handlePressOut = () => {
-    cardScale.value = withSpring(1, { damping: 12, stiffness: 300 });
-  };
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onPress?.();
   };
 
-  // Estilos animados
-  const animatedIconStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: iconScale.value },
-      { rotate: `${iconRotate.value}deg` },
-    ],
-  }));
-
-  const animatedGlowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-  }));
-
-  const animatedCardStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: cardScale.value }],
-  }));
-
   return (
     <TouchableOpacity
-      activeOpacity={1}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      activeOpacity={0.86}
       onPress={handlePress}
     >
-      <Animated.View style={[
-        isHorizontal ? styles.containerHorizontal : styles.container,
-        animatedCardStyle
-      ]}>
+      <View style={isHorizontal ? styles.containerHorizontal : styles.container}>
         <View style={isHorizontal ? styles.gradientHorizontal : styles.gradient}>
           {/* Patrón de fondo */}
           <PatternComponent isHorizontal={isHorizontal} />
 
           {/* Glow effect overlay */}
-          <Animated.View style={[styles.glowOverlay, animatedGlowStyle]} />
+          <View style={styles.glowOverlay} />
 
           {/* Contenido */}
           <View style={isHorizontal ? styles.contentHorizontal : styles.content}>
             {/* Ícono animado */}
-            <Animated.View style={[
-              isHorizontal ? styles.iconCircleHorizontal : styles.iconCircle,
-              animatedIconStyle
-            ]}>
+            <View style={isHorizontal ? styles.iconCircleHorizontal : styles.iconCircle}>
               <Ionicons name={iconName} size={isHorizontal ? 28 : 32} color={theme.iconColor} />
-            </Animated.View>
+            </View>
 
             {/* Texto */}
             <Text style={[
@@ -288,7 +200,7 @@ export default function HomeCategoryCard({ label, iconName = 'ellipse', onPress,
             </Text>
           </View>
         </View>
-      </Animated.View>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -328,7 +240,7 @@ const styles = StyleSheet.create({
   },
   glowOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     borderRadius: 20,
   },
   content: {
