@@ -51,7 +51,7 @@ export default function MotelDetailScreen({ route, navigation }) {
   // Priorizar slug, caer a ID si no hay slug
   const identifier = motelSlug || motelId;
 
-  const loadMotel = useCallback(async ({ showLoader = true } = {}) => {
+  const loadMotel = useCallback(async ({ showLoader = true, forceRefresh = false } = {}) => {
     if (!identifier) {
       setError('No se proporcionó ID o slug del motel');
       setLoading(false);
@@ -61,9 +61,10 @@ export default function MotelDetailScreen({ route, navigation }) {
     try {
       if (showLoader) setLoading(true);
       setError(null);
-      // El orden de habitaciones y fotos se administra remotamente; pedir el
-      // detalle actualizado al abrir, conservando el caché solo como fallback offline.
-      const data = await fetchMotelBySlug(identifier, false);
+      // Usar el detalle cacheado cuando esté disponible evita solicitudes
+      // repetidas al volver a abrir un motel. El pull-to-refresh fuerza una
+      // actualización explícita.
+      const data = await fetchMotelBySlug(identifier, !forceRefresh);
       setMotel(data);
 
       // Track vista del motel
@@ -85,7 +86,7 @@ export default function MotelDetailScreen({ route, navigation }) {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await loadMotel({ showLoader: false });
+      await loadMotel({ showLoader: false, forceRefresh: true });
     } finally {
       setRefreshing(false);
     }

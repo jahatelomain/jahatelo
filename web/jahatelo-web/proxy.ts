@@ -284,7 +284,37 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // 4. Rate Limiting para API pública (no admin)
+  // 4. Rate limiting específico para los rótulos cacheables del mapa. Una
+  // apertura válida puede solicitar un PNG por motel (actualmente más de 50),
+  // por lo que no debe agotar la cuota de operaciones JSON. Conservamos una
+  // cuota propia para proteger el render dinámico contra abuso.
+  const isPublicMapMarker =
+    request.method === 'GET' && pathname === '/api/mobile/motels/map-marker';
+  if (isPublicMapMarker) {
+    if (process.env.E2E_MODE === '1') return NextResponse.next();
+
+    const { success, remaining } = await applyRateLimit('map-marker', ip, 120, 60 * 1000);
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Límite de imágenes del mapa excedido. Intenta nuevamente en 1 minuto.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': '60',
+            'X-RateLimit-Limit': '120',
+            'X-RateLimit-Remaining': '0',
+          },
+        },
+      );
+    }
+
+    const response = NextResponse.next();
+    response.headers.set('X-RateLimit-Limit', '120');
+    response.headers.set('X-RateLimit-Remaining', remaining.toString());
+    return response;
+  }
+
+  // 4.1. Rate Limiting para API pública (no admin)
   if (
     pathname.startsWith('/api/') &&
     !pathname.startsWith('/api/admin/') &&

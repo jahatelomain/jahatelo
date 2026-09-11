@@ -1,14 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withRepeat,
-  withTiming,
   interpolate,
-  Easing,
 } from 'react-native-reanimated';
 import { hasMotelPlanGlow } from '../constants/motelPlans';
 import MotelLogoHeart from './MotelLogoHeart';
@@ -22,30 +19,6 @@ export default function MotelCardSmall({ motel, onPress }) {
   // Todos los hooks ANTES del early return
   const diamondOrbit = useSharedValue(0);
   const diamondShimmer = useSharedValue(-1);
-
-  useEffect(() => {
-    if (!isDiamond) return;
-    diamondOrbit.value = withRepeat(
-      withTiming(360, { duration: 4200, easing: Easing.linear }),
-      -1,
-      false
-    );
-    return () => {
-      diamondOrbit.value = 0;
-    };
-  }, [isDiamond, diamondOrbit]);
-
-  useEffect(() => {
-    if (!isDiamond) return;
-    diamondShimmer.value = withRepeat(
-      withTiming(1, { duration: 7000, easing: Easing.linear }),
-      -1,
-      false
-    );
-    return () => {
-      diamondShimmer.value = -1;
-    };
-  }, [isDiamond, diamondShimmer]);
 
   const animatedOrbitStyle = useAnimatedStyle(() => {
     return {

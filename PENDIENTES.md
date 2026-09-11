@@ -49,6 +49,11 @@
 
 ### 2026-09-10
 
+- [x] **JH-067 — Amenities populares en búsqueda:** eliminados los filtros escritos a mano; app y web muestran los cinco amenities presentes en más moteles activos, calculados por el backend.
+- [x] **JH-066 — Resultados completos en el mapa:** la búsqueda móvil recorre todas las páginas del API y envía al mapa el conjunto completo; eliminada además la precarga masiva de detalles que consumía cuota sin interacción.
+- [x] **JH-065 — Campana del inicio móvil:** conectada a la pantalla de configuración de notificaciones y completada su identificación accesible.
+- [x] **JH-064 — Encabezados del menú móvil:** retirados los iconos decorativos de las categorías y sustituido el fondo lila por una superficie gris neutra de la paleta; la web ya utilizaba el tratamiento neutro equivalente.
+- [x] **JH-063 — Cuota y rótulos del mapa móvil:** los PNG del mapa usan una cuota protegida independiente, los errores 429 ya no se reintentan ni se guardan como imágenes y abrir un detalle dejó de duplicar solicitudes; restaurado además el contraste de los accesos del inicio.
 - [x] **JH-057 — Descubrimiento y navegación pública:** búsqueda y mapa funcionan como vistas del mismo conjunto filtrado en web, iOS y Android; la navegación conserva el contexto y se redujo la carga inicial del inicio.
 - [x] **JH-058 — Ficha pública del motel:** menú agrupado por categorías, secciones navegables y acciones de llamada y WhatsApp persistentes durante la exploración en web y apps.
 - [x] **JH-059 — Perfil y accesos personales:** simplificada la navegación, ocultadas las herramientas técnicas hasta solicitarlas, agrupados los controles legales y de datos, eliminados accesos duplicados y normalizado el tono en web, iOS y Android.

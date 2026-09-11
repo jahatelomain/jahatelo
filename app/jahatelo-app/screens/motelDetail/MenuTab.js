@@ -4,20 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatPrice } from '../../services/motelsApi';
 import { COLORS } from '../../constants/theme';
 
-// Iconos por categoría (fuzzy match por palabras clave)
-const getCategoryIcon = (title = '') => {
-  const t = title.toLowerCase();
-  if (t.includes('bebida') || t.includes('trago') || t.includes('drink') || t.includes('alcohol') || t.includes('vino') || t.includes('cerveza')) return 'wine';
-  if (t.includes('postre') || t.includes('dulce') || t.includes('torta') || t.includes('helado')) return 'ice-cream';
-  if (t.includes('desayuno') || t.includes('mañana')) return 'sunny';
-  if (t.includes('snack') || t.includes('picada') || t.includes('entrada') || t.includes('aperitivo')) return 'nutrition';
-  if (t.includes('principal') || t.includes('plato') || t.includes('comida') || t.includes('cena')) return 'restaurant';
-  if (t.includes('sandwich') || t.includes('burger') || t.includes('hamburgue')) return 'fast-food';
-  if (t.includes('pizza')) return 'pizza';
-  if (t.includes('ensalada') || t.includes('vegano') || t.includes('vegetarian')) return 'leaf';
-  return 'list';
-};
-
 export default function MenuTab({ route, refreshing, onRefresh, embedded = false }) {
   const { motel } = route.params || {};
   const [expandedCategories, setExpandedCategories] = useState(() => new Set());
@@ -66,12 +52,9 @@ export default function MenuTab({ route, refreshing, onRefresh, embedded = false
             accessibilityLabel={`${category.title}, ${category.items?.length || 0} productos`}
             accessibilityState={{ expanded }}
           >
-            <View style={styles.categoryIconContainer}>
-              <Ionicons name={getCategoryIcon(category.title)} size={18} color={COLORS.white} />
-            </View>
             <Text style={styles.categoryTitle}>{category.title}</Text>
             <Text style={styles.categoryCount}>{category.items?.length || 0}</Text>
-            <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color={COLORS.white} />
+            <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color={COLORS.grayDark} />
           </TouchableOpacity>
 
           {/* Items */}
@@ -122,27 +105,19 @@ const styles = StyleSheet.create({
   categoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.surfaceSubtle,
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 10,
   },
-  categoryIconContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   categoryTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.white,
+    color: COLORS.grayDark,
     flex: 1,
   },
   categoryCount: {
-    color: COLORS.white,
+    color: COLORS.textLight,
     fontSize: 13,
     fontWeight: '700',
     opacity: 0.85,
