@@ -6,7 +6,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   interpolate,
-} from 'react-native-reanimated';
+} from '../utils/reanimatedCompat';
 import { hasMotelPlanGlow } from '../constants/motelPlans';
 import MotelLogoHeart from './MotelLogoHeart';
 import { DARK_SURFACES, PLAN_COLORS } from '../constants/theme';

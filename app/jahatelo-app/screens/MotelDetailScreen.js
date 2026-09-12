@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Linking, Dimensions, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GestureDetector } from 'react-native-gesture-handler';
 import { fetchMotelBySlug } from '../services/motelsApi';
 import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../hooks/useFavorites';
@@ -12,7 +11,7 @@ import Animated, {
   withTiming,
   FadeIn,
   FadeInDown,
-} from 'react-native-reanimated';
+} from '../utils/reanimatedCompat';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../constants/theme';
 import { getMotelImageSource, hasRemoteMotelImage } from '../utils/mediaSource';
@@ -26,7 +25,6 @@ import { trackMotelView, trackPhoneClick, trackWhatsAppClick } from '../services
 import { shareMotel } from '../utils/share';
 import MotelHeader from '../components/motelDetail/MotelHeader';
 import MotelTabBar from '../components/motelDetail/MotelTabBar';
-import useMotelTabsGesture from '../hooks/useMotelTabsGesture';
 import LoadingScreen from '../components/LoadingScreen';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -181,17 +179,6 @@ export default function MotelDetailScreen({ route, navigation }) {
     ...(!isFreePlan ? [{ key: 'Reseñas', name: 'Reseñas', component: ReviewsTab }] : []),
   ], [isFreePlan, motel]);
   const selectedTab = availableTabs.find((tab) => tab.name === activeTab) || availableTabs[0];
-  const { tabSwipeGesture } = useMotelTabsGesture({
-    tabs: availableTabs,
-    activeTab: selectedTab.name,
-    onTabChange: (tabName) => {
-      const offset = sectionOffsets.current[tabName];
-      if (offset !== undefined) {
-        detailScrollRef.current?.scrollTo({ y: Math.max(0, offset - 8), animated: true });
-      }
-      setActiveTab(tabName);
-    },
-  });
 
   const handleTabPress = useCallback((tabName) => {
     const offset = sectionOffsets.current[tabName];
@@ -354,8 +341,7 @@ export default function MotelDetailScreen({ route, navigation }) {
           activeTab={selectedTab.name}
           onTabPress={handleTabPress}
         />
-        <GestureDetector gesture={tabSwipeGesture}>
-          <ScrollView
+        <ScrollView
             ref={detailScrollRef}
             style={styles.tabContent}
             contentContainerStyle={styles.sectionsContent}
@@ -386,8 +372,7 @@ export default function MotelDetailScreen({ route, navigation }) {
               </View>
             );
           })}
-          </ScrollView>
-        </GestureDetector>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );

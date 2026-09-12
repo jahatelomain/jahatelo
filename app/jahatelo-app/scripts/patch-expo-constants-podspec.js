@@ -24,6 +24,31 @@ if (!source.includes(original) || source.includes(patched)) {
   fs.writeFileSync(podspecPath, source.replace(original, patched));
 }
 
+// Expo Constants usa PROJECT_DIR sin comillas. En rutas con espacios (como
+// "AKAHATA STUDIO"), basename recibe varios argumentos y el script omite
+// silenciosamente la creación del manifiesto app.config.
+const appConfigScriptPath = path.join(
+  __dirname,
+  '..',
+  'node_modules',
+  'expo-constants',
+  'scripts',
+  'get-app-config-ios.sh'
+);
+
+if (fs.existsSync(appConfigScriptPath)) {
+  const appConfigScript = fs.readFileSync(appConfigScriptPath, 'utf8');
+  const unsafeBasename = 'PROJECT_DIR_BASENAME=$(basename $PROJECT_DIR)';
+  const safeBasename = 'PROJECT_DIR_BASENAME=$(basename "$PROJECT_DIR")';
+
+  if (appConfigScript.includes(unsafeBasename)) {
+    fs.writeFileSync(
+      appConfigScriptPath,
+      appConfigScript.replace(unsafeBasename, safeBasename)
+    );
+  }
+}
+
 // react-native-maps 1.20.1 con Google Maps + Fabric en iOS puede recibir un
 // subview nulo o un índice obsoleto al reconciliar marcadores dinámicos. El
 // arreglo oficial equivalente aún no fue publicado en una versión estable.

@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
+import { Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import FullscreenPhotoViewer from './FullscreenPhotoViewer';
 
 export default function RoomPhotoGallery({

@@ -15,6 +15,7 @@
       "backgroundColor": "#FFFFFF"
     },
     "ios": {
+      "newArchEnabled": false,
       "supportsTablet": true,
       "icon": "./assets/ios-icon-1024.png",
       "bundleIdentifier": "app.jahatelo.mobile",

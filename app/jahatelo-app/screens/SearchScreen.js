@@ -10,7 +10,8 @@ import Animated, {
   withTiming,
   withRepeat,
   withSequence,
-} from 'react-native-reanimated';
+  cancelAnimation,
+} from '../utils/reanimatedCompat';
 import { fetchPopularAmenities, searchAndFilterMotels } from '../services/motelsApi';
 import { getApiRoot } from '../services/apiBaseUrl';
 import MotelCard from '../components/MotelCard';
@@ -87,6 +88,10 @@ export default function SearchScreen({ route }) {
       -1,
       false
     );
+    return () => {
+      cancelAnimation(emptyIconScale);
+      cancelAnimation(emptyIconOpacity);
+    };
   }, [emptyIconOpacity, emptyIconScale]);
 
   // Función para cargar resultados

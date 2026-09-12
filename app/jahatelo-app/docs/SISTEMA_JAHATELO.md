@@ -34,7 +34,7 @@ La regla de evolución principal es: **una regla funcional se define una vez y s
  PostgreSQL        AWS S3            Integraciones
  Prisma           media             Google Maps, OAuth,
                                       AWS SNS, SMTP, Expo Push,
-                                      Upstash, Sentry
+                                      Upstash
 ```
 
 - Next.js es el backend y la web: no existe un backend móvil independiente.
@@ -50,7 +50,7 @@ projects/jahatelo/
 ├── app/jahatelo-app/                  # Expo / React Native
 │   ├── screens/                       # pantallas y tabs
 │   ├── components/                    # UI reutilizable
-│   ├── services/                      # API, cache, prefetch, push y Sentry
+│   ├── services/                      # API, cache, prefetch y push
 │   ├── utils/, hooks/, contexts/      # comportamiento compartido
 │   ├── constants/                     # diseño, planes y amenities
 │   ├── ios/, android/                 # proyectos nativos
@@ -80,7 +80,7 @@ projects/jahatelo/
 ### App nativa
 
 - Expo SDK 54, React Native `0.81`, React `19.1` y React Navigation.
-- `expo-image`, `expo-location`, `expo-notifications`, `expo-splash-screen`, Lottie, AsyncStorage, NetInfo, Sentry y `react-native-maps`.
+- `expo-image`, `expo-location`, `expo-notifications`, `expo-splash-screen`, Lottie, AsyncStorage, NetInfo y `react-native-maps`.
 - Bundle/package: `app.jahatelo.mobile`.
 - La instalación temporal de iPhone se realiza como **Release nativo con bundle incluido**, no como Development Build con Metro.
 
@@ -315,7 +315,6 @@ Reglas de contrato:
 | Google OAuth | login social | IDs de cliente por plataforma |
 | SMTP | correo | `SMTP_*`, `EMAIL_FROM_*` |
 | Expo | push y builds móviles | URL API, proyecto/bundle y tokens |
-| Sentry | fallos y trazas | DSN web/móvil/servidor |
 | Upstash | rate limiting | URL y token REST |
 
 Antes de cambiar un proveedor, identificar el que está activo en las variables del entorno objetivo. Cloudinary aparece como configuración heredada/opcional, no debe asumirse como el storage activo si S3 está configurado.
@@ -326,7 +325,7 @@ Antes de cambiar un proveedor, identificar el que está activo en las variables 
 2. Usar variantes correctas de portada por plataforma y evitar estirar/recortar la imagen de origen.
 3. Mantener órdenes de foto/habitación estables y actualizar en memoria tras reordenar; no obligar al usuario a recargar.
 4. Las listas usan paginación/infinite scroll, deduplicación por ID y contadores del servidor.
-5. `MotelAnalytics`, `VisitorEvent` y `AdAnalytics` capturan uso funcional; Sentry captura fallos técnicos.
+5. `MotelAnalytics`, `VisitorEvent` y `AdAnalytics` capturan el uso funcional.
 6. No enviar datos sensibles en eventos, logs ni etiquetas de observabilidad.
 
 ## 17. Desarrollo, pruebas y despliegue
@@ -373,7 +372,7 @@ No ejecutar migraciones destructivas, restauraciones ni scripts de limpieza sin 
 
 | Síntoma | Verificación inicial |
 | --- | --- |
-| Web/API 500 | logs Vercel/Sentry, variables, Prisma/DB y endpoint exacto |
+| Web/API 500 | logs de Vercel, variables, Prisma/DB y endpoint exacto |
 | App sin datos | `EXPO_PUBLIC_API_URL`, red, contrato `/api/mobile/*`, caché y 426 |
 | App abre Expo launcher | se instaló Development Build; reinstalar Release con bundle nativo |
 | Fotos faltantes o mal encuadradas | referencia S3, permisos, variante 16:9/4:5 y orden |

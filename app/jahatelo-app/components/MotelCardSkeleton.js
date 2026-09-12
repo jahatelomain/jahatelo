@@ -6,7 +6,8 @@ import Animated, {
   withRepeat,
   withTiming,
   Easing,
-} from 'react-native-reanimated';
+  cancelAnimation,
+} from '../utils/reanimatedCompat';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, BORDER_RADIUS, SHADOWS, SPACING } from '../constants/theme';
 
@@ -24,6 +25,7 @@ export default function MotelCardSkeleton() {
       -1, // Infinite
       false
     );
+    return () => cancelAnimation(shimmerTranslateX);
   }, [shimmerTranslateX]);
 
   const shimmerStyle = useAnimatedStyle(() => {

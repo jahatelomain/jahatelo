@@ -7,7 +7,8 @@ import Animated, {
   withSequence,
   withTiming,
   withSpring,
-} from 'react-native-reanimated';
+  cancelAnimation,
+} from '../utils/reanimatedCompat';
 import { COLORS } from '../constants/theme';
 
 export default function LoadingScreen({ message = 'Cargando...' }) {
@@ -23,9 +24,11 @@ export default function LoadingScreen({ message = 'Cargando...' }) {
 
   useEffect(() => {
     if (reduceMotion) {
+      cancelAnimation(scale);
+      cancelAnimation(opacity);
       scale.value = 1;
       opacity.value = 1;
-      return;
+      return undefined;
     }
 
     // Animación de pulso
@@ -47,6 +50,11 @@ export default function LoadingScreen({ message = 'Cargando...' }) {
       -1,
       false
     );
+
+    return () => {
+      cancelAnimation(scale);
+      cancelAnimation(opacity);
+    };
   }, [opacity, reduceMotion, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({

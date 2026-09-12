@@ -20,7 +20,8 @@ import Animated, {
   withTiming,
   withRepeat,
   withSequence,
-} from 'react-native-reanimated';
+  cancelAnimation,
+} from '../utils/reanimatedCompat';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../constants/theme';
 import { fetchCities } from '../services/motelsApi';
@@ -126,7 +127,11 @@ const AnimatedEmptyState = () => {
       -1,
       false
     );
-  }, []);
+    return () => {
+      cancelAnimation(iconScale);
+      cancelAnimation(iconRotation);
+    };
+  }, [iconRotation, iconScale]);
 
   const animatedIconStyle = useAnimatedStyle(() => ({
     transform: [
