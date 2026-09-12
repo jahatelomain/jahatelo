@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  InteractionManager,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,6 +37,15 @@ export default function LoginScreen({ navigation }) {
   const [resendSeconds, setResendSeconds] = useState(0);
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendVerifLoading, setResendVerifLoading] = useState(false);
+
+  // El cambio de autenticación vuelve a renderizar Perfil y sus providers.
+  // Esperar a que ese commit termine evita desmontar Login dentro de la misma
+  // transacción de Fabric, una carrera que provoca SIGSEGV en iOS 26.
+  const closeAfterAuthentication = () => {
+    InteractionManager.runAfterInteractions(() => {
+      if (navigation.isFocused()) navigation.goBack();
+    });
+  };
 
   // Google Sign-In
   const { request: googleRequest, response: googleResponse, promptAsync: promptGoogleAsync } = useGoogleAuth();
@@ -100,7 +110,7 @@ export default function LoginScreen({ navigation }) {
       const result = await login({ email: email.trim(), password });
 
       if (result.success) {
-        navigation.goBack();
+        closeAfterAuthentication();
       } else if (result.needsVerification) {
         setNeedsVerification(true);
       } else {
@@ -164,7 +174,7 @@ export default function LoginScreen({ navigation }) {
       });
       if (result?.success) {
         showSuccessMessage('¡Bienvenido!', 'Sesión iniciada correctamente');
-        navigation.goBack();
+        closeAfterAuthentication();
       }
     } catch (error) {
       showErrorMessage(error.message || 'Código inválido');
@@ -190,7 +200,7 @@ export default function LoginScreen({ navigation }) {
 
       if (result.success) {
         showSuccessMessage('¡Bienvenido!', `Hola ${result.user.name || result.user.email}`);
-        navigation.goBack();
+        closeAfterAuthentication();
       } else {
         showErrorMessage(result.error || 'Error al iniciar sesión con Google');
       }

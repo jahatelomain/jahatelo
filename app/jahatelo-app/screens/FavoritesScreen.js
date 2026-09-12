@@ -9,7 +9,8 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
-} from 'react-native-reanimated';
+  cancelAnimation,
+} from '../utils/reanimatedCompat';
 import { useFavorites } from '../hooks/useFavorites';
 import { fetchMotelBySlug } from '../services/motelsApi';
 import MotelCard from '../components/MotelCard';
@@ -43,7 +44,8 @@ export default function FavoritesScreen() {
       -1, // Infinite
       false
     );
-  }, []);
+    return () => cancelAnimation(heartScale);
+  }, [heartScale]);
 
   // Cargar datos completos de favoritos si faltan campos
   useEffect(() => {

@@ -14,7 +14,7 @@ import Animated, {
   useAnimatedStyle,
   interpolate,
   Extrapolate,
-} from 'react-native-reanimated';
+} from '../utils/reanimatedCompat';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.75;

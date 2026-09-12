@@ -25,6 +25,10 @@ export function normalizeGoogleMapsUrl(value: string): string {
   return trimmed.match(/src=["']([^"']+)["']/i)?.[1] || trimmed;
 }
 
+export function hasGoogleMapsUrlChanged(currentUrl: string | null, requestedUrl: string): boolean {
+  return normalizeGoogleMapsUrl(currentUrl || '') !== normalizeGoogleMapsUrl(requestedUrl);
+}
+
 /**
  * Extrae coordenadas de una URL de Google Maps
  * @param url - URL de Google Maps (cualquier formato)

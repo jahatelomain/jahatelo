@@ -6,7 +6,7 @@ import { logAuditEvent } from '@/lib/audit';
 import { IdSchema, UpdateMotelSchema } from '@/lib/validations/schemas';
 import { sanitizeText } from '@/lib/sanitize';
 import { normalizeLocationName } from '@/lib/locationCatalog';
-import { normalizeGoogleMapsUrl } from '@/lib/utils/coordinates';
+import { hasGoogleMapsUrlChanged, normalizeGoogleMapsUrl } from '@/lib/utils/coordinates';
 import { findOfficialGooglePlace } from '@/lib/googlePlaces';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
@@ -215,16 +215,38 @@ export async function PATCH(
       } else {
         const currentMotel = await prisma.motel.findUnique({
           where: { id: idResult.data },
-          select: { name: true, address: true, city: true, country: true },
+          select: { name: true, address: true, city: true, country: true, mapUrl: true },
         });
         if (!currentMotel) return NextResponse.json({ error: 'Motel no encontrado' }, { status: 404 });
-        const place = await findOfficialGooglePlace(currentMotel);
-        if (place) {
-          data.googlePlaceId = place.id;
-          data.latitude = place.latitude;
-          data.longitude = place.longitude;
-          // El enlace devuelto por Places abre la ficha del establecimiento.
-          data.mapUrl = place.googleMapsUri || mapUrl;
+
+        // El formulario envía la URL actual al guardar cualquier sección. No
+        // volvemos a consultar Places ni a reasignar el Place ID cuando el
+        // enlace no cambió (por ejemplo, al guardar solamente una imagen).
+        const mapUrlChanged = hasGoogleMapsUrlChanged(currentMotel.mapUrl, mapUrl);
+        if (mapUrlChanged) {
+          const place = await findOfficialGooglePlace({
+            name: validated.name ?? currentMotel.name,
+            address: validated.address ?? currentMotel.address,
+            city: validated.city ?? currentMotel.city,
+            country: validated.country ?? currentMotel.country,
+          });
+          if (place) {
+            const existingMotel = await prisma.motel.findFirst({
+              where: { googlePlaceId: place.id, NOT: { id: idResult.data } },
+              select: { id: true, name: true },
+            });
+            if (existingMotel) {
+              return NextResponse.json(
+                { error: `La ficha de Google Maps ya está asociada a ${existingMotel.name}.` },
+                { status: 409 },
+              );
+            }
+            data.googlePlaceId = place.id;
+            data.latitude = place.latitude;
+            data.longitude = place.longitude;
+            // El enlace devuelto por Places abre la ficha del establecimiento.
+            data.mapUrl = place.googleMapsUri || mapUrl;
+          }
         }
       }
     }

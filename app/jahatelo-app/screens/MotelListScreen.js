@@ -20,7 +20,8 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
-} from 'react-native-reanimated';
+  cancelAnimation,
+} from '../utils/reanimatedCompat';
 import { useEffect } from 'react';
 import MotelCard from '../components/MotelCard';
 import AdListItem from '../components/AdListItem';
@@ -121,7 +122,11 @@ const AnimatedEmptyState = () => {
       -1,
       false
     );
-  }, []);
+    return () => {
+      cancelAnimation(iconScale);
+      cancelAnimation(iconOpacity);
+    };
+  }, [iconOpacity, iconScale]);
 
   const animatedIconStyle = useAnimatedStyle(() => ({
     transform: [{ scale: iconScale.value }],

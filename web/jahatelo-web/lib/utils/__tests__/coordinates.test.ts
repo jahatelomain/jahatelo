@@ -1,5 +1,6 @@
 import {
   extractCoordinatesFromGoogleMapsUrl,
+  hasGoogleMapsUrlChanged,
   normalizeGoogleMapsUrl,
 } from '../coordinates';
 
@@ -17,5 +18,17 @@ describe('Google Maps coordinates', () => {
       lat: -25.289246227339,
       lng: -57.53838482378769,
     });
+  });
+
+  it('does not treat the unchanged map URL as an edit when another motel field is saved', () => {
+    const url = 'https://maps.app.goo.gl/example';
+    expect(hasGoogleMapsUrlChanged(url, `  ${url}  `)).toBe(false);
+  });
+
+  it('detects an actual change of Google Maps listing', () => {
+    expect(hasGoogleMapsUrlChanged(
+      'https://maps.app.goo.gl/first',
+      'https://maps.app.goo.gl/second',
+    )).toBe(true);
   });
 });

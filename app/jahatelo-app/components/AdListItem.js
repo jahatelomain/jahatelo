@@ -6,7 +6,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
-} from 'react-native-reanimated';
+} from '../utils/reanimatedCompat';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../constants/theme';
 

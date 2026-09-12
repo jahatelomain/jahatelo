@@ -1,5 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { enableScreens } from 'react-native-screens';
 import SplashScreen from '../screens/SplashScreen';
 import AgeGateScreen from '../screens/AgeGateScreen';
 import BottomTabs from './BottomTabs';
@@ -19,6 +20,11 @@ import NotificationPreferencesScreen from '../screens/NotificationPreferencesScr
 import PromoHistoryScreen from '../screens/PromoHistoryScreen';
 import RecommendMotelScreen from '../screens/RecommendMotelScreen';
 import ReportMotelScreen from '../screens/ReportMotelScreen';
+
+// iOS 26 + Fabric puede abortar al reciclar una pantalla nativa después del
+// login (RNSScreenStackView prepareForRecycle). Conservamos la Nueva
+// Arquitectura para Reanimated, pero evitamos esa ruta nativa inestable.
+enableScreens(false);
 
 const Stack = createNativeStackNavigator();
 

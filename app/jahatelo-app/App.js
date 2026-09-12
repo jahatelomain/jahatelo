@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { initSentry } from './services/sentryService';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import {
   Alert,
@@ -30,9 +28,6 @@ import {
   setStagingCredentials,
 } from './services/stagingAuthService';
 import { trackAppOpen, trackScreenView } from './services/analyticsService';
-
-// Inicializar Sentry antes de renderizar la aplicación.
-initSentry();
 
 const linking = {
   prefixes: ['jahatelo://', 'https://jahatelo.com', 'https://www.jahatelo.com'],
@@ -266,20 +261,20 @@ export default function App() {
 
   if (!stagingAuthChecked) {
     return (
-      <GestureHandlerRootView style={stylesStaging.root}>
+      <View style={stylesStaging.root}>
         <SafeAreaProvider>
           <View style={stylesStaging.loadingContainer}>
             <ActivityIndicator size="large" color="#822DE2" />
             <Text style={stylesStaging.loadingText}>Inicializando app...</Text>
           </View>
         </SafeAreaProvider>
-      </GestureHandlerRootView>
+      </View>
     );
   }
 
   if (isStagingEnvironment() && !stagingAuthReady) {
     return (
-      <GestureHandlerRootView style={stylesStaging.root}>
+      <View style={stylesStaging.root}>
         <SafeAreaProvider>
           <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -344,12 +339,12 @@ export default function App() {
           </View>
           </KeyboardAvoidingView>
         </SafeAreaProvider>
-      </GestureHandlerRootView>
+      </View>
     );
   }
 
   return (
-    <GestureHandlerRootView style={stylesStaging.root}>
+    <View style={stylesStaging.root}>
       <SafeAreaProvider>
         <AuthProvider>
           <FavoritesProvider>
@@ -359,7 +354,7 @@ export default function App() {
           </FavoritesProvider>
         </AuthProvider>
       </SafeAreaProvider>
-    </GestureHandlerRootView>
+    </View>
   );
 }
 

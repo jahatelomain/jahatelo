@@ -8,7 +8,7 @@ import Animated, {
   useAnimatedStyle,
   interpolate,
   Extrapolate,
-} from 'react-native-reanimated';
+} from '../utils/reanimatedCompat';
 import { hasMotelPlanGlow } from '../constants/motelPlans';
 import MotelLogoHeart from './MotelLogoHeart';
 import { getMotelImageSource, hasRemoteMotelImage } from '../utils/mediaSource';

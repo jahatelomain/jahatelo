@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { SlideInUp } from 'react-native-reanimated';
+import Animated, { SlideInUp } from '../../utils/reanimatedCompat';
 import { COLORS } from '../../constants/theme';
 
 export default function MotelHeader({ motel, onCall, onWhatsApp, onShare }) {

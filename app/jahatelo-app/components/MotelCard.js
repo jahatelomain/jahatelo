@@ -7,7 +7,7 @@ import Animated, {
   interpolate,
   withSpring,
   withTiming,
-} from 'react-native-reanimated';
+} from '../utils/reanimatedCompat';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { formatPrice, formatDistance } from '../services/motelsApi';

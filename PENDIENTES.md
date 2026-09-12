@@ -14,10 +14,6 @@
 
 ## Pendientes activos
 
-### Incidencias reportadas
-
-- [ ] **JH-072 — Error 500 al cargar una imagen del motel:** captura muestra fallo en `/api/admin/motels/...` (URL truncada). No hay errores 500 disponibles en los logs consultados de Vercel de las últimas 24 h. Falta confirmar entorno, método HTTP y respuesta/log del servidor; no atribuirlo al upload sin reproducción.
-
 ### Seguridad y autenticación
 
 - [ ] **JH-069 — Validación real de autenticación y uploads:** código integrado y publicado en producción por PR #99, merge `0190a42`; Vercel Ready. Google/sesiones 49/49 y admin/uploads 29/29, typechecks correctos. Home y catálogo HTTP 200; Google sin ID token y upload sin sesión HTTP 401 con Origin válido. Pendiente login Google real, subida autenticada y distribución de app actualizada. JWT_SECRET y audiences móviles configurados; requiere nuevo login. Detalle: `web/jahatelo-web/tests/SECURITY-CHECKPOINT.md`.
@@ -56,6 +52,10 @@
 - [ ] **JH-002 — Sentry:** pausado por decisión de producto hasta disponer de presupuesto para el servicio.
 
 ## Completados
+
+### 2026-09-12
+
+- [x] **JH-072 — Error 500 al guardar una imagen del motel:** los logs de producción confirmaron que la carga terminaba correctamente y el `PATCH` posterior reprocesaba sin necesidad la URL de Google Maps, provocando una colisión `P2002` de `googlePlaceId`. El backend ahora consulta Places únicamente si cambia el enlace y responde con conflicto explícito cuando una ficha ya pertenece a otro motel.
 
 ### 2026-09-10
 
