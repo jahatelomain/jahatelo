@@ -43,7 +43,7 @@
 - [ ] **JH-074 — Moderación de reseñas para Google Play:** agregar una acción visible para denunciar reseñas, recepción y resolución en SUPERADMIN, y comprobar que la aceptación de términos y las reglas sobre contenido generado por usuarios cumplan la política de UGC.
 - [ ] **JH-075 — Firma de producción para Google Maps Android:** tras subir el primer AAB, agregar a Google Cloud el SHA-1 de Google Play App Signing para Maps y validar el mapa del build distribuido por Play en un Android físico. El SHA-256 de App Links continúa exclusivamente en JH-001.
 - [ ] **JH-076 — Expediente de cumplimiento de exportación de EE.UU.:** documentar el uso exclusivo de cifrado estándar, determinar y conservar la clasificación aplicable (`EAR99`, `5D992.c` o excepción), revisar destinos/personas sancionadas y obtener validación profesional si la clasificación no puede sostenerse internamente.
-- [ ] **JH-077 — Paridad visual y claridad del home en iOS/Android:** corregir las diferencias observadas en dispositivos físicos y reducir elementos sobredimensionados.
+- [ ] **JH-077 — Paridad visual y claridad del home en iOS/Android:** implementación integrada en `main` mediante PR #102 y rebuild iOS/Android completado; falta la confirmación visual final en dispositivos físicos antes de cerrarlo.
   - Redondear correctamente en iOS el contenedor completo de las tarjetas de moteles destacados.
   - Restablecer la jerarquía de tamaño de los marcadores según plan y reducir su escala general en Android.
   - Replicar en iOS la entrada escalonada de las ciudades que actualmente se aprecia mejor en Android.
