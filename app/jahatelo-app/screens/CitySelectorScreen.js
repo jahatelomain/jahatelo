@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,12 +25,17 @@ import Animated, {
 } from '../utils/reanimatedCompat';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../constants/theme';
-import { fetchCities } from '../services/motelsApi';
+import { fetchCities, fetchMotels } from '../services/motelsApi';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { mixAdvertisements } from '../utils/mixAdvertisements';
 import AdDetailModal from '../components/AdDetailModal';
 import MotelCard from '../components/MotelCard';
-import { fetchMotels } from '../services/motelsApi';
+
+// En iOS la transición de navegación tarda más y las entering animations
+// comenzaban detrás de ella. Esta espera hace visible la misma secuencia que
+// Android sin ralentizar el escalonado entre tarjetas.
+const CITY_ENTRY_BASE_DELAY = Platform.OS === 'ios' ? 350 : 0;
+const cityEntryDelay = (index) => CITY_ENTRY_BASE_DELAY + index * 90;
 
 // Componente de city card animada
 const AnimatedCityCard = ({ item, index, onPress }) => {
@@ -51,7 +57,7 @@ const AnimatedCityCard = ({ item, index, onPress }) => {
   return (
     <Animated.View
       key={`city-entry-${item.id || item.name}-${index}`}
-      entering={FadeInRight.delay(index * 90).duration(450)}
+      entering={FadeInRight.delay(cityEntryDelay(index)).duration(450)}
     >
       <TouchableOpacity
         onPressIn={handlePressIn}
@@ -83,7 +89,7 @@ const AnimatedCityAdCard = ({ item, index, onPress }) => {
   return (
     <Animated.View
       key={`city-ad-entry-${item.id}-${index}`}
-      entering={FadeInRight.delay(index * 90).duration(450)}
+      entering={FadeInRight.delay(cityEntryDelay(index)).duration(450)}
     >
       <TouchableOpacity
         onPress={() => onPress(item)}
@@ -157,7 +163,7 @@ const AnimatedEmptyState = () => {
 };
 
 const CityCardSkeleton = ({ index }) => (
-  <Animated.View entering={FadeInRight.delay(index * 90).duration(450)}>
+  <Animated.View entering={FadeInRight.delay(cityEntryDelay(index)).duration(450)}>
     <View style={styles.cityCardSkeleton}>
       <View style={styles.iconSkeleton} />
       <View style={styles.textSkeleton}>
