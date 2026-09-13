@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/theme';
 
 export default function HomeHeader({ motels = [], onMotelPress, onSearch, navigation }) {
-  const insets = useSafeAreaInsets();
   const colors = COLORS;
   const [searchValue, setSearchValue] = useState('');
 
@@ -23,11 +21,11 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
     setSearchValue(trimmed);
   };
 
-  // Acerca los controles al área del sistema en iOS sin modificar Android.
+  // HomeTabs ya aplica el área segura superior. No volver a sumar el inset acá.
   const paddingTop = Platform.select({
-    ios: Math.max(insets.top - 30, 8),
-    android: Math.max(insets.top - 12, 4),
-    default: Math.max(insets.top - 12, 4),
+    ios: 8,
+    android: 4,
+    default: 4,
   });
 
   return (
