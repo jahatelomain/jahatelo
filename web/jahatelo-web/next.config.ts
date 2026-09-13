@@ -1,5 +1,4 @@
 import type { NextConfig } from "next";
-import { withSentryConfig } from "@sentry/nextjs";
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -121,27 +120,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  // Organización y proyecto en Sentry (configurar en .env o variables de entorno)
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  authToken: process.env.SENTRY_AUTH_TOKEN,
-
-  // Suprimir output de Sentry en CI/dev (solo mostrar errores en producción)
-  silent: process.env.NODE_ENV !== 'production',
-
-  // Tunnel para evitar ad-blockers
-  tunnelRoute: '/monitoring',
-
-  // Subir source maps y eliminarlos del bundle después (v10 API)
-  sourcemaps: {
-    deleteSourcemapsAfterUpload: true,
-  },
-
-  // Reducir tamaño del bundle eliminando logs internos de Sentry.
-  webpack: {
-    treeshake: {
-      removeDebugLogging: true,
-    },
-  },
-});
+export default nextConfig;

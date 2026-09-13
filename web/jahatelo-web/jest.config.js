@@ -33,6 +33,8 @@ const customJestConfig = {
     '/node_modules/',
     '/.next/',
     '/e2e/',
+    '/tests/google-auth/',
+    '/tests/admin-access-upload/',
   ],
 };
 

@@ -57,15 +57,11 @@ Necesita verificación manual:
 ```json
 {
   "@react-oauth/google": "^0.12.1",  // ✅ USADA (login Google web)
-  "@sentry/nextjs": "^9.0.0",        // ⚠️ INSTALADA pero NO configurada
   "mercadopago": "..."               // ⚠️ Verificar si se usa
 }
 ```
 
-**Sentry:** Está instalado pero NO hay configuración en:
-- No existe `sentry.client.config.ts`
-- No existe `sentry.server.config.ts`
-- No existe `sentry.edge.config.ts`
+**Observabilidad externa:** Sentry fue retirado completamente el 13/09/2026. Ver `DT-002`.
 
 **MercadoPago:** Necesita verificarse si hay implementación real
 
@@ -100,9 +96,8 @@ grep -r "console.log" app/ components/ lib/ --include="*.ts" --include="*.tsx"
    - Eliminar carpeta `app/ciudades/`
    - Agregar redirect 301 en `next.config.js`
 
-2. **Decidir sobre Sentry:**
-   - Opción A: Configurarlo completamente (agregar DSN, configs)
-   - Opción B: Removerlo del proyecto si no se va a usar
+2. **Mantener la decisión de observabilidad vigente:**
+   - No reinstalar Sentry u otro SDK sin cumplir las condiciones de `DT-002`.
 
 3. **Verificar uso de MercadoPago**
    - Si no se usa, remover dependencia
@@ -131,7 +126,7 @@ grep -r "console.log" app/ components/ lib/ --include="*.ts" --include="*.tsx"
 ## 🎯 PRÓXIMOS PASOS
 
 1. ✅ **COMPLETADO:** Resolver conflicto `/ciudades` vs `/ciudad`
-2. ✅ **VERIFICADO:** Sentry está correctamente configurado
+2. ✅ **COMPLETADO:** Sentry retirado de web y apps; decisión registrada en `DT-002`
 3. ✅ **COMPLETADO:** Eliminación completa de MercadoPago del sistema
 4. ✅ **VERIFICADO:** Código limpio - CERO console.log encontrados
 

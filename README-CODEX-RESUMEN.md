@@ -27,7 +27,7 @@
   - popup de credenciales staging,
   - interceptor para header `Authorization` en requests a staging,
   - manejo de timeout/retry unificado.
-- Sentry desactivado temporalmente en la app para evitar friccion de build local.
+- Sentry retirado por completo de web y apps mientras no exista presupuesto ni operación real; ver `DT-002`.
 - Home en caso de 0 moteles:
   - ya no queda spinner infinito,
   - muestra estado vacio,

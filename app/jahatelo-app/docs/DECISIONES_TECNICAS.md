@@ -27,6 +27,18 @@ Cada baja o sustitución debe indicar:
 - **Condiciones para reconsiderarlo:** usar clustering soportado por el SDK o una librería compatible con las versiones actuales de React Native, Google Maps y ambas arquitecturas; medir tiempo de apertura, fluidez, consumo de memoria y comportamiento en dispositivos físicos iOS/Android; conservar jerarquía por plan y navegación correcta al ampliar.
 - **No hacer:** copiar nuevamente el algoritmo manual de `c024b70` sin pruebas comparativas y validación física.
 
+## DT-002 — Retiro temporal de Sentry
+
+- **Estado:** retirado de web y apps; no reinstalar hasta aprobar su operación.
+- **Fecha:** 13 de septiembre de 2026.
+- **Alcance:** web pública, panel administrativo, backend y aplicaciones móviles.
+- **Qué cambió:** se eliminaron los SDK, archivos de configuración, wrappers de build, llamadas y mocks de Sentry. La página global de error conserva registro local limitado y la operación continúa con logs estructurados de servidor, logs de Vercel, auditoría, analytics propios y el endpoint de salud.
+- **Motivo:** la cuenta no está activa por decisión de producto y presupuesto. Mantener una integración sin DSN, alertas ni responsable agregaba dependencias, peso, telemetría del proceso de build y documentación engañosa sin aportar monitoreo real.
+- **Evidencia:** los builds advertían que no existía token de autenticación ni carga de source maps; el pendiente `JH-002` ya estaba pausado.
+- **Alternativa vigente:** `lib/logger.ts`, logs de Vercel, `AuditLog`, métricas propias y `/api/health`.
+- **Condiciones para reconsiderarlo:** presupuesto aprobado, cuenta activa, responsable operativo, política de retención y privacidad revisada, filtrado de datos sensibles, alertas definidas y pruebas de recepción en staging y producción.
+- **No hacer:** reinstalar el paquete o copiar configuraciones históricas sin completar primero esas condiciones.
+
 ## Plantilla
 
 ### DT-XXX — Título de la decisión

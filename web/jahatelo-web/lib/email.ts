@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import nodemailer, { type Transporter } from 'nodemailer';
 
 type SendEmailArgs = {
   to: string;
@@ -7,7 +7,7 @@ type SendEmailArgs = {
   text?: string;
 };
 
-let cachedTransporter: nodemailer.Transporter | null = null;
+let cachedTransporter: Transporter | null = null;
 
 function getTransporter() {
   if (cachedTransporter) return cachedTransporter;

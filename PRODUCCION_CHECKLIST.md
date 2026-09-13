@@ -137,10 +137,10 @@
   - Aplicado en `MapScreen.js`: reemplazada la vista inline con `ActivityIndicator` por `<LoadingScreen message="Cargando mapa..." />`
   - Eliminado import de `ActivityIndicator` (ya no necesario)
 
-- [x] 28. **[WEB+APP] Integrar Sentry o similar para error tracking**
-  - **Web**: `@sentry/nextjs` instalado. `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts` ya existían y están correctamente configurados. Agregado `withSentryConfig()` wrapper en `next.config.ts` con tunnelRoute, hideSourceMaps, disableLogger
-  - **App**: `@sentry/react-native` instalado. Creado `services/sentryService.js` con `initSentry()`, `setSentryUser()`, `captureError()`. Plugin `@sentry/react-native/expo` agregado a `app.json`. `initSentry()` llamado al inicio de `App.js`. `setSentryUser()` integrado en login/logout en `AuthContext.js`
-  - **Variables pendientes**: agregar `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` en Vercel y `EXPO_PUBLIC_SENTRY_DSN` en EAS
+- [ ] 28. **[WEB+APP] Evaluar observabilidad externa cuando exista presupuesto y responsable**
+  - Sentry fue retirado de web y apps el 13/09/2026 porque no existían cuenta operativa, alertas ni presupuesto.
+  - Mientras tanto se utilizan logs estructurados, logs de Vercel, auditoría, analítica propia y `/api/health`.
+  - No reinstalar una integración externa sin cumplir las condiciones documentadas en `DT-002`.
 
 - [x] 29. **[APP] Agregar chequeo de versión mínima compatible**
   - `middleware.ts`: sección 2.2 — valida `X-App-Version` en todas las rutas `/api/mobile/`. Responde `426 Upgrade Required` si la versión es inferior a `MIN_APP_VERSION` (env var, default `1.0.0`)

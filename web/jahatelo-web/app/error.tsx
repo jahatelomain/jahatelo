@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import * as Sentry from '@sentry/nextjs';
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -11,13 +10,7 @@ interface ErrorProps {
 
 export default function GlobalError({ error, reset }: ErrorProps) {
   useEffect(() => {
-    if (process.env.NODE_ENV === 'production') {
-      Sentry.captureException(error, {
-        extra: { digest: error.digest },
-      });
-    } else {
-      console.error('[GlobalError]', error);
-    }
+    console.error('[GlobalError]', { message: error.message, digest: error.digest });
   }, [error]);
 
   return (

@@ -24,7 +24,7 @@
 ### ¿Qué falta?
 ❌ **Seguridad HTTP** (rate limiting, validaciones, CORS)
 ❌ **Testing** (0% cobertura actual)
-❌ **Monitoring** (sin Sentry ni logs)
+⚠️ **Monitoring externo** pausado; se mantienen logs, auditoría, analítica propia y health check según `DT-002`
 ❌ **Integración de pagos**
 ❌ **Optimizaciones** (paginación, caché, CDN)
 
@@ -73,7 +73,7 @@
 - ✅ Security headers
 - ✅ Validación de inputs
 - ✅ Testing básico (50% cobertura)
-- ✅ Monitoring con Sentry
+- ✅ Monitoreo operativo con logs, auditoría, analítica propia y health check
 - ❌ Sin pagos automáticos (cobro manual)
 
 **¿Para quién?**
@@ -95,7 +95,7 @@
 - ✅ Security headers
 - ✅ Validación de inputs
 - ✅ Testing completo (70%+ cobertura)
-- ✅ Monitoring con Sentry
+- ✅ Monitoreo operativo con logs, auditoría, analítica propia y health check
 - ✅ Integración de pagos
 - ✅ Pagos automáticos
 - ✅ Performance optimizado
@@ -160,7 +160,7 @@ Base de datos se llena → App deja de funcionar
 [ ] Security headers activos
 [ ] Inputs validados con Zod
 [ ] Testing E2E de flujos críticos
-[ ] Sentry configurado
+[ ] Observabilidad externa aprobada o excepción `DT-002` vigente
 [ ] Backups automáticos DB
 ```
 
@@ -270,7 +270,7 @@ SEMANA 5: PERFORMANCE (20h)
 
 SEMANA 5: MONITORING (12h)
 │
-├─ Sentry setup
+├─ Revisión de observabilidad según DT-002
 ├─ Structured logging
 ├─ Uptime monitoring
 └─ Alertas críticas
@@ -340,7 +340,7 @@ TOTAL:                       152h      $6,080
 3. **Setup de entorno**
    - [ ] Crear entorno de staging
    - [ ] Configurar CI/CD básico
-   - [ ] Configurar Sentry cuenta
+   - [ ] Definir proveedor, presupuesto y responsable si se reactiva observabilidad externa
 
 4. **Iniciar Fase 1**
    - [ ] Implementar rate limiting

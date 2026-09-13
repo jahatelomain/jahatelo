@@ -187,19 +187,25 @@ export default async function CityPage({ params }: Props) {
 }
 
 export async function generateStaticParams() {
-  const cities = await prisma.motel.findMany({
-    where: {
-      status: 'APPROVED',
-      isActive: true,
-      city: { not: '' },
-    },
-    select: { city: true },
-    distinct: ['city'],
-  });
+  try {
+    const cities = await prisma.motel.findMany({
+      where: {
+        status: 'APPROVED',
+        isActive: true,
+        city: { not: '' },
+      },
+      select: { city: true },
+      distinct: ['city'],
+    });
 
-  return cities
-    .filter((m) => m.city)
-    .map((m) => ({
-      ciudad: m.city!.toLowerCase().replace(/\s+/g, '-'),
-    }));
+    return cities
+      .filter((m) => m.city)
+      .map((m) => ({
+        ciudad: m.city!.toLowerCase().replace(/\s+/g, '-'),
+      }));
+  } catch (error) {
+    console.warn('[generateStaticParams] No se pudieron precargar ciudades; se generarán bajo demanda.',
+      error instanceof Error ? error.message : String(error));
+    return [];
+  }
 }
