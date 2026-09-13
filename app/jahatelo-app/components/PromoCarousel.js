@@ -383,7 +383,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 4,
-    overflow: 'visible',
+    // iOS no recorta el contenido del LinearGradient usando solo borderRadius.
+    // El wrapper exterior conserva la sombra; este nodo debe recortar el marco.
+    overflow: 'hidden',
   },
   planGlowInner: {
     borderRadius: 20,
