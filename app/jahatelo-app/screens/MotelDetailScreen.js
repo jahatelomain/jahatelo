@@ -399,6 +399,8 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 240,
     overflow: 'hidden',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   motelPhoto: {
     width: SCREEN_WIDTH,

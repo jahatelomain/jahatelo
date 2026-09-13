@@ -14,7 +14,7 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
   };
 
   const handleNotificationsPress = () => {
-    navigation?.navigate('NotificationPreferences');
+    navigation?.navigate('Notifications');
   };
 
   const triggerSearch = () => {
@@ -23,10 +23,9 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
     setSearchValue(trimmed);
   };
 
-  // Reducción EXTRA agresiva del margen superior sin solapar con notch
-  // iOS: resta 18px del insets, mínimo 2px | Android: resta 12px, mínimo 4px
+  // Acerca los controles al área del sistema en iOS sin modificar Android.
   const paddingTop = Platform.select({
-    ios: Math.max(insets.top - 18, 2),
+    ios: Math.max(insets.top - 30, 8),
     android: Math.max(insets.top - 12, 4),
     default: Math.max(insets.top - 12, 4),
   });
@@ -49,7 +48,7 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
             onPress={handleNotificationsPress}
             accessibilityRole="button"
             accessibilityLabel="Notificaciones"
-            accessibilityHint="Abre la configuración de notificaciones"
+            accessibilityHint="Abre tus notificaciones"
           >
             <Ionicons name="notifications-outline" size={18} color={colors.text} />
           </TouchableOpacity>
@@ -58,7 +57,7 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
 
       <View style={styles.greetingBlock}>
         <Text style={[styles.greeting, { color: colors.white }]}>Encontrá el motel ideal para vos</Text>
-        <Text style={styles.subGreeting}>Compará opciones y elegí dónde ir</Text>
+        <Text style={styles.subGreeting}>Cientos de opciones para que elijas dónde ir</Text>
       </View>
 
       <View style={[styles.searchContainer, { backgroundColor: colors.white }]}>

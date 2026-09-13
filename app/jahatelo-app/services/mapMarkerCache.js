@@ -1,4 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy';
+import { Platform } from 'react-native';
 
 const MARKERS_DIRECTORY = `${FileSystem.cacheDirectory}jahatelo-map-markers/`;
 const MAX_PARALLEL_DOWNLOADS = 4;
@@ -13,7 +14,7 @@ async function ensureMarkersDirectory() {
 }
 
 async function resolveMarkerImage(motel, apiRoot) {
-  const version = sanitizeFilePart(motel.markerVersion || motel.plan || 'v1');
+  const version = sanitizeFilePart(`${motel.markerVersion || motel.plan || 'v1'}-plan-scale-v2-${Platform.OS}`);
   const fileUri = `${MARKERS_DIRECTORY}${sanitizeFilePart(motel.id)}-${version}.png`;
   const cachedFile = await FileSystem.getInfoAsync(fileUri);
   // Una respuesta 429 anterior podía quedar guardada con extensión .png. No
@@ -22,7 +23,7 @@ async function resolveMarkerImage(motel, apiRoot) {
   if (cachedFile.exists && Number(cachedFile.size || 0) >= 256) return fileUri;
   if (cachedFile.exists) await FileSystem.deleteAsync(fileUri, { idempotent: true });
 
-  const markerUrl = `${apiRoot}/api/mobile/motels/map-marker?id=${encodeURIComponent(motel.id)}&v=${encodeURIComponent(motel.markerVersion || '')}`;
+  const markerUrl = `${apiRoot}/api/mobile/motels/map-marker?id=${encodeURIComponent(motel.id)}&v=${encodeURIComponent(motel.markerVersion || '')}&platform=${Platform.OS}`;
   const temporaryUri = `${fileUri}.download`;
   const download = await FileSystem.downloadAsync(markerUrl, temporaryUri);
   if (download.status < 200 || download.status >= 300) {
