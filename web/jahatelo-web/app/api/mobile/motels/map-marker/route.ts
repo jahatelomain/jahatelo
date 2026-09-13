@@ -29,18 +29,31 @@ function labelFor(name: string) {
   return normalized.length > 24 ? `${normalized.slice(0, 23).trimEnd()}…` : normalized;
 }
 
-function markerDimensions(label: string) {
+const PLAN_SCALE: Record<string, number> = {
+  FREE: 0.72,
+  BASIC: 0.82,
+  GOLD: 0.94,
+  DIAMOND: 1.06,
+};
+
+function markerDimensions(label: string, plan: string, platform: string) {
   const characterCount = Array.from(label).length;
   const viewWidth = Math.max(80, Math.min(176, Math.ceil(characterCount * 8 + 28)));
-  const outputScale = 1.4;
+  // Android interpreta estos PNG nativos a mayor tamaño visual que iOS.
+  // La escala base por plataforma corrige esa diferencia y el multiplicador
+  // de plan recupera la jerarquía comercial sin alterar el área de toque.
+  const platformScale = platform === 'android' ? 0.82 : 1;
+  const outputScale = platformScale * (PLAN_SCALE[plan] ?? PLAN_SCALE.BASIC);
   return {
     viewWidth,
-    outputWidth: Math.round(viewWidth * outputScale),
+    outputWidth: Math.max(58, Math.round(viewWidth * outputScale)),
+    outputHeight: Math.max(68, Math.round(94 * outputScale)),
   };
 }
 
 export async function GET(request: NextRequest) {
   const motelId = request.nextUrl.searchParams.get('id');
+  const platform = request.nextUrl.searchParams.get('platform') === 'android' ? 'android' : 'ios';
   if (!motelId) return NextResponse.json({ error: 'Falta id' }, { status: 400 });
 
   const motel = await prisma.motel.findFirst({
@@ -52,9 +65,9 @@ export async function GET(request: NextRequest) {
   const color = PLAN_COLORS[motel.plan] ?? PLAN_COLORS.BASIC;
   const label = labelFor(motel.name);
   const text = escapeXml(label);
-  const { viewWidth, outputWidth } = markerDimensions(label);
+  const { viewWidth, outputWidth, outputHeight } = markerDimensions(label, motel.plan, platform);
   const center = viewWidth / 2;
-  const svg = `<svg width="${outputWidth}" height="132" viewBox="0 0 ${viewWidth} 94" xmlns="http://www.w3.org/2000/svg">
+  const svg = `<svg width="${outputWidth}" height="${outputHeight}" viewBox="0 0 ${viewWidth} 94" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#111827" flood-opacity=".24"/></filter>
     </defs>

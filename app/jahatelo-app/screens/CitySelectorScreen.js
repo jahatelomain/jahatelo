@@ -49,7 +49,10 @@ const AnimatedCityCard = ({ item, index, onPress }) => {
   }));
 
   return (
-    <Animated.View entering={FadeInRight.delay(index * 80).duration(500).springify()}>
+    <Animated.View
+      key={`city-entry-${item.id || item.name}-${index}`}
+      entering={FadeInRight.delay(index * 90).duration(450)}
+    >
       <TouchableOpacity
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -78,7 +81,10 @@ const AnimatedCityCard = ({ item, index, onPress }) => {
 
 const AnimatedCityAdCard = ({ item, index, onPress }) => {
   return (
-    <Animated.View entering={FadeInRight.delay(index * 80).duration(500).springify()}>
+    <Animated.View
+      key={`city-ad-entry-${item.id}-${index}`}
+      entering={FadeInRight.delay(index * 90).duration(450)}
+    >
       <TouchableOpacity
         onPress={() => onPress(item)}
         activeOpacity={1}
@@ -151,7 +157,7 @@ const AnimatedEmptyState = () => {
 };
 
 const CityCardSkeleton = ({ index }) => (
-  <Animated.View entering={FadeInRight.delay(index * 80).duration(500).springify()}>
+  <Animated.View entering={FadeInRight.delay(index * 90).duration(450)}>
     <View style={styles.cityCardSkeleton}>
       <View style={styles.iconSkeleton} />
       <View style={styles.textSkeleton}>

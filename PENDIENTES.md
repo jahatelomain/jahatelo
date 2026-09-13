@@ -39,6 +39,18 @@
 
 - [ ] **JH-028 — Texto ampliado:** la revisión de código ya retiró cortes de una línea, preserva escalado y scroll en formularios; falta ejecutar y registrar la matriz con el tamaño máximo en dispositivos físicos.
 - [ ] **JH-029 — Lectores de pantalla:** ejecutar la matriz documentada con VoiceOver y TalkBack en dispositivos físicos.
+- [ ] **JH-073 — Cumplimiento de permisos y privacidad en Google Play:** retirar de Android los permisos amplios de cámara/galería que no tienen un uso activo y actualizar la política de privacidad para reflejar proveedores, analítica, identificadores, ubicación, notificaciones y retención reales. Completar después la ficha de Seguridad de datos con esas mismas prácticas.
+- [ ] **JH-074 — Moderación de reseñas para Google Play:** agregar una acción visible para denunciar reseñas, recepción y resolución en SUPERADMIN, y comprobar que la aceptación de términos y las reglas sobre contenido generado por usuarios cumplan la política de UGC.
+- [ ] **JH-075 — Firma de producción para Google Maps Android:** tras subir el primer AAB, agregar a Google Cloud el SHA-1 de Google Play App Signing para Maps y validar el mapa del build distribuido por Play en un Android físico. El SHA-256 de App Links continúa exclusivamente en JH-001.
+- [ ] **JH-076 — Expediente de cumplimiento de exportación de EE.UU.:** documentar el uso exclusivo de cifrado estándar, determinar y conservar la clasificación aplicable (`EAR99`, `5D992.c` o excepción), revisar destinos/personas sancionadas y obtener validación profesional si la clasificación no puede sostenerse internamente.
+- [ ] **JH-077 — Paridad visual y claridad del home en iOS/Android:** corregir las diferencias observadas en dispositivos físicos y reducir elementos sobredimensionados.
+  - Redondear correctamente en iOS el contenedor completo de las tarjetas de moteles destacados.
+  - Restablecer la jerarquía de tamaño de los marcadores según plan y reducir su escala general en Android.
+  - Replicar en iOS la entrada escalonada de las ciudades que actualmente se aprecia mejor en Android.
+  - Aplicar en Android las esquinas inferiores redondeadas del encabezado fotográfico del detalle que ya se ven en iOS.
+  - Separar el acceso al historial de notificaciones de la configuración de preferencias y definir un estado vacío claro.
+  - Reducir aproximadamente a la mitad el espacio superior del encabezado del home en iOS, respetando el área segura.
+  - Sustituir el texto actual “Compará opciones y elegí dónde ir” por “Cientos de opciones para que elijas dónde ir”. No utilizar la palabra “compará”.
 
 ### Panel administrativo
 

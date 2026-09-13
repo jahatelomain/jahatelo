@@ -20,6 +20,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { NavigationProvider, useNavigationContext } from './contexts/NavigationContext';
 import RootNavigation from './navigation/RootNavigation';
 import { initializeNotifications } from './services/notificationService';
+import { storeReceivedNotification } from './services/notificationInboxService';
 import {
   clearStoredStagingCredentials,
   installStagingFetchInterceptor,
@@ -119,8 +120,9 @@ function AppContent() {
     // Inicializar notificaciones push
     const setupNotifications = async () => {
       const { cleanup } = await initializeNotifications({
-        onNotificationReceived: (notification) => {
+        onNotificationReceived: async (notification) => {
           console.log('📬 Notificación recibida:', notification);
+          await storeReceivedNotification(notification);
           const data = notification.request.content.data;
 
           // Mostrar alerta in-app cuando la notificación llega con la app abierta
@@ -140,6 +142,9 @@ function AppContent() {
         },
         onNotificationResponse: (response) => {
           console.log('Usuario interactuó con notificación:', response);
+          storeReceivedNotification(response.notification).catch((error) => {
+            console.error('No se pudo guardar la notificación abierta:', error);
+          });
           const data = response.notification.request.content.data;
           handleNotificationNavigation(data);
         },

@@ -17,6 +17,7 @@ import NearbyMotelsScreen from '../screens/NearbyMotelsScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import NotificationPreferencesScreen from '../screens/NotificationPreferencesScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import PromoHistoryScreen from '../screens/PromoHistoryScreen';
 import RecommendMotelScreen from '../screens/RecommendMotelScreen';
 import ReportMotelScreen from '../screens/ReportMotelScreen';
@@ -40,6 +41,7 @@ export default function RootNavigation() {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="NotificationPreferences" component={NotificationPreferencesScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="PromoHistory" component={PromoHistoryScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen name="MotelList" component={MotelListScreen} />

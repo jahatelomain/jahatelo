@@ -100,7 +100,7 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
   });
 
   const card = (
-    <TouchableOpacity activeOpacity={0.9} onPress={() => onPress?.(motel)}>
+    <TouchableOpacity style={styles.cardClip} activeOpacity={0.9} onPress={() => onPress?.(motel)}>
       <ImageBackground
         source={imageSource}
         style={styles.card}
@@ -204,7 +204,7 @@ const AdCard = ({ ad, onPress, index, scrollX, onTrackView }) => {
 
   return (
     <Animated.View style={[styles.cardWrapper, animatedStyle]}>
-      <TouchableOpacity activeOpacity={0.9} onPress={handlePress}>
+      <TouchableOpacity style={styles.cardClip} activeOpacity={0.9} onPress={handlePress}>
         <ImageBackground
           source={imageSource}
           style={styles.card}
@@ -364,6 +364,16 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     marginRight: SPACING,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  cardClip: {
+    borderRadius: 20,
+    overflow: 'hidden',
   },
   planGlowFrame: {
     padding: 2,
@@ -386,11 +396,6 @@ const styles = StyleSheet.create({
     height: width * 0.5,
     borderRadius: 20,
     overflow: 'hidden',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
   },
   cardImage: {
     borderRadius: 20,
