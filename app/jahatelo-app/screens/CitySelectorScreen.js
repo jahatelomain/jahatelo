@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState, useCallback } from 'react';
+import React, { useMemo, useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,13 +7,13 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
+  Animated as RNAnimated,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   FadeIn,
-  FadeInRight,
   SlideInLeft,
   useSharedValue,
   useAnimatedStyle,
@@ -37,9 +37,40 @@ import MotelCard from '../components/MotelCard';
 const CITY_ENTRY_BASE_DELAY = Platform.OS === 'ios' ? 350 : 0;
 const cityEntryDelay = (index) => CITY_ENTRY_BASE_DELAY + index * 90;
 
+// Las entering animations de Reanimated pueden finalizar durante la transición
+// de navegación o ser omitidas por la virtualización de FlatList en iOS. Esta
+// animación controlada comienza después de montar cada fila y conserva el mismo
+// efecto escalonado en ambas plataformas.
+const useCityEntryStyle = (index) => {
+  const progress = useRef(new RNAnimated.Value(0)).current;
+
+  useEffect(() => {
+    progress.setValue(0);
+    const animation = RNAnimated.timing(progress, {
+      toValue: 1,
+      duration: 450,
+      delay: cityEntryDelay(index),
+      useNativeDriver: true,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [index, progress]);
+
+  return {
+    opacity: progress,
+    transform: [{
+      translateX: progress.interpolate({
+        inputRange: [0, 1],
+        outputRange: [28, 0],
+      }),
+    }],
+  };
+};
+
 // Componente de city card animada
 const AnimatedCityCard = ({ item, index, onPress }) => {
   const scale = useSharedValue(1);
+  const entryStyle = useCityEntryStyle(index);
 
   const handlePressIn = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -55,9 +86,9 @@ const AnimatedCityCard = ({ item, index, onPress }) => {
   }));
 
   return (
-    <Animated.View
+    <RNAnimated.View
       key={`city-entry-${item.id || item.name}-${index}`}
-      entering={FadeInRight.delay(cityEntryDelay(index)).duration(450)}
+      style={entryStyle}
     >
       <TouchableOpacity
         onPressIn={handlePressIn}
@@ -81,15 +112,17 @@ const AnimatedCityCard = ({ item, index, onPress }) => {
           <Ionicons name="chevron-forward" size={20} color={COLORS.muted} />
         </Animated.View>
       </TouchableOpacity>
-    </Animated.View>
+    </RNAnimated.View>
   );
 };
 
 const AnimatedCityAdCard = ({ item, index, onPress }) => {
+  const entryStyle = useCityEntryStyle(index);
+
   return (
-    <Animated.View
+    <RNAnimated.View
       key={`city-ad-entry-${item.id}-${index}`}
-      entering={FadeInRight.delay(cityEntryDelay(index)).duration(450)}
+      style={entryStyle}
     >
       <TouchableOpacity
         onPress={() => onPress(item)}
@@ -111,7 +144,7 @@ const AnimatedCityAdCard = ({ item, index, onPress }) => {
           <Ionicons name="chevron-forward" size={20} color={COLORS.muted} />
         </Animated.View>
       </TouchableOpacity>
-    </Animated.View>
+    </RNAnimated.View>
   );
 };
 
@@ -162,17 +195,21 @@ const AnimatedEmptyState = () => {
   );
 };
 
-const CityCardSkeleton = ({ index }) => (
-  <Animated.View entering={FadeInRight.delay(cityEntryDelay(index)).duration(450)}>
-    <View style={styles.cityCardSkeleton}>
-      <View style={styles.iconSkeleton} />
-      <View style={styles.textSkeleton}>
-        <View style={styles.lineSkeleton} />
-        <View style={styles.lineSkeletonShort} />
+const CityCardSkeleton = ({ index }) => {
+  const entryStyle = useCityEntryStyle(index);
+
+  return (
+    <RNAnimated.View style={entryStyle}>
+      <View style={styles.cityCardSkeleton}>
+        <View style={styles.iconSkeleton} />
+        <View style={styles.textSkeleton}>
+          <View style={styles.lineSkeleton} />
+          <View style={styles.lineSkeletonShort} />
+        </View>
       </View>
-    </View>
-  </Animated.View>
-);
+    </RNAnimated.View>
+  );
+};
 
 export default function CitySelectorScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();

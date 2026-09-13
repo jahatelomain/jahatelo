@@ -81,5 +81,10 @@ xcodebuild \
 
 test -f "$APP_PATH/Info.plist"
 test -f "$APP_PATH/main.jsbundle"
+BUILT_GOOGLE_MAPS_KEY="$(/usr/libexec/PlistBuddy -c 'Print :GoogleMapsApiKey' "$APP_PATH/Info.plist" 2>/dev/null || true)"
+if [[ -z "$BUILT_GOOGLE_MAPS_KEY" || "$BUILT_GOOGLE_MAPS_KEY" == *'$('* ]]; then
+  echo "El build iOS no contiene una clave válida de Google Maps; se cancela la instalación para evitar un cierre al abrir el mapa."
+  exit 1
+fi
 xcrun devicectl device install app --device "$DEVICE_ID" "$APP_PATH"
 xcrun devicectl device process launch --device "$DEVICE_ID" --terminate-existing app.jahatelo.mobile

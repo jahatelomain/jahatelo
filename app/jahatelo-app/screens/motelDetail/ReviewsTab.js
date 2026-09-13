@@ -29,13 +29,30 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
     refreshing,
     loadingMore,
     submitting,
+    reportingId,
     userCanReview,
     cooldownMessage,
     loadMore: handleLoadMore,
     deleteReview: handleDeleteReview,
     submitReview,
+    reportReview,
     refresh,
   } = useReviews({ motelId: motel?.id, isAuthenticated, token });
+
+  const handleReportReview = (reviewId) => {
+    if (!isAuthenticated) {
+      showMessage('Inicia sesión', 'Necesitas una cuenta para denunciar una reseña.', [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Iniciar sesión', onPress: () => navigation.navigate('Login') },
+      ]);
+      return;
+    }
+    showMessage('Denunciar reseña', 'Indica el motivo principal de la denuncia.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Spam o engaño', onPress: () => reportReview(reviewId, 'REVIEW_SPAM') },
+      { text: 'Contenido inapropiado', style: 'destructive', onPress: () => reportReview(reviewId, 'REVIEW_OFFENSIVE') },
+    ]);
+  };
 
   const handleSubmitReview = async () => {
     if (!isAuthenticated) {
@@ -294,6 +311,20 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
                           accessibilityLabel="Eliminar reseña"
                         >
                           <Ionicons name="trash-outline" size={16} color={STATUS_COLORS.danger} />
+                        </TouchableOpacity>
+                      )}
+                      {!isOwn && (
+                        <TouchableOpacity
+                          onPress={() => handleReportReview(review.id)}
+                          style={styles.deleteButton}
+                          activeOpacity={0.7}
+                          disabled={reportingId === review.id}
+                          accessibilityRole="button"
+                          accessibilityLabel="Denunciar reseña"
+                        >
+                          {reportingId === review.id
+                            ? <ActivityIndicator size="small" color={COLORS.textLight} />
+                            : <Ionicons name="flag-outline" size={16} color={COLORS.textLight} />}
                         </TouchableOpacity>
                       )}
                     </View>

@@ -38,8 +38,9 @@ export default function PrivacyPage() {
               <ul className="list-disc pl-6 text-slate-700 space-y-2">
                 <li><strong>Datos de uso:</strong> páginas visitadas, clics, tiempo en la plataforma</li>
                 <li><strong>Información del dispositivo:</strong> tipo de dispositivo, sistema operativo, navegador</li>
-                <li><strong>Ubicación:</strong> ubicación aproximada basada en IP o GPS (con su permiso)</li>
-                <li><strong>Cookies:</strong> identificadores únicos, preferencias (ver sección 7)</li>
+                <li><strong>Ubicación:</strong> ubicación aproximada basada en IP y ubicación precisa del dispositivo únicamente mientras usa funciones cercanas o el mapa y concede el permiso correspondiente</li>
+                <li><strong>Identificadores técnicos:</strong> identificadores aleatorios de navegador o instalación, dirección IP y datos de sesión; Jahatelo no accede al IMEI, número de serie ni dirección MAC</li>
+                <li><strong>Cookies y almacenamiento local:</strong> sesión, preferencias y medición de uso (ver sección 7)</li>
               </ul>
 
               <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">2.3 Información de terceros:</h3>
@@ -84,8 +85,9 @@ export default function PrivacyPage() {
                 <li><strong>Hosting:</strong> Vercel (infraestructura web)</li>
                 <li><strong>Base de datos:</strong> Neon/Vercel Postgres</li>
                 <li><strong>Almacenamiento:</strong> Cloudinary (imágenes)</li>
+                <li><strong>Mapas y ubicación:</strong> Google Maps Platform</li>
                 <li><strong>Notificaciones:</strong> Expo Push Notifications</li>
-                <li><strong>Analytics:</strong> Google Analytics, Sentry (monitoreo de errores)</li>
+                <li><strong>Analítica:</strong> medición propia de eventos de navegación y Google Analytics en la web</li>
               </ul>
 
               <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">5.2 Otros usuarios:</h3>
@@ -131,7 +133,7 @@ export default function PrivacyPage() {
                 <li><strong>Esenciales:</strong> mantener sesión, seguridad (no se pueden deshabilitar)</li>
                 <li><strong>Funcionales:</strong> recordar preferencias, idioma</li>
                 <li><strong>Analytics:</strong> entender el uso de la plataforma mediante un identificador aleatorio de navegador o instalación y sesiones de navegación; no recopilamos IMEI, número de serie ni dirección MAC</li>
-                <li><strong>Marketing:</strong> mostrar anuncios relevantes (con consentimiento)</li>
+                <li><strong>Promociones:</strong> medir la interacción con moteles y promociones destacadas dentro de Jahatelo</li>
               </ul>
 
               <p className="text-slate-700 leading-relaxed mt-4">
@@ -161,7 +163,7 @@ export default function PrivacyPage() {
               </p>
               <ul className="list-disc pl-6 text-slate-700 space-y-2 mt-4">
                 <li><strong>Cuentas activas:</strong> mientras use la plataforma</li>
-                <li><strong>Cuentas eliminadas:</strong> 30 días (periodo de recuperación)</li>
+                <li><strong>Solicitudes de eliminación:</strong> se procesan según los pasos y plazos informados en la página de eliminación de cuenta y datos</li>
                 <li><strong>Datos de facturación:</strong> 5 años (requisito legal)</li>
                 <li><strong>Logs de seguridad:</strong> 12 meses</li>
                 <li><strong>Eventos de analytics:</strong> hasta 90 días; pueden vincularse a su cuenta únicamente cuando inicia sesión</li>
@@ -196,7 +198,7 @@ export default function PrivacyPage() {
                 <li>Avisos de mantenimiento</li>
               </ul>
               <p className="text-slate-700 leading-relaxed mt-4">
-                Puede gestionar preferencias en: App → Perfil → Notificaciones
+                Puede gestionar el permiso desde la configuración de su dispositivo y sus preferencias desde la sección de notificaciones de Jahatelo.
               </p>
             </section>
 

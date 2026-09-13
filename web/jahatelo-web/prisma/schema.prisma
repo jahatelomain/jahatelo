@@ -153,6 +153,11 @@ enum MotelReportReason {
   LOCATION_OR_CONTACT
   CLOSED
   INFORMATION
+  REVIEW_SPAM
+  REVIEW_OFFENSIVE
+  REVIEW_PRIVACY
+  REVIEW_FALSE
+  REVIEW_OTHER
   OTHER
 }
 
@@ -483,6 +488,7 @@ model Review {
   isVerified  Boolean   @default(false) // True si el usuario está verificado
   isAnonymous Boolean   @default(false) // True si la review es anónima
   likes       Int       @default(0) // Para futuro: sistema de likes
+  reports     MotelReport[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -541,26 +547,29 @@ model User {
 }
 
 model MotelReport {
-  id        String            @id @default(cuid())
-  motel     Motel             @relation(fields: [motelId], references: [id], onDelete: Cascade)
-  motelId   String
-  user      User?             @relation("MotelReportReporter", fields: [userId], references: [id], onDelete: SetNull)
-  userId    String?
-  assignedTo User?            @relation("MotelReportAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
-  assignedToId String?
-  reason    MotelReportReason
-  comment   String?
-  status    MotelReportStatus @default(PENDING)
+  id                String            @id @default(cuid())
+  motel             Motel             @relation(fields: [motelId], references: [id], onDelete: Cascade)
+  motelId           String
+  review            Review?           @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+  reviewId          String?
+  user              User?             @relation("MotelReportReporter", fields: [userId], references: [id], onDelete: SetNull)
+  userId            String?
+  assignedTo        User?             @relation("MotelReportAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedToId      String?
+  reason            MotelReportReason
+  comment           String?
+  status            MotelReportStatus @default(PENDING)
   resolutionSummary String?
-  resolvedAt DateTime?
-  notes     MotelReportNote[]
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  resolvedAt        DateTime?
+  notes             MotelReportNote[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
   @@index([status, createdAt])
   @@index([motelId, createdAt])
   @@index([userId, createdAt])
   @@index([assignedToId, status])
+  @@index([reviewId, status])
 }
 
 model MotelReportNote {
@@ -860,7 +869,7 @@ model MotelAnalytics {
   eventId   String?            @unique
   deviceId  String?
   sessionId String?
-  environment String           @default("production")
+  environment String             @default("production")
 
   // Metadatos del evento
   source      String? // 'MAP', 'LIST', 'SEARCH', 'HOME', 'DETAIL'

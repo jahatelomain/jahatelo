@@ -39,12 +39,11 @@
 
 - [ ] **JH-028 — Texto ampliado:** la revisión de código ya retiró cortes de una línea, preserva escalado y scroll en formularios; falta ejecutar y registrar la matriz con el tamaño máximo en dispositivos físicos.
 - [ ] **JH-029 — Lectores de pantalla:** ejecutar la matriz documentada con VoiceOver y TalkBack en dispositivos físicos.
-- [ ] **JH-073 — Cumplimiento de permisos y privacidad en Google Play:** retirar de Android los permisos amplios de cámara/galería que no tienen un uso activo y actualizar la política de privacidad para reflejar proveedores, analítica, identificadores, ubicación, notificaciones y retención reales. Completar después la ficha de Seguridad de datos con esas mismas prácticas.
-- [ ] **JH-074 — Moderación de reseñas para Google Play:** agregar una acción visible para denunciar reseñas, recepción y resolución en SUPERADMIN, y comprobar que la aceptación de términos y las reglas sobre contenido generado por usuarios cumplan la política de UGC.
+- [ ] **JH-073 — Cumplimiento de permisos y privacidad en Google Play:** los permisos Android amplios de cámara/galería sin uso fueron retirados y la política pública ya refleja ubicación, identificadores, proveedores, analítica, notificaciones y retención reales. Falta completar y validar externamente la ficha de Seguridad de datos de Google Play con estas mismas prácticas.
 - [ ] **JH-075 — Firma de producción para Google Maps Android:** tras subir el primer AAB, agregar a Google Cloud el SHA-1 de Google Play App Signing para Maps y validar el mapa del build distribuido por Play en un Android físico. El SHA-256 de App Links continúa exclusivamente en JH-001.
 - [ ] **JH-076 — Expediente de cumplimiento de exportación de EE.UU.:** documentar el uso exclusivo de cifrado estándar, determinar y conservar la clasificación aplicable (`EAR99`, `5D992.c` o excepción), revisar destinos/personas sancionadas y obtener validación profesional si la clasificación no puede sostenerse internamente.
 - [ ] **JH-077 — Paridad visual y claridad del home en iOS/Android:** implementación integrada en `main` mediante PR #102 y rebuild iOS/Android completado; falta la confirmación visual final en dispositivos físicos antes de cerrarlo.
-  - Redondear correctamente en iOS el contenedor completo de las tarjetas de moteles destacados.
+  - Redondear correctamente en iOS el contenedor completo de todas las tarjetas Diamond: destacados, Favoritos, búsqueda, cercanos, listados por ciudad y secciones horizontales del home.
   - Restablecer la jerarquía de tamaño de los marcadores según plan y reducir su escala general en Android.
   - Replicar en iOS la entrada escalonada de las ciudades que actualmente se aprecia mejor en Android.
   - Aplicar en Android las esquinas inferiores redondeadas del encabezado fotográfico del detalle que ya se ven en iOS.
@@ -64,6 +63,10 @@
 - [ ] **JH-002 — Sentry:** pausado por decisión de producto hasta disponer de presupuesto para el servicio.
 
 ## Completados
+
+### 2026-09-13
+
+- [x] **JH-074 — Moderación de reseñas para Google Play:** web, iOS y Android permiten denunciar reseñas ajenas; el backend exige autenticación, evita duplicados y entrega cada caso a la bandeja exclusiva de SUPERADMIN. La administración puede investigar, asignar, documentar, descartar o eliminar la reseña conservando el historial del reporte, y los términos públicos incorporan las normas y el proceso de moderación de contenido generado por usuarios.
 
 ### 2026-09-12
 

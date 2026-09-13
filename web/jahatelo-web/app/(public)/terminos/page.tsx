@@ -83,6 +83,17 @@ export default function TermsPage() {
                 Nos reservamos el derecho de revisar, editar o eliminar cualquier contenido que viole estos
                 términos o que consideremos inapropiado, sin previo aviso.
               </p>
+
+              <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">5.3 Denuncias y normas de la comunidad</h3>
+              <p className="text-slate-700 leading-relaxed mb-4">
+                Puede denunciar una reseña desde la propia publicación. No se permite contenido ilegal,
+                amenazante, discriminatorio, sexualmente explícito, engañoso, repetitivo, ajeno a la experiencia
+                reseñada ni contenido que exponga datos personales de terceros.
+              </p>
+              <p className="text-slate-700 leading-relaxed">
+                El equipo administrador evaluará cada denuncia y podrá descartarla, eliminar la reseña o aplicar
+                medidas sobre la cuenta responsable. La denuncia no implica la eliminación automática del contenido.
+              </p>
             </section>
 
             <section>

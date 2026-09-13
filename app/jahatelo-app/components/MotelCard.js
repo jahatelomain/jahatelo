@@ -311,7 +311,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 4,
-    overflow: 'visible',
+    // LinearGradient no respeta el radio exterior en iOS si el contenido
+    // animado puede dibujarse fuera del contenedor.
+    overflow: 'hidden',
   },
   diamondFrameInner: {
     borderRadius: 16,

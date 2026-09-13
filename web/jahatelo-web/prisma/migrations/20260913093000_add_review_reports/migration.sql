@@ -1,0 +1,14 @@
+ALTER TYPE "MotelReportReason" ADD VALUE IF NOT EXISTS 'REVIEW_SPAM';
+ALTER TYPE "MotelReportReason" ADD VALUE IF NOT EXISTS 'REVIEW_OFFENSIVE';
+ALTER TYPE "MotelReportReason" ADD VALUE IF NOT EXISTS 'REVIEW_PRIVACY';
+ALTER TYPE "MotelReportReason" ADD VALUE IF NOT EXISTS 'REVIEW_FALSE';
+ALTER TYPE "MotelReportReason" ADD VALUE IF NOT EXISTS 'REVIEW_OTHER';
+
+ALTER TABLE "MotelReport" ADD COLUMN "reviewId" TEXT;
+
+CREATE INDEX "MotelReport_reviewId_status_idx" ON "MotelReport"("reviewId", "status");
+
+ALTER TABLE "MotelReport"
+ADD CONSTRAINT "MotelReport_reviewId_fkey"
+FOREIGN KEY ("reviewId") REFERENCES "Review"("id")
+ON DELETE SET NULL ON UPDATE CASCADE;

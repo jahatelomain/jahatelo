@@ -20,7 +20,10 @@ export async function GET(request: NextRequest) {
     ...(status && status !== 'ALL' ? { status: status as Prisma.EnumMotelReportStatusFilter } : {}),
     ...(reason && reason !== 'ALL' ? { reason: reason as Prisma.EnumMotelReportReasonFilter } : {}),
     ...(assignedToId === 'UNASSIGNED' ? { assignedToId: null } : assignedToId ? { assignedToId } : {}),
-    ...(query ? { motel: { name: { contains: query, mode: 'insensitive' } } } : {}),
+    ...(query ? { OR: [
+      { motel: { name: { contains: query, mode: 'insensitive' } } },
+      { review: { comment: { contains: query, mode: 'insensitive' } } },
+    ] } : {}),
   };
 
   const [reports, total, grouped, assignees] = await Promise.all([
@@ -31,6 +34,7 @@ export async function GET(request: NextRequest) {
       take: pageSize,
       include: {
         motel: { select: { id: true, name: true, city: true } },
+        review: { select: { id: true, score: true, comment: true, createdAt: true, isAnonymous: true, user: { select: { id: true, name: true, email: true } } } },
         user: { select: { id: true, name: true, email: true } },
         assignedTo: { select: { id: true, name: true, email: true } },
         notes: { orderBy: { createdAt: 'desc' }, include: { author: { select: { id: true, name: true, email: true } } } },
