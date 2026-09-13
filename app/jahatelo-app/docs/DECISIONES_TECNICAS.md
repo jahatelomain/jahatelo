@@ -39,6 +39,17 @@ Cada baja o sustitución debe indicar:
 - **Condiciones para reconsiderarlo:** presupuesto aprobado, cuenta activa, responsable operativo, política de retención y privacidad revisada, filtrado de datos sensibles, alertas definidas y pruebas de recepción en staging y producción.
 - **No hacer:** reinstalar el paquete o copiar configuraciones históricas sin completar primero esas condiciones.
 
+## DT-003 — Splash nativo Android sin logotipo intermedio
+
+- **Estado:** activo.
+- **Fecha:** 13 de septiembre de 2026.
+- **Alcance:** aplicación Android, arranque en frío.
+- **Qué cambió:** el splash obligatorio del sistema conserva el fondo blanco, pero usa un recurso transparente antes de montar el splash animado de Jahatelo.
+- **Motivo:** Android 12 o posterior siempre presenta una pantalla nativa de arranque. Mostrar allí el icono y luego iniciar la animación generaba dos apariciones distintas del logo, a diferencia del flujo continuo de iOS.
+- **Alternativa vigente:** transición de fondo blanco directamente al splash animado compartido. Un plugin local reaplica el recurso transparente cuando Expo regenera el proyecto Android.
+- **Condiciones para reconsiderarlo:** sustituirlo solo si el splash animado deja de existir o si una nueva implementación nativa permite una continuidad visual comprobada en Android físico.
+- **No hacer:** volver a configurar `splashscreen_logo` como `windowSplashScreenAnimatedIcon` sin revisar el doble logo en un arranque en frío.
+
 ## Plantilla
 
 ### DT-XXX — Título de la decisión

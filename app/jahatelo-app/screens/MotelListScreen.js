@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ImageBackground,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,6 +42,23 @@ const PROMO_RADIUS_OPTIONS = [
   { value: null, label: 'Todos' },
   { value: 'PROMOS_BY_CITY', label: 'Ver promos por ciudad' },
 ];
+
+const PROMO_LOCATION_TIMEOUT_MS = 8000;
+
+const withTimeout = (promise, timeoutMs) =>
+  new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => reject(new Error('LOCATION_TIMEOUT')), timeoutMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timeoutId);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      }
+    );
+  });
 
 // Componente wrapper para cada card con animación de entrada escalonada
 const AnimatedMotelCard = ({ item, index, onPress }) => {
@@ -150,17 +168,22 @@ export default function MotelListScreen({ route, navigation }) {
   const headerPaddingTop = insets.top + 12;
   const [selectedAd, setSelectedAd] = useState(null);
   const [showAdDetailModal, setShowAdDetailModal] = useState(false);
-  const [displayMotels, setDisplayMotels] = useState(motels);
+  // Las promos cercanas parten vacías: no mostramos resultados fuera del radio
+  // mientras Android todavía está resolviendo la ubicación.
+  const [displayMotels, setDisplayMotels] = useState(isPromosList ? [] : motels);
   const [selectedRadius, setSelectedRadius] = useState(10);
   const [showRadiusModal, setShowRadiusModal] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
+  const [isResolvingPromoLocation, setIsResolvingPromoLocation] = useState(isPromosList);
 
   // Cargar anuncios de lista
   const { ads: listAds, trackAdEvent } = useAdvertisements('LIST_INLINE');
 
   useEffect(() => {
-    setDisplayMotels(motels);
-  }, [motels]);
+    if (!isPromosList) {
+      setDisplayMotels(motels);
+    }
+  }, [isPromosList, motels]);
 
   useEffect(() => {
     if (!isPromosList) return;
@@ -175,6 +198,9 @@ export default function MotelListScreen({ route, navigation }) {
   }, [selectedRadius, userLocation, motels]);
 
   const loadPromoNearby = async () => {
+    let resolvedWithRecentLocation = false;
+    setIsResolvingPromoLocation(true);
+    setDisplayMotels([]);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
@@ -184,19 +210,48 @@ export default function MotelListScreen({ route, navigation }) {
         );
         setSelectedRadius(null);
         setDisplayMotels(motels);
+        setIsResolvingPromoLocation(false);
         return;
       }
 
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
+      // Android puede tardar decenas de segundos en obtener un GPS nuevo. Una
+      // ubicación reciente permite aplicar el filtro de inmediato y luego se
+      // reemplaza silenciosamente por la lectura actual.
+      const recentLocation = await Location.getLastKnownPositionAsync({
+        maxAge: 5 * 60 * 1000,
+        requiredAccuracy: 2000,
       });
+
+      if (recentLocation?.coords) {
+        resolvedWithRecentLocation = true;
+        const recentCoords = {
+          latitude: recentLocation.coords.latitude,
+          longitude: recentLocation.coords.longitude,
+        };
+        setUserLocation(recentCoords);
+        applyPromoRadius(selectedRadius, recentCoords, motels);
+        setIsResolvingPromoLocation(false);
+      }
+
+      const location = await withTimeout(
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+        PROMO_LOCATION_TIMEOUT_MS
+      );
       const { latitude, longitude } = location.coords;
       setUserLocation({ latitude, longitude });
       applyPromoRadius(selectedRadius, { latitude, longitude }, motels);
+      setIsResolvingPromoLocation(false);
     } catch (error) {
       console.error('Error obteniendo ubicación:', error);
-      setSelectedRadius(null);
-      setDisplayMotels(motels);
+      // Si ya filtramos con una ubicación reciente, conservamos ese resultado.
+      // Si no había ninguna, no exponemos promos fuera del radio por defecto.
+      setIsResolvingPromoLocation(false);
+      if (!resolvedWithRecentLocation) {
+        showMessage(
+          'No pudimos obtener tu ubicación',
+          'Intenta nuevamente o selecciona "Todos" para ver todas las promociones.'
+        );
+      }
     }
   };
 
@@ -288,6 +343,12 @@ export default function MotelListScreen({ route, navigation }) {
           )}
         </Animated.View>
 
+        {isResolvingPromoLocation ? (
+          <View style={styles.locationLoading} accessibilityRole="progressbar">
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.locationLoadingText}>Buscando promociones cerca tuyo...</Text>
+          </View>
+        ) : (
         <FlatList
           data={mixedItems}
           keyExtractor={(item, index) => `${item.type}-${item.data.id || item.data.slug || index}`}
@@ -327,6 +388,7 @@ export default function MotelListScreen({ route, navigation }) {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={<AnimatedEmptyState />}
         />
+        )}
       </View>
 
       <AdDetailModal
@@ -469,6 +531,16 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 24,
+  },
+  locationLoading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  locationLoadingText: {
+    color: COLORS.textLight,
+    fontSize: 14,
   },
   modalOverlay: {
     flex: 1,

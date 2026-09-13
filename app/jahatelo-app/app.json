@@ -140,7 +140,8 @@
             }
           }
         }
-      ]
+      ],
+      "./plugins/withAndroidTransparentSplashIcon"
     ],
     "experiments": {
       "typedRoutes": true,
