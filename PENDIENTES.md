@@ -19,6 +19,7 @@
 - [ ] **JH-069 — Validación real de autenticación y uploads:** código integrado y publicado en producción por PR #99, merge `0190a42`; Vercel Ready. Google/sesiones 49/49 y admin/uploads 29/29, typechecks correctos. Home y catálogo HTTP 200; Google sin ID token y upload sin sesión HTTP 401 con Origin válido. Pendiente login Google real, subida autenticada y distribución de app actualizada. JWT_SECRET y audiences móviles configurados; requiere nuevo login. Detalle: `web/jahatelo-web/tests/SECURITY-CHECKPOINT.md`.
 - [ ] **JH-070 — Revalidar hallazgos de seguridad y sesión sobre la versión actual:** comprobar autorización y propiedad de push tokens, cron sin secreto, límites de login móvil, secreto de verificación de email, contexto OTP/reenvío de email y logout por fallo de red. Los hallazgos originales se hicieron sobre una copia antigua; no asumir que siguen vigentes.
 - [ ] **JH-071 — Revalidar concurrencia de promociones y entrega push:** comprobar cupos/canje atómico, inicio de vigencia, duplicados, reintentos y frecuencia de programación sobre la versión actual. Corregir únicamente problemas reproducidos.
+- [ ] **JH-078 — Dependencias transitivas sin corrección compatible:** la web ya actualizó Next, Sharp, Nodemailer, AWS y demás correcciones seguras; quedan tres avisos altos en `deepmerge-ts` de Prisma CLI. La app conserva avisos dentro de Expo/Metro cuya salida automática exige migrar de Expo 54 a 57. No aplicar `npm audit fix --force`: planificar y probar ambas migraciones mayores, reconstruir iOS/Android y repetir las auditorías.
 
 ### Preparación para producción
 
@@ -60,7 +61,7 @@
 
 ## En pausa
 
-- [ ] **JH-002 — Sentry:** pausado por decisión de producto hasta disponer de presupuesto para el servicio.
+- [ ] **JH-002 — Observabilidad externa:** Sentry fue retirado por completo de web y apps mientras no exista presupuesto ni operación real. Reconsiderar una herramienta externa solo con proveedor, costos, responsable, privacidad y alertas definidos; decisión registrada en `DT-002`.
 
 ## Completados
 

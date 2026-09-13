@@ -15,7 +15,12 @@ export function clientHarness(response: object) {
     createContext: () => ({ Provider: 'Provider' }),
     useContext: () => context,
   };
-  const native = { Platform: { OS: 'ios' }, StyleSheet: { create: (x: unknown) => x }, Alert: { alert: jest.fn() } };
+  const native = {
+    Platform: { OS: 'ios' },
+    StyleSheet: { create: (x: unknown) => x },
+    Alert: { alert: jest.fn() },
+    InteractionManager: { runAfterInteractions: (callback: () => void) => callback() },
+  };
   const stubs: Record<string, unknown> = {
     react: react,
     'react/jsx-runtime': { jsx: (type: unknown, props: unknown) => ({ type, props }), jsxs: (type: unknown, props: unknown) => ({ type, props }) },
@@ -40,7 +45,6 @@ export function clientHarness(response: object) {
     const code = ts.transpileModule(source, { fileName: filename.endsWith('.js') ? filename + 'x' : filename, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
     const localRequire = (id: string): unknown => {
       if (id in stubs) return stubs[id];
-      if (id.endsWith('/sentryService')) return { setSentryUser: () => {} };
       if (id.endsWith('/apiBaseUrl')) return { getApiRoot: () => 'https://local.test' };
       if (id.endsWith('/theme')) return { COLORS: {} };
       if (id.startsWith('.')) return load(path.resolve(path.dirname(filename), id + '.js'));
@@ -57,7 +61,9 @@ export function clientHarness(response: object) {
       const provider = load(app + '/contexts/AuthContext.js').AuthProvider({ children: null });
       context = provider.props.value;
       effects.length = 0; // Do not run unrelated bootstrap/profile refresh.
-      return load(app + '/screens/LoginScreen.js').default({ navigation: { goBack: () => {} } });
+      return load(app + '/screens/LoginScreen.js').default({
+        navigation: { isFocused: () => true, goBack: () => {} },
+      });
     },
   };
 }

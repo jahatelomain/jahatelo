@@ -1057,62 +1057,9 @@ Implementar error tracking y logs estructurados
 
 ---
 
-### 4.1 Configurar Sentry (4 horas)
+### 4.1 Observabilidad externa
 
-```bash
-npm install @sentry/nextjs
-npx @sentry/wizard@latest -i nextjs
-```
-
-**Archivo:** `web/jahatelo-web/sentry.client.config.ts`
-
-```typescript
-import * as Sentry from '@sentry/nextjs';
-
-Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  environment: process.env.NODE_ENV,
-  tracesSampleRate: 0.1,
-  debug: false,
-
-  beforeSend(event, hint) {
-    // No enviar errores de desarrollo
-    if (process.env.NODE_ENV === 'development') {
-      return null;
-    }
-    return event;
-  },
-
-  integrations: [
-    new Sentry.BrowserTracing(),
-    new Sentry.Replay({
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
-  ],
-});
-```
-
-**Archivo:** `web/jahatelo-web/sentry.server.config.ts`
-
-```typescript
-import * as Sentry from '@sentry/nextjs';
-
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  environment: process.env.NODE_ENV,
-  tracesSampleRate: 0.1,
-
-  beforeSend(event, hint) {
-    // Filtrar información sensible
-    if (event.request?.headers) {
-      delete event.request.headers['authorization'];
-      delete event.request.headers['cookie'];
-    }
-    return event;
-  },
-});
-```
+Sentry fue retirado de web y apps por decisión de producto. No instalar un SDK de monitoreo hasta cumplir las condiciones de `DT-002` en `app/jahatelo-app/docs/DECISIONES_TECNICAS.md`. La alternativa vigente se documenta en `web/jahatelo-web/MONITORING-SETUP.md`.
 
 ---
 
@@ -1261,7 +1208,7 @@ export async function GET() {
 
 ### 4.4 Alertas Críticas (2 horas)
 
-**Configurar alertas en Sentry:**
+**Configurar alertas en el proveedor operativo aprobado:**
 
 1. Settings → Alerts
 2. Crear alerta: "Error Rate Spike"
@@ -1353,10 +1300,10 @@ checkCriticalMetrics();
 
 ### Monitoring ✅
 ```
-[ ] Sentry configurado y recibiendo eventos
+[ ] Proveedor externo aprobado y operativo, o excepción `DT-002` vigente
 [ ] Logs estructurados implementados
 [ ] UptimeRobot monitoreando /api/health
-[ ] Alertas de Sentry configuradas
+[ ] Alertas del proveedor operativo configuradas
 [ ] Health check endpoint funcionando
 ```
 
@@ -1402,7 +1349,7 @@ npx prisma studio         # DB GUI
 - [Zod Documentation](https://zod.dev)
 - [Jest Testing](https://jestjs.io/docs/getting-started)
 - [Playwright E2E](https://playwright.dev/docs/intro)
-- [Sentry Next.js](https://docs.sentry.io/platforms/javascript/guides/nextjs/)
+- [Decisión de observabilidad vigente](app/jahatelo-app/docs/DECISIONES_TECNICAS.md)
 
 ### Herramientas de Testing
 - [SecurityHeaders.com](https://securityheaders.com) - Verificar headers

@@ -698,7 +698,7 @@ Buscar errores de notificaciones:
 vercel logs --app jahatelo | grep "Error sending push"
 ```
 
-### 2. Métricas Recomendadas (Sentry/Analytics)
+### 2. Métricas recomendadas (logs y analytics vigentes)
 
 Trackear:
 - `push_notification_sent` - Total enviadas
@@ -721,7 +721,7 @@ El admin panel ya tiene sección de notificaciones en:
 
 ### 4. Alertas Recomendadas
 
-Configurar alertas (ej: en Sentry) para:
+Configurar alertas en el proveedor operativo aprobado para:
 - **Alta tasa de fallos:** `totalFailed / totalSent > 0.2` (>20% fallos)
 - **Sin envíos:** No se procesaron notificaciones en últimas 24 horas (cron job parado)
 - **Muchos tokens inválidos:** >100 tokens desactivados en 1 hora
@@ -739,7 +739,7 @@ Antes de ir a producción, verificar:
 - [ ] Endpoint `/api/cron/process-notifications` protegido con CRON_SECRET
 - [ ] Políticas de categorías implementadas (advertising respeta preferencias)
 - [ ] Rate limiting considerado (batching si se espera > 600 requests/hora)
-- [ ] Logs y monitoreo configurados (Sentry/Vercel Logs)
+- [ ] Logs y monitoreo configurados según `MONITORING-SETUP.md`
 - [ ] Horarios de envío validados (evitar notificaciones nocturnas publicitarias)
 - [ ] Frecuencia de notificaciones limitada por usuario
 - [ ] Plan de escalabilidad (considerar plan paid de Expo si es necesario)
