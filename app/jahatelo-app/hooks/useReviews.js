@@ -15,6 +15,7 @@ export default function useReviews({ motelId, isAuthenticated, token }) {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [reportingId, setReportingId] = useState(null);
   const [userCanReview, setUserCanReview] = useState(true);
   const [cooldownMessage, setCooldownMessage] = useState('');
 
@@ -189,6 +190,35 @@ export default function useReviews({ motelId, isAuthenticated, token }) {
     }
   }, [checkUserCanReview, loadReviews, motelId, token]);
 
+  const reportReview = useCallback(async (reviewId, reason) => {
+    if (!token) return false;
+    try {
+      setReportingId(reviewId);
+      const response = await fetch(`${API_URL}/api/mobile/reviews/report`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reviewId, reason }),
+      });
+      const data = isJsonResponse(response) ? await response.json() : {};
+      if (!response.ok) {
+        Alert.alert('No se pudo enviar la denuncia', data.error || 'Intenta nuevamente.');
+        return false;
+      }
+      Alert.alert('Denuncia recibida', data.alreadyReported
+        ? 'Esta reseña ya tiene una denuncia tuya en revisión.'
+        : 'Nuestro equipo revisará la reseña. Gracias por informarnos.');
+      return true;
+    } catch {
+      Alert.alert('No se pudo enviar la denuncia', 'Verifica tu conexión e intenta nuevamente.');
+      return false;
+    } finally {
+      setReportingId(null);
+    }
+  }, [token]);
+
   return {
     reviews,
     total,
@@ -196,11 +226,13 @@ export default function useReviews({ motelId, isAuthenticated, token }) {
     refreshing,
     loadingMore,
     submitting,
+    reportingId,
     userCanReview,
     cooldownMessage,
     refresh,
     loadMore,
     deleteReview,
     submitReview,
+    reportReview,
   };
 }

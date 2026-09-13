@@ -22,6 +22,8 @@ export default function ReviewsList({ motelId }: { motelId: string }) {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [reportingId, setReportingId] = useState<string | null>(null);
+  const [submittingReport, setSubmittingReport] = useState(false);
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -80,6 +82,26 @@ export default function ReviewsList({ motelId }: { motelId: string }) {
       toast.error(error instanceof Error ? error.message : 'No se pudo eliminar la reseña');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const reportReview = async (reviewId: string, reason: 'REVIEW_SPAM' | 'REVIEW_OFFENSIVE') => {
+    setSubmittingReport(true);
+    try {
+      const response = await fetch('/api/mobile/reviews/report', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reviewId, reason }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'No se pudo enviar la denuncia');
+      toast.success(data.alreadyReported ? 'Esta denuncia ya está en revisión' : 'Denuncia recibida');
+      setReportingId(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo enviar la denuncia');
+    } finally {
+      setSubmittingReport(false);
     }
   };
 
@@ -143,6 +165,21 @@ export default function ReviewsList({ motelId }: { motelId: string }) {
               >
                 {deletingId === review.id ? 'Eliminando...' : 'Eliminar mi reseña'}
               </button>
+            )}
+            {!review.isOwn && reportingId !== review.id && (
+              <button type="button" onClick={() => setReportingId(review.id)} className="mt-3 text-xs font-semibold text-slate-500 hover:text-red-700">
+                Denunciar reseña
+              </button>
+            )}
+            {!review.isOwn && reportingId === review.id && (
+              <div className="mt-3 rounded-lg bg-slate-50 p-3">
+                <p className="text-xs font-semibold text-slate-700">¿Cuál es el motivo?</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button type="button" disabled={submittingReport} onClick={() => reportReview(review.id, 'REVIEW_SPAM')} className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold">Spam o engaño</button>
+                  <button type="button" disabled={submittingReport} onClick={() => reportReview(review.id, 'REVIEW_OFFENSIVE')} className="rounded-md border border-red-200 px-3 py-2 text-xs font-semibold text-red-700">Contenido inapropiado</button>
+                  <button type="button" disabled={submittingReport} onClick={() => setReportingId(null)} className="px-2 py-2 text-xs text-slate-500">Cancelar</button>
+                </div>
+              </div>
             )}
           </div>
         ))}

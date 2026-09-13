@@ -98,7 +98,8 @@ const CustomMarker = React.memo(({ motel, onPress }) => {
   );
 }, (prevProps, nextProps) => {
   return prevProps.motel.id === nextProps.motel.id &&
-         prevProps.motel.plan === nextProps.motel.plan;
+         prevProps.motel.plan === nextProps.motel.plan &&
+         prevProps.motel.markerImageUri === nextProps.motel.markerImageUri;
 });
 
 CustomMarker.displayName = 'CustomMarker';
@@ -122,6 +123,7 @@ export default function MapScreen({ route }) {
     longitudeDelta: 0.5,
   });
   const mapRef = React.useRef(null);
+  const mountedRef = React.useRef(true);
   const resultIds = route?.params?.motelIds;
   const resultIdSet = useMemo(() => Array.isArray(resultIds) ? new Set(resultIds) : null, [resultIds]);
 
@@ -136,6 +138,19 @@ export default function MapScreen({ route }) {
 
   useEffect(() => {
     fetchMapData();
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const hydrateMarkerImages = useCallback((mapMotels, sourceData) => {
+    // Los rótulos personalizados requieren una imagen por motel. No bloquear
+    // la apertura del mapa mientras se descargan: primero mostramos los pines
+    // locales y sustituimos las imágenes cuando la caché queda lista.
+    void withCachedMapMarkerImages(mapMotels, API_URL).then((hydratedMotels) => {
+      cachedMapData = { ...sourceData, motels: hydratedMotels };
+      if (mountedRef.current) setMotels(hydratedMotels);
+    });
   }, []);
 
   // Retry automático al reconectar a internet
@@ -150,8 +165,7 @@ export default function MapScreen({ route }) {
       const now = Date.now();
       if (cachedMapData && (now - cacheTimestamp) < CACHE_DURATION) {
         debugLog('📍 Usando datos del mapa cacheados');
-        const cachedMotels = await withCachedMapMarkerImages(cachedMapData.motels, API_URL);
-        cachedMapData = { ...cachedMapData, motels: cachedMotels };
+        const cachedMotels = cachedMapData.motels;
         setMotels(cachedMotels);
 
         if (cachedMotels.length > 0) {
@@ -164,6 +178,7 @@ export default function MapScreen({ route }) {
           setInitialRegion(firstMotelRegion);
         }
         setLoading(false);
+        hydrateMarkerImages(cachedMotels, cachedMapData);
         return;
       }
 
@@ -194,8 +209,8 @@ export default function MapScreen({ route }) {
       const data = await response.json();
 
       if (data.success && data.motels.length > 0) {
-        const mapMotels = await withCachedMapMarkerImages(data.motels, API_URL);
-        cachedMapData = { ...data, motels: mapMotels };
+        const mapMotels = data.motels;
+        cachedMapData = data;
         cacheTimestamp = now;
 
         setMotels(mapMotels);
@@ -207,10 +222,12 @@ export default function MapScreen({ route }) {
           longitudeDelta: 0.5,
         };
         setInitialRegion(firstMotelRegion);
+        setLoading(false);
 
         setTimeout(() => {
           mapRef.current?.animateToRegion(firstMotelRegion, 1000);
         }, 500);
+        hydrateMarkerImages(mapMotels, data);
       } else {
         setError('No hay moteles con ubicación disponibles');
       }

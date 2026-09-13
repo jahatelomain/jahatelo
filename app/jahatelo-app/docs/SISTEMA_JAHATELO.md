@@ -390,6 +390,7 @@ No ejecutar migraciones destructivas, restauraciones ni scripts de limpieza sin 
 4. No mantener compatibilidad obsoleta sin fecha de retirada y plan de migración.
 5. Toda integración nueva debe documentar credenciales requeridas, permisos, coste, monitoreo, reintentos y rollback.
 6. Archivos temporales, recovery y backups locales no son parte del producto: la recuperación se apoya en Git, backups de DB y almacenamiento documentado.
+7. Toda funcionalidad, integración o enfoque técnico que se retire, desactive o sustituya debe registrarse en `docs/DECISIONES_TECNICAS.md`, incluyendo el motivo, la alternativa vigente y las condiciones para reconsiderarlo.
 
 ---
 

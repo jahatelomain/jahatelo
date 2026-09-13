@@ -118,7 +118,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 4,
-    overflow: 'visible',
+    // Mantiene redondeado el marco Diamond también en iOS.
+    overflow: 'hidden',
   },
   diamondFrameInner: {
     borderRadius: 14,
