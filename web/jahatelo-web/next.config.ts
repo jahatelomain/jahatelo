@@ -3,6 +3,11 @@ import type { NextConfig } from "next";
 const isDev = process.env.NODE_ENV !== 'production';
 
 const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    '/api/mobile/motels/map-marker': [
+      './node_modules/@fontsource/roboto/files/roboto-latin-500-normal.woff',
+    ],
+  },
   turbopack: {
     root: __dirname,
   },

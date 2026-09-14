@@ -65,6 +65,7 @@
 
 ### 2026-09-14
 
+- [x] **JH-080 — Tipografía de etiquetas del mapa:** producción generaba cuadrados porque `sharp` intentaba rasterizar Arial en Vercel sin una fuente disponible. Los nombres ahora se convierten con Roboto incluido a trazos SVG antes de crear el PNG, se validaron caracteres acentuados y se incrementó la versión para invalidar cachés iOS/Android.
 - [x] **JH-071 — Concurrencia de promociones y entrega push:** los reclamos se serializan por promoción para que cupos, repetición y creación sean atómicos; el canje mantiene su actualización condicional y ahora también valida el inicio de vigencia. Las notificaciones programadas se reclaman con lock recuperable, no se duplican entre workers, reintentan hasta cinco ejecuciones y Expo reintenta fallos transitorios en lotes de 100 tokens.
 - [x] **JH-070 — Seguridad y sesión revalidada:** push tokens asociados únicamente desde JWT; cron cerrado si falta o no coincide el secreto; límites por identidad e IP para login, Google, OTP y reenvío de verificación; secreto de email obligatorio; OTP consumido atómicamente; una caída de red al revalidar la app ya no elimina una sesión válida.
 
