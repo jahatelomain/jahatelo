@@ -2,7 +2,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 
 const MARKERS_DIRECTORY = `${FileSystem.cacheDirectory}jahatelo-map-markers/`;
-const MAX_PARALLEL_DOWNLOADS = 4;
+const MAX_PARALLEL_DOWNLOADS = 8;
 
 const sanitizeFilePart = (value) => String(value || '').replace(/[^a-zA-Z0-9._-]/g, '_');
 
@@ -46,7 +46,7 @@ async function runWithLimit(items, worker) {
     const index = cursor;
     cursor += 1;
     if (index >= items.length) return;
-    results[index] = await worker(items[index]);
+    results[index] = await worker(items[index], index);
     await next();
   };
   await Promise.all(Array.from({ length: Math.min(MAX_PARALLEL_DOWNLOADS, items.length) }, next));
@@ -58,18 +58,25 @@ async function runWithLimit(items, worker) {
  * markers. Google Maps los renderiza como una sola imagen nativa, sin views
  * React ni cálculos de coordenadas en cada pan/zoom.
  */
-export async function withCachedMapMarkerImages(motels, apiRoot) {
+export async function withCachedMapMarkerImages(motels, apiRoot, onMarkerResolved) {
   if (!Array.isArray(motels) || motels.length === 0) return [];
   try {
     await ensureMarkersDirectory();
-    const imageUris = await runWithLimit(motels, async (motel) => {
+    const imageUris = await runWithLimit(motels, async (motel, index) => {
+      let imageUri = null;
       try {
-        return await resolveMarkerImage(motel, apiRoot);
+        imageUri = await resolveMarkerImage(motel, apiRoot);
       } catch {
-        return null;
+        imageUri = null;
       }
+      onMarkerResolved?.({ ...motel, markerImageUri: imageUri, markerImageReady: true }, index);
+      return imageUri;
     });
-    return motels.map((motel, index) => ({ ...motel, markerImageUri: imageUris[index] }));
+    return motels.map((motel, index) => ({
+      ...motel,
+      markerImageUri: imageUris[index],
+      markerImageReady: true,
+    }));
   } catch {
     return motels;
   }

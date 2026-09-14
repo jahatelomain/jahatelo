@@ -144,10 +144,14 @@ export default function MapScreen({ route }) {
   }, []);
 
   const hydrateMarkerImages = useCallback((mapMotels, sourceData) => {
-    // Los rótulos personalizados requieren una imagen por motel. No bloquear
-    // la apertura del mapa mientras se descargan: primero mostramos los pines
-    // locales y sustituimos las imágenes cuando la caché queda lista.
-    void withCachedMapMarkerImages(mapMotels, API_URL).then((hydratedMotels) => {
+    // Mostrar cada rótulo apenas queda disponible evita presentar primero una
+    // capa completa de corazones genéricos y reemplazarla varios segundos después.
+    void withCachedMapMarkerImages(mapMotels, API_URL, (resolvedMotel) => {
+      if (!mountedRef.current) return;
+      setMotels((currentMotels) => currentMotels.map((currentMotel) => (
+        currentMotel.id === resolvedMotel.id ? resolvedMotel : currentMotel
+      )));
+    }).then((hydratedMotels) => {
       cachedMapData = { ...sourceData, motels: hydratedMotels };
       if (mountedRef.current) setMotels(hydratedMotels);
     });
@@ -209,8 +213,8 @@ export default function MapScreen({ route }) {
       const data = await response.json();
 
       if (data.success && data.motels.length > 0) {
-        const mapMotels = data.motels;
-        cachedMapData = data;
+        const mapMotels = data.motels.map((motel) => ({ ...motel, markerImageReady: false }));
+        cachedMapData = { ...data, motels: mapMotels };
         cacheTimestamp = now;
 
         setMotels(mapMotels);
@@ -334,7 +338,7 @@ export default function MapScreen({ route }) {
             showsUserLocation={!!userLocation}
             showsMyLocationButton={false}
           >
-          {sortedMotels.map((motel) => (
+          {sortedMotels.filter((motel) => motel.markerImageReady !== false).map((motel) => (
             <CustomMarker
               // Google Maps iOS no siempre reemplaza `image` en un marker ya
               // montado. Cambiar la key cuando llega el PNG fuerza únicamente
