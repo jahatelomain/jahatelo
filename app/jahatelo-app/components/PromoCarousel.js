@@ -71,16 +71,25 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
   const isPlaceholder = !hasRemoteMotelImage(resolvedImageUrl);
   const hasPlanGlow = hasMotelPlanGlow(motel?.plan);
   const borderMotion = useSharedValue(-1);
+  const borderOrbit = useSharedValue(0);
 
   useEffect(() => {
     if (!hasPlanGlow) return undefined;
     borderMotion.value = -1;
+    borderOrbit.value = 0;
     borderMotion.value = withRepeat(withTiming(1, { duration: 2200 }), -1, false);
-    return () => cancelAnimation(borderMotion);
-  }, [borderMotion, hasPlanGlow]);
+    borderOrbit.value = withRepeat(withTiming(360, { duration: 4200 }), -1, false);
+    return () => {
+      cancelAnimation(borderMotion);
+      cancelAnimation(borderOrbit);
+    };
+  }, [borderMotion, borderOrbit, hasPlanGlow]);
 
   const animatedBorderStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: interpolate(borderMotion.value, [-1, 1], [-CARD_WIDTH, CARD_WIDTH]) }],
+  }));
+  const animatedOrbitStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${borderOrbit.value}deg` }],
   }));
 
   useEffect(() => {
@@ -168,6 +177,9 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
               end={{ x: 1, y: 0 }}
               style={styles.borderSweepGradient}
             />
+          </Animated.View>
+          <Animated.View pointerEvents="none" style={[styles.diamondOrbit, animatedOrbitStyle]}>
+            <View style={styles.diamondOrbitDot} />
           </Animated.View>
           <View style={styles.planGlowInner}>{card}</View>
         </LinearGradient>
@@ -412,6 +424,23 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.5)',
+  },
+  diamondOrbit: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 22,
+    alignItems: 'center',
+  },
+  diamondOrbitDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    shadowColor: PLAN_COLORS.diamondLight,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
+    elevation: 3,
+    marginTop: -3,
   },
   card: {
     width: CARD_WIDTH,

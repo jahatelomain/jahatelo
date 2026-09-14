@@ -16,7 +16,6 @@
 
 ### Seguridad y autenticación
 
-- [ ] **JH-069 — Validación real de autenticación y uploads:** código integrado y publicado en producción por PR #99, merge `0190a42`; Vercel Ready. Google/sesiones 49/49 y admin/uploads 29/29, typechecks correctos. Home y catálogo HTTP 200; Google sin ID token y upload sin sesión HTTP 401 con Origin válido. Pendiente login Google real, subida autenticada y distribución de app actualizada. JWT_SECRET y audiences móviles configurados; requiere nuevo login. Detalle: `web/jahatelo-web/tests/SECURITY-CHECKPOINT.md`.
 - [ ] **JH-078 — Dependencias transitivas sin corrección compatible:** la web ya actualizó Next, Sharp, Nodemailer, AWS y demás correcciones seguras; quedan tres avisos altos en `deepmerge-ts` de Prisma CLI. La app conserva avisos dentro de Expo/Metro cuya salida automática exige migrar de Expo 54 a 57. No aplicar `npm audit fix --force`: planificar y probar ambas migraciones mayores, reconstruir iOS/Android y repetir las auditorías.
 
 ### Preparación para producción
@@ -65,6 +64,7 @@
 
 ### 2026-09-14
 
+- [x] **JH-069 — Validación real de autenticación y uploads:** código integrado y publicado en producción por PR #99, merge `0190a42`; Vercel Ready. Google/sesiones 49/49 y admin/uploads 29/29, typechecks correctos. Home y catálogo HTTP 200; Google sin ID token y upload sin sesión HTTP 401 con Origin válido. El login real con Gmail fue probado correctamente por el responsable; queda cerrado como validado.
 - [x] **JH-080 — Tipografía de etiquetas del mapa:** producción generaba cuadrados porque `sharp` intentaba rasterizar Arial en Vercel sin una fuente disponible. Los nombres ahora se convierten con Roboto incluido a trazos SVG antes de crear el PNG, se validaron caracteres acentuados y se incrementó la versión para invalidar cachés iOS/Android.
 - [x] **JH-071 — Concurrencia de promociones y entrega push:** los reclamos se serializan por promoción para que cupos, repetición y creación sean atómicos; el canje mantiene su actualización condicional y ahora también valida el inicio de vigencia. Las notificaciones programadas se reclaman con lock recuperable, no se duplican entre workers, reintentan hasta cinco ejecuciones y Expo reintenta fallos transitorios en lotes de 100 tokens.
 - [x] **JH-070 — Seguridad y sesión revalidada:** push tokens asociados únicamente desde JWT; cron cerrado si falta o no coincide el secreto; límites por identidad e IP para login, Google, OTP y reenvío de verificación; secreto de email obligatorio; OTP consumido atómicamente; una caída de red al revalidar la app ya no elimina una sesión válida.
