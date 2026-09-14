@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import opentype, { type Font, type Glyph } from 'opentype.js';
+import { parse, type Font, type Glyph } from 'opentype.js';
 
 const FONT_SIZE = 15;
 const ROBOTO_FONT_PATH = path.join(
@@ -17,7 +17,7 @@ let cachedFont: Font | null = null;
 function markerFont() {
   if (cachedFont) return cachedFont;
   const buffer = fs.readFileSync(ROBOTO_FONT_PATH);
-  cachedFont = opentype.parse(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));
+  cachedFont = parse(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));
   return cachedFont;
 }
 
@@ -43,4 +43,3 @@ export function markerLabelPath(label: string, baseline = 27) {
 
   return { width, pathData };
 }
-
