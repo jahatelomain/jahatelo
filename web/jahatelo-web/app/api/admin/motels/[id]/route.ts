@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { canAccessMotel } from '@/lib/auth';
 import { logAuditEvent } from '@/lib/audit';
+import { sendFavoriteMotelUpdateNotification } from '@/lib/push-notifications';
 import { IdSchema, UpdateMotelSchema } from '@/lib/validations/schemas';
 import { sanitizeText } from '@/lib/sanitize';
 import { normalizeLocationName } from '@/lib/locationCatalog';
@@ -137,6 +138,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
+    const beforeUpdate = await prisma.motel.findUnique({ where: { id: idResult.data } });
 
     // Validar con Zod
     const validated = UpdateMotelSchema.parse(body);
@@ -260,6 +262,17 @@ export async function PATCH(
       where: { id: idResult.data },
       data,
     });
+
+    const publicFields = [
+      'name', 'description', 'city', 'address', 'phone', 'whatsapp', 'website',
+      'instagram', 'featuredPhoto', 'featuredPhotoWeb', 'featuredPhotoApp', 'logoUrl',
+    ] as const;
+    const hasPublicChange = beforeUpdate && publicFields.some((field) =>
+      validated[field] !== undefined && beforeUpdate[field] !== motel[field]
+    );
+    if (hasPublicChange && motel.status === 'APPROVED' && motel.isActive) {
+      void sendFavoriteMotelUpdateNotification(motel.id);
+    }
 
     const sourceReportId = request.headers.get('x-jahatelo-report-id');
     const sourceReport = sourceReportId && access.user?.role === 'SUPERADMIN'

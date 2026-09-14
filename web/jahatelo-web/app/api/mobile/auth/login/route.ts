@@ -6,6 +6,7 @@ import { LoginSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
 import { GoogleAuthError, verifyGoogleIdToken } from '@/lib/googleAuth';
+import { enforceAuthRateLimit } from '@/lib/authRateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,8 @@ export async function POST(request: NextRequest) {
       // Validar con Zod
       const validated = LoginSchema.parse(sanitized);
       const { email, password } = validated;
+      const rateLimitError = await enforceAuthRateLimit(request, 'mobile-login', email);
+      if (rateLimitError) return rateLimitError;
 
       const emailLower = email.toLowerCase().trim();
 
@@ -119,6 +122,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (provider === 'google') {
+      const rateLimitError = await enforceAuthRateLimit(request, 'mobile-google-login', body.idToken.slice(-32));
+      if (rateLimitError) return rateLimitError;
       const { providerId, email, name } = await verifyGoogleIdToken(body.idToken, 'mobile');
 
       const emailLower = email.toLowerCase().trim();

@@ -16,7 +16,7 @@ import {
 import OfflineIndicator from './components/OfflineIndicator';
 import AppUpdateModal from './components/AppUpdateModal';
 import { FavoritesProvider } from './hooks/useFavorites';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NavigationProvider, useNavigationContext } from './contexts/NavigationContext';
 import RootNavigation from './navigation/RootNavigation';
 import { initializeNotifications } from './services/notificationService';
@@ -47,6 +47,7 @@ const linking = {
 SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
+  const { token, isLoading: authLoading } = useAuth();
   const { navigationRef } = useNavigationContext();
   const cleanupRef = useRef(null);
   const notificationDataRef = useRef(null);
@@ -94,6 +95,17 @@ function AppContent() {
           }
           break;
 
+        case 'review_reply':
+        case 'review_like':
+          if (data.motelId) {
+            navigationRef.current.navigate('MotelDetail', {
+              motelId: data.motelId,
+              motelSlug: data.motelSlug,
+              initialTab: 'Reseñas',
+            });
+          }
+          break;
+
         default:
           console.log('Tipo de notificación no reconocido:', data.type);
       }
@@ -114,12 +126,14 @@ function AppContent() {
   }, [navigationRef, performNavigation]);
 
   useEffect(() => {
+    if (authLoading) return undefined;
     // El splash nativo se oculta en SplashScreen.js cuando AnimatedSplash ya está montado,
     // evitando el flash blanco entre el splash estático y la animación Lottie.
 
     // Inicializar notificaciones push
     const setupNotifications = async () => {
       const { cleanup } = await initializeNotifications({
+        authToken: token,
         onNotificationReceived: async (notification) => {
           console.log('📬 Notificación recibida:', notification);
           await storeReceivedNotification(notification);
@@ -160,7 +174,7 @@ function AppContent() {
         cleanupRef.current();
       }
     };
-  }, [handleNotificationNavigation]);
+  }, [authLoading, handleNotificationNavigation, token]);
 
   // Effect para manejar navegación pendiente cuando el navegador esté listo
   useEffect(() => {

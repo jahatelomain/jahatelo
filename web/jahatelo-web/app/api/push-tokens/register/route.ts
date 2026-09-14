@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { PushTokenDeleteSchema, PushTokenRegisterSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
+import { getTokenFromRequest, verifyToken } from '@/lib/auth';
 
 /**
  * POST /api/push-tokens/register
@@ -12,8 +13,13 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const sanitized = sanitizeObject(body);
-    const { token, deviceId, deviceType, deviceName, appVersion, userId } =
+    const { token, deviceId, deviceType, deviceName, appVersion, advertisingEnabled } =
       PushTokenRegisterSchema.parse(sanitized);
+    const authToken = await getTokenFromRequest(request as never);
+    const authenticatedUser = authToken ? await verifyToken(authToken) : null;
+    if (authToken && !authenticatedUser) {
+      return NextResponse.json({ error: 'Token de sesión inválido' }, { status: 401 });
+    }
 
     // Validar que sea un token de Expo válido
     if (!token.startsWith('ExponentPushToken[') && !token.startsWith('ExpoPushToken[')) {
@@ -50,12 +56,15 @@ export async function POST(request: Request) {
       pushToken = await prisma.pushToken.update({
         where: { token },
         data: {
-          userId: userId || existingToken.userId,
+          // La pertenencia nunca se acepta desde el body: deriva únicamente
+          // de la sesión actual y se libera al volver al modo invitado.
+          userId: authenticatedUser?.id ?? null,
           deviceId: deviceId || existingToken.deviceId,
           deviceType: deviceType || existingToken.deviceType,
           deviceName: deviceName || existingToken.deviceName,
           appVersion: appVersion || existingToken.appVersion,
           isActive: true,
+          ...(advertisingEnabled !== undefined && { advertisingEnabled }),
           lastUsedAt: new Date(),
         },
       });
@@ -64,12 +73,13 @@ export async function POST(request: Request) {
       pushToken = await prisma.pushToken.create({
         data: {
           token,
-          userId: userId || null,
+          userId: authenticatedUser?.id ?? null,
           deviceId: deviceId || null,
           deviceType: deviceType || null,
           deviceName: deviceName || null,
           appVersion: appVersion || null,
           isActive: true,
+          advertisingEnabled: advertisingEnabled ?? true,
         },
       });
     }

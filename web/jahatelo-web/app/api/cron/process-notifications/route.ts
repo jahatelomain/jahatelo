@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { processScheduledNotifications } from '@/lib/push-notifications';
 import { EmptySchema } from '@/lib/validations/schemas';
 import { z } from 'zod';
+import { authorizeCron } from '@/lib/cronAuth';
 
 /**
  * GET /api/cron/process-notifications
@@ -14,15 +15,8 @@ export async function GET(request: NextRequest) {
   try {
     EmptySchema.parse({});
     // Verificar token de autorización (opcional pero recomendado)
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authError = authorizeCron(request);
+    if (authError) return authError;
 
     // Procesar notificaciones programadas
     const result = await processScheduledNotifications();

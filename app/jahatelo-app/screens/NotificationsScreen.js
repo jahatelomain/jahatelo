@@ -33,11 +33,13 @@ export default function NotificationsScreen({ navigation }) {
   const openNotification = async (notification) => {
     setNotifications(await markNotificationRead(notification.id));
     const data = notification.data || {};
-    if ((data.type === 'promo' || data.type === 'motel_update') && data.motelId) {
+    if (['promo', 'motel_update', 'review_reply', 'review_like'].includes(data.type) && data.motelId) {
       navigation.navigate('MotelDetail', {
         motelId: data.motelId,
         motelSlug: data.motelSlug,
-        initialTab: data.type === 'promo' ? 'Promos' : undefined,
+        initialTab: data.type === 'promo'
+          ? 'Promos'
+          : data.type.startsWith('review_') ? 'Reseñas' : undefined,
       });
     }
   };

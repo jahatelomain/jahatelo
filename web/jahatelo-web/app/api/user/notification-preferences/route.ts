@@ -124,7 +124,6 @@ export async function PUT(request: NextRequest) {
       'notifyReviewReplies',
       'notifyReviewLikes',
       'notifyPromotions',
-      'notifyNewMotels',
       'notifyContactMessages',
       'notifyNewProspects',
       'notifyPaymentReminders',

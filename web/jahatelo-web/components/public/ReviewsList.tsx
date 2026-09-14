@@ -10,6 +10,9 @@ interface Review {
   comment?: string | null;
   createdAt: string;
   isOwn?: boolean;
+  likes: number;
+  likedByCurrentUser?: boolean;
+  ownerReply?: string | null;
   user?: { name?: string | null } | null;
 }
 
@@ -24,6 +27,7 @@ export default function ReviewsList({ motelId }: { motelId: string }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reportingId, setReportingId] = useState<string | null>(null);
   const [submittingReport, setSubmittingReport] = useState(false);
+  const [likingId, setLikingId] = useState<string | null>(null);
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -105,6 +109,25 @@ export default function ReviewsList({ motelId }: { motelId: string }) {
     }
   };
 
+  const toggleLike = async (reviewId: string) => {
+    setLikingId(reviewId);
+    try {
+      const response = await fetch(`/api/mobile/reviews/${reviewId}/like`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Inicia sesión para indicar que te gusta una reseña');
+      setReviews((current) => current.map((review) => review.id === reviewId
+        ? { ...review, likes: data.likes, likedByCurrentUser: data.liked }
+        : review));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo actualizar la reseña');
+    } finally {
+      setLikingId(null);
+    }
+  };
+
   const distribution = useMemo(() => {
     const counts = [0, 0, 0, 0, 0];
     reviews.forEach((review) => {
@@ -156,6 +179,20 @@ export default function ReviewsList({ motelId }: { motelId: string }) {
               {'★'.repeat(review.score)}{'☆'.repeat(5 - review.score)}
             </div>
             {review.comment && <p className="mt-2 text-sm text-slate-600">{review.comment}</p>}
+            {review.ownerReply && (
+              <div className="mt-3 rounded-lg bg-slate-50 p-3">
+                <p className="text-xs font-semibold text-slate-700">Respuesta del motel</p>
+                <p className="mt-1 text-sm text-slate-600">{review.ownerReply}</p>
+              </div>
+            )}
+            <button
+              type="button"
+              disabled={review.isOwn || likingId === review.id}
+              onClick={() => toggleLike(review.id)}
+              className={`mt-3 text-xs font-semibold disabled:opacity-50 ${review.likedByCurrentUser ? 'text-purple-700' : 'text-slate-500'}`}
+            >
+              {review.likedByCurrentUser ? '♥' : '♡'} {review.likes || 0}
+            </button>
             {review.isOwn && (
               <button
                 type="button"

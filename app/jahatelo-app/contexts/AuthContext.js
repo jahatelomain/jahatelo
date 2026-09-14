@@ -50,9 +50,14 @@ export const AuthProvider = ({ children }) => {
             setUser(profileData.user);
           }
         } catch (error) {
-          // Si falla, limpiar datos (token inválido/expirado)
-          debugLog('Token inválido o expirado, limpiando datos...');
-          await handleLogout();
+          // Una caída de red no invalida la sesión local. Solo una respuesta
+          // explícita de autenticación puede expulsar al usuario.
+          if (error?.status === 401 || error?.status === 403) {
+            debugLog('Token inválido o expirado, limpiando datos...');
+            await handleLogout();
+          } else {
+            debugLog('No se pudo revalidar la sesión; se conserva el acceso local.', error);
+          }
         }
       }
     } catch (error) {

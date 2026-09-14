@@ -488,12 +488,27 @@ model Review {
   isVerified  Boolean   @default(false) // True si el usuario está verificado
   isAnonymous Boolean   @default(false) // True si la review es anónima
   likes       Int       @default(0) // Para futuro: sistema de likes
+  ownerReply   String?
+  ownerReplyAt DateTime?
+  reviewLikes  ReviewLike[]
   reports     MotelReport[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   @@index([motelId, createdAt])
   @@index([userId, motelId])
+}
+
+model ReviewLike {
+  id        String   @id @default(cuid())
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reviewId  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([reviewId, userId])
+  @@index([userId])
 }
 
 // ============================================
@@ -536,6 +551,7 @@ model User {
   auditLogs               AuditLog[]
   notificationPreferences UserNotificationPreferences?
   pushTokens              PushToken[]
+  reviewLikes             ReviewLike[]
   motelReports            MotelReport[]     @relation("MotelReportReporter")
   assignedMotelReports    MotelReport[]     @relation("MotelReportAssignee")
   motelReportNotes        MotelReportNote[]
@@ -700,7 +716,7 @@ model UserNotificationPreferences {
 
   // Marketing
   notifyPromotions Boolean @default(true) // Promociones generales
-  notifyNewMotels  Boolean @default(false) // Nuevos moteles cerca
+  notifyNewMotels  Boolean @default(false) // Legacy sin uso; no exponer en interfaces
 
   // Preferencias para administradores (SUPERADMIN y MOTEL_ADMIN)
   notifyContactMessages  Boolean @default(true) // Mensajes de contacto
@@ -964,6 +980,7 @@ model PushToken {
   deviceName String? // Nombre del dispositivo
   appVersion String? // Versión de la app
   isActive   Boolean  @default(true)
+  advertisingEnabled Boolean @default(true)
   lastUsedAt DateTime @default(now())
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -987,6 +1004,8 @@ model ScheduledNotification {
   scheduledFor DateTime // Cuándo se debe enviar
   sent         Boolean   @default(false)
   sentAt       DateTime? // Cuándo se envió realmente
+  processingAt DateTime? // Lock recuperable para evitar envíos duplicados
+  attemptCount Int       @default(0)
 
   // Audience (a quién se envía)
   targetUserIds String[] // IDs específicos de usuarios (opcional)
@@ -1010,6 +1029,7 @@ model ScheduledNotification {
   updatedAt DateTime @updatedAt
 
   @@index([scheduledFor, sent])
+  @@index([sent, processingAt])
   @@index([targetMotelId])
   @@index([type])
   @@index([category])

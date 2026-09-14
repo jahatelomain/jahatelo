@@ -54,7 +54,8 @@ export interface PushSendResult {
  */
 export async function sendPushNotification(
   token: string,
-  notification: PushNotification
+  notification: PushNotification,
+  attempt = 0
 ): Promise<PushSendResult> {
   try {
     // Validar que el token sea válido
@@ -98,6 +99,13 @@ export async function sendPushNotification(
       };
     }
 
+    const retryable = response.status === 429 || response.status >= 500 ||
+      entry?.details?.error === 'MessageRateExceeded';
+    if (retryable && attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, (attempt + 1) * 500));
+      return sendPushNotification(token, notification, attempt + 1);
+    }
+
     // Si hay error, verificar si el token es inválido
     if (entry?.details?.error === 'DeviceNotRegistered') {
       // Desactivar el token en la base de datos
@@ -113,6 +121,10 @@ export async function sendPushNotification(
       details: entry,
     };
   } catch (error) {
+    if (attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, (attempt + 1) * 500));
+      return sendPushNotification(token, notification, attempt + 1);
+    }
     console.error('Error sending push notification:', error);
     return {
       success: false,
@@ -128,10 +140,13 @@ export async function sendPushNotifications(
   tokens: string[],
   notification: PushNotification
 ): Promise<PushSendResult[]> {
-  const results = await Promise.all(
-    tokens.map((token) => sendPushNotification(token, notification))
-  );
-
+  const results: PushSendResult[] = [];
+  for (let index = 0; index < tokens.length; index += 100) {
+    const chunk = tokens.slice(index, index + 100);
+    results.push(...await Promise.all(
+      chunk.map((token) => sendPushNotification(token, notification))
+    ));
+  }
   return results;
 }
 
@@ -383,6 +398,85 @@ export async function sendPromoNotificationToFavorites(
   }
 }
 
+export async function sendFavoriteMotelUpdateNotification(motelId: string) {
+  const [motel, favorites] = await Promise.all([
+    prisma.motel.findUnique({ where: { id: motelId }, select: { name: true, slug: true } }),
+    prisma.favorite.findMany({
+      where: { motelId },
+      include: {
+        user: {
+          include: {
+            pushTokens: { where: { isActive: true } },
+            notificationPreferences: true,
+          },
+        },
+      },
+    }),
+  ]);
+  if (!motel) return { sent: 0, failed: 0 };
+
+  const tokens = favorites.flatMap(({ user }) => {
+    const prefs = user.notificationPreferences;
+    if (prefs && (!prefs.enableNotifications || !prefs.enablePush || !prefs.notifyUpdates)) return [];
+    return user.pushTokens.map(({ token }) => token);
+  });
+  const results = await sendPushNotifications([...new Set(tokens)], {
+    title: `${motel.name} actualizó su información`,
+    body: 'Revisa las novedades del motel que guardaste en favoritos.',
+    data: { type: 'motel_update', motelId, motelSlug: motel.slug },
+  });
+  return {
+    sent: results.filter((result) => result.success).length,
+    failed: results.filter((result) => !result.success).length,
+  };
+}
+
+async function sendReviewActivityNotification(
+  reviewId: string,
+  actorUserId: string | null,
+  kind: 'review_reply' | 'review_like'
+) {
+  const review = await prisma.review.findUnique({
+    where: { id: reviewId },
+    select: {
+      userId: true,
+      motelId: true,
+      motel: { select: { name: true, slug: true } },
+      user: {
+        select: {
+          notificationPreferences: true,
+          pushTokens: { where: { isActive: true } },
+        },
+      },
+    },
+  });
+  if (!review || !review.user || review.userId === actorUserId) return;
+  const prefs = review.user.notificationPreferences;
+  const enabled = !prefs || (
+    prefs.enableNotifications && prefs.enablePush &&
+    (kind === 'review_reply' ? prefs.notifyReviewReplies : prefs.notifyReviewLikes)
+  );
+  if (!enabled) return;
+  await sendPushNotifications(review.user.pushTokens.map(({ token }) => token), {
+    title: kind === 'review_reply' ? 'Respondieron tu reseña' : 'A alguien le gustó tu reseña',
+    body: review.motel?.name
+      ? `Hay actividad nueva en tu reseña de ${review.motel.name}.`
+      : 'Hay actividad nueva en una de tus reseñas.',
+    data: {
+      type: kind,
+      reviewId,
+      motelId: review.motelId,
+      motelSlug: review.motel?.slug,
+    },
+  });
+}
+
+export const sendReviewReplyNotification = (reviewId: string, actorUserId: string) =>
+  sendReviewActivityNotification(reviewId, actorUserId, 'review_reply');
+
+export const sendReviewLikeNotification = (reviewId: string, actorUserId: string) =>
+  sendReviewActivityNotification(reviewId, actorUserId, 'review_like');
+
 /**
  * Programa una notificación para ser enviada en el futuro
  */
@@ -435,9 +529,11 @@ function shouldSendNotificationByCategory(
       enableMaintenancePush: boolean;
       enableNotifications: boolean;
       enablePush: boolean;
+      notifyPromotions: boolean;
     } | null;
   },
-  category: string
+  category: string,
+  notificationType?: string
 ): boolean {
   // Si no tiene preferencias, enviar por defecto
   if (!user.notificationPreferences) {
@@ -455,7 +551,8 @@ function shouldSendNotificationByCategory(
   switch (category) {
     case 'advertising':
       // Publicidad: respetar preferencia del usuario
-      return prefs.enableAdvertisingPush;
+      return prefs.enableAdvertisingPush &&
+        (notificationType !== 'promotion' || prefs.notifyPromotions);
 
     case 'security':
       // Seguridad: siempre enviar (crítico)
@@ -475,6 +572,7 @@ async function deliverScheduledNotification(notification: {
   id: string;
   title: string;
   body: string;
+  type: string;
   data: unknown;
   category: string;
   targetUserIds: string[];
@@ -485,6 +583,9 @@ async function deliverScheduledNotification(notification: {
   let skipped = 0;
   const category = notification.category || 'advertising';
   const includeGuests = hasIncludeGuests(notification.data);
+  const preferenceType = notification.type === 'promo' && !notification.targetMotelId
+    ? 'promotion'
+    : notification.type;
 
   if (notification.targetUserIds.length > 0) {
     const users = await prisma.user.findMany({
@@ -505,7 +606,7 @@ async function deliverScheduledNotification(notification: {
     });
 
     for (const user of users) {
-      if (shouldSendNotificationByCategory(user, category)) {
+      if (shouldSendNotificationByCategory(user, category, preferenceType)) {
         tokens.push(...user.pushTokens.map((pt) => pt.token));
       } else {
         skipped += user.pushTokens.length;
@@ -528,7 +629,7 @@ async function deliverScheduledNotification(notification: {
     });
 
     for (const user of users) {
-      if (shouldSendNotificationByCategory(user, category)) {
+      if (shouldSendNotificationByCategory(user, category, preferenceType)) {
         tokens.push(...user.pushTokens.map((pt) => pt.token));
       } else {
         skipped += user.pushTokens.length;
@@ -554,7 +655,7 @@ async function deliverScheduledNotification(notification: {
     });
 
     for (const fav of favorites) {
-      if (shouldSendNotificationByCategory(fav.user, category)) {
+      if (shouldSendNotificationByCategory(fav.user, category, preferenceType)) {
         tokens.push(...fav.user.pushTokens.map((pt) => pt.token));
       } else {
         skipped += fav.user.pushTokens.length;
@@ -576,7 +677,7 @@ async function deliverScheduledNotification(notification: {
     });
 
     for (const user of users) {
-      if (shouldSendNotificationByCategory(user, category)) {
+      if (shouldSendNotificationByCategory(user, category, preferenceType)) {
         tokens.push(...user.pushTokens.map((pt) => pt.token));
       } else {
         skipped += user.pushTokens.length;
@@ -588,6 +689,7 @@ async function deliverScheduledNotification(notification: {
         where: {
           userId: null,
           isActive: true,
+          advertisingEnabled: true,
         },
         select: {
           token: true,
@@ -597,8 +699,9 @@ async function deliverScheduledNotification(notification: {
     }
   }
 
-  if (tokens.length > 0) {
-    const results = await sendPushNotifications(tokens, {
+  const uniqueTokens = [...new Set(tokens)];
+  if (uniqueTokens.length > 0) {
+    const results = await sendPushNotifications(uniqueTokens, {
       title: notification.title,
       body: notification.body,
       data: toNotificationData(notification.data),
@@ -613,6 +716,7 @@ async function deliverScheduledNotification(notification: {
       data: {
         sent: true,
         sentAt: new Date(),
+        processingAt: null,
         totalSent: sent,
         totalFailed: failed,
         totalSkipped: skipped,
@@ -627,6 +731,7 @@ async function deliverScheduledNotification(notification: {
     data: {
       sent: true,
       sentAt: new Date(),
+      processingAt: null,
       totalSent: 0,
       totalFailed: 0,
       totalSkipped: skipped,
@@ -637,24 +742,56 @@ async function deliverScheduledNotification(notification: {
   return { sent: 0, failed: 0, skipped };
 }
 
-export async function processScheduledNotificationById(id: string) {
-  const notification = await prisma.scheduledNotification.findUnique({
-    where: { id },
+async function claimScheduledNotification(id: string) {
+  const staleBefore = new Date(Date.now() - 10 * 60_000);
+  const claimed = await prisma.scheduledNotification.updateMany({
+    where: {
+      id,
+      sent: false,
+      OR: [{ processingAt: null }, { processingAt: { lt: staleBefore } }],
+    },
+    data: { processingAt: new Date(), attemptCount: { increment: 1 } },
   });
+  if (claimed.count !== 1) return null;
+  return prisma.scheduledNotification.findUnique({ where: { id } });
+}
 
-  if (!notification) {
+async function releaseFailedNotification(id: string, attemptCount: number, error: unknown) {
+  const exhausted = attemptCount >= 5;
+  await prisma.scheduledNotification.update({
+    where: { id },
+    data: {
+      processingAt: null,
+      sent: exhausted,
+      sentAt: exhausted ? new Date() : null,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    },
+  });
+}
+
+export async function processScheduledNotificationById(id: string) {
+  const existing = await prisma.scheduledNotification.findUnique({ where: { id } });
+
+  if (!existing) {
     return null;
   }
 
-  if (notification.sent) {
+  if (existing.sent) {
     return {
-      sent: notification.totalSent,
-      failed: notification.totalFailed,
-      skipped: notification.totalSkipped,
+      sent: existing.totalSent,
+      failed: existing.totalFailed,
+      skipped: existing.totalSkipped,
     };
   }
 
-  return deliverScheduledNotification(notification);
+  const notification = await claimScheduledNotification(id);
+  if (!notification) return { sent: 0, failed: 0, skipped: 0 };
+  try {
+    return await deliverScheduledNotification(notification);
+  } catch (error) {
+    await releaseFailedNotification(id, notification.attemptCount, error);
+    throw error;
+  }
 }
 
 /**
@@ -682,23 +819,17 @@ export async function processScheduledNotifications(): Promise<{
     let totalFailed = 0;
 
     for (const notification of pendingNotifications) {
+      const claimed = await claimScheduledNotification(notification.id);
+      if (!claimed) continue;
       try {
-        const result = await deliverScheduledNotification(notification);
+        const result = await deliverScheduledNotification(claimed);
         totalSent += result.sent;
         totalFailed += result.failed;
       } catch (error) {
         console.error(`Error processing scheduled notification ${notification.id}:`, error);
         totalFailed++;
 
-        // Marcar como error
-        await prisma.scheduledNotification.update({
-          where: { id: notification.id },
-          data: {
-            sent: true,
-            sentAt: new Date(),
-            errorMessage: error instanceof Error ? error.message : 'Unknown error',
-          },
-        });
+        await releaseFailedNotification(claimed.id, claimed.attemptCount, error);
       }
     }
 

@@ -85,7 +85,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
 
   return (
     <div className="w-full mb-8">
-      <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-xl">
+      <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden">
         {mixedItems.map((item, index) => {
           const isActive = index === currentIndex;
 

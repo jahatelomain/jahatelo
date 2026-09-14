@@ -74,10 +74,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await prisma.whatsappOtp.update({
-      where: { id: otp.id },
+    const consumed = await prisma.whatsappOtp.updateMany({
+      where: { id: otp.id, verifiedAt: null, expiresAt: { gt: now } },
       data: { verifiedAt: now },
     });
+    if (consumed.count !== 1) {
+      return NextResponse.json({ error: 'Código ya utilizado o expirado' }, { status: 409 });
+    }
 
     const phoneNoPlus = phone.replace(/^\+/, '');
     const rawName = (sanitized as { name?: unknown }).name;

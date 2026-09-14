@@ -42,7 +42,12 @@ export async function POST(
     }
     const { deviceId } = validated.data;
 
-    const promo = await prisma.promo.findUnique({
+    // Serializa los reclamos de una misma promoción. Así la comprobación del
+    // cupo y la creación forman una sola operación incluso con varias instancias.
+    return await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${promoId}))`;
+
+    const promo = await tx.promo.findUnique({
       where: { id: promoId },
     });
 
@@ -60,7 +65,7 @@ export async function POST(
     }
 
     // Idempotent: return existing PENDING code for this device
-    const existing = await prisma.promoCode.findFirst({
+    const existing = await tx.promoCode.findFirst({
       where: { promoId, deviceId, status: 'PENDING' },
     });
     if (existing) {
@@ -85,11 +90,11 @@ export async function POST(
       if (promo.codeRepeatRule === 'DAILY') {
         const startOfDay = new Date(now);
         startOfDay.setHours(0, 0, 0, 0);
-        usedInPeriod = await prisma.promoCode.count({
+        usedInPeriod = await tx.promoCode.count({
           where: { promoId, deviceId, status: 'USED', redeemedAt: { gte: startOfDay } },
         });
       } else if (repeatPeriodStart) {
-        usedInPeriod = await prisma.promoCode.count({
+        usedInPeriod = await tx.promoCode.count({
           where: { promoId, deviceId, status: 'USED', redeemedAt: { gte: repeatPeriodStart } },
         });
       } else {
@@ -101,7 +106,7 @@ export async function POST(
       }
     } else if (promo.codeRepeatRule === 'NEVER') {
       // Never allow re-claim after USED
-      const hasUsed = await prisma.promoCode.count({
+      const hasUsed = await tx.promoCode.count({
         where: { promoId, deviceId, status: 'USED' },
       });
       if (hasUsed > 0) {
@@ -112,7 +117,7 @@ export async function POST(
     // Check global code limit
     if (promo.codeLimit !== null && promo.codeLimit !== undefined) {
       const limitPeriodStart = getPeriodStart(promo.codeLimitPeriod ?? null);
-      const usedCount = await prisma.promoCode.count({
+      const usedCount = await tx.promoCode.count({
         where: {
           promoId,
           ...(limitPeriodStart ? { createdAt: { gte: limitPeriodStart } } : {}),
@@ -127,7 +132,7 @@ export async function POST(
     let code = '';
     for (let attempt = 0; attempt < 10; attempt++) {
       const candidate = generateCode();
-      const collision = await prisma.promoCode.findUnique({ where: { code: candidate } });
+      const collision = await tx.promoCode.findUnique({ where: { code: candidate } });
       if (!collision) {
         code = candidate;
         break;
@@ -137,7 +142,7 @@ export async function POST(
       return NextResponse.json({ error: 'Error al generar código, intente nuevamente' }, { status: 500 });
     }
 
-    const promoCode = await prisma.promoCode.create({
+    const promoCode = await tx.promoCode.create({
       data: { promoId, code, deviceId, status: 'PENDING' },
     });
 
@@ -155,6 +160,7 @@ export async function POST(
       promoImageUrl: promo.imageUrl,
       promoValidUntil: promo.validUntil,
     });
+    }, { isolationLevel: 'Serializable' });
   } catch (error) {
     console.error('Error claiming promo code:', error);
     return NextResponse.json({ error: 'Error al obtener código' }, { status: 500 });

@@ -336,7 +336,10 @@ export default function MapScreen({ route }) {
           >
           {sortedMotels.map((motel) => (
             <CustomMarker
-              key={motel.id}
+              // Google Maps iOS no siempre reemplaza `image` en un marker ya
+              // montado. Cambiar la key cuando llega el PNG fuerza únicamente
+              // ese reemplazo, sin volver a usar vistas React dentro del mapa.
+              key={`${motel.id}-${motel.markerImageUri ? 'label' : 'pin'}`}
               motel={motel}
               onPress={() => handleMarkerPress(motel)}
             />

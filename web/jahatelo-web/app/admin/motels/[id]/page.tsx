@@ -949,6 +949,23 @@ export default function MotelDetailPage() {
     });
   };
 
+  const handleReplyReview = async (reviewId: string, reply: string) => {
+    const response = await fetch(`/api/admin/reviews/${reviewId}/reply`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reply }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      toast.error(data.error || 'No se pudo guardar la respuesta');
+      return;
+    }
+    setReviews((previous) => previous.map((review) =>
+      review.id === reviewId ? { ...review, ...data.review } : review
+    ));
+    toast.success('Respuesta publicada');
+  };
+
   const handleReorderRooms = async (orderedRooms: RoomType[]) => {
     if (!motel) return;
     const previousRooms = motel.rooms ?? [];
@@ -1605,8 +1622,9 @@ export default function MotelDetailPage() {
           reviews={reviews}
           loading={reviewsLoading}
           onRefresh={fetchReviews}
-          onDelete={handleDeleteReview}
-          canModerate={currentUser?.role === 'SUPERADMIN'}
+          onDelete={currentUser?.role === 'SUPERADMIN' ? handleDeleteReview : undefined}
+          onReply={handleReplyReview}
+          canModerate={currentUser?.role === 'SUPERADMIN' || currentUser?.role === 'MOTEL_ADMIN'}
         />
       )}
 

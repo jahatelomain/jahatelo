@@ -8,6 +8,9 @@ import Animated, {
   useAnimatedStyle,
   interpolate,
   Extrapolate,
+  withRepeat,
+  withTiming,
+  cancelAnimation,
 } from '../utils/reanimatedCompat';
 import { hasMotelPlanGlow } from '../constants/motelPlans';
 import MotelLogoHeart from './MotelLogoHeart';
@@ -67,6 +70,18 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
   const imageSource = getMotelImageSource(resolvedImageUrl);
   const isPlaceholder = !hasRemoteMotelImage(resolvedImageUrl);
   const hasPlanGlow = hasMotelPlanGlow(motel?.plan);
+  const borderMotion = useSharedValue(-1);
+
+  useEffect(() => {
+    if (!hasPlanGlow) return undefined;
+    borderMotion.value = -1;
+    borderMotion.value = withRepeat(withTiming(1, { duration: 2200 }), -1, false);
+    return () => cancelAnimation(borderMotion);
+  }, [borderMotion, hasPlanGlow]);
+
+  const animatedBorderStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: interpolate(borderMotion.value, [-1, 1], [-CARD_WIDTH, CARD_WIDTH]) }],
+  }));
 
   useEffect(() => {
     setImageIndex(0);
@@ -146,6 +161,14 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
           end={{ x: 1, y: 1 }}
           style={styles.planGlowFrame}
         >
+          <Animated.View pointerEvents="none" style={[styles.borderSweep, animatedBorderStyle]}>
+            <LinearGradient
+              colors={['transparent', 'rgba(255,255,255,0.95)', 'transparent']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.borderSweepGradient}
+            />
+          </Animated.View>
           <View style={styles.planGlowInner}>{card}</View>
         </LinearGradient>
       ) : card}
@@ -365,11 +388,6 @@ const styles = StyleSheet.create({
   cardWrapper: {
     marginRight: SPACING,
     borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   cardClip: {
     borderRadius: 20,
@@ -378,14 +396,16 @@ const styles = StyleSheet.create({
   planGlowFrame: {
     padding: 2,
     borderRadius: 22,
-    shadowColor: '#22D3EE',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 4,
-    // iOS no recorta el contenido del LinearGradient usando solo borderRadius.
-    // El wrapper exterior conserva la sombra; este nodo debe recortar el marco.
+    // El marco celeste delimita la tarjeta sin proyectar brillo ni elevación.
+    // El recorte explícito mantiene el mismo resultado en iOS y Android.
     overflow: 'hidden',
+  },
+  borderSweep: {
+    ...StyleSheet.absoluteFillObject,
+    width: CARD_WIDTH * 0.55,
+  },
+  borderSweepGradient: {
+    flex: 1,
   },
   planGlowInner: {
     borderRadius: 20,

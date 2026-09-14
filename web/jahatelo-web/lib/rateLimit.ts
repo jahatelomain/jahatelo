@@ -11,6 +11,7 @@ const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 
 const redis = redisUrl && redisToken ? new Redis({ url: redisUrl, token: redisToken }) : null;
 const limiterCache = new Map<string, Ratelimit>();
+const localCounters = new Map<string, { count: number; resetAt: number }>();
 
 const toWindowSeconds = (windowMs: number) => Math.max(1, Math.ceil(windowMs / 1000));
 
@@ -37,7 +38,20 @@ export const rateLimitUpstash = async (
   windowMs: number
 ): Promise<RateLimitResult> => {
   if (!redis) {
-    return { success: true, remaining: limit };
+    const now = Date.now();
+    const current = localCounters.get(identifier);
+    if (!current || current.resetAt <= now) {
+      localCounters.set(identifier, { count: 1, resetAt: now + windowMs });
+      return { success: true, remaining: Math.max(0, limit - 1) };
+    }
+    current.count += 1;
+    // Evita crecimiento indefinido en procesos de desarrollo o instancias cálidas.
+    if (localCounters.size > 5000) {
+      for (const [key, value] of localCounters) {
+        if (value.resetAt <= now) localCounters.delete(key);
+      }
+    }
+    return { success: current.count <= limit, remaining: Math.max(0, limit - current.count) };
   }
 
   const limiter = getLimiter(limit, windowMs);

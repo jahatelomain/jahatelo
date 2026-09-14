@@ -16,6 +16,7 @@ export default function useReviews({ motelId, isAuthenticated, token }) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reportingId, setReportingId] = useState(null);
+  const [likingId, setLikingId] = useState(null);
   const [userCanReview, setUserCanReview] = useState(true);
   const [cooldownMessage, setCooldownMessage] = useState('');
 
@@ -26,7 +27,8 @@ export default function useReviews({ motelId, isAuthenticated, token }) {
       if (offset === 0) setLoading(true);
       else setLoadingMore(true);
       const response = await fetch(
-        `${API_URL}/api/mobile/reviews?motelId=${motelId}&limit=${PAGE_SIZE}&offset=${offset}`
+        `${API_URL}/api/mobile/reviews?motelId=${motelId}&limit=${PAGE_SIZE}&offset=${offset}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
 
       if (!isJsonResponse(response)) {
@@ -51,7 +53,32 @@ export default function useReviews({ motelId, isAuthenticated, token }) {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [motelId]);
+  }, [motelId, token]);
+
+  const toggleLike = useCallback(async (reviewId) => {
+    if (!token) return false;
+    try {
+      setLikingId(reviewId);
+      const response = await fetch(`${API_URL}/api/mobile/reviews/${reviewId}/like`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = isJsonResponse(response) ? await response.json() : {};
+      if (!response.ok) {
+        Alert.alert('No se pudo actualizar', data.error || 'Intenta nuevamente.');
+        return false;
+      }
+      setReviews((previous) => previous.map((review) => review.id === reviewId
+        ? { ...review, likes: data.likes, likedByCurrentUser: data.liked }
+        : review));
+      return true;
+    } catch {
+      Alert.alert('No se pudo actualizar', 'Verifica tu conexión e intenta nuevamente.');
+      return false;
+    } finally {
+      setLikingId(null);
+    }
+  }, [token]);
 
   const checkUserCanReview = useCallback(async () => {
     if (!motelId || !isAuthenticated || !token) {
@@ -227,6 +254,7 @@ export default function useReviews({ motelId, isAuthenticated, token }) {
     loadingMore,
     submitting,
     reportingId,
+    likingId,
     userCanReview,
     cooldownMessage,
     refresh,
@@ -234,5 +262,6 @@ export default function useReviews({ motelId, isAuthenticated, token }) {
     deleteReview,
     submitReview,
     reportReview,
+    toggleLike,
   };
 }

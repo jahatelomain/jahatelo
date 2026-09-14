@@ -28,7 +28,7 @@ export default function PrivacyPage() {
 
               <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">2.1 Información proporcionada por usted:</h3>
               <ul className="list-disc pl-6 text-slate-700 space-y-2">
-                <li><strong>Registro de cuenta:</strong> nombre, correo electrónico, contraseña (encriptada)</li>
+                <li><strong>Registro de cuenta:</strong> nombre, correo electrónico y contraseña almacenada únicamente como hash irreversible</li>
                 <li><strong>Perfil:</strong> foto de perfil, preferencias, configuración</li>
                 <li><strong>Contenido del usuario:</strong> reseñas, comentarios, favoritos</li>
                 <li><strong>Información de contacto:</strong> teléfono, dirección (para moteles registrados)</li>
@@ -38,14 +38,14 @@ export default function PrivacyPage() {
               <ul className="list-disc pl-6 text-slate-700 space-y-2">
                 <li><strong>Datos de uso:</strong> páginas visitadas, clics, tiempo en la plataforma</li>
                 <li><strong>Información del dispositivo:</strong> tipo de dispositivo, sistema operativo, navegador</li>
-                <li><strong>Ubicación:</strong> ubicación aproximada basada en IP y ubicación precisa del dispositivo únicamente mientras usa funciones cercanas o el mapa y concede el permiso correspondiente</li>
+                <li><strong>Ubicación:</strong> ubicación aproximada basada en IP; la ubicación precisa se procesa al usar funciones cercanas o el mapa únicamente si concede el permiso correspondiente</li>
                 <li><strong>Identificadores técnicos:</strong> identificadores aleatorios de navegador o instalación, dirección IP y datos de sesión; Jahatelo no accede al IMEI, número de serie ni dirección MAC</li>
                 <li><strong>Cookies y almacenamiento local:</strong> sesión, preferencias y medición de uso (ver sección 7)</li>
               </ul>
 
               <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">2.3 Información de terceros:</h3>
               <ul className="list-disc pl-6 text-slate-700 space-y-2">
-                <li><strong>Redes sociales:</strong> si inicia sesión con Google/Apple</li>
+                <li><strong>Proveedor de identidad:</strong> si inicia sesión con Google</li>
               </ul>
             </section>
 
@@ -84,9 +84,10 @@ export default function PrivacyPage() {
               <ul className="list-disc pl-6 text-slate-700 space-y-2">
                 <li><strong>Hosting:</strong> Vercel (infraestructura web)</li>
                 <li><strong>Base de datos:</strong> Neon/Vercel Postgres</li>
-                <li><strong>Almacenamiento:</strong> Cloudinary (imágenes)</li>
+                <li><strong>Almacenamiento:</strong> Amazon Web Services S3 (imágenes)</li>
                 <li><strong>Mapas y ubicación:</strong> Google Maps Platform</li>
                 <li><strong>Notificaciones:</strong> Expo Push Notifications</li>
+                <li><strong>Mensajes de verificación:</strong> Amazon Web Services SNS y el proveedor de correo configurado por Jahatelo</li>
                 <li><strong>Analítica:</strong> medición propia de eventos de navegación y Google Analytics en la web</li>
               </ul>
 
@@ -165,16 +166,17 @@ export default function PrivacyPage() {
                 <li><strong>Cuentas activas:</strong> mientras use la plataforma</li>
                 <li><strong>Solicitudes de eliminación:</strong> se procesan según los pasos y plazos informados en la página de eliminación de cuenta y datos</li>
                 <li><strong>Datos de facturación:</strong> 5 años (requisito legal)</li>
-                <li><strong>Logs de seguridad:</strong> 12 meses</li>
-                <li><strong>Eventos de analytics:</strong> hasta 90 días; pueden vincularse a su cuenta únicamente cuando inicia sesión</li>
+                <li><strong>Logs de seguridad y auditoría:</strong> hasta 90 días</li>
+                <li><strong>Eventos de visitantes:</strong> hasta 90 días; pueden vincularse a su cuenta únicamente cuando inicia sesión</li>
+                <li><strong>Analítica de rendimiento de moteles:</strong> hasta 180 días</li>
               </ul>
             </section>
 
             <section>
               <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">10. Transferencias Internacionales</h2>
               <p className="text-slate-700 leading-relaxed">
-                Algunos proveedores (Vercel, Cloudinary, Google) pueden almacenar datos en servidores fuera
-                de Paraguay. Estos proveedores cumplen con estándares internacionales de protección de datos.
+                Algunos proveedores (Vercel, Amazon Web Services, Google y Expo) pueden almacenar datos en servidores fuera
+                de Paraguay. Jahatelo selecciona proveedores con medidas de seguridad y condiciones de tratamiento acordes al servicio prestado.
               </p>
             </section>
 

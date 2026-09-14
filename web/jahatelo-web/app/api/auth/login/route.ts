@@ -7,6 +7,7 @@ import { LoginSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
 import logger from '@/lib/logger';
+import { enforceAuthRateLimit } from '@/lib/authRateLimit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,6 +18,8 @@ export async function POST(request: NextRequest) {
     // Validación con Zod
     const validated = LoginSchema.parse(sanitized);
     const { email, password } = validated;
+    const rateLimitError = await enforceAuthRateLimit(request, 'web-login', email);
+    if (rateLimitError) return rateLimitError;
 
     // Buscar usuario activo
     const normalizedEmail = email.toLowerCase().trim();
