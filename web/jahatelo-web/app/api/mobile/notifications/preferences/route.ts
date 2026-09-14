@@ -101,7 +101,6 @@ export async function PATCH(request: NextRequest) {
       notifyReviewReplies,
       notifyReviewLikes,
       notifyPromotions,
-      notifyNewMotels,
     } = validated;
 
     // Actualizar preferencias (upsert por si no existen)
@@ -119,7 +118,6 @@ export async function PATCH(request: NextRequest) {
         notifyReviewReplies: notifyReviewReplies ?? true,
         notifyReviewLikes: notifyReviewLikes ?? false,
         notifyPromotions: notifyPromotions ?? true,
-        notifyNewMotels: notifyNewMotels ?? false,
       },
       update: {
         ...(enableNotifications !== undefined && { enableNotifications }),
@@ -132,7 +130,6 @@ export async function PATCH(request: NextRequest) {
         ...(notifyReviewReplies !== undefined && { notifyReviewReplies }),
         ...(notifyReviewLikes !== undefined && { notifyReviewLikes }),
         ...(notifyPromotions !== undefined && { notifyPromotions }),
-        ...(notifyNewMotels !== undefined && { notifyNewMotels }),
       },
     });
 

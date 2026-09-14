@@ -3,6 +3,7 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { getApiRoot } from './apiBaseUrl';
+import { getAdvertisingPushEnabled } from './preferencesService';
 
 const API_URL = getApiRoot();
 
@@ -105,7 +106,7 @@ export async function registerForPushNotificationsAsync() {
  * @param {string} userId - ID del usuario (opcional)
  * @returns {Promise<boolean>} true si se registró exitosamente
  */
-export async function registerPushToken(token, userId = null) {
+export async function registerPushToken(token, authToken = null, advertisingEnabled = true) {
   try {
     // Obtener información del dispositivo
     const deviceInfo = {
@@ -121,10 +122,11 @@ export async function registerPushToken(token, userId = null) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       },
       body: JSON.stringify({
         token,
-        userId,
+        advertisingEnabled,
         ...deviceInfo,
       }),
     });
@@ -244,9 +246,9 @@ export async function dismissAllNotificationsAsync() {
  * @param {string|null} userId
  * @param {number} maxRetries - Intentos máximos (default 3)
  */
-async function registerPushTokenWithRetry(token, userId, maxRetries = 3) {
+async function registerPushTokenWithRetry(token, authToken, advertisingEnabled, maxRetries = 3) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const success = await registerPushToken(token, userId);
+    const success = await registerPushToken(token, authToken, advertisingEnabled);
     if (success) return true;
     if (attempt < maxRetries) {
       const delay = attempt * 2000; // back-off: 2s, 4s
@@ -258,7 +260,7 @@ async function registerPushTokenWithRetry(token, userId, maxRetries = 3) {
 }
 
 export async function initializeNotifications(options = {}) {
-  const { userId = null, onNotificationReceived, onNotificationResponse } = options;
+  const { authToken = null, onNotificationReceived, onNotificationResponse } = options;
 
   // Registrar y obtener token
   const token = await registerForPushNotificationsAsync();
@@ -271,7 +273,8 @@ export async function initializeNotifications(options = {}) {
   }
 
   // Registrar token en el backend con retry
-  await registerPushTokenWithRetry(token, userId);
+  const advertisingEnabled = await getAdvertisingPushEnabled();
+  await registerPushTokenWithRetry(token, authToken, advertisingEnabled);
 
   // Configurar listeners
   const receivedSubscription = onNotificationReceived
@@ -296,4 +299,10 @@ export async function initializeNotifications(options = {}) {
     token,
     cleanup,
   };
+}
+
+export async function updatePushAdvertisingPreference(enabled, authToken = null) {
+  const token = await registerForPushNotificationsAsync();
+  if (!token) return false;
+  return registerPushToken(token, authToken, enabled);
 }

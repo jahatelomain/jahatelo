@@ -427,11 +427,11 @@ export const PushTokenSchema = z.object({
 
 export const PushTokenRegisterSchema = z.object({
   token: z.string().min(1, 'Token requerido'),
-  userId: z.string().min(1).max(100).optional().nullable(),
   deviceId: z.string().max(100).optional().nullable(),
   deviceType: z.string().max(50).optional().nullable(),
   deviceName: z.string().max(100).optional().nullable(),
   appVersion: z.string().max(50).optional().nullable(),
+  advertisingEnabled: z.boolean().optional(),
 });
 
 export const PushTokenDeleteSchema = z.object({
@@ -724,7 +724,6 @@ export const MobileNotificationPreferencesSchema = z.object({
   notifyReviewReplies: z.boolean().optional(),
   notifyReviewLikes: z.boolean().optional(),
   notifyPromotions: z.boolean().optional(),
-  notifyNewMotels: z.boolean().optional(),
 });
 
 export const UploadFormSchema = z.object({

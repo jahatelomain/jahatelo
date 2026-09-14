@@ -14,7 +14,7 @@ async function ensureMarkersDirectory() {
 }
 
 async function resolveMarkerImage(motel, apiRoot) {
-  const version = sanitizeFilePart(`${motel.markerVersion || motel.plan || 'v1'}-plan-scale-v2-${Platform.OS}`);
+  const version = sanitizeFilePart(`${motel.markerVersion || motel.plan || 'v1'}-single-line-plan-scale-v3-${Platform.OS}`);
   const fileUri = `${MARKERS_DIRECTORY}${sanitizeFilePart(motel.id)}-${version}.png`;
   const cachedFile = await FileSystem.getInfoAsync(fileUri);
   // Una respuesta 429 anterior podía quedar guardada con extensión .png. No

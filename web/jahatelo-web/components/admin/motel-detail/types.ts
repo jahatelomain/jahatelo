@@ -168,5 +168,8 @@ export type MotelReview = {
   isVerified: boolean;
   isAnonymous: boolean;
   createdAt: string;
+  likes: number;
+  ownerReply: string | null;
+  ownerReplyAt: string | null;
   user: { id: string; name: string | null; email: string | null } | null;
 };

@@ -22,6 +22,7 @@ import {
 } from '../services/preferencesService';
 import LoadingScreen from '../components/LoadingScreen';
 import { getApiRoot } from '../services/apiBaseUrl';
+import { updatePushAdvertisingPreference } from '../services/notificationService';
 
 const API_URL = getApiRoot();
 
@@ -42,7 +43,6 @@ export default function NotificationPreferencesScreen({ navigation }) {
     notifyReviewReplies: true,
     notifyReviewLikes: false,
     notifyPromotions: true,
-    notifyNewMotels: false,
   });
 
   useEffect(() => {
@@ -113,7 +113,6 @@ export default function NotificationPreferencesScreen({ navigation }) {
             notifyReviewReplies: data.preferences.notifyReviewReplies ?? true,
             notifyReviewLikes: data.preferences.notifyReviewLikes ?? false,
             notifyPromotions: data.preferences.notifyPromotions ?? true,
-            notifyNewMotels: data.preferences.notifyNewMotels ?? false,
           });
         }
       } else {
@@ -133,10 +132,18 @@ export default function NotificationPreferencesScreen({ navigation }) {
       await setSoundEffectsEnabled(value);
       return;
     }
-    if (key === 'enableAdvertisingPush' && !isAuthenticated) {
+    if (key === 'enableAdvertisingPush') {
       setPreferences(prev => ({ ...prev, [key]: value }));
       await setAdvertisingPushEnabled(value);
-      return;
+      const deviceUpdated = await updatePushAdvertisingPreference(value, token);
+      if (!isAuthenticated) {
+        if (!deviceUpdated) {
+          setPreferences(prev => ({ ...prev, [key]: !value }));
+          await setAdvertisingPushEnabled(!value);
+          showMessage('Error', 'No se pudo actualizar la preferencia');
+        }
+        return;
+      }
     }
 
     // Actualizar estado local inmediatamente para mejor UX
@@ -307,6 +314,21 @@ export default function NotificationPreferencesScreen({ navigation }) {
         )}
 
         {/* Notificaciones Generales */}
+        {!isAuthenticated ? null : (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Generales</Text>
+            <View style={styles.optionsContainer}>
+              <PreferenceItem
+                icon="megaphone-outline"
+                title="Promociones generales"
+                description="Promociones de Jahatelo que no dependen de tus favoritos"
+                value={preferences.notifyPromotions}
+                onToggle={() => toggleSwitch('notifyPromotions')}
+                disabled={saving || !preferences.enableNotifications || !preferences.enableAdvertisingPush}
+              />
+            </View>
+          </View>
+        )}
         {/* Info Footer */}
         {isAuthenticated && (
           <View style={styles.infoContainer}>

@@ -1,5 +1,15 @@
 # Checkpoint de seguridad local
 
+## Revalidación 2026-09-14
+
+- Los endpoints cron fallan cerrados con HTTP 503 si `CRON_SECRET` no está configurado y 401 si la credencial no coincide.
+- Login web/móvil, Google móvil, solicitud OTP y reenvío de verificación tienen límites combinados por identidad e IP; Upstash distribuye el límite cuando está configurado y existe un respaldo local por instancia.
+- Los tokens de verificación de email ya no admiten un secreto conocido ni configuración vacía.
+- El OTP se consume mediante actualización condicional para impedir dos verificaciones simultáneas del mismo código.
+- La app conserva la sesión local ante errores transitorios y solo la elimina ante una respuesta explícita 401/403.
+- Los reclamos de códigos promocionales se serializan por promoción; el canje valida inicio y fin de vigencia. La entrega programada usa locks recuperables, cinco intentos de ejecución, deduplicación de tokens, lotes de 100 y reintentos transitorios de Expo.
+- Verificación local: 69 pruebas unitarias, 49 pruebas Google/sesión, 29 pruebas admin/upload y 14 pruebas de app; TypeScript, lint dirigido, Prisma y `git diff --check` correctos.
+
 ## Integración con staging actualizado
 
 - Base integrada: `1a72179`. Conservados perfiles de acceso, auditoría, logos, marcas de agua y variantes WebP de upstream.

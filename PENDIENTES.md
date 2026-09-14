@@ -17,8 +17,6 @@
 ### Seguridad y autenticación
 
 - [ ] **JH-069 — Validación real de autenticación y uploads:** código integrado y publicado en producción por PR #99, merge `0190a42`; Vercel Ready. Google/sesiones 49/49 y admin/uploads 29/29, typechecks correctos. Home y catálogo HTTP 200; Google sin ID token y upload sin sesión HTTP 401 con Origin válido. Pendiente login Google real, subida autenticada y distribución de app actualizada. JWT_SECRET y audiences móviles configurados; requiere nuevo login. Detalle: `web/jahatelo-web/tests/SECURITY-CHECKPOINT.md`.
-- [ ] **JH-070 — Revalidar hallazgos de seguridad y sesión sobre la versión actual:** comprobar autorización y propiedad de push tokens, cron sin secreto, límites de login móvil, secreto de verificación de email, contexto OTP/reenvío de email y logout por fallo de red. Los hallazgos originales se hicieron sobre una copia antigua; no asumir que siguen vigentes.
-- [ ] **JH-071 — Revalidar concurrencia de promociones y entrega push:** comprobar cupos/canje atómico, inicio de vigencia, duplicados, reintentos y frecuencia de programación sobre la versión actual. Corregir únicamente problemas reproducidos.
 - [ ] **JH-078 — Dependencias transitivas sin corrección compatible:** la web ya actualizó Next, Sharp, Nodemailer, AWS y demás correcciones seguras; quedan tres avisos altos en `deepmerge-ts` de Prisma CLI. La app conserva avisos dentro de Expo/Metro cuya salida automática exige migrar de Expo 54 a 57. No aplicar `npm audit fix --force`: planificar y probar ambas migraciones mayores, reconstruir iOS/Android y repetir las auditorías.
 
 ### Preparación para producción
@@ -29,7 +27,7 @@
 ### SEO y adquisición
 
 - [ ] **JH-018 — Google Search Console:** configurar una identidad técnica con permisos mínimos y guardar sus credenciales únicamente como secretos.
-- [ ] **JH-020 — Operación de Search Console:** documentar revocación, rotación de credenciales y responsable operativo.
+- [ ] **JH-020 — Operación de Search Console:** el procedimiento de alta, mínimo privilegio, revisión, rotación, revocación e incidentes está documentado en `docs/SEARCH-CONSOLE-OPERACION.md`. Falta designar por nombre al titular y suplente y crear la identidad externa.
 
 ### Mapa web
 
@@ -40,9 +38,9 @@
 
 - [ ] **JH-028 — Texto ampliado:** la revisión de código ya retiró cortes de una línea, preserva escalado y scroll en formularios; falta ejecutar y registrar la matriz con el tamaño máximo en dispositivos físicos.
 - [ ] **JH-029 — Lectores de pantalla:** ejecutar la matriz documentada con VoiceOver y TalkBack en dispositivos físicos.
-- [ ] **JH-073 — Cumplimiento de permisos y privacidad en Google Play:** los permisos Android amplios de cámara/galería sin uso fueron retirados y la política pública ya refleja ubicación, identificadores, proveedores, analítica, notificaciones y retención reales. Falta completar y validar externamente la ficha de Seguridad de datos de Google Play con estas mismas prácticas.
+- [ ] **JH-073 — Cumplimiento de permisos y privacidad en Google Play:** los permisos Android amplios de cámara/galería sin uso fueron retirados; política y retención se alinearon con el código. La matriz campo por campo está en `kit para subida a stores/GOOGLE-PLAY-SEGURIDAD-DE-DATOS.md`. Falta resolver las condiciones del AAB final y proveedores, cargarla y validarla externamente en Play Console.
 - [ ] **JH-075 — Firma de producción para Google Maps Android:** tras subir el primer AAB, agregar a Google Cloud el SHA-1 de Google Play App Signing para Maps y validar el mapa del build distribuido por Play en un Android físico. El SHA-256 de App Links continúa exclusivamente en JH-001.
-- [ ] **JH-076 — Expediente de cumplimiento de exportación de EE.UU.:** documentar el uso exclusivo de cifrado estándar, determinar y conservar la clasificación aplicable (`EAR99`, `5D992.c` o excepción), revisar destinos/personas sancionadas y obtener validación profesional si la clasificación no puede sostenerse internamente.
+- [ ] **JH-076 — Expediente de cumplimiento de exportación de EE.UU.:** el inventario criptográfico, evidencia y procedimiento de control están documentados en `docs/CUMPLIMIENTO-EXPORTACION-EEUU.md`. Falta registrar la clasificación final aplicable (`EAR99`, `5D992.c` u otra excepción), revisar destinos/personas sancionadas y obtener validación profesional si no puede sostenerse internamente.
 - [ ] **JH-077 — Paridad visual y claridad del home en iOS/Android:** implementación integrada en `main` mediante PR #102 y rebuild iOS/Android completado; falta la confirmación visual final en dispositivos físicos antes de cerrarlo.
   - Redondear correctamente en iOS el contenedor completo de todas las tarjetas Diamond: destacados, Favoritos, búsqueda, cercanos, listados por ciudad y secciones horizontales del home.
   - Restablecer la jerarquía de tamaño de los marcadores según plan y reducir su escala general en Android.
@@ -65,8 +63,14 @@
 
 ## Completados
 
+### 2026-09-14
+
+- [x] **JH-071 — Concurrencia de promociones y entrega push:** los reclamos se serializan por promoción para que cupos, repetición y creación sean atómicos; el canje mantiene su actualización condicional y ahora también valida el inicio de vigencia. Las notificaciones programadas se reclaman con lock recuperable, no se duplican entre workers, reintentan hasta cinco ejecuciones y Expo reintenta fallos transitorios en lotes de 100 tokens.
+- [x] **JH-070 — Seguridad y sesión revalidada:** push tokens asociados únicamente desde JWT; cron cerrado si falta o no coincide el secreto; límites por identidad e IP para login, Google, OTP y reenvío de verificación; secreto de email obligatorio; OTP consumido atómicamente; una caída de red al revalidar la app ya no elimina una sesión válida.
+
 ### 2026-09-13
 
+- [x] **JH-079 — Preferencias y eventos de notificaciones:** vinculación segura del dispositivo tras iniciar sesión; opt-out publicitario por instalación para invitados; avisos por cambios en moteles favoritos, respuestas y likes de reseñas; preferencia efectiva para promociones generales; retirada de “Nuevos moteles”. Se incorporaron respuesta administrativa y likes de reseñas en web/iOS/Android, y el carrusel recuperó el borde Diamond animado sin sombra.
 - [x] **JH-074 — Moderación de reseñas para Google Play:** web, iOS y Android permiten denunciar reseñas ajenas; el backend exige autenticación, evita duplicados y entrega cada caso a la bandeja exclusiva de SUPERADMIN. La administración puede investigar, asignar, documentar, descartar o eliminar la reseña conservando el historial del reporte, y los términos públicos incorporan las normas y el proceso de moderación de contenido generado por usuarios.
 
 ### 2026-09-12

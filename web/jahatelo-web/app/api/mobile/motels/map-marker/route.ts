@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import path from 'path';
 import sharp from 'sharp';
 import { prisma } from '@/lib/prisma';
 
@@ -12,8 +11,6 @@ const PLAN_COLORS: Record<string, string> = {
   FREE: '#64748B',
   BASIC: '#8B2BE2',
 };
-const MARKER_FONT_FILE = path.join(process.cwd(), 'assets/fonts/NotoSans-Regular.ttf');
-
 function escapeXml(value: string) {
   return value.replace(/[<>&'\"]/g, (character) => ({
     '<': '&lt;',
@@ -25,8 +22,19 @@ function escapeXml(value: string) {
 }
 
 function labelFor(name: string) {
-  const normalized = name.trim();
-  return normalized.length > 24 ? `${normalized.slice(0, 23).trimEnd()}…` : normalized;
+  return name.trim().replace(/\s+/g, ' ') || 'Motel';
+}
+
+function estimateLabelWidth(label: string) {
+  return Array.from(label).reduce((width, character) => {
+    if (/\s/.test(character)) return width + 4;
+    if (/[ilI1.,'`]/.test(character)) return width + 4.5;
+    if (/[MW@#%&]/.test(character)) return width + 11;
+    if (character === character.toUpperCase() && character !== character.toLowerCase()) {
+      return width + 9;
+    }
+    return width + 7.5;
+  }, 0);
 }
 
 const PLAN_SCALE: Record<string, number> = {
@@ -36,9 +44,7 @@ const PLAN_SCALE: Record<string, number> = {
   DIAMOND: 1.06,
 };
 
-function markerDimensions(label: string, plan: string, platform: string) {
-  const characterCount = Array.from(label).length;
-  const viewWidth = Math.max(80, Math.min(176, Math.ceil(characterCount * 8 + 28)));
+function markerDimensions(viewWidth: number, plan: string, platform: string) {
   // Android interpreta estos PNG nativos a mayor tamaño visual que iOS.
   // La escala base por plataforma corrige esa diferencia y el multiplicador
   // de plan recupera la jerarquía comercial sin alterar el área de toque.
@@ -65,33 +71,25 @@ export async function GET(request: NextRequest) {
   const color = PLAN_COLORS[motel.plan] ?? PLAN_COLORS.BASIC;
   const label = labelFor(motel.name);
   const text = escapeXml(label);
-  const { viewWidth, outputWidth, outputHeight } = markerDimensions(label, motel.plan, platform);
+  // SVG mantiene el nombre como una única línea. El lienzo se calcula según
+  // sus caracteres y después se escala completo para conservar la jerarquía
+  // de planes sin separar el texto de su etiqueta.
+  const textWidth = Math.ceil(estimateLabelWidth(label));
+  const viewWidth = Math.max(80, textWidth + 28);
+  const { outputWidth, outputHeight } = markerDimensions(viewWidth, motel.plan, platform);
   const center = viewWidth / 2;
-  const svg = `<svg width="${outputWidth}" height="${outputHeight}" viewBox="0 0 ${viewWidth} 94" xmlns="http://www.w3.org/2000/svg">
+  const svg = `<svg width="${viewWidth}" height="94" viewBox="0 0 ${viewWidth} 94" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#111827" flood-opacity=".24"/></filter>
     </defs>
     <g filter="url(#shadow)">
       <rect x="4" y="4" width="${viewWidth - 8}" height="34" rx="10" fill="${color}" stroke="#FFFFFF" stroke-width="2"/>
       <path d="M${center} 87 C${center - 5} 80 ${center - 30} 65 ${center - 30} 49 C${center - 30} 40 ${center - 23} 34 ${center - 14} 34 C${center - 8} 34 ${center - 3} 37 ${center} 42 C${center + 3} 37 ${center + 8} 34 ${center + 14} 34 C${center + 23} 34 ${center + 30} 40 ${center + 30} 49 C${center + 30} 65 ${center + 5} 80 ${center} 87 Z" fill="${color}" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/>
+      <text x="${center}" y="21" text-anchor="middle" dominant-baseline="middle" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="15" font-weight="600" textLength="${textWidth}" lengthAdjust="spacingAndGlyphs">${text}</text>
     </g>
   </svg>`;
   const png = await sharp(Buffer.from(svg))
-    .composite([{
-      input: {
-        text: {
-          text: `<span foreground="#FFFFFF">${text}</span>`,
-          font: 'Noto Sans',
-          fontfile: MARKER_FONT_FILE,
-          width: outputWidth - 24,
-          height: 31,
-          align: 'centre',
-          rgba: true,
-        },
-      },
-      left: 12,
-      top: 13,
-    }])
+    .resize(outputWidth, outputHeight)
     .png()
     .toBuffer();
   return new NextResponse(new Uint8Array(png), {

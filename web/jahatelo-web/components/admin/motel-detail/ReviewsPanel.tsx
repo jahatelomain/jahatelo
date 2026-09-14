@@ -7,6 +7,7 @@ type Props = {
   loading: boolean;
   onRefresh: () => void;
   onDelete?: (reviewId: string) => void;
+  onReply?: (reviewId: string, reply: string) => Promise<void>;
   canModerate?: boolean;
 };
 
@@ -17,6 +18,7 @@ export default function ReviewsPanel({
   loading,
   onRefresh,
   onDelete,
+  onReply,
   canModerate = false,
 }: Props) {
   return (
@@ -59,6 +61,12 @@ export default function ReviewsPanel({
                     )}
                   </div>
                   {review.comment && <p className="text-sm text-slate-700 mt-1">{review.comment}</p>}
+                  {review.ownerReply && (
+                    <div className="mt-3 rounded-lg bg-slate-50 p-3">
+                      <p className="text-xs font-semibold text-slate-600">Respuesta del motel</p>
+                      <p className="mt-1 text-sm text-slate-700">{review.ownerReply}</p>
+                    </div>
+                  )}
                   <p className="text-xs text-slate-400 mt-2">
                     {review.isAnonymous ? 'Usuario anónimo' : (review.user?.name || review.user?.email || 'Usuario')}
                     {' · '}
@@ -68,6 +76,31 @@ export default function ReviewsPanel({
                       year: 'numeric',
                     })}
                   </p>
+                  {canModerate && onReply && (
+                    <form
+                      className="mt-3 flex gap-2"
+                      onSubmit={async (event) => {
+                        event.preventDefault();
+                        const form = event.currentTarget;
+                        const input = form.elements.namedItem('reply') as HTMLInputElement;
+                        const reply = input.value.trim();
+                        if (!reply) return;
+                        await onReply(review.id, reply);
+                        input.value = '';
+                      }}
+                    >
+                      <input
+                        name="reply"
+                        defaultValue={review.ownerReply || ''}
+                        maxLength={500}
+                        className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        placeholder="Responder esta reseña"
+                      />
+                      <button className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-semibold text-white">
+                        Responder
+                      </button>
+                    </form>
+                  )}
                 </div>
                 {canModerate && onDelete && <button
                   onClick={() => onDelete(review.id)}

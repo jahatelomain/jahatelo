@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { createEmailVerificationToken } from '@/lib/emailVerification';
 import { sendEmail } from '@/lib/email';
 import { sanitizeObject } from '@/lib/sanitize';
+import { enforceAuthRateLimit } from '@/lib/authRateLimit';
 
 const RequestSchema = z.object({
   email: z.string().email(),
@@ -19,6 +20,8 @@ export async function POST(request: NextRequest) {
     }
 
     const email = parsed.data.email.toLowerCase().trim();
+    const rateLimitError = await enforceAuthRateLimit(request, 'email-verification', email, 5, 60 * 60_000);
+    if (rateLimitError) return rateLimitError;
     const user = await prisma.user.findUnique({
       where: { email },
       select: { id: true, name: true, isEmailVerified: true },

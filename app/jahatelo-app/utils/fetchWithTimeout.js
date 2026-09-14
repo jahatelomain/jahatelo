@@ -39,7 +39,9 @@ export async function fetchWithTimeout(url, options = {}, retryCount = 0) {
     if (!response.ok) {
       // Si es 401 (Unauthorized), probablemente falta Basic Auth en staging
       if (response.status === 401) {
-        throw new Error('Error de autenticación (401). Verifica credenciales de staging.');
+        const error = new Error('Error de autenticación (401). Verifica credenciales de staging.');
+        error.status = 401;
+        throw error;
       }
       // Para errores de negocio (4xx), intentar devolver el body JSON para
       // que el caller pueda leer campos como needsVerification, error, etc.

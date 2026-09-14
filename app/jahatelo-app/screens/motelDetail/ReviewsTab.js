@@ -30,12 +30,14 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
     loadingMore,
     submitting,
     reportingId,
+    likingId,
     userCanReview,
     cooldownMessage,
     loadMore: handleLoadMore,
     deleteReview: handleDeleteReview,
     submitReview,
     reportReview,
+    toggleLike,
     refresh,
   } = useReviews({ motelId: motel?.id, isAuthenticated, token });
 
@@ -330,6 +332,32 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
                     </View>
                   </View>
                   <Text style={styles.reviewComment}>{review.comment}</Text>
+                  {review.ownerReply ? (
+                    <View style={styles.ownerReply}>
+                      <Text style={styles.ownerReplyTitle}>Respuesta del motel</Text>
+                      <Text style={styles.ownerReplyText}>{review.ownerReply}</Text>
+                    </View>
+                  ) : null}
+                  <TouchableOpacity
+                    style={styles.likeButton}
+                    onPress={() => isAuthenticated
+                      ? toggleLike(review.id)
+                      : navigation.navigate('Login')}
+                    disabled={isOwn || likingId === review.id}
+                    accessibilityRole="button"
+                    accessibilityLabel="Indicar que te gusta esta reseña"
+                  >
+                    {likingId === review.id ? (
+                      <ActivityIndicator size="small" color={COLORS.primary} />
+                    ) : (
+                      <Ionicons
+                        name={review.likedByCurrentUser ? 'heart' : 'heart-outline'}
+                        size={18}
+                        color={review.likedByCurrentUser ? COLORS.primary : COLORS.textLight}
+                      />
+                    )}
+                    <Text style={styles.likeText}>{review.likes || 0}</Text>
+                  </TouchableOpacity>
                 </View>
               );
             })}
@@ -640,6 +668,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.text,
     lineHeight: 20,
+  },
+  ownerReply: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: COLORS.grayLight,
+  },
+  ownerReplyTitle: {
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  ownerReplyText: {
+    color: COLORS.textLight,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  likeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    marginTop: 12,
+    paddingVertical: 4,
+  },
+  likeText: {
+    color: COLORS.textLight,
+    fontSize: 13,
+    fontWeight: '600',
   },
   loadMoreButton: {
     flexDirection: 'row',

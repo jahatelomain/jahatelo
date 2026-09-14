@@ -16,7 +16,8 @@ type Preferences = {
   notifyPriceDrops: boolean;
   notifyUpdates: boolean;
   notifyReviewReplies: boolean;
-  notifyNewMotels: boolean;
+  notifyReviewLikes: boolean;
+  notifyPromotions: boolean;
 };
 
 const defaults: Preferences = {
@@ -28,7 +29,8 @@ const defaults: Preferences = {
   notifyPriceDrops: true,
   notifyUpdates: true,
   notifyReviewReplies: true,
-  notifyNewMotels: true,
+  notifyReviewLikes: false,
+  notifyPromotions: true,
 };
 
 const options: Array<{ key: keyof Preferences; title: string; description: string }> = [
@@ -38,8 +40,9 @@ const options: Array<{ key: keyof Preferences; title: string; description: strin
   { key: 'enableAdvertisingPush', title: 'Publicidad y promociones', description: 'Ofertas y comunicaciones comerciales.' },
   { key: 'notifyNewPromos', title: 'Nuevas promociones', description: 'Promos publicadas por los moteles.' },
   { key: 'notifyPriceDrops', title: 'Cambios de precios', description: 'Avisos de precios y oportunidades.' },
-  { key: 'notifyNewMotels', title: 'Nuevos moteles', description: 'Establecimientos recién publicados.' },
   { key: 'notifyReviewReplies', title: 'Respuestas a reseñas', description: 'Actividad relacionada con tus reseñas.' },
+  { key: 'notifyReviewLikes', title: 'Me gusta en reseñas', description: 'Cuando otro usuario indique que le gustó tu reseña.' },
+  { key: 'notifyPromotions', title: 'Promociones generales', description: 'Promociones de Jahatelo que no dependen de tus favoritos.' },
   { key: 'notifyUpdates', title: 'Actualizaciones de Jahatelo', description: 'Cambios relevantes del servicio.' },
 ];
 

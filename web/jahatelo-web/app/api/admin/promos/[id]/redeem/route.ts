@@ -33,6 +33,7 @@ export async function POST(
             description: true,
             imageUrl: true,
             isActive: true,
+            validFrom: true,
             validUntil: true,
             motelId: true,
           },
@@ -59,7 +60,11 @@ export async function POST(
     }
 
     const now = new Date();
-    if (!promoCode.promo.isActive || (promoCode.promo.validUntil && new Date(promoCode.promo.validUntil) < now)) {
+    if (
+      !promoCode.promo.isActive ||
+      (promoCode.promo.validFrom && new Date(promoCode.promo.validFrom) > now) ||
+      (promoCode.promo.validUntil && new Date(promoCode.promo.validUntil) < now)
+    ) {
       return NextResponse.json({ valid: false, reason: 'PROMO_INACTIVE' });
     }
 

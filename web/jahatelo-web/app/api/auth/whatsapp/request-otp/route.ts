@@ -6,6 +6,7 @@ import { generateOtpCode, hashOtp, isValidPhone, normalizePhone } from '@/lib/ot
 import { sendSmsOtp } from '@/lib/sms';
 import { z } from 'zod';
 import logger from '@/lib/logger';
+import { enforceAuthRateLimit } from '@/lib/authRateLimit';
 
 const OTP_EXPIRY_MINUTES = 5;
 const OTP_SEND_COOLDOWN_SECONDS = 60;
@@ -21,6 +22,8 @@ export async function POST(request: NextRequest) {
     }
 
     const phone = normalizePhone(validated.phone);
+    const rateLimitError = await enforceAuthRateLimit(request, 'web-otp', phone, 5, 60 * 60_000);
+    if (rateLimitError) return rateLimitError;
     const now = new Date();
 
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);

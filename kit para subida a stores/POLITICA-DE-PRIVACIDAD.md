@@ -25,17 +25,18 @@ Usamos tus datos para:
 Tratamos tus datos con tu consentimiento, para ejecutar el contrato, o por interés legitimo,
 según corresponda.
 
-5. Comparición de datos
+5. Compartición de datos
 No vendemos datos personales. Podemos compartir con:
-- Proveedores tecnológicos (hosting, analitica, notificaciones).
+- Proveedores tecnológicos que actúan por cuenta de Jahatelo: Vercel y Postgres (hosting y base de datos), Amazon Web Services S3 (imágenes), Amazon Web Services SNS (SMS), Google (identidad y mapas), Expo (notificaciones), analítica y correo configurados por Jahatelo.
 - Autoridades si la ley lo exige.
 
 6. Seguridad
 Aplicamos medidas técnicas y organizativas razonables para proteger la información.
 
 7. Conservación
-Conservamos los datos mientras la cuenta este activa o sea necesario para el servicio,
-salvo obligación legal distinta.
+Conservamos los datos mientras la cuenta esté activa o sean necesarios para el servicio.
+Los eventos de visitantes y logs de seguridad o auditoría se conservan hasta 90 días; la analítica
+de rendimiento de moteles, hasta 180 días, salvo obligación legal distinta.
 
 8. Derechos del usuario
 Podés solicitar acceso, rectificación, eliminación o portabilidad.

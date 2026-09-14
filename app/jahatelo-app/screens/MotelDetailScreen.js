@@ -37,7 +37,9 @@ export default function MotelDetailScreen({ route, navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [mainPhotoError, setMainPhotoError] = useState(false);
-  const [activeTab, setActiveTab] = useState(initialTab === 'Promos' ? 'Promos' : 'Detalles');
+  const [activeTab, setActiveTab] = useState(
+    initialTab === 'Promos' || initialTab === 'Reseñas' ? initialTab : 'Detalles'
+  );
   const sectionOffsets = useRef({});
   const detailScrollRef = useRef(null);
   const { isFavorite, toggleFavorite } = useFavorites();

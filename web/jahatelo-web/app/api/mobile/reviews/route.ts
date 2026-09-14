@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
               slug: true,
             },
           },
+          reviewLikes: { where: { userId: currentUser?.id ?? '__guest__' }, select: { id: true } },
         },
         orderBy: {
           createdAt: 'desc',
@@ -77,6 +78,9 @@ export async function GET(request: NextRequest) {
         isVerified: r.isVerified,
         isAnonymous: r.isAnonymous,
         likes: r.likes,
+        likedByCurrentUser: r.reviewLikes.length > 0,
+        ownerReply: r.ownerReply,
+        ownerReplyAt: r.ownerReplyAt,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
         isOwn: currentUser?.id === r.userId,
