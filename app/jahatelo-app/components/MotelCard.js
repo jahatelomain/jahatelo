@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   interpolate,
+  withRepeat,
   withSpring,
   withTiming,
 } from '../utils/reanimatedCompat';
@@ -77,6 +78,12 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
       transform: [{ translateX }, { rotate: '20deg' }],
     };
   });
+
+  useEffect(() => {
+    if (!isDiamond) return;
+    diamondOrbit.value = withRepeat(withTiming(360, { duration: 4200 }), -1, false);
+    diamondShimmer.value = withRepeat(withTiming(1, { duration: 2600 }), -1, false);
+  }, [diamondOrbit, diamondShimmer, isDiamond]);
 
   // Early return después de todos los hooks
   if (!motel) return null;

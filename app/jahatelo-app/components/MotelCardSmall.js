@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,6 +6,8 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   interpolate,
+  withRepeat,
+  withTiming,
 } from '../utils/reanimatedCompat';
 import { hasMotelPlanGlow } from '../constants/motelPlans';
 import MotelLogoHeart from './MotelLogoHeart';
@@ -32,6 +34,12 @@ export default function MotelCardSmall({ motel, onPress }) {
       transform: [{ translateX }, { rotate: '20deg' }],
     };
   });
+
+  useEffect(() => {
+    if (!isDiamond) return;
+    diamondOrbit.value = withRepeat(withTiming(360, { duration: 4200 }), -1, false);
+    diamondShimmer.value = withRepeat(withTiming(1, { duration: 2600 }), -1, false);
+  }, [diamondOrbit, diamondShimmer, isDiamond]);
 
   // Early return después de todos los hooks
   if (!motel) return null;
