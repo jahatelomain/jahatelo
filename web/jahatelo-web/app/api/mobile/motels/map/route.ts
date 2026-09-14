@@ -7,7 +7,7 @@ import { normalizeLocalUrl } from '@/lib/normalizeLocalUrl';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 60; // Cache por 60 segundos
-const MARKER_RENDER_VERSION = '4';
+const MARKER_RENDER_VERSION = '5';
 
 /**
  * GET /api/mobile/motels/map
