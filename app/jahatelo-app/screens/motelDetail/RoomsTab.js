@@ -33,18 +33,16 @@ function hasDayVariation(dayRates) {
   );
 }
 
-/**
- * Fila de precios por duración para un bloque (entre semana o fin de semana).
- */
+/** Lista de precios por duración para un bloque general. */
 function PriceRow({ prices }) {
   const entries = DURATIONS.filter(({ key }) => prices[key] != null && prices[key] > 0);
   if (entries.length === 0) return null;
   return (
-    <View style={styles.priceGrid}>
+    <View style={styles.priceList}>
       {entries.map(({ key, label }) => (
-        <View key={key} style={styles.priceCell}>
-          <Text style={styles.priceCellLabel}>{label}</Text>
-          <Text style={styles.priceCellValue}>{formatPrice(prices[key])}</Text>
+        <View key={key} style={styles.priceListRow}>
+          <Text style={styles.priceListLabel}>{label}</Text>
+          <Text style={styles.priceListValue}>{formatPrice(prices[key])}</Text>
         </View>
       ))}
     </View>
@@ -135,6 +133,7 @@ function RoomCard({ room, motel, onPhotoGestureStart, onPhotoGestureEnd }) {
 
   // Determinar si hay precios desglosados que mostrar
   const currentPrices = room.prices || {};
+  const hasSpecificDayRates = Array.isArray(room.weekdayRates) && room.weekdayRates.length > 0;
   const hasPriceBreakdown =
     DURATIONS.some(({ key }) => currentPrices[key] != null && currentPrices[key] > 0);
 
@@ -164,7 +163,7 @@ function RoomCard({ room, motel, onPhotoGestureStart, onPhotoGestureEnd }) {
       />
 
       {/* Precios */}
-      {hasDiff ? (
+      {!hasSpecificDayRates && (hasDiff ? (
         // Modo con variación por día de semana
         <View style={styles.dayRatesContainer}>
           {weekdayRates && (
@@ -196,7 +195,7 @@ function RoomCard({ room, motel, onPhotoGestureStart, onPhotoGestureEnd }) {
         <View style={styles.roomPriceRow}>
           <Text style={styles.roomPrice}>{PRICE_UPDATING_MESSAGE}</Text>
         </View>
-      )}
+      ))}
       <SpecificDayRates rates={room.weekdayRates} />
 
       {/* Amenities */}
@@ -362,33 +361,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.primary,
   },
-  priceGrid: {
+  priceList: {
+    gap: 7,
+  },
+  priceListRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  priceCell: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E8E0F0',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
     alignItems: 'center',
-    minWidth: 68,
+    justifyContent: 'space-between',
+    gap: 10,
+    backgroundColor: '#F7F3FF',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
   },
-  priceCellLabel: {
-    fontSize: 10,
-    color: '#888',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  priceCellValue: {
+  priceListLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#2A0038',
+    color: '#3C1952',
+  },
+  priceListValue: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: COLORS.primary,
   },
   specificRates: { marginTop: 12, gap: 7, borderTopWidth: 1, borderTopColor: '#E9E1F0', paddingTop: 12 },
   specificRatesTitle: { fontSize: 12, fontWeight: '700', color: '#54206B', marginBottom: 1 },

@@ -27,7 +27,7 @@ function markerDimensions(viewWidth: number, plan: string, platform: string) {
   // Android interpreta estos PNG nativos a mayor tamaño visual que iOS.
   // La escala base por plataforma corrige esa diferencia y el multiplicador
   // de plan recupera la jerarquía comercial sin alterar el área de toque.
-  const platformScale = platform === 'android' ? 0.82 : 1;
+  const platformScale = platform === 'android' ? 0.861 : 1.25;
   const outputScale = platformScale * (PLAN_SCALE[plan] ?? PLAN_SCALE.BASIC);
   return {
     viewWidth,
