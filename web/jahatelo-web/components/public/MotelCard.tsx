@@ -261,7 +261,7 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
       </div>
   );
 
-  const diamondFrameStyle: CSSProperties | undefined = hasPlanGlow
+  const diamondFrameStyle: (CSSProperties & { '--motel-orbit-dot-shadow'?: string }) | undefined = hasPlanGlow
     ? {
         backgroundImage: glowTheme.frame,
         '--motel-orbit-dot-shadow': glowTheme.dotShadow,
