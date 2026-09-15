@@ -13,7 +13,7 @@ Fecha: 6 de febrero de 2026
 2) Contacto y links
 - Sitio web: https://jahatelo.com
 - Soporte email: info@jahatelo.com
-- Email privacidad: privacidad@jahatelo.com
+- Email privacidad: info@jahatelo.com
 - URL Politica de privacidad: https://jahatelo.com/privacy
 - URL Terminos y condiciones: https://jahatelo.com/terminos
 - URL Soporte: https://jahatelo.com/soporte

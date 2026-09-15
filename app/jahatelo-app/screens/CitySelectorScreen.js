@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import Animated, {
   FadeIn,
   SlideInLeft,
@@ -25,9 +26,10 @@ import Animated, {
 } from '../utils/reanimatedCompat';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../constants/theme';
-import { fetchCities, fetchMotels } from '../services/motelsApi';
+import { fetchCities, fetchMotels, searchAndFilterMotels } from '../services/motelsApi';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { mixAdvertisements } from '../utils/mixAdvertisements';
+import { calculateDistance } from '../utils/location';
 import AdDetailModal from '../components/AdDetailModal';
 import MotelCard from '../components/MotelCard';
 
@@ -36,6 +38,46 @@ import MotelCard from '../components/MotelCard';
 // Android sin ralentizar el escalonado entre tarjetas.
 const CITY_ENTRY_BASE_DELAY = Platform.OS === 'ios' ? 350 : 0;
 const cityEntryDelay = (index) => CITY_ENTRY_BASE_DELAY + index * 90;
+const CITY_LOCATION_TIMEOUT_MS = 8000;
+
+const normalizeCityName = (value) => {
+  return (value || '').toString().trim().toLowerCase();
+};
+
+const getNumericCoordinate = (...values) => {
+  for (const value of values) {
+    if (value === null || value === undefined || value === '') continue;
+    const numericValue = Number(value);
+    if (Number.isFinite(numericValue)) return numericValue;
+  }
+  return null;
+};
+
+const getMotelCoordinates = (motel) => {
+  const latitude = getNumericCoordinate(
+    motel?.latitude,
+    motel?.lat,
+    motel?.location?.latitude,
+    motel?.location?.lat
+  );
+  const longitude = getNumericCoordinate(
+    motel?.longitude,
+    motel?.lng,
+    motel?.lon,
+    motel?.location?.longitude,
+    motel?.location?.lng
+  );
+
+  if (latitude === null || longitude === null) return null;
+  return { latitude, longitude };
+};
+
+const withTimeout = (promise, timeoutMs) => (
+  Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('LOCATION_TIMEOUT')), timeoutMs)),
+  ])
+);
 
 // Las entering animations de Reanimated pueden finalizar durante la transición
 // de navegación o ser omitidas por la virtualización de FlatList en iOS. Esta
@@ -224,28 +266,83 @@ export default function CitySelectorScreen({ route, navigation }) {
   const [showAdDetailModal, setShowAdDetailModal] = useState(false);
   const [expandedCity, setExpandedCity] = useState(null);
   const [motelsByCity, setMotelsByCity] = useState({});
+  const [cityDistanceMotels, setCityDistanceMotels] = useState(motels);
   const [loadingCity, setLoadingCity] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationStatus, setLocationStatus] = useState('idle');
   const { ads: listAds, loading: adsLoading, trackAdEvent } = useAdvertisements('LIST_INLINE');
+
+  const loadUserLocation = useCallback(async () => {
+    let resolvedWithRecentLocation = false;
+    setLocationStatus('loading');
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationStatus('denied');
+        return;
+      }
+
+      const recentLocation = await Location.getLastKnownPositionAsync({
+        maxAge: 5 * 60 * 1000,
+        requiredAccuracy: 3000,
+      });
+
+      if (recentLocation?.coords) {
+        resolvedWithRecentLocation = true;
+        setUserLocation({
+          latitude: recentLocation.coords.latitude,
+          longitude: recentLocation.coords.longitude,
+        });
+        setLocationStatus('ready');
+      }
+
+      const currentLocation = await withTimeout(
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+        CITY_LOCATION_TIMEOUT_MS
+      );
+
+      if (currentLocation?.coords) {
+        setUserLocation({
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        });
+        setLocationStatus('ready');
+      }
+    } catch (err) {
+      if (!resolvedWithRecentLocation) setLocationStatus('unavailable');
+    }
+  }, []);
 
   const loadCities = useCallback(async ({ initial = false } = {}) => {
     if (useProvidedMotels) {
+      setCityDistanceMotels(motels);
       if (initial) setLoading(false);
       return;
     }
     try {
       if (initial) setLoading(true);
       setError(null);
-      setCities(await fetchCities());
+      const [loadedCities, loadedMotels] = await Promise.all([
+        fetchCities(),
+        searchAndFilterMotels('', null),
+      ]);
+      setCities(loadedCities);
+      setCityDistanceMotels(loadedMotels?.length ? loadedMotels : motels);
     } catch (err) {
       setError(err?.message || 'Error al cargar ciudades');
+      setCityDistanceMotels(motels);
     } finally {
       if (initial) setLoading(false);
     }
-  }, [useProvidedMotels]);
+  }, [motels, useProvidedMotels]);
 
   useEffect(() => {
     loadCities({ initial: true });
   }, [loadCities]);
+
+  useEffect(() => {
+    loadUserLocation();
+  }, [loadUserLocation]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -258,21 +355,70 @@ export default function CitySelectorScreen({ route, navigation }) {
 
   // Agrupar moteles por ciudad
   const citiesData = useMemo(() => {
+    const motelsByNormalizedCity = new Map();
+
+    cityDistanceMotels.forEach((motel) => {
+      const cityName = motel.ciudad || motel.city || 'Sin ciudad';
+      const cityKey = normalizeCityName(cityName);
+      if (!cityKey) return;
+      const current = motelsByNormalizedCity.get(cityKey) || [];
+      current.push(motel);
+      motelsByNormalizedCity.set(cityKey, current);
+    });
+
+    const enrichCityWithDistance = (city) => {
+      if (!userLocation) return city;
+
+      const cityMotels = city.motels?.length
+        ? city.motels
+        : motelsByNormalizedCity.get(normalizeCityName(city.name)) || [];
+
+      const nearestDistance = cityMotels.reduce((nearest, motel) => {
+        const coordinates = getMotelCoordinates(motel);
+        if (!coordinates) return nearest;
+
+        const distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          coordinates.latitude,
+          coordinates.longitude
+        );
+
+        return Number.isFinite(distance) ? Math.min(nearest, distance) : nearest;
+      }, Number.POSITIVE_INFINITY);
+
+      if (!Number.isFinite(nearestDistance)) return city;
+      return {
+        ...city,
+        distance: nearestDistance,
+      };
+    };
+
+    const sortCities = (items) => {
+      return [...items].sort((a, b) => {
+        const distanceA = Number.isFinite(a.distance) ? a.distance : Number.POSITIVE_INFINITY;
+        const distanceB = Number.isFinite(b.distance) ? b.distance : Number.POSITIVE_INFINITY;
+
+        if (distanceA !== distanceB) return distanceA - distanceB;
+        return a.name.localeCompare(b.name);
+      });
+    };
+
     if (cities.length > 0) {
-      return cities
+      return sortCities(cities
         .map((city) => ({
           name: city.name,
           count: city.count || 0,
           motels: [],
         }))
-        .sort((a, b) => a.name.localeCompare(b.name));
+        .map(enrichCityWithDistance));
     }
 
-    if (motels.length === 0) return [];
+    if (cityDistanceMotels.length === 0) return [];
 
     const citiesMap = {};
 
-    motels.forEach((motel) => {
+    cityDistanceMotels.forEach((motel) => {
       const city = motel.ciudad || motel.city || 'Sin ciudad';
       if (!citiesMap[city]) {
         citiesMap[city] = [];
@@ -280,14 +426,14 @@ export default function CitySelectorScreen({ route, navigation }) {
       citiesMap[city].push(motel);
     });
 
-    return Object.keys(citiesMap)
-      .sort()
+    return sortCities(Object.keys(citiesMap)
       .map((cityName) => ({
         name: cityName,
         count: citiesMap[cityName].length,
         motels: citiesMap[cityName],
-      }));
-  }, [cities, motels]);
+      }))
+      .map(enrichCityWithDistance));
+  }, [cities, cityDistanceMotels, userLocation]);
 
   const mixedItems = useMemo(() => {
     if (loading || adsLoading) {
@@ -295,10 +441,6 @@ export default function CitySelectorScreen({ route, navigation }) {
     }
     return mixAdvertisements(citiesData, listAds);
   }, [citiesData, listAds, loading, adsLoading]);
-
-  const normalizeCityName = (value) => {
-    return (value || '').toString().trim().toLowerCase();
-  };
 
   const handleCityPress = async (city) => {
     if (mode === 'promos' && useProvidedMotels) {
@@ -375,9 +517,17 @@ export default function CitySelectorScreen({ route, navigation }) {
               <Text style={styles.subtitle}>Cargando ciudades...</Text>
             </View>
           ) : (
-            <Text style={styles.subtitle}>
-              {citiesData.length} {citiesData.length === 1 ? 'ciudad disponible' : 'ciudades disponibles'}
-            </Text>
+            <View>
+              <Text style={styles.subtitle}>
+                {citiesData.length} {citiesData.length === 1 ? 'ciudad disponible' : 'ciudades disponibles'}
+              </Text>
+              {locationStatus === 'loading' && (
+                <Text style={styles.locationHint}>Ordenando por tu ubicación...</Text>
+              )}
+              {(locationStatus === 'denied' || locationStatus === 'unavailable') && (
+                <Text style={styles.locationHint}>Activá la ubicación para ordenar por cercanía.</Text>
+              )}
+            </View>
           )}
           {error && !loading && (
             <Text style={styles.errorText}>{error}</Text>
@@ -495,6 +645,12 @@ const styles = StyleSheet.create({
     marginTop: 6,
     color: COLORS.error,
     fontSize: 12,
+  },
+  locationHint: {
+    color: COLORS.textLight,
+    fontSize: 12,
+    marginTop: -8,
+    marginBottom: 12,
   },
   listContent: {
     paddingBottom: 24,

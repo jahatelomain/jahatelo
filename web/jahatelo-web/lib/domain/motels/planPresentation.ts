@@ -10,7 +10,10 @@ export function normalizeMotelPlan(plan: string | null | undefined): MotelPlan {
 }
 
 export const hasMotelPlanGlow = (plan: string | null | undefined) =>
-  normalizeMotelPlan(plan) === 'DIAMOND';
+  ['DIAMOND', 'GOLD'].includes(normalizeMotelPlan(plan));
+
+export const getMotelPlanGlowTone = (plan: string | null | undefined): 'diamond' | 'gold' =>
+  normalizeMotelPlan(plan) === 'GOLD' ? 'gold' : 'diamond';
 
 export const isMotelPlanDisabled = (plan: string | null | undefined) =>
   normalizeMotelPlan(plan) === 'FREE';

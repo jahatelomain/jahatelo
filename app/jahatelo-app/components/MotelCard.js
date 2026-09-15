@@ -16,7 +16,7 @@ import { useFavorites } from '../hooks/useFavorites';
 import { getAmenityIconConfig } from '../constants/amenityIcons';
 import { COLORS, PLAN_COLORS } from '../constants/theme';
 import { PRICE_UPDATING_MESSAGE } from '../constants/motelPrices';
-import { hasMotelPlanGlow, isMotelPlanMuted, normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
+import { getMotelPlanGlowTone, hasMotelPlanGlow, isMotelPlanMuted, normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
 import { trackFavoriteAdd, trackFavoriteRemove } from '../services/analyticsService';
 import MotelLogoTile from './MotelLogoTile';
 
@@ -26,6 +26,11 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
   // Derivadas de motel con null safety — deben estar antes de los hooks
   const isMuted = isMotelPlanMuted(motel?.plan);
   const isDiamond = hasMotelPlanGlow(motel?.plan);
+  const glowTone = getMotelPlanGlowTone(motel?.plan);
+  const glowColors = glowTone === 'gold'
+    ? [PLAN_COLORS.gold, PLAN_COLORS.goldLight, PLAN_COLORS.goldDark, PLAN_COLORS.goldSoft]
+    : [PLAN_COLORS.diamond, PLAN_COLORS.diamondLight, PLAN_COLORS.diamondDark, PLAN_COLORS.diamondSoft];
+  const orbitColor = glowTone === 'gold' ? PLAN_COLORS.goldLight : PLAN_COLORS.diamondLight;
   const plan = normalizeMotelPlan(motel?.plan);
 
   // Valores animados para la card
@@ -269,7 +274,7 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
     >
       {isDiamond ? (
         <LinearGradient
-          colors={[PLAN_COLORS.diamond, PLAN_COLORS.diamondLight, PLAN_COLORS.diamondDark, PLAN_COLORS.diamondSoft]}
+          colors={glowColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.diamondFrame}
@@ -283,7 +288,7 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
             />
           </Animated.View>
           <Animated.View pointerEvents="none" style={[styles.diamondOrbit, animatedOrbitStyle]}>
-            <View style={styles.diamondDot} />
+            <View style={[styles.diamondDot, { shadowColor: orbitColor }]} />
           </Animated.View>
           <View style={styles.diamondFrameInner}>{cardBody}</View>
         </LinearGradient>
@@ -313,11 +318,6 @@ const styles = StyleSheet.create({
     padding: 2,
     borderRadius: 18,
     marginBottom: 10,
-    shadowColor: '#22D3EE',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 4,
     // LinearGradient no respeta el radio exterior en iOS si el contenido
     // animado puede dibujarse fuera del contenedor.
     overflow: 'hidden',
@@ -353,11 +353,6 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: 'rgba(255,255,255,0.95)',
-    shadowColor: '#BAE6FD',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 4,
-    elevation: 4,
     marginTop: -3,
   },
   disabledCard: {

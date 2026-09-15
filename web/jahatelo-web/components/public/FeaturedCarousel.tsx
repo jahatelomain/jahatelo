@@ -8,6 +8,7 @@ import type { Advertisement } from '@/hooks/useAdvertisements';
 import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
 import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
 import type { PublicMotelListItem } from '@/lib/domain/motels/publicListItem';
+import { getMotelPlanGlowTone, hasMotelPlanGlow } from '@/lib/domain/motels/planPresentation';
 import MotelLogoHeart from '@/components/public/MotelLogoHeart';
 
 type Motel = PublicMotelListItem;
@@ -147,6 +148,16 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
           const realPhotoUrl = motel.featuredPhotoWeb || motel.thumbnail || motel.featuredPhoto || null;
           const photoUrl = failedImages[motel.id] ? null : realPhotoUrl;
           const isPlaceholder = !photoUrl;
+          const hasPlanGlow = hasMotelPlanGlow(motel.plan);
+          const glowTone = getMotelPlanGlowTone(motel.plan);
+          const glowStyle = {
+            '--featured-glow-frame': glowTone === 'gold'
+              ? 'conic-gradient(from 180deg at 50% 50%, rgba(245,158,11,0.95), rgba(253,230,138,0.95), rgba(217,119,6,0.95), rgba(251,191,36,0.95), rgba(245,158,11,0.95))'
+              : 'conic-gradient(from 180deg at 50% 50%, rgba(34,211,238,0.9), rgba(186,230,253,0.9), rgba(14,116,144,0.9), rgba(125,211,252,0.9), rgba(34,211,238,0.9))',
+            '--featured-orbit-shadow': glowTone === 'gold'
+              ? '0 0 6px rgba(253, 230, 138, 0.7), 0 0 12px rgba(245, 158, 11, 0.45)'
+              : '0 0 6px rgba(186, 230, 253, 0.7), 0 0 12px rgba(34, 211, 238, 0.45)',
+          } as React.CSSProperties;
 
           return (
             <div
@@ -177,6 +188,15 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none" />
 
+              {hasPlanGlow && (
+                <div className="featured-plan-frame pointer-events-none absolute inset-0 rounded-2xl" style={glowStyle}>
+                  <div className="featured-plan-orbit absolute inset-0 rounded-2xl">
+                    <span className="featured-plan-dot" />
+                  </div>
+                  <div className="featured-plan-shimmer absolute -inset-1 rounded-2xl" />
+                </div>
+              )}
+
               {motel.logoUrl && <MotelLogoHeart src={motel.logoUrl} alt={motel.name} className="absolute left-4 top-4 h-14 w-16" />}
 
               {/* Badge DESTACADO */}
@@ -198,6 +218,66 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
             </div>
           );
         })}
+        <style jsx>{`
+          .featured-plan-frame::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 2px;
+            background: var(--featured-glow-frame);
+            -webkit-mask:
+              linear-gradient(#000 0 0) content-box,
+              linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+          }
+          .featured-plan-orbit {
+            animation: featured-plan-orbit 4.2s linear infinite;
+          }
+          .featured-plan-dot {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: var(--featured-orbit-shadow);
+            transform: translate(-50%, -50%);
+          }
+          .featured-plan-shimmer {
+            background: linear-gradient(
+              120deg,
+              rgba(255, 255, 255, 0) 0%,
+              rgba(255, 255, 255, 0.18) 45%,
+              rgba(255, 255, 255, 0) 70%
+            );
+            animation: featured-plan-shimmer 7s linear infinite;
+            mix-blend-mode: screen;
+          }
+          @keyframes featured-plan-orbit {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+          @keyframes featured-plan-shimmer {
+            0% {
+              opacity: 0;
+              transform: translateX(-60%) rotate(20deg);
+            }
+            10% {
+              opacity: 0.45;
+            }
+            50% {
+              opacity: 0.2;
+            }
+            100% {
+              opacity: 0;
+              transform: translateX(60%) rotate(20deg);
+            }
+          }
+        `}</style>
       </div>
 
       {/* Dots Navigation */}

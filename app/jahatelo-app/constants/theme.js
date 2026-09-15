@@ -131,6 +131,9 @@ export const STATUS_COLORS = {
 
 export const PLAN_COLORS = {
   gold: '#F59E0B',
+  goldLight: '#FDE68A',
+  goldDark: '#D97706',
+  goldSoft: '#FBBF24',
   diamond: '#22D3EE',
   diamondLight: '#BAE6FD',
   diamondDark: '#0EA5E9',

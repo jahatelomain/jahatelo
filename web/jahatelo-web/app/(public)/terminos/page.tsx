@@ -197,7 +197,7 @@ export default function TermsPage() {
                 Para preguntas sobre estos términos, contáctenos:
               </p>
               <ul className="list-none pl-0 text-slate-700 space-y-2 mt-4">
-                <li><strong>Email:</strong> legal@jahatelo.com</li>
+                <li><strong>Email:</strong> info@jahatelo.com</li>
                 <li><strong>Teléfono:</strong> +595 XXX XXX XXX</li>
                 <li><strong>Dirección:</strong> [Dirección física en Paraguay]</li>
               </ul>

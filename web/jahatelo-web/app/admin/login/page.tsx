@@ -145,7 +145,7 @@ function LoginForm() {
         {process.env.NODE_ENV === 'development' && (
           <div className="mt-4 p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
             <p className="text-xs text-white/80 text-center">
-              Credenciales de prueba: admin@jahatelo.com / Admin123!
+              Credenciales de prueba: apps@jahatelo.com / Admin123!
             </p>
           </div>
         )}

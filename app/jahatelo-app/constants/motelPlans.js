@@ -10,7 +10,14 @@ export const normalizeMotelPlan = (plan) => {
   return MOTEL_PLANS[normalized] || MOTEL_PLANS.BASIC;
 };
 
-export const hasMotelPlanGlow = (plan) => normalizeMotelPlan(plan) === MOTEL_PLANS.DIAMOND;
+export const hasMotelPlanGlow = (plan) => {
+  const normalizedPlan = normalizeMotelPlan(plan);
+  return normalizedPlan === MOTEL_PLANS.DIAMOND || normalizedPlan === MOTEL_PLANS.GOLD;
+};
+
+export const getMotelPlanGlowTone = (plan) => (
+  normalizeMotelPlan(plan) === MOTEL_PLANS.GOLD ? 'gold' : 'diamond'
+);
 
 // FREE sigue visible, pero se presenta con menor énfasis comercial. No implica
 // que el motel sea inaccesible: la navegación debe permanecer habilitada.

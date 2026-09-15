@@ -11,7 +11,7 @@ import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
 import type { CSSProperties } from 'react';
 import { formatGuaranies } from '@/lib/formatCurrency';
 import type { PublicMotelListItem } from '@/lib/domain/motels/publicListItem';
-import { hasMotelPlanGlow, isMotelPlanDisabled, normalizeMotelPlan } from '@/lib/domain/motels/planPresentation';
+import { getMotelPlanGlowTone, hasMotelPlanGlow, isMotelPlanDisabled, normalizeMotelPlan } from '@/lib/domain/motels/planPresentation';
 import { PRICE_UPDATING_MESSAGE } from '@/lib/domain/motels/pricePresentation';
 
 export interface MotelCardProps {
@@ -84,8 +84,21 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
       ).values()).slice(0, 3);
   const normalizedPlan = normalizeMotelPlan(motel.plan);
   const isDisabled = isMotelPlanDisabled(normalizedPlan);
-  const isDiamond = hasMotelPlanGlow(normalizedPlan);
+  const hasPlanGlow = hasMotelPlanGlow(normalizedPlan);
+  const glowTone = getMotelPlanGlowTone(normalizedPlan);
+  const isDiamond = normalizedPlan === 'DIAMOND';
   const isGold = normalizedPlan === 'GOLD';
+  const glowTheme = glowTone === 'gold'
+    ? {
+        frame:
+          'conic-gradient(from 180deg at 50% 50%, rgba(245,158,11,0.95), rgba(253,230,138,0.95), rgba(217,119,6,0.95), rgba(251,191,36,0.95), rgba(245,158,11,0.95)), repeating-linear-gradient(135deg, rgba(255,255,255,0.35) 0 6px, rgba(255,255,255,0.05) 6px 12px)',
+        dotShadow: '0 0 6px rgba(253, 230, 138, 0.7), 0 0 12px rgba(245, 158, 11, 0.45)',
+      }
+    : {
+        frame:
+          'conic-gradient(from 180deg at 50% 50%, rgba(34,211,238,0.9), rgba(186,230,253,0.9), rgba(14,116,144,0.9), rgba(125,211,252,0.9), rgba(34,211,238,0.9)), repeating-linear-gradient(135deg, rgba(255,255,255,0.35) 0 6px, rgba(255,255,255,0.05) 6px 12px)',
+        dotShadow: '0 0 6px rgba(186, 230, 253, 0.7), 0 0 12px rgba(34, 211, 238, 0.45)',
+      };
   const locationLabel = [motel.address, motel.city].filter(Boolean).join(', ') || 'Sin ubicación';
 
   // En móvil, las listas se leen más rápido como filas: logo a la izquierda y
@@ -122,7 +135,7 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
 
   const cardInner = (
     <div
-      className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[360px] h-full flex flex-col ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-pointer' : 'cursor-pointer'} ${isDiamond ? 'border-transparent' : ''}`}
+      className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[360px] h-full flex flex-col ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-pointer' : 'cursor-pointer'} ${hasPlanGlow ? 'border-transparent' : ''}`}
     >
         {/* Image */}
         <div
@@ -248,16 +261,16 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
       </div>
   );
 
-  const diamondFrameStyle: CSSProperties | undefined = isDiamond
+  const diamondFrameStyle: CSSProperties | undefined = hasPlanGlow
     ? {
-        backgroundImage:
-          'conic-gradient(from 180deg at 50% 50%, rgba(34,211,238,0.9), rgba(186,230,253,0.9), rgba(14,116,144,0.9), rgba(125,211,252,0.9), rgba(34,211,238,0.9)), repeating-linear-gradient(135deg, rgba(255,255,255,0.35) 0 6px, rgba(255,255,255,0.05) 6px 12px)',
+        backgroundImage: glowTheme.frame,
+        '--motel-orbit-dot-shadow': glowTheme.dotShadow,
       }
     : undefined;
 
-  const cardContent = isDiamond ? (
+  const cardContent = hasPlanGlow ? (
     <div
-      className="relative p-[2px] rounded-xl shadow-[0_0_18px_rgba(34,211,238,0.45)]"
+      className="relative overflow-hidden rounded-xl p-[2px]"
       style={diamondFrameStyle}
     >
       <div className="absolute inset-0 rounded-xl pointer-events-none diamond-orbit">
@@ -288,7 +301,7 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
           height: 6px;
           border-radius: 999px;
           background: rgba(255, 255, 255, 0.95);
-          box-shadow: 0 0 6px rgba(186, 230, 253, 0.7), 0 0 12px rgba(34, 211, 238, 0.45);
+          box-shadow: var(--motel-orbit-dot-shadow);
         }
         @keyframes diamond-orbit {
           0% {
