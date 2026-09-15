@@ -12,7 +12,7 @@ import Animated, {
   withTiming,
   cancelAnimation,
 } from '../utils/reanimatedCompat';
-import { hasMotelPlanGlow } from '../constants/motelPlans';
+import { getMotelPlanGlowTone, hasMotelPlanGlow } from '../constants/motelPlans';
 import MotelLogoHeart from './MotelLogoHeart';
 import { getMotelImageSource, hasRemoteMotelImage } from '../utils/mediaSource';
 import { PLAN_COLORS } from '../constants/theme';
@@ -70,6 +70,11 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
   const imageSource = getMotelImageSource(resolvedImageUrl);
   const isPlaceholder = !hasRemoteMotelImage(resolvedImageUrl);
   const hasPlanGlow = hasMotelPlanGlow(motel?.plan);
+  const glowTone = getMotelPlanGlowTone(motel?.plan);
+  const glowColors = glowTone === 'gold'
+    ? [PLAN_COLORS.gold, PLAN_COLORS.goldLight, PLAN_COLORS.goldDark, PLAN_COLORS.goldSoft]
+    : [PLAN_COLORS.diamond, PLAN_COLORS.diamondLight, PLAN_COLORS.diamondDark, PLAN_COLORS.diamondSoft];
+  const orbitColor = glowTone === 'gold' ? PLAN_COLORS.goldLight : PLAN_COLORS.diamondLight;
   const borderMotion = useSharedValue(-1);
   const borderOrbit = useSharedValue(0);
 
@@ -165,7 +170,7 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
     <Animated.View style={[styles.cardWrapper, animatedStyle]}>
       {hasPlanGlow ? (
         <LinearGradient
-          colors={[PLAN_COLORS.diamond, PLAN_COLORS.diamondLight, PLAN_COLORS.diamondDark, PLAN_COLORS.diamondSoft]}
+          colors={glowColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.planGlowFrame}
@@ -179,7 +184,7 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
             />
           </Animated.View>
           <Animated.View pointerEvents="none" style={[styles.diamondOrbit, animatedOrbitStyle]}>
-            <View style={styles.diamondOrbitDot} />
+            <View style={[styles.diamondOrbitDot, { shadowColor: orbitColor }]} />
           </Animated.View>
           <View style={styles.planGlowInner}>{card}</View>
         </LinearGradient>
@@ -435,11 +440,6 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: 'rgba(255,255,255,0.95)',
-    shadowColor: PLAN_COLORS.diamondLight,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 4,
-    elevation: 3,
     marginTop: -3,
   },
   card: {

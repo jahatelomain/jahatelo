@@ -984,7 +984,7 @@ test.describe('Authentication Flow', () => {
   test('should login existing user', async ({ page }) => {
     await page.goto('/admin/login');
 
-    await page.fill('input[name="email"]', 'admin@jahatelo.com');
+    await page.fill('input[name="email"]', 'apps@jahatelo.com');
     await page.fill('input[name="password"]', 'AdminPass123!');
 
     await page.click('button[type="submit"]');
@@ -1015,7 +1015,7 @@ test.describe('Motel Management', () => {
   test.beforeEach(async ({ page }) => {
     // Login como SUPERADMIN
     await page.goto('/admin/login');
-    await page.fill('input[name="email"]', 'admin@jahatelo.com');
+    await page.fill('input[name="email"]', 'apps@jahatelo.com');
     await page.fill('input[name="password"]', 'AdminPass123!');
     await page.click('button[type="submit"]');
     await page.waitForURL('/admin');

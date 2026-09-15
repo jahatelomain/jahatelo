@@ -71,7 +71,7 @@ Antes de comenzar, asegúrate de tener:
    - Métodos aceptados: Tarjeta de crédito/débito
 5. Completa los datos de tu cuenta:
    - **Nombre del desarrollador** (será público): "Jahatelo" o "AKAHATA STUDIO"
-   - **Correo de contacto**: soporte@jahatelo.com
+   - **Correo de contacto**: apps@jahatelo.com
    - **Sitio web**: https://jahatelo.com
    - **Dirección** (puede ser requerida)
 
@@ -259,7 +259,7 @@ Descarga ahora y descubre por qué miles de usuarios confían en Jahatelo para s
 
 ---
 🌐 Sitio web: https://jahatelo.com
-📧 Soporte: soporte@jahatelo.com
+📧 Soporte: apps@jahatelo.com
 ```
 
 **📱 Categoría**
@@ -267,7 +267,7 @@ Descarga ahora y descubre por qué miles de usuarios confían en Jahatelo para s
 - **Subcategoría**: Hoteles y alojamientos
 
 **📧 Datos de contacto**
-- **Correo**: soporte@jahatelo.com
+- **Correo**: apps@jahatelo.com
 - **Teléfono** (opcional): +54 xxx xxx xxxx
 - **Sitio web**: https://jahatelo.com
 - **Política de privacidad**: https://jahatelo.com/privacy ← **Obligatorio**
@@ -311,7 +311,7 @@ Descarga ahora y descubre por qué miles de usuarios confían en Jahatelo para s
 Ve a **Política > Clasificación de contenido**
 
 1. Click en **"Empezar"**
-2. **Dirección de correo**: soporte@jahatelo.com
+2. **Dirección de correo**: apps@jahatelo.com
 3. **Categoría**: Utilidades, Productividad o Referencias
 4. Responde el cuestionario:
    - ¿Violencia? → **No**
@@ -631,7 +631,7 @@ Descarga ahora y descubre por qué miles de usuarios confían en Jahatelo.
 
 CONTACTO
 🌐 Sitio web: https://jahatelo.com
-📧 Soporte: soporte@jahatelo.com
+📧 Soporte: apps@jahatelo.com
 ```
 
 **Keywords** (≤100 caracteres, separadas por comas)
@@ -1000,7 +1000,7 @@ eas build --platform ios --profile production --clear-cache
 
 **Última actualización:** Enero 2025
 
-**¿Necesitas ayuda?** Consulta la documentación oficial o escribe a soporte@jahatelo.com
+**¿Necesitas ayuda?** Consulta la documentación oficial o escribe a apps@jahatelo.com
 
 ---
 

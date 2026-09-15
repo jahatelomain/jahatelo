@@ -335,7 +335,7 @@ async function main() {
   // Crear SUPERADMIN
   const superAdmin = await prisma.user.create({
     data: {
-      email: 'admin@jahatelo.com',
+      email: 'apps@jahatelo.com',
       passwordHash: adminPasswordHash,
       name: 'Super Administrador',
       role: 'SUPERADMIN',
@@ -408,7 +408,7 @@ async function main() {
 
   console.log(`\n🌟 Seed completado: ${motelsData.length} moteles y 5 usuarios registrados`);
   console.log(`\n🔑 Credenciales de acceso (todas con password: Admin123!):`);
-  console.log(`   [SUPERADMIN]   admin@jahatelo.com`);
+  console.log(`   [SUPERADMIN]   apps@jahatelo.com`);
   console.log(`   [MOTEL_ADMIN]  admin@maximus.com`);
   console.log(`   [MOTEL_ADMIN]  admin@pausa.com`);
   console.log(`   [USER]         user@example.com`);

@@ -6,10 +6,10 @@ import {
 } from '../motelPlans';
 
 describe('motel plan presentation', () => {
-  it('applies glow only to Diamond motels', () => {
+  it('applies glow to premium highlighted plans', () => {
     expect(hasMotelPlanGlow('DIAMOND')).toBe(true);
     expect(hasMotelPlanGlow('diamond')).toBe(true);
-    expect(hasMotelPlanGlow('GOLD')).toBe(false);
+    expect(hasMotelPlanGlow('GOLD')).toBe(true);
     expect(hasMotelPlanGlow('BASIC')).toBe(false);
     expect(hasMotelPlanGlow('FREE')).toBe(false);
   });

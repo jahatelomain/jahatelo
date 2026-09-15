@@ -791,7 +791,7 @@ gunzip -c backups/jahatelo_backup_20250117_020000.sql.gz | psql $STAGING_DATABAS
    ```bash
    # Enviar email si backup falla
    if [ $? -ne 0 ]; then
-     echo "Backup failed" | mail -s "Jahatelo Backup Error" admin@jahatelo.com
+     echo "Backup failed" | mail -s "Jahatelo Backup Error" apps@jahatelo.com
    fi
    ```
 

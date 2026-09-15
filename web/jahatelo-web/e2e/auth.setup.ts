@@ -2,7 +2,7 @@ import { test } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
-const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'admin@jahatelo.com';
+const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'apps@jahatelo.com';
 const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'Admin123!';
 
 test('authenticate admin', async ({ page, context }) => {

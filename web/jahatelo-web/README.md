@@ -49,7 +49,7 @@ Después de ejecutar el seed, puedes usar estas credenciales (todas con password
 
 ```
 SUPERADMIN:
-  Email: admin@jahatelo.com
+  Email: apps@jahatelo.com
 
 MOTEL_ADMIN:
   Email: admin@maximus.com (Maximus Motel)

@@ -6,29 +6,29 @@ const prisma = new PrismaClient();
 const TEST_PASSWORD = 'Admin123!';
 const TEST_USERS = [
   {
-    email: 'test-superadmin@jahatelo.com',
+    email: 'superadmin@example.test',
     name: 'Super Admin Test',
     role: 'SUPERADMIN',
   },
   {
-    email: 'test-moteladmin-maximus@jahatelo.com',
+    email: 'moteladmin-maximus@example.test',
     name: 'Admin Maximus Test',
     role: 'MOTEL_ADMIN',
     motelSlug: 'maximus-motel',
   },
   {
-    email: 'test-moteladmin-pausa@jahatelo.com',
+    email: 'moteladmin-pausa@example.test',
     name: 'Admin Pausa Test',
     role: 'MOTEL_ADMIN',
     motelSlug: 'pausa-motel',
   },
   {
-    email: 'test-user1@jahatelo.com',
+    email: 'user1@example.test',
     name: 'Usuario Test 1',
     role: 'USER',
   },
   {
-    email: 'test-user2@jahatelo.com',
+    email: 'user2@example.test',
     name: 'Usuario Test 2',
     role: 'USER',
   },

@@ -9,7 +9,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from '../utils/reanimatedCompat';
-import { hasMotelPlanGlow } from '../constants/motelPlans';
+import { getMotelPlanGlowTone, hasMotelPlanGlow } from '../constants/motelPlans';
 import MotelLogoHeart from './MotelLogoHeart';
 import { DARK_SURFACES, PLAN_COLORS } from '../constants/theme';
 import { getMotelImageSource, hasRemoteMotelImage } from '../utils/mediaSource';
@@ -17,6 +17,11 @@ import { getMotelImageSource, hasRemoteMotelImage } from '../utils/mediaSource';
 export default function MotelCardSmall({ motel, onPress }) {
   // isDiamond con null safety — debe estar antes de los hooks
   const isDiamond = hasMotelPlanGlow(motel?.plan);
+  const glowTone = getMotelPlanGlowTone(motel?.plan);
+  const glowColors = glowTone === 'gold'
+    ? [PLAN_COLORS.gold, PLAN_COLORS.goldLight, PLAN_COLORS.goldDark, PLAN_COLORS.goldSoft]
+    : [PLAN_COLORS.diamond, PLAN_COLORS.diamondLight, PLAN_COLORS.diamondDark, PLAN_COLORS.diamondSoft];
+  const orbitColor = glowTone === 'gold' ? PLAN_COLORS.goldLight : PLAN_COLORS.diamondLight;
 
   // Todos los hooks ANTES del early return
   const diamondOrbit = useSharedValue(0);
@@ -85,7 +90,7 @@ export default function MotelCardSmall({ motel, onPress }) {
 
   return (
     <LinearGradient
-      colors={[PLAN_COLORS.diamond, PLAN_COLORS.diamondLight, PLAN_COLORS.diamondDark, PLAN_COLORS.diamondSoft]}
+      colors={glowColors}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.diamondFrame}
@@ -99,7 +104,7 @@ export default function MotelCardSmall({ motel, onPress }) {
         />
       </Animated.View>
       <Animated.View pointerEvents="none" style={[styles.diamondOrbit, animatedOrbitStyle]}>
-        <View style={styles.diamondDot} />
+        <View style={[styles.diamondDot, { shadowColor: orbitColor }]} />
       </Animated.View>
       <View style={styles.diamondFrameInner}>{cardBody}</View>
     </LinearGradient>
@@ -121,11 +126,6 @@ const styles = StyleSheet.create({
     padding: 2,
     borderRadius: 16,
     marginRight: 16,
-    shadowColor: PLAN_COLORS.diamond,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 4,
     // Mantiene redondeado el marco Diamond también en iOS.
     overflow: 'hidden',
   },
@@ -160,11 +160,6 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 3,
     backgroundColor: 'rgba(255,255,255,0.95)',
-    shadowColor: PLAN_COLORS.diamondLight,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 4,
-    elevation: 3,
     marginTop: -3,
   },
   image: {

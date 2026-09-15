@@ -1,5 +1,6 @@
 import {
   getMotelAnalyticsAccess,
+  hasMotelPlanGlow,
   normalizeMotelPlan,
 } from '@/lib/domain/motels/planPresentation';
 
@@ -14,5 +15,12 @@ describe('planPresentation', () => {
     expect(getMotelAnalyticsAccess('BASIC')).toBe('SUMMARY');
     expect(getMotelAnalyticsAccess('GOLD')).toBe('FULL');
     expect(getMotelAnalyticsAccess('DIAMOND')).toBe('FULL');
+  });
+
+  it('aplica borde animado a planes premium destacados', () => {
+    expect(hasMotelPlanGlow('DIAMOND')).toBe(true);
+    expect(hasMotelPlanGlow('GOLD')).toBe(true);
+    expect(hasMotelPlanGlow('BASIC')).toBe(false);
+    expect(hasMotelPlanGlow('FREE')).toBe(false);
   });
 });

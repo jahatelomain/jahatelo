@@ -4,7 +4,7 @@ Fecha de ultima actualización: 12 de febrero de 2026
 
 1. Responsable del tratamiento
 Jahatelo ("nosotros") es responsable del tratamiento de tus datos personales.
-Contacto: privacidad@jahatelo.com | Asuncion, Paraguay | Paraguay
+Contacto: info@jahatelo.com | Asuncion, Paraguay | Paraguay
 
 2. Datos que recopilamos
 Podemos recopilar:

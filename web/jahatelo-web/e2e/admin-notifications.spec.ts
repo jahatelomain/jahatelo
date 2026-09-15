@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'admin@jahatelo.com';
+const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'apps@jahatelo.com';
 const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'Admin123!';
 
 test.describe('Admin Notifications Flow', () => {
