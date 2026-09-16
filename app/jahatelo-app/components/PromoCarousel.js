@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated as RNAnimated, Dimensions, ImageBackground, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -8,9 +8,6 @@ import Animated, {
   useAnimatedStyle,
   interpolate,
   Extrapolate,
-  withRepeat,
-  withTiming,
-  cancelAnimation,
 } from '../utils/reanimatedCompat';
 import { getMotelPlanGlowTone, hasMotelPlanGlow } from '../constants/motelPlans';
 import MotelLogoHeart from './MotelLogoHeart';
@@ -62,7 +59,7 @@ const getMotelImageUrls = (motel) => {
   return [...new Set(candidates.map(resolveImageUrl).filter(Boolean))];
 };
 
-const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badgeIconName = 'pricetag' }) => {
+const PromoCard = ({ motel, onPress, index, scrollX, iosScrollX, activeIndex, badgeLabel = 'PROMO', badgeIconName = 'pricetag' }) => {
   const imageUrls = getMotelImageUrls(motel);
   const imageKey = imageUrls.join('|');
   const [imageIndex, setImageIndex] = useState(0);
@@ -74,28 +71,6 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
   const glowColors = glowTone === 'gold'
     ? [PLAN_COLORS.gold, PLAN_COLORS.goldLight, PLAN_COLORS.goldDark, PLAN_COLORS.goldSoft]
     : [PLAN_COLORS.diamond, PLAN_COLORS.diamondLight, PLAN_COLORS.diamondDark, PLAN_COLORS.diamondSoft];
-  const orbitColor = glowTone === 'gold' ? PLAN_COLORS.goldLight : PLAN_COLORS.diamondLight;
-  const borderMotion = useSharedValue(-1);
-  const borderOrbit = useSharedValue(0);
-
-  useEffect(() => {
-    if (!hasPlanGlow) return undefined;
-    borderMotion.value = -1;
-    borderOrbit.value = 0;
-    borderMotion.value = withRepeat(withTiming(1, { duration: 2200 }), -1, false);
-    borderOrbit.value = withRepeat(withTiming(360, { duration: 4200 }), -1, false);
-    return () => {
-      cancelAnimation(borderMotion);
-      cancelAnimation(borderOrbit);
-    };
-  }, [borderMotion, borderOrbit, hasPlanGlow]);
-
-  const animatedBorderStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: interpolate(borderMotion.value, [-1, 1], [-CARD_WIDTH, CARD_WIDTH]) }],
-  }));
-  const animatedOrbitStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${borderOrbit.value}deg` }],
-  }));
 
   useEffect(() => {
     setImageIndex(0);
@@ -107,7 +82,29 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
     (index + 1) * (CARD_WIDTH + SPACING),
   ];
 
+  const iosAnimatedStyle = Platform.OS === 'ios'
+    ? {
+        transform: [{
+          scale: iosScrollX.interpolate({
+            inputRange,
+            outputRange: [0.9, 1, 0.9],
+            extrapolate: 'clamp',
+          }),
+        }],
+        opacity: iosScrollX.interpolate({
+          inputRange,
+          outputRange: [0.7, 1, 0.7],
+          extrapolate: 'clamp',
+        }),
+        zIndex: index === activeIndex ? 100 : 1,
+      }
+    : null;
+
   const animatedStyle = useAnimatedStyle(() => {
+    if (Platform.OS === 'ios') {
+      return {};
+    }
+
     const scale = interpolate(
       scrollX.value,
       inputRange,
@@ -167,7 +164,7 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
   );
 
   return (
-    <Animated.View style={[styles.cardWrapper, animatedStyle]}>
+    <CarouselAnimatedView style={[styles.cardWrapper, Platform.OS === 'ios' ? iosAnimatedStyle : animatedStyle]}>
       {hasPlanGlow ? (
         <LinearGradient
           colors={glowColors}
@@ -175,25 +172,14 @@ const PromoCard = ({ motel, onPress, index, scrollX, badgeLabel = 'PROMO', badge
           end={{ x: 1, y: 1 }}
           style={styles.planGlowFrame}
         >
-          <Animated.View pointerEvents="none" style={[styles.borderSweep, animatedBorderStyle]}>
-            <LinearGradient
-              colors={['transparent', 'rgba(255,255,255,0.95)', 'transparent']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.borderSweepGradient}
-            />
-          </Animated.View>
-          <Animated.View pointerEvents="none" style={[styles.diamondOrbit, animatedOrbitStyle]}>
-            <View style={[styles.diamondOrbitDot, { shadowColor: orbitColor }]} />
-          </Animated.View>
           <View style={styles.planGlowInner}>{card}</View>
         </LinearGradient>
       ) : card}
-    </Animated.View>
+    </CarouselAnimatedView>
   );
 };
 
-const AdCard = ({ ad, onPress, index, scrollX, onTrackView }) => {
+const AdCard = ({ ad, onPress, index, scrollX, iosScrollX, activeIndex, onTrackView }) => {
   const viewTracked = useRef(false);
 
   useEffect(() => {
@@ -214,7 +200,29 @@ const AdCard = ({ ad, onPress, index, scrollX, onTrackView }) => {
     (index + 1) * (CARD_WIDTH + SPACING),
   ];
 
+  const iosAnimatedStyle = Platform.OS === 'ios'
+    ? {
+        transform: [{
+          scale: iosScrollX.interpolate({
+            inputRange,
+            outputRange: [0.9, 1, 0.9],
+            extrapolate: 'clamp',
+          }),
+        }],
+        opacity: iosScrollX.interpolate({
+          inputRange,
+          outputRange: [0.7, 1, 0.7],
+          extrapolate: 'clamp',
+        }),
+        zIndex: index === activeIndex ? 100 : 1,
+      }
+    : null;
+
   const animatedStyle = useAnimatedStyle(() => {
+    if (Platform.OS === 'ios') {
+      return {};
+    }
+
     const scale = interpolate(
       scrollX.value,
       inputRange,
@@ -243,7 +251,7 @@ const AdCard = ({ ad, onPress, index, scrollX, onTrackView }) => {
   };
 
   return (
-    <Animated.View style={[styles.cardWrapper, animatedStyle]}>
+    <CarouselAnimatedView style={[styles.cardWrapper, Platform.OS === 'ios' ? iosAnimatedStyle : animatedStyle]}>
       <TouchableOpacity style={styles.cardClip} activeOpacity={0.9} onPress={handlePress}>
         <ImageBackground
           source={imageSource}
@@ -280,9 +288,11 @@ const AdCard = ({ ad, onPress, index, scrollX, onTrackView }) => {
           </LinearGradient>
         </ImageBackground>
       </TouchableOpacity>
-    </Animated.View>
+    </CarouselAnimatedView>
   );
 };
+
+const CarouselAnimatedView = Platform.OS === 'ios' ? RNAnimated.View : Animated.View;
 
 export default function PromoCarousel({
   promos = [],
@@ -295,6 +305,9 @@ export default function PromoCarousel({
   badgeIconName = 'pricetag'
 }) {
   const scrollX = useSharedValue(0);
+  const iosScrollX = useRef(new RNAnimated.Value(0)).current;
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeIndexRef = useRef(0);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -329,7 +342,39 @@ export default function PromoCarousel({
     return result;
   }, [promos, ads]);
 
+  useEffect(() => {
+    activeIndexRef.current = 0;
+    setActiveIndex(0);
+  }, [mixedItems.length]);
+
   if (!mixedItems.length) return null;
+
+  const syncActiveIndexFromOffset = (offsetX) => {
+    if (Platform.OS !== 'ios') return;
+    const nextIndex = Math.round(offsetX / (CARD_WIDTH + SPACING));
+    const clampedIndex = Math.max(0, Math.min(nextIndex, mixedItems.length - 1));
+    if (clampedIndex === activeIndexRef.current) return;
+    activeIndexRef.current = clampedIndex;
+    setActiveIndex(clampedIndex);
+  };
+
+  const handleMomentumScrollEnd = (event) => {
+    syncActiveIndexFromOffset(event.nativeEvent.contentOffset.x);
+  };
+
+  const iosNativeScrollHandler = Platform.OS === 'ios'
+    ? RNAnimated.event(
+        [{ nativeEvent: { contentOffset: { x: iosScrollX } } }],
+        {
+          useNativeDriver: true,
+          listener: (event) => {
+            syncActiveIndexFromOffset(event.nativeEvent.contentOffset.x);
+          },
+        }
+      )
+    : undefined;
+
+  const CarouselFlatList = Platform.OS === 'ios' ? RNAnimated.FlatList : Animated.FlatList;
 
   const renderItem = ({ item, index }) => {
     if (item.type === 'ad') {
@@ -340,6 +385,8 @@ export default function PromoCarousel({
           onTrackView={onAdView}
           index={index}
           scrollX={scrollX}
+          iosScrollX={iosScrollX}
+          activeIndex={activeIndex}
         />
       );
     }
@@ -350,6 +397,8 @@ export default function PromoCarousel({
         onPress={onPromoPress}
         index={index}
         scrollX={scrollX}
+        iosScrollX={iosScrollX}
+        activeIndex={activeIndex}
         badgeLabel={badgeLabel}
         badgeIconName={badgeIconName}
       />
@@ -360,18 +409,23 @@ export default function PromoCarousel({
     <View style={styles.container}>
       <View style={styles.curvedContainer}>
         <Text style={styles.sectionTitle}>{title}</Text>
-        <Animated.FlatList
+        <CarouselFlatList
           data={mixedItems}
+          extraData={Platform.OS === 'ios' ? activeIndex : undefined}
           keyExtractor={(item, index) => `${item.type}-${item.data.id || index}`}
           renderItem={renderItem}
           horizontal
+          style={styles.list}
           showsHorizontalScrollIndicator={false}
+          removeClippedSubviews={false}
           maxToRenderPerBatch={10}
           initialNumToRender={10}
           contentContainerStyle={styles.listContent}
           snapToInterval={CARD_WIDTH + SPACING}
           decelerationRate="fast"
-          onScroll={scrollHandler}
+          onScroll={Platform.OS === 'ios' ? iosNativeScrollHandler : scrollHandler}
+          onMomentumScrollEnd={handleMomentumScrollEnd}
+          onScrollEndDrag={handleMomentumScrollEnd}
           scrollEventThrottle={16}
         />
       </View>
@@ -402,6 +456,9 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 20,
   },
+  list: {
+    overflow: 'visible',
+  },
   cardWrapper: {
     marginRight: SPACING,
     borderRadius: 20,
@@ -413,34 +470,13 @@ const styles = StyleSheet.create({
   planGlowFrame: {
     padding: 2,
     borderRadius: 22,
-    // El marco celeste delimita la tarjeta sin proyectar brillo ni elevación.
-    // El recorte explícito mantiene el mismo resultado en iOS y Android.
     overflow: 'hidden',
-  },
-  borderSweep: {
-    ...StyleSheet.absoluteFillObject,
-    width: CARD_WIDTH * 0.55,
-  },
-  borderSweepGradient: {
-    flex: 1,
   },
   planGlowInner: {
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.5)',
-  },
-  diamondOrbit: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 22,
-    alignItems: 'center',
-  },
-  diamondOrbitDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    marginTop: -3,
   },
   card: {
     width: CARD_WIDTH,
@@ -471,11 +507,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     gap: 4,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
   },
   promoBadgeText: {
     color: COLORS.white,

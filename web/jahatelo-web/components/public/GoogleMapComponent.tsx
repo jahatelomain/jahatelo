@@ -6,6 +6,9 @@ type LatLngLiteral = { lat: number; lng: number };
 
 type GoogleMap = {
   setCenter(position: LatLngLiteral): void;
+  getZoom(): number | undefined;
+  fitBounds(bounds: unknown): void;
+  addListener(eventName: string, handler: () => void): { remove: () => void };
 };
 
 type GoogleInfoWindow = {
@@ -30,12 +33,15 @@ type GoogleOverlay = {
   getProjection(): {
     fromLatLngToDivPixel(position: unknown): { x: number; y: number };
   };
+  show?(): void;
+  hide?(): void;
 };
 
 type GoogleMapsApi = {
   Map: new (element: HTMLElement, options: Record<string, unknown>) => GoogleMap;
   InfoWindow: new (options: { content: string }) => GoogleInfoWindow;
   Circle: new (options: Record<string, unknown>) => GoogleCircle;
+  LatLngBounds: new () => { extend(position: LatLngLiteral): void };
   LatLng: new (lat: number, lng: number) => unknown;
   OverlayView: new () => GoogleOverlay;
   marker: {
@@ -47,7 +53,7 @@ const BASE_PIN_WIDTH = 32;
 const BASE_PIN_HEIGHT = 45;
 const BASE_PIN_CENTER = 16;
 const BASE_PIN_RADIUS = 13;
-const GLOBAL_PIN_SCALE = 1.1;
+const GLOBAL_PIN_SCALE = 0.9;
 const BASE_LABEL_GAP = 22;
 const EXTRA_LABEL_GAP_PX = 3;
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -126,6 +132,7 @@ function createMotelLabelOverlay({
   effectiveScale,
   zIndex,
   onClick,
+  initiallyVisible,
 }: {
   maps: GoogleMapsApi;
   position: LatLngLiteral;
@@ -134,9 +141,11 @@ function createMotelLabelOverlay({
   effectiveScale: number;
   zIndex: number;
   onClick: () => void;
+  initiallyVisible: boolean;
 }): GoogleOverlay {
   class MotelLabelOverlay extends maps.OverlayView {
     div: HTMLDivElement | null = null;
+    visible = initiallyVisible;
 
     onAdd() {
       this.div = document.createElement('div');
@@ -160,6 +169,9 @@ function createMotelLabelOverlay({
       this.div.style.display = 'inline-flex';
       this.div.style.alignItems = 'center';
       this.div.style.pointerEvents = 'auto';
+      this.div.style.opacity = this.visible ? '1' : '0';
+      this.div.style.transform = this.visible ? 'translateY(0)' : 'translateY(4px)';
+      this.div.style.transition = 'opacity 140ms ease, transform 140ms ease';
 
       const nameSpan = document.createElement('span');
       nameSpan.textContent = text;
@@ -195,6 +207,22 @@ function createMotelLabelOverlay({
 
       this.div.addEventListener('click', onClick);
       this.getPanes().floatPane.appendChild(this.div);
+    }
+
+    show() {
+      this.visible = true;
+      if (!this.div) return;
+      this.div.style.opacity = '1';
+      this.div.style.transform = 'translateY(0)';
+      this.div.style.pointerEvents = 'auto';
+    }
+
+    hide() {
+      this.visible = false;
+      if (!this.div) return;
+      this.div.style.opacity = '0';
+      this.div.style.transform = 'translateY(4px)';
+      this.div.style.pointerEvents = 'none';
     }
 
     draw() {
@@ -348,6 +376,10 @@ export default function GoogleMapComponent({
     // Add initial user location if provided
     if (initialUserLocation) {
       addUserMarkerRef.current(initialUserLocation);
+    } else if (motels.length > 1) {
+      const bounds = new window.google.maps.LatLngBounds();
+      motels.forEach((motel) => bounds.extend({ lat: motel.latitude, lng: motel.longitude }));
+      googleMapRef.current.fitBounds(bounds);
     }
   }, [isLoaded, motels, initialUserLocation]);
 
@@ -397,6 +429,10 @@ export default function GoogleMapComponent({
       }
     };
 
+    const shouldShowLabelByDefault = (motel: MapMotel) => (
+      motel.plan === 'DIAMOND' || motel.plan === 'GOLD'
+    );
+
     const sortedMotels = [...motels].sort(
       (a, b) => getPlanZIndex(a.plan ?? null) - getPlanZIndex(b.plan ?? null)
     );
@@ -406,6 +442,7 @@ export default function GoogleMapComponent({
       const planConfig = getPlanConfig(motel.plan ?? null);
       const planZIndex = getPlanZIndex(motel.plan ?? null);
       const effectiveScale = planConfig.scale * GLOBAL_PIN_SCALE;
+      const labelVisibleByDefault = shouldShowLabelByDefault(motel);
       const pinElement = createPinElement(planConfig.color, planConfig.opacity, effectiveScale);
       const marker = new window.google.maps.marker.AdvancedMarkerElement({
         position: { lat: motel.latitude, lng: motel.longitude },
@@ -421,6 +458,7 @@ export default function GoogleMapComponent({
         planConfig,
         effectiveScale,
         zIndex: planZIndex,
+        initiallyVisible: labelVisibleByDefault,
         onClick: () => {
           markersRef.current.forEach((existingMarker) => existingMarker.infoWindow?.close());
           marker.infoWindow?.open(googleMapRef.current!, marker);
@@ -482,7 +520,13 @@ export default function GoogleMapComponent({
             m.infoWindow.close();
           }
         });
+        customLabel.show?.();
         infoWindow.open({ anchor: marker, map: googleMapRef.current! });
+      });
+
+      pinElement.addEventListener('mouseenter', () => customLabel.show?.());
+      pinElement.addEventListener('mouseleave', () => {
+        if (!labelVisibleByDefault) customLabel.hide?.();
       });
 
       marker.infoWindow = infoWindow;

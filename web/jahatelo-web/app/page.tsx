@@ -83,13 +83,13 @@ export default async function HomePage() {
             </div>
 
             {/* Buscador */}
-            <div className="animate-fade-up-delay-3 max-w-2xl mx-auto mb-12">
+            <div className="relative z-[70] animate-fade-up-delay-3 max-w-2xl mx-auto mb-12">
               <SearchBar />
             </div>
 
             {/* Carousel destacados */}
             {featuredMotels.length > 0 && (
-              <div className="animate-fade-up-delay-4 max-w-5xl mx-auto mb-12">
+              <div className="relative z-10 animate-fade-up-delay-4 max-w-5xl mx-auto mb-12">
                 <FeaturedCarousel featuredMotels={featuredMotels} />
               </div>
             )}

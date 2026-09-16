@@ -21,10 +21,14 @@ interface FeaturedCarouselProps {
 export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+  const [isDragging, setIsDragging] = useState(false);
   const { ads } = useAdvertisements('CAROUSEL');
   const [selectedAd, setSelectedAd] = useState<Advertisement | null>(null);
   const [showAdModal, setShowAdModal] = useState(false);
   const trackedAdViews = useRef<Set<string>>(new Set());
+  const dragStartX = useRef<number | null>(null);
+  const dragDeltaX = useRef(0);
+  const didDrag = useRef(false);
   const adPlaceholder = '/motel-placeholder.png';
 
   const mixedItems = useMemo(() => {
@@ -55,13 +59,14 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
   useEffect(() => {
     // No rota si hay menos de 4 ítems en total (moteles + ads)
     if (mixedItems.length < 4) return;
+    if (isDragging) return;
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % mixedItems.length);
-    }, 4000);
+    }, 4500);
 
     return () => clearInterval(interval);
-  }, [mixedItems.length]);
+  }, [isDragging, mixedItems.length]);
 
   useEffect(() => {
     const currentItem = mixedItems[currentIndex];
@@ -76,7 +81,49 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
 
   if (mixedItems.length === 0) return null;
 
-  const handleDotClick = (index: number) => setCurrentIndex(index);
+  const goToIndex = (index: number) => {
+    if (mixedItems.length === 0) return;
+    setCurrentIndex((index + mixedItems.length) % mixedItems.length);
+  };
+
+  const goToPrevious = () => goToIndex(currentIndex - 1);
+  const goToNext = () => goToIndex(currentIndex + 1);
+  const handleDotClick = (index: number) => goToIndex(index);
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    dragStartX.current = event.clientX;
+    dragDeltaX.current = 0;
+    didDrag.current = false;
+    setIsDragging(true);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (dragStartX.current === null) return;
+    dragDeltaX.current = event.clientX - dragStartX.current;
+    if (Math.abs(dragDeltaX.current) > 8) didDrag.current = true;
+  };
+
+  const finishDrag = () => {
+    if (dragStartX.current === null) return;
+    const delta = dragDeltaX.current;
+    dragStartX.current = null;
+    dragDeltaX.current = 0;
+    window.setTimeout(() => {
+      setIsDragging(false);
+      didDrag.current = false;
+    }, 0);
+
+    if (Math.abs(delta) < 48) return;
+    if (delta < 0) goToNext();
+    else goToPrevious();
+  };
+
+  const preventClickAfterDrag = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!didDrag.current) return;
+    event.preventDefault();
+    event.stopPropagation();
+  };
 
   const handleAdClick = (ad: Advertisement) => {
     setSelectedAd(ad);
@@ -86,7 +133,14 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
 
   return (
     <div className="w-full mb-8">
-      <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden">
+      <div
+        className={`group relative h-64 md:h-80 rounded-2xl overflow-hidden select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={finishDrag}
+        onPointerCancel={finishDrag}
+        onClickCapture={preventClickAfterDrag}
+      >
         {mixedItems.map((item, index) => {
           const isActive = index === currentIndex;
 
@@ -218,6 +272,56 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
             </div>
           );
         })}
+        {mixedItems.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                goToPrevious();
+              }}
+              className="absolute left-4 top-1/2 z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/30 text-white opacity-0 shadow-lg backdrop-blur-md transition hover:bg-black/45 group-hover:opacity-100 md:flex"
+              aria-label="Ver destacado anterior"
+            >
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                goToNext();
+              }}
+              className="absolute right-4 top-1/2 z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/30 text-white opacity-0 shadow-lg backdrop-blur-md transition hover:bg-black/45 group-hover:opacity-100 md:flex"
+              aria-label="Ver siguiente destacado"
+            >
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/25 px-3 py-2 backdrop-blur-md">
+              {mixedItems.map((item, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleDotClick(index);
+                  }}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    index === currentIndex
+                      ? `w-7 ${item.type === 'ad' ? 'bg-amber-400' : 'bg-white'}`
+                      : 'w-2 bg-white/45 hover:bg-white/75'
+                  }`}
+                  aria-label={`Ir a ${item.type === 'ad' ? 'publicidad' : 'destacado'} ${index + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
         <style jsx>{`
           .featured-plan-frame::before {
             content: '';
@@ -279,24 +383,6 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
           }
         `}</style>
       </div>
-
-      {/* Dots Navigation */}
-      {mixedItems.length > 1 && (
-        <div className="flex justify-center gap-2 mt-4">
-          {mixedItems.map((item, index) => (
-            <button
-              key={index}
-              onClick={() => handleDotClick(index)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                index === currentIndex
-                  ? `w-8 ${item.type === 'ad' ? 'bg-amber-500' : 'bg-purple-600'}`
-                  : 'w-2 bg-gray-300 hover:bg-gray-400'
-              }`}
-              aria-label={`Ir a ${item.type === 'ad' ? 'publicidad' : 'destacado'} ${index + 1}`}
-            />
-          ))}
-        </div>
-      )}
 
       {/* Modal de publicidad */}
       {showAdModal && selectedAd && (
