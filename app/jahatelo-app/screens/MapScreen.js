@@ -338,11 +338,12 @@ export default function MapScreen({ route }) {
             showsUserLocation={!!userLocation}
             showsMyLocationButton={false}
           >
-          {sortedMotels.filter((motel) => motel.markerImageReady !== false).map((motel) => (
+          {sortedMotels.map((motel) => (
             <CustomMarker
-              // Google Maps iOS no siempre reemplaza `image` en un marker ya
-              // montado. Cambiar la key cuando llega el PNG fuerza únicamente
-              // ese reemplazo, sin volver a usar vistas React dentro del mapa.
+              // Nunca ocultamos el marcador mientras se resuelve su rótulo PNG:
+              // Android podía quedar sin pines si la descarga de etiquetas se
+              // demoraba o fallaba. Arranca con el pin base y reemplaza por la
+              // etiqueta cuando está disponible.
               key={`${motel.id}-${motel.markerImageUri ? 'label' : 'pin'}`}
               motel={motel}
               onPress={() => handleMarkerPress(motel)}
