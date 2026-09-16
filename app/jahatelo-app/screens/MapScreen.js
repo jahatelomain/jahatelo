@@ -28,7 +28,10 @@ const MAP_REQUEST_TIMEOUT_MS = 10000;
 // duplicar los pines propios de Jahatelo.
 const GOOGLE_MAP_ID = Platform.select({
   ios: '5a5c021d949062e756d2bbdd',
-  android: '5a5c021d949062e775a5d0c4',
+  // Android queda temporalmente sin Map ID hasta verificar en dispositivo que
+  // el estilo cloud está correctamente asociado a la API key/SHA. El Map ID
+  // solo ocultaba POIs de Google; no debe bloquear el mapa ni los pines propios.
+  android: undefined,
 });
 
 const debugLog = (...args) => {
@@ -333,7 +336,7 @@ export default function MapScreen({ route }) {
             ref={mapRef}
             style={StyleSheet.absoluteFill}
             provider={PROVIDER_GOOGLE}
-            googleMapId={GOOGLE_MAP_ID}
+            {...(GOOGLE_MAP_ID ? { googleMapId: GOOGLE_MAP_ID } : {})}
             initialRegion={initialRegion}
             showsUserLocation={!!userLocation}
             showsMyLocationButton={false}

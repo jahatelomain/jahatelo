@@ -99,7 +99,7 @@ export default function SearchBar() {
   };
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative z-[80]" ref={containerRef}>
       <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
         <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -118,7 +118,7 @@ export default function SearchBar() {
       />
 
       {open && suggestions.length > 0 && (
-        <div className="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden">
+        <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl z-[90] overflow-hidden">
           {suggestions.map((item, index) => (
             <button
               key={`${item.type}-${item.label}-${index}`}
@@ -132,12 +132,12 @@ export default function SearchBar() {
         </div>
       )}
       {open && loading && (
-        <div className="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden">
+        <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl z-[90] overflow-hidden">
           <div className="px-4 py-3 text-sm text-slate-500">Cargando...</div>
         </div>
       )}
       {open && !loading && noResults && (
-        <div className="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden">
+        <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl z-[90] overflow-hidden">
           <div className="px-4 py-3 text-sm text-slate-500">Sin resultados</div>
         </div>
       )}

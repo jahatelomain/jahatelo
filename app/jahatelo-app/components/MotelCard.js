@@ -30,7 +30,6 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
   const glowColors = glowTone === 'gold'
     ? [PLAN_COLORS.gold, PLAN_COLORS.goldLight, PLAN_COLORS.goldDark, PLAN_COLORS.goldSoft]
     : [PLAN_COLORS.diamond, PLAN_COLORS.diamondLight, PLAN_COLORS.diamondDark, PLAN_COLORS.diamondSoft];
-  const orbitColor = glowTone === 'gold' ? PLAN_COLORS.goldLight : PLAN_COLORS.diamondLight;
   const plan = normalizeMotelPlan(motel?.plan);
 
   // Valores animados para la card
@@ -43,7 +42,6 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
 
   // Valor animado para badge PROMO
   const promoBadgeScale = useSharedValue(1);
-  const diamondOrbit = useSharedValue(0);
   const diamondShimmer = useSharedValue(-1);
 
   // Todos los useAnimatedStyle ANTES del early return
@@ -70,12 +68,6 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
     };
   });
 
-  const animatedOrbitStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ rotate: `${diamondOrbit.value}deg` }],
-    };
-  });
-
   const animatedShimmerStyle = useAnimatedStyle(() => {
     const translateX = interpolate(diamondShimmer.value, [-1, 1], [-60, 60]);
     return {
@@ -86,9 +78,8 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
 
   useEffect(() => {
     if (!isDiamond) return;
-    diamondOrbit.value = withRepeat(withTiming(360, { duration: 4200 }), -1, false);
     diamondShimmer.value = withRepeat(withTiming(1, { duration: 2600 }), -1, false);
-  }, [diamondOrbit, diamondShimmer, isDiamond]);
+  }, [diamondShimmer, isDiamond]);
 
   // Early return después de todos los hooks
   if (!motel) return null;
@@ -287,9 +278,6 @@ function MotelCardComponent({ motel, onPress, showFavoriteAction = true }) {
               style={styles.diamondShimmerGradient}
             />
           </Animated.View>
-          <Animated.View pointerEvents="none" style={[styles.diamondOrbit, animatedOrbitStyle]}>
-            <View style={[styles.diamondDot, { shadowColor: orbitColor }]} />
-          </Animated.View>
           <View style={styles.diamondFrameInner}>{cardBody}</View>
         </LinearGradient>
       ) : (
@@ -338,22 +326,6 @@ const styles = StyleSheet.create({
   diamondShimmerGradient: {
     width: 120,
     height: '100%',
-  },
-  diamondOrbit: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 18,
-    alignItems: 'center',
-  },
-  diamondDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    marginTop: -3,
   },
   disabledCard: {
     opacity: 0.4,
