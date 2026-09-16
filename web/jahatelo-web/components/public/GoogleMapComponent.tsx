@@ -364,7 +364,7 @@ export default function GoogleMapComponent({
     googleMapRef.current = new window.google.maps.Map(mapRef.current, {
       center: initialCenter,
       zoom: 13,
-      mapId: '5a5c021d949062e767299e61', // Estilo cloud y marcadores avanzados de Jahatelo
+      // Map ID desactivado temporalmente en web: el estilo cloud actual deja la base del mapa sin detalle.
       // La web pública siempre usa el diseño claro, independientemente del
       // esquema oscuro del navegador o sistema operativo.
       colorScheme: 'LIGHT',
