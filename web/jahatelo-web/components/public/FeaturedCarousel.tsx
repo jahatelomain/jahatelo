@@ -99,6 +99,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
       return {
         className: 'left-[8%] w-[84%] scale-100 opacity-100 z-20',
         active: true,
+        interactive: true,
       };
     }
 
@@ -106,6 +107,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
       return {
         className: 'left-[43%] w-[72%] scale-[0.88] opacity-55 z-10',
         active: false,
+        interactive: true,
       };
     }
 
@@ -113,6 +115,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
       return {
         className: 'left-[-15%] w-[72%] scale-[0.88] opacity-55 z-10',
         active: false,
+        interactive: true,
       };
     }
 
@@ -120,12 +123,14 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
       return {
         className: 'left-[43%] w-[72%] scale-[0.88] opacity-55 z-10',
         active: false,
+        interactive: true,
       };
     }
 
     return {
       className: 'left-[14%] w-[72%] scale-90 opacity-0 z-0',
       active: false,
+      interactive: false,
     };
   };
 
@@ -150,8 +155,10 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
     dragDeltaX.current = 0;
     window.setTimeout(() => {
       setIsDragging(false);
-      didDrag.current = false;
     }, 0);
+    window.setTimeout(() => {
+      didDrag.current = false;
+    }, 160);
 
     if (Math.abs(delta) < 48) return;
     if (delta < 0) goToNext();
@@ -183,6 +190,12 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
         {mixedItems.map((item, index) => {
           const slideState = getSlideState(index);
           const isActive = slideState.active;
+          const focusSlide = (event: React.MouseEvent<HTMLDivElement>) => {
+            if (isActive) return;
+            event.preventDefault();
+            event.stopPropagation();
+            goToIndex(index);
+          };
 
           /* ── SLIDE DE PUBLICIDAD ── */
           if (item.type === 'ad') {
@@ -193,7 +206,8 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
               <div
                 key={`ad-${ad.id}`}
                 className={`absolute top-0 h-full overflow-hidden rounded-2xl shadow-xl transition-all duration-700 ease-out ${slideState.className}`}
-                style={{ pointerEvents: isActive ? 'auto' : 'none' }}
+                onClickCapture={focusSlide}
+                style={{ pointerEvents: slideState.interactive ? 'auto' : 'none' }}
               >
                 <button
                   type="button"
@@ -255,7 +269,8 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
             <div
               key={motel.id}
               className={`absolute top-0 h-full overflow-hidden rounded-2xl shadow-xl transition-all duration-700 ease-out ${slideState.className}`}
-              style={{ pointerEvents: isActive ? 'auto' : 'none' }}
+              onClickCapture={focusSlide}
+              style={{ pointerEvents: slideState.interactive ? 'auto' : 'none' }}
             >
               {isPlaceholder ? (
                 <div className="absolute inset-0" style={MOTEL_PATTERN_STYLE} />
@@ -308,29 +323,6 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
             </div>
           );
         })}
-        {mixedItems.length > 1 && (
-          <>
-            <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/25 px-3 py-2 backdrop-blur-md">
-              {mixedItems.map((item, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleDotClick(index);
-                  }}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    index === currentIndex
-                      ? `w-7 ${item.type === 'ad' ? 'bg-amber-400' : 'bg-white'}`
-                      : 'w-2 bg-white/45 hover:bg-white/75'
-                  }`}
-                  aria-label={`Ir a ${item.type === 'ad' ? 'publicidad' : 'destacado'} ${index + 1}`}
-                />
-              ))}
-            </div>
-          </>
-        )}
-
         <style jsx>{`
           .featured-plan-frame::before {
             content: '';
@@ -392,6 +384,24 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
           }
         `}</style>
       </div>
+
+      {mixedItems.length > 1 && (
+        <div className="mt-4 flex items-center justify-center gap-2">
+          {mixedItems.map((item, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => handleDotClick(index)}
+              className={`h-2.5 rounded-full transition-all duration-300 ${
+                index === currentIndex
+                  ? `w-8 ${item.type === 'ad' ? 'bg-amber-400' : 'bg-purple-500'}`
+                  : 'w-2.5 bg-white/35 hover:bg-white/65'
+              }`}
+              aria-label={`Ir a ${item.type === 'ad' ? 'publicidad' : 'destacado'} ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Modal de publicidad */}
       {showAdModal && selectedAd && (
