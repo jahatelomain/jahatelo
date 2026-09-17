@@ -22,6 +22,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
   const [currentIndex, setCurrentIndex] = useState(0);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const [isDragging, setIsDragging] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const { ads } = useAdvertisements('CAROUSEL');
   const [selectedAd, setSelectedAd] = useState<Advertisement | null>(null);
   const [showAdModal, setShowAdModal] = useState(false);
@@ -62,13 +63,14 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
     // cuando producción tenía pocos destacados/publicidades cargadas.
     if (mixedItems.length < 2) return;
     if (isDragging) return;
+    if (isPaused) return;
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % mixedItems.length);
     }, 4500);
 
     return () => clearInterval(interval);
-  }, [isDragging, mixedItems.length]);
+  }, [isDragging, isPaused, mixedItems.length]);
 
   useEffect(() => {
     const currentItem = mixedItems[currentIndex];
@@ -386,20 +388,39 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
       </div>
 
       {mixedItems.length > 1 && (
-        <div className="mt-4 flex items-center justify-center gap-2">
-          {mixedItems.map((item, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => handleDotClick(index)}
-              className={`h-2.5 rounded-full transition-all duration-300 ${
-                index === currentIndex
-                  ? `w-8 ${item.type === 'ad' ? 'bg-amber-400' : 'bg-purple-500'}`
-                  : 'w-2.5 bg-white/35 hover:bg-white/65'
-              }`}
-              aria-label={`Ir a ${item.type === 'ad' ? 'publicidad' : 'destacado'} ${index + 1}`}
-            />
-          ))}
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1.5 backdrop-blur-sm">
+            {mixedItems.map((item, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => handleDotClick(index)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  index === currentIndex
+                    ? `w-5 ${item.type === 'ad' ? 'bg-amber-400' : 'bg-purple-500'}`
+                    : 'w-1.5 bg-white/40 hover:bg-white/75'
+                }`}
+                aria-label={`Ir a ${item.type === 'ad' ? 'publicidad' : 'destacado'} ${index + 1}`}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsPaused((prev) => !prev)}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white/85 backdrop-blur-sm transition hover:bg-white/20 hover:text-white"
+            aria-label={isPaused ? 'Reanudar carrusel' : 'Pausar carrusel'}
+            title={isPaused ? 'Reanudar' : 'Pausar'}
+          >
+            {isPaused ? (
+              <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M6.3 4.22A1 1 0 005 5.17v9.66a1 1 0 001.55.83l7.24-4.83a1 1 0 000-1.66L6.55 4.34a1 1 0 00-.25-.12z" />
+              </svg>
+            ) : (
+              <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M6 4.75A1.75 1.75 0 017.75 3h.5A1.75 1.75 0 0110 4.75v10.5A1.75 1.75 0 018.25 17h-.5A1.75 1.75 0 016 15.25V4.75zM12 4.75A1.75 1.75 0 0113.75 3h.5A1.75 1.75 0 0116 4.75v10.5A1.75 1.75 0 0114.25 17h-.5A1.75 1.75 0 0112 15.25V4.75z" />
+              </svg>
+            )}
+          </button>
         </div>
       )}
 
