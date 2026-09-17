@@ -401,12 +401,12 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                     : 'bg-white/40 hover:bg-white/75'
                 }`}
                 style={{
-                  width: 8,
-                  height: 8,
-                  minWidth: 8,
-                  minHeight: 8,
-                  maxWidth: 8,
-                  maxHeight: 8,
+                  width: 12,
+                  height: 12,
+                  minWidth: 12,
+                  minHeight: 12,
+                  maxWidth: 12,
+                  maxHeight: 12,
                   aspectRatio: '1 / 1',
                 }}
                 aria-label={`Ir a ${item.type === 'ad' ? 'publicidad' : 'destacado'} ${index + 1}`}
