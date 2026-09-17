@@ -30,7 +30,7 @@ export default function CityListWithAds({ cities }: { cities: CityItem[] }) {
 
     setLoadingCity(city.name);
     try {
-      const response = await fetch(`/api/mobile/motels?city=${encodeURIComponent(city.name)}&limit=100`);
+      const response = await fetch(`/api/mobile/motels?city=${encodeURIComponent(city.name)}&limit=50`);
       if (!response.ok) throw new Error('No se pudieron cargar los moteles de esta ciudad.');
       const payload = await response.json();
       setMotelsByCity((current) => ({ ...current, [city.name]: payload.data || [] }));
