@@ -16,6 +16,7 @@ import { PRICE_UPDATING_MESSAGE } from '@/lib/domain/motels/pricePresentation';
 
 export interface MotelCardProps {
   showFavoriteAction?: boolean;
+  showInlineDistance?: boolean;
   motel: (PublicMotelListItem | {
     id: string;
     name: string;
@@ -46,7 +47,7 @@ export interface MotelCardProps {
   };
 }
 
-export default function MotelCard({ motel, showFavoriteAction = true }: MotelCardProps) {
+export default function MotelCard({ motel, showFavoriteAction = true, showInlineDistance = true }: MotelCardProps) {
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
   const isCanonical = 'rating' in motel;
   const realPhotoUrl = isCanonical
@@ -159,7 +160,7 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
             <div className="w-full h-full bg-transparent" />
           )}
           {motel.logoUrl && <MotelLogoHeart src={motel.logoUrl} alt={motel.name} className="absolute left-3 top-3 h-12 w-14" />}
-          {showFavoriteAction && <div className={`absolute top-3 ${motel.logoUrl ? 'left-[4.25rem]' : 'left-3'}`}>
+          {showFavoriteAction && <div className={`absolute top-3 ${motel.distanceKm !== undefined ? 'left-[6.25rem]' : motel.logoUrl ? 'left-[4.25rem]' : 'left-3'}`}>
             <FavoriteButtonClient motelId={motel.id} source="LIST" size="small" />
           </div>}
           <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
@@ -190,7 +191,7 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
           </h3>
           <p className="text-sm text-gray-500 mb-3">
             {locationLabel}
-            {motel.distanceKm !== undefined && (
+            {showInlineDistance && motel.distanceKm !== undefined && (
               <span className="ml-2 inline-flex items-center gap-1 text-purple-600 font-medium">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -221,9 +222,8 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
           </div>
 
           {/* Amenities */}
-          {topAmenities.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
-              {topAmenities.map((amenity, idx) => {
+          <div className="mb-3 flex min-h-8 flex-wrap gap-2">
+            {topAmenities.map((amenity, idx) => {
                 const label = amenity.name;
                 const IconComponent = amenity.icon ? iconLibrary[amenity.icon] : undefined;
                 return (
@@ -237,8 +237,7 @@ export default function MotelCard({ motel, showFavoriteAction = true }: MotelCar
                   </span>
                 );
               })}
-            </div>
-          )}
+          </div>
 
           {/* Price */}
           <div className="mt-auto pt-4 border-t border-gray-100">

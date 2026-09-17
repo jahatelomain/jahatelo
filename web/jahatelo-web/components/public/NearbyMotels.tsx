@@ -167,7 +167,7 @@ export default function NearbyMotels() {
     <div className="mx-auto max-w-7xl px-4 py-5 md:px-6 md:py-8 lg:px-8">
       {/* Radius Selector */}
       <div className="mb-5 md:mb-8">
-        <label className="block text-sm font-medium text-gray-700 mb-3">
+        <label className="mb-3 block text-sm font-semibold text-slate-300">
           Radio de búsqueda:
         </label>
         <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] md:flex-wrap md:gap-3">
@@ -191,9 +191,9 @@ export default function NearbyMotels() {
 
       {/* Results Count */}
       <div className="mb-4 md:mb-6">
-        <h2 className="text-lg font-bold text-gray-900 md:text-2xl">
+        <h2 className="text-lg font-bold text-white md:text-2xl">
           {nearbyMotels.length} {nearbyMotels.length === 1 ? 'motel encontrado' : 'moteles encontrados'}
-          <span className="text-gray-600 font-normal"> dentro de {selectedRadius} km</span>
+          <span className="font-normal text-slate-300"> dentro de {selectedRadius} km</span>
         </h2>
       </div>
 
@@ -235,7 +235,7 @@ export default function NearbyMotels() {
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
           {nearbyMotels.map((motel) => (
             <div key={motel.id} className="relative">
-              <MotelCard motel={{ ...motel, distanceKm: motel.distance }} />
+              <MotelCard motel={{ ...motel, distanceKm: motel.distance }} showInlineDistance={false} />
               {motel.distance !== undefined && (
                 <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full shadow-md">
                   <span className="text-sm font-semibold text-purple-600">
