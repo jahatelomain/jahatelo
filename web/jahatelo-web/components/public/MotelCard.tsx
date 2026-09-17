@@ -15,6 +15,7 @@ import { getMotelPlanGlowTone, hasMotelPlanGlow, isMotelPlanDisabled, normalizeM
 import { PRICE_UPDATING_MESSAGE } from '@/lib/domain/motels/pricePresentation';
 
 export interface MotelCardProps {
+  compact?: boolean;
   showFavoriteAction?: boolean;
   showInlineDistance?: boolean;
   motel: (PublicMotelListItem | {
@@ -47,7 +48,7 @@ export interface MotelCardProps {
   };
 }
 
-export default function MotelCard({ motel, showFavoriteAction = false, showInlineDistance = true }: MotelCardProps) {
+export default function MotelCard({ motel, compact = false, showFavoriteAction = false, showInlineDistance = true }: MotelCardProps) {
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
   const isCanonical = 'rating' in motel;
   const realPhotoUrl = isCanonical
@@ -136,11 +137,11 @@ export default function MotelCard({ motel, showFavoriteAction = false, showInlin
 
   const cardInner = (
     <div
-      className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[360px] h-full flex flex-col ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-pointer' : 'cursor-pointer'} ${hasPlanGlow ? 'border-transparent' : ''}`}
+      className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${compact ? 'h-[270px]' : 'min-h-[360px]'} h-full flex flex-col ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-pointer' : 'cursor-pointer'} ${hasPlanGlow ? 'border-transparent' : ''}`}
     >
         {/* Image */}
         <div
-          className="relative h-40"
+          className={`relative ${compact ? 'h-[120px]' : 'h-40'}`}
           style={isPlaceholder ? MOTEL_PATTERN_STYLE : undefined}
         >
           {photoUrl ? (
@@ -185,11 +186,11 @@ export default function MotelCard({ motel, showFavoriteAction = false, showInlin
         </div>
 
         {/* Content */}
-        <div className="p-5 flex-1 flex flex-col">
-          <h3 className="font-bold text-lg text-gray-900 mb-1 group-hover:text-purple-600 transition-colors">
+        <div className={`${compact ? 'p-4' : 'p-5'} flex-1 flex min-h-0 flex-col`}>
+          <h3 className={`font-bold text-gray-900 mb-1 group-hover:text-purple-600 transition-colors ${compact ? 'text-base' : 'text-lg'}`}>
             {motel.name}
           </h3>
-          <p className="text-sm text-gray-500 mb-3">
+          <p className={`text-gray-500 ${compact ? 'mb-2 h-10 overflow-hidden text-xs leading-5' : 'mb-3 text-sm'}`}>
             {locationLabel}
             {showInlineDistance && motel.distanceKm !== undefined && (
               <span className="ml-2 inline-flex items-center gap-1 text-purple-600 font-medium">
@@ -203,7 +204,7 @@ export default function MotelCard({ motel, showFavoriteAction = false, showInlin
           </p>
 
           {/* Rating */}
-          <div className="flex items-center gap-2 mb-3">
+          <div className={`flex items-center gap-2 ${compact ? 'mb-2 min-h-0' : 'mb-3'}`}>
             {hasReviews ? (
               <>
                 <div className="flex items-center">
@@ -222,7 +223,7 @@ export default function MotelCard({ motel, showFavoriteAction = false, showInlin
           </div>
 
           {/* Amenities */}
-          <div className="mb-3 flex min-h-8 flex-wrap gap-2">
+          <div className={`${compact ? 'mb-2 min-h-0' : 'mb-3 min-h-8'} flex flex-wrap gap-2 overflow-hidden`}>
             {topAmenities.map((amenity, idx) => {
                 const label = amenity.name;
                 const IconComponent = amenity.icon ? iconLibrary[amenity.icon] : undefined;
@@ -240,9 +241,9 @@ export default function MotelCard({ motel, showFavoriteAction = false, showInlin
           </div>
 
           {/* Price */}
-          <div className="mt-auto pt-4 border-t border-gray-100">
+          <div className={`${compact ? 'pt-3' : 'pt-4'} mt-auto border-t border-gray-100`}>
             {hasDayPriceVariation ? (
-              <p className="whitespace-nowrap text-sm font-bold text-purple-600">
+              <p className={`${compact ? 'text-xs' : 'text-sm'} whitespace-nowrap font-bold text-purple-600`}>
                 <span className="text-xs font-medium text-slate-500">S–J </span>
                 {formatGuaranies(weekdayPrice)}
                 <span className="mx-1.5 text-purple-300">·</span>
@@ -250,8 +251,8 @@ export default function MotelCard({ motel, showFavoriteAction = false, showInlin
                 {formatGuaranies(weekendPrice)}
               </p>
             ) : minPrice !== null && minPrice > 0 ? (
-              <p className="text-xl font-bold text-purple-600">
-                <span className="mr-1 text-sm font-medium text-slate-500">Desde</span>
+              <p className={`${compact ? 'text-lg' : 'text-xl'} font-bold text-purple-600`}>
+                <span className={`mr-1 font-medium text-slate-500 ${compact ? 'text-xs' : 'text-sm'}`}>Desde</span>
                 {formatGuaranies(minPrice)}
               </p>
             ) : <p className="text-sm font-semibold leading-5 text-slate-500">{PRICE_UPDATING_MESSAGE}</p>}
