@@ -58,7 +58,7 @@ export default function MobileHome({ featuredMotels, cities }: { featuredMotels:
     if (motelsByCity[city.name]) return;
     setLoadingCity(city.name);
     try {
-      const response = await fetch(`/api/mobile/motels?city=${encodeURIComponent(city.name)}&limit=100`);
+      const response = await fetch(`/api/mobile/motels?city=${encodeURIComponent(city.name)}&limit=50`);
       const payload = response.ok ? await response.json() : { data: [] };
       setMotelsByCity((current) => ({ ...current, [city.name]: payload.data || [] }));
     } finally {
