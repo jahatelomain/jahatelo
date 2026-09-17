@@ -47,7 +47,7 @@ export interface MotelCardProps {
   };
 }
 
-export default function MotelCard({ motel, showFavoriteAction = true, showInlineDistance = true }: MotelCardProps) {
+export default function MotelCard({ motel, showFavoriteAction = false, showInlineDistance = true }: MotelCardProps) {
   const iconLibrary = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>;
   const isCanonical = 'rating' in motel;
   const realPhotoUrl = isCanonical
