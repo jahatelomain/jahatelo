@@ -17,7 +17,7 @@ export default function FavoriteButtonClient({
   size = 'medium',
   variant = 'icon',
 }: FavoriteButtonClientProps) {
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const { addFavorite, isFavorite, removeFavorite } = useFavorites();
   const serverFavorite = isFavorite(motelId);
   const [favorite, setFavorite] = useState(serverFavorite);
 
@@ -29,12 +29,14 @@ export default function FavoriteButtonClient({
     const previousValue = favorite;
     setFavorite(!previousValue);
 
-    const success = await toggleFavorite(motelId, source);
+    const success = previousValue
+      ? await removeFavorite(motelId, source)
+      : await addFavorite(motelId, source);
     if (!success) {
       setFavorite(previousValue);
     }
     return success;
-  }, [favorite, motelId, source, toggleFavorite]);
+  }, [addFavorite, favorite, motelId, removeFavorite, source]);
 
   return (
     <FavoriteButton
