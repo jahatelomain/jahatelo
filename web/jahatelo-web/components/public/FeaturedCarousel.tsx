@@ -395,11 +395,20 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                 key={index}
                 type="button"
                 onClick={() => handleDotClick(index)}
-                className={`h-2 w-2 rounded-full transition-colors duration-200 ${
+                className={`block shrink-0 rounded-full border-0 p-0 transition-colors duration-200 ${
                   index === currentIndex
                     ? `${item.type === 'ad' ? 'bg-amber-400' : 'bg-purple-500'}`
                     : 'bg-white/40 hover:bg-white/75'
                 }`}
+                style={{
+                  width: 8,
+                  height: 8,
+                  minWidth: 8,
+                  minHeight: 8,
+                  maxWidth: 8,
+                  maxHeight: 8,
+                  aspectRatio: '1 / 1',
+                }}
                 aria-label={`Ir a ${item.type === 'ad' ? 'publicidad' : 'destacado'} ${index + 1}`}
               />
             ))}
@@ -407,7 +416,16 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
           <button
             type="button"
             onClick={() => setIsPaused((prev) => !prev)}
-            className="flex h-5 w-5 items-center justify-center rounded-full bg-white/15 text-white/85 transition hover:bg-white/25 hover:text-white"
+            className="flex shrink-0 items-center justify-center rounded-full border-0 bg-white/15 p-0 text-white/85 transition hover:bg-white/25 hover:text-white"
+            style={{
+              width: 18,
+              height: 18,
+              minWidth: 18,
+              minHeight: 18,
+              maxWidth: 18,
+              maxHeight: 18,
+              aspectRatio: '1 / 1',
+            }}
             aria-label={isPaused ? 'Reanudar carrusel' : 'Pausar carrusel'}
             title={isPaused ? 'Reanudar' : 'Pausar'}
           >
