@@ -89,6 +89,36 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
   const goToPrevious = () => goToIndex(currentIndex - 1);
   const goToNext = () => goToIndex(currentIndex + 1);
   const handleDotClick = (index: number) => goToIndex(index);
+  const getSlideState = (index: number) => {
+    const previousIndex = (currentIndex - 1 + mixedItems.length) % mixedItems.length;
+    const nextIndex = (currentIndex + 1) % mixedItems.length;
+
+    if (index === currentIndex) {
+      return {
+        className: 'left-[8%] w-[84%] scale-100 opacity-100 z-20',
+        active: true,
+      };
+    }
+
+    if (mixedItems.length > 1 && index === previousIndex) {
+      return {
+        className: 'left-[-15%] w-[72%] scale-[0.88] opacity-55 z-10',
+        active: false,
+      };
+    }
+
+    if (mixedItems.length > 1 && index === nextIndex) {
+      return {
+        className: 'left-[43%] w-[72%] scale-[0.88] opacity-55 z-10',
+        active: false,
+      };
+    }
+
+    return {
+      className: 'left-[14%] w-[72%] scale-90 opacity-0 z-0',
+      active: false,
+    };
+  };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     dragStartX.current = event.clientX;
@@ -134,7 +164,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
   return (
     <div className="w-full mb-8">
       <div
-        className={`group relative h-64 md:h-80 rounded-2xl overflow-hidden select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`group relative h-64 overflow-hidden select-none md:h-80 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={finishDrag}
@@ -142,7 +172,8 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
         onClickCapture={preventClickAfterDrag}
       >
         {mixedItems.map((item, index) => {
-          const isActive = index === currentIndex;
+          const slideState = getSlideState(index);
+          const isActive = slideState.active;
 
           /* ── SLIDE DE PUBLICIDAD ── */
           if (item.type === 'ad') {
@@ -152,9 +183,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
             return (
               <div
                 key={`ad-${ad.id}`}
-                className={`absolute inset-0 transition-opacity duration-500 ${
-                  isActive ? 'opacity-100' : 'opacity-0'
-                }`}
+                className={`absolute top-0 h-full overflow-hidden rounded-2xl shadow-xl transition-all duration-700 ease-out ${slideState.className}`}
                 style={{ pointerEvents: isActive ? 'auto' : 'none' }}
               >
                 <button
@@ -216,9 +245,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
           return (
             <div
               key={motel.id}
-              className={`absolute inset-0 transition-opacity duration-500 ${
-                isActive ? 'opacity-100' : 'opacity-0'
-              }`}
+              className={`absolute top-0 h-full overflow-hidden rounded-2xl shadow-xl transition-all duration-700 ease-out ${slideState.className}`}
               style={{ pointerEvents: isActive ? 'auto' : 'none' }}
             >
               {isPlaceholder ? (
@@ -274,33 +301,6 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
         })}
         {mixedItems.length > 1 && (
           <>
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                goToPrevious();
-              }}
-              className="absolute left-4 top-1/2 z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/30 text-white opacity-0 shadow-lg backdrop-blur-md transition hover:bg-black/45 group-hover:opacity-100 md:flex"
-              aria-label="Ver destacado anterior"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                goToNext();
-              }}
-              className="absolute right-4 top-1/2 z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/30 text-white opacity-0 shadow-lg backdrop-blur-md transition hover:bg-black/45 group-hover:opacity-100 md:flex"
-              aria-label="Ver siguiente destacado"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-
             <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/25 px-3 py-2 backdrop-blur-md">
               {mixedItems.map((item, index) => (
                 <button
