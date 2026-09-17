@@ -429,6 +429,10 @@ export default function GoogleMapComponent({
       }
     };
 
+    const shouldShowLabelByDefault = (motel: MapMotel) => (
+      motel.plan === 'DIAMOND' || motel.plan === 'GOLD'
+    );
+
     const sortedMotels = [...motels].sort(
       (a, b) => getPlanZIndex(a.plan ?? null) - getPlanZIndex(b.plan ?? null)
     );
@@ -438,7 +442,7 @@ export default function GoogleMapComponent({
       const planConfig = getPlanConfig(motel.plan ?? null);
       const planZIndex = getPlanZIndex(motel.plan ?? null);
       const effectiveScale = planConfig.scale * GLOBAL_PIN_SCALE;
-      const labelVisibleByDefault = true;
+      const labelVisibleByDefault = shouldShowLabelByDefault(motel);
       const pinElement = createPinElement(planConfig.color, planConfig.opacity, effectiveScale);
       const marker = new window.google.maps.marker.AdvancedMarkerElement({
         position: { lat: motel.latitude, lng: motel.longitude },
