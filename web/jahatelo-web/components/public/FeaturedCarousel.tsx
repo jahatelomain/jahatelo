@@ -57,8 +57,10 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
   }, [featuredMotels, ads]);
 
   useEffect(() => {
-    // No rota si hay menos de 4 ítems en total (moteles + ads)
-    if (mixedItems.length < 4) return;
+    // Rota siempre que exista más de una tarjeta visible.
+    // Antes se frenaba con menos de 4 ítems, por eso el carrusel parecía roto
+    // cuando producción tenía pocos destacados/publicidades cargadas.
+    if (mixedItems.length < 2) return;
     if (isDragging) return;
 
     const interval = setInterval(() => {
@@ -100,14 +102,21 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
       };
     }
 
-    if (mixedItems.length > 1 && index === previousIndex) {
+    if (mixedItems.length === 2 && index === nextIndex) {
+      return {
+        className: 'left-[43%] w-[72%] scale-[0.88] opacity-55 z-10',
+        active: false,
+      };
+    }
+
+    if (mixedItems.length > 2 && index === previousIndex) {
       return {
         className: 'left-[-15%] w-[72%] scale-[0.88] opacity-55 z-10',
         active: false,
       };
     }
 
-    if (mixedItems.length > 1 && index === nextIndex) {
+    if (mixedItems.length > 2 && index === nextIndex) {
       return {
         className: 'left-[43%] w-[72%] scale-[0.88] opacity-55 z-10',
         active: false,
