@@ -159,7 +159,7 @@ export default function MotelCard({ motel, showFavoriteAction = false, showInlin
           ) : (
             <div className="w-full h-full bg-transparent" />
           )}
-          {motel.logoUrl && <MotelLogoHeart src={motel.logoUrl} alt={motel.name} className="absolute left-3 top-3 h-12 w-14" />}
+          {motel.logoUrl && <MotelLogoHeart src={motel.logoUrl} alt={motel.name} className="absolute left-3 top-3 h-12 w-12" />}
           {showFavoriteAction && <div className={`absolute top-3 ${motel.distanceKm !== undefined ? 'left-[6.25rem]' : motel.logoUrl ? 'left-[4.25rem]' : 'left-3'}`}>
             <FavoriteButtonClient motelId={motel.id} source="LIST" size="small" />
           </div>}

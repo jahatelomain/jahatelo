@@ -304,7 +304,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
                 </div>
               )}
 
-              {motel.logoUrl && <MotelLogoHeart src={motel.logoUrl} alt={motel.name} className="absolute left-4 top-4 h-14 w-16" />}
+              {motel.logoUrl && <MotelLogoHeart src={motel.logoUrl} alt={motel.name} className="absolute left-4 top-4 h-14 w-14" />}
 
               {/* Badge DESTACADO */}
               <div className="absolute top-4 right-4 bg-purple-600 text-white px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 shadow-lg pointer-events-none">
@@ -388,16 +388,16 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
       </div>
 
       {mixedItems.length > 1 && (
-        <div className="mt-3 flex items-center justify-center gap-1.5">
-          <div className="flex items-center justify-center gap-1.5 rounded-full bg-white/10 px-2 py-1.5 backdrop-blur-sm">
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-2">
             {mixedItems.map((item, index) => (
               <button
                 key={index}
                 type="button"
                 onClick={() => handleDotClick(index)}
-                className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
+                className={`h-2 w-2 rounded-full transition-colors duration-200 ${
                   index === currentIndex
-                    ? `${item.type === 'ad' ? 'bg-amber-400' : 'bg-purple-500'} ring-2 ring-white/25`
+                    ? `${item.type === 'ad' ? 'bg-amber-400' : 'bg-purple-500'}`
                     : 'bg-white/40 hover:bg-white/75'
                 }`}
                 aria-label={`Ir a ${item.type === 'ad' ? 'publicidad' : 'destacado'} ${index + 1}`}
@@ -407,16 +407,16 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
           <button
             type="button"
             onClick={() => setIsPaused((prev) => !prev)}
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-white/85 backdrop-blur-sm transition hover:bg-white/20 hover:text-white"
+            className="flex h-5 w-5 items-center justify-center rounded-full bg-white/15 text-white/85 transition hover:bg-white/25 hover:text-white"
             aria-label={isPaused ? 'Reanudar carrusel' : 'Pausar carrusel'}
             title={isPaused ? 'Reanudar' : 'Pausar'}
           >
             {isPaused ? (
-              <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <svg className="h-2.5 w-2.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M6.3 4.22A1 1 0 005 5.17v9.66a1 1 0 001.55.83l7.24-4.83a1 1 0 000-1.66L6.55 4.34a1 1 0 00-.25-.12z" />
               </svg>
             ) : (
-              <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <svg className="h-2.5 w-2.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M6 4.75A1.75 1.75 0 017.75 3h.5A1.75 1.75 0 0110 4.75v10.5A1.75 1.75 0 018.25 17h-.5A1.75 1.75 0 016 15.25V4.75zM12 4.75A1.75 1.75 0 0113.75 3h.5A1.75 1.75 0 0116 4.75v10.5A1.75 1.75 0 0114.25 17h-.5A1.75 1.75 0 0112 15.25V4.75z" />
               </svg>
             )}
