@@ -62,7 +62,7 @@ export default function CityListWithAds({ cities }: { cities: CityItem[] }) {
                 <ChevronDown className={`shrink-0 text-purple-300 transition-transform ${isExpanded ? 'rotate-180' : ''}`} size={22} />
               </button>
               {isExpanded && <div className="border-t border-purple-800/40 bg-slate-950/20 p-4">
-                {loadingCity === city.name ? <div className="flex items-center justify-center gap-2 py-6 text-sm text-purple-200"><LoaderCircle className="animate-spin" size={18} />Cargando moteles…</div> : errorCity ? <p className="py-4 text-sm text-red-300">{errorCity}</p> : cityMotels.length === 0 ? <p className="py-4 text-sm text-purple-200">No hay moteles publicados en esta ciudad.</p> : <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">{cityMotels.map((motel) => <MotelCard key={motel.id} motel={motel} showFavoriteAction={false} />)}</div>}
+                {loadingCity === city.name ? <div className="flex items-center justify-center gap-2 py-6 text-sm text-purple-200"><LoaderCircle className="animate-spin" size={18} />Cargando moteles…</div> : errorCity ? <p className="py-4 text-sm text-red-300">{errorCity}</p> : cityMotels.length === 0 ? <p className="py-4 text-sm text-purple-200">No hay moteles publicados en esta ciudad.</p> : <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">{cityMotels.map((motel) => <MotelCard key={motel.id} motel={motel} compact showFavoriteAction={false} />)}</div>}
               </div>}
             </section>
             {ad && <AdInlineCard key={`${city.name}-ad-${ad.id}`} ad={ad} placement="CITY_LIST" />}
