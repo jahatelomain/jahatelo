@@ -12,31 +12,16 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
-  const { login, refreshUser } = useAuth();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loginMethod, setLoginMethod] = useState<'email' | 'whatsapp'>('email');
-  const [phone, setPhone] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [otpName, setOtpName] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [otpVerifyLoading, setOtpVerifyLoading] = useState(false);
-  const [resendSeconds, setResendSeconds] = useState(0);
   const [error, setError] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (resendSeconds <= 0) return;
-    const timer = setInterval(() => {
-      setResendSeconds((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [resendSeconds]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,70 +96,6 @@ function LoginForm() {
     }
   }, [searchParams]);
 
-  const handleSendOtp = async (e?: React.FormEvent | React.MouseEvent) => {
-    e?.preventDefault();
-    setError('');
-    if (!phone.trim()) {
-      setError('Ingresa tu número de teléfono');
-      return;
-    }
-    setOtpLoading(true);
-    try {
-      const res = await fetch('/api/auth/whatsapp/request-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ phone }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'No se pudo enviar el código');
-        return;
-      }
-      setOtpSent(true);
-      setResendSeconds(60);
-      if (data?.debugCode && process.env.NODE_ENV === 'development') {
-        setOtpCode(data.debugCode);
-      }
-    } catch (err) {
-      console.error('OTP error:', err);
-      setError('Error al conectar con el servidor');
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (!otpCode.trim()) {
-      setError('Ingresa el código');
-      return;
-    }
-    setOtpVerifyLoading(true);
-    try {
-      const res = await fetch('/api/auth/whatsapp/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ phone, code: otpCode, name: otpName }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Código inválido');
-        return;
-      }
-      await refreshUser();
-      const target = redirect || '/';
-      router.push(target);
-      router.refresh();
-    } catch (err) {
-      console.error('OTP verify error:', err);
-      setError('Error al conectar con el servidor');
-    } finally {
-      setOtpVerifyLoading(false);
-    }
-  };
 
   return (
     <main className="public-page bg-gradient-to-br from-purple-600 to-purple-800 px-4 py-6 md:flex md:items-center md:justify-center md:px-4 md:py-0">
@@ -193,10 +114,10 @@ function LoginForm() {
               />
             </div>
             <h1 className="mb-1 text-2xl font-bold text-slate-900 md:mb-2 md:font-semibold">
-              Iniciar Sesión
+              Iniciar sesión
             </h1>
             <p className="text-sm text-slate-600 md:text-base">
-              Ingresa tus credenciales para continuar
+              Ingresá con email, Google o Facebook
             </p>
           </div>
 
@@ -217,193 +138,66 @@ function LoginForm() {
           )}
 
           {/* Form */}
-          <div className="mb-5 flex items-center gap-2 rounded-xl bg-slate-100 p-1 md:mb-6" role="group" aria-label="Método de inicio de sesión">
-            <button
-              type="button"
-              aria-pressed={loginMethod === 'email'}
-              onClick={() => {
-                setLoginMethod('email');
-                setError('');
-                setOtpSent(false);
-                setOtpCode('');
-                setOtpName('');
-                setResendSeconds(0);
-                setPhone('');
-              }}
-                className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors md:rounded-md md:py-2 md:font-medium ${
-                loginMethod === 'email' ? 'bg-white text-slate-900 shadow' : 'text-slate-600'
-              }`}
-            >
-              Email
-            </button>
-            <button
-              type="button"
-              aria-pressed={loginMethod === 'whatsapp'}
-              onClick={() => {
-                setLoginMethod('whatsapp');
-                setError('');
-                setEmail('');
-                setPassword('');
-                setOtpSent(false);
-                setOtpCode('');
-                setOtpName('');
-                setResendSeconds(0);
-              }}
-                className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors md:rounded-md md:py-2 md:font-medium ${
-                loginMethod === 'whatsapp' ? 'bg-white text-slate-900 shadow' : 'text-slate-600'
-              }`}
-            >
-              SMS
-            </button>
-          </div>
-
-          {loginMethod === 'email' ? (
-            <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-slate-700 mb-2"
-                >
-                  Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  aria-describedby={error ? 'login-error' : undefined}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
-                  placeholder="tu@email.com"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-slate-700 mb-2"
-                >
-                  Contraseña
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  aria-describedby={error ? 'login-error' : undefined}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-xl bg-purple-600 px-4 py-3.5 font-semibold text-white transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50 md:rounded-lg md:py-3 md:font-medium"
+          <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-slate-700 mb-2"
               >
-                {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-              </button>
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                aria-describedby={error ? 'login-error' : undefined}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
+                placeholder="tu@email.com"
+              />
+            </div>
 
-              {needsVerification && (
-                <button
-                  type="button"
-                  onClick={handleResendVerification}
-                  disabled={resendLoading}
-                  className="w-full text-sm text-purple-600 hover:text-purple-700 font-medium disabled:text-slate-400"
-                >
-                  {resendLoading ? 'Enviando...' : 'Reenviar correo de verificación'}
-                </button>
-              )}
-            </form>
-          ) : (
-            <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp} className="space-y-6">
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="block text-sm font-medium text-slate-700 mb-2"
-                >
-                  Número de teléfono
-                </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  aria-describedby={error ? 'login-error' : undefined}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
-                  placeholder="+595981234567"
-                />
-                <p className="mt-2 text-xs text-slate-500">
-                  Te enviaremos un código de verificación por SMS.
-                </p>
-              </div>
-
-              {otpSent && (
-                <div>
-                  <label
-                    htmlFor="otp"
-                    className="block text-sm font-medium text-slate-700 mb-2"
-                  >
-                    Código de verificación
-                  </label>
-                  <input
-                    id="otp"
-                    type="text"
-                    inputMode="numeric"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
-                    placeholder="000000"
-                  />
-                </div>
-              )}
-
-              {otpSent && (
-                <div>
-                  <label
-                    htmlFor="otpName"
-                    className="block text-sm font-medium text-slate-700 mb-2"
-                  >
-                    Nombre (opcional)
-                  </label>
-                  <input
-                    id="otpName"
-                    type="text"
-                    value={otpName}
-                    onChange={(e) => setOtpName(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
-                    placeholder="Tu nombre"
-                  />
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={otpSent ? otpVerifyLoading : otpLoading}
-                className="w-full rounded-xl bg-purple-600 px-4 py-3.5 font-semibold text-white transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50 md:rounded-lg md:py-3 md:font-medium"
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-slate-700 mb-2"
               >
-                {otpSent
-                  ? otpVerifyLoading ? 'Verificando...' : 'Verificar e ingresar'
-                  : otpLoading ? 'Enviando...' : 'Enviar código'}
-              </button>
+                Contraseña
+              </label>
+              <input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                aria-describedby={error ? 'login-error' : undefined}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
+                placeholder="••••••••"
+              />
+            </div>
 
-              {otpSent && (
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  disabled={resendSeconds > 0 || otpLoading}
-                  className="w-full text-sm text-purple-600 hover:text-purple-700 font-medium disabled:text-slate-400"
-                >
-                  {resendSeconds > 0 ? `Reenviar en ${resendSeconds}s` : 'Reenviar código por SMS'}
-                </button>
-              )}
-            </form>
-          )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-purple-600 px-4 py-3.5 font-semibold text-white transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50 md:rounded-lg md:py-3 md:font-medium"
+            >
+              {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+            </button>
+
+            {needsVerification && (
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resendLoading}
+                className="w-full text-sm text-purple-600 hover:text-purple-700 font-medium disabled:text-slate-400"
+              >
+                {resendLoading ? 'Enviando...' : 'Reenviar correo de verificación'}
+              </button>
+            )}
+          </form>
 
           {/* Google Login */}
           <div className="mt-6">

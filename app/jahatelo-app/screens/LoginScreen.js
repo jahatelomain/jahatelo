@@ -14,7 +14,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
-import { requestSmsOtp, verifySmsOtp } from '../services/authApi';
 import { getApiRoot } from '../services/apiBaseUrl';
 import { COLORS } from '../constants/theme';
 import { useGoogleAuth, isGoogleConfigured } from '../services/googleAuthService';
@@ -25,17 +24,9 @@ export default function LoginScreen({ navigation }) {
   const { login, loginWithOAuth, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loginMethod, setLoginMethod] = useState('email'); // email | sms
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [phone, setPhone] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [otpName, setOtpName] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [otpVerifyLoading, setOtpVerifyLoading] = useState(false);
-  const [resendSeconds, setResendSeconds] = useState(0);
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendVerifLoading, setResendVerifLoading] = useState(false);
 
@@ -76,20 +67,6 @@ export default function LoginScreen({ navigation }) {
   const validateForm = () => {
     const newErrors = {};
 
-    if (loginMethod === 'sms') {
-      const phoneClean = phone.trim();
-      if (!phoneClean) {
-        newErrors.phone = 'El teléfono es requerido';
-      } else if (!/^\+?[\d\s\-()]{8,15}$/.test(phoneClean)) {
-        newErrors.phone = 'Formato de teléfono inválido';
-      }
-      if (otpSent && !otpCode.trim()) {
-        newErrors.otpCode = 'El código es requerido';
-      }
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
-    }
-
     if (!email.trim()) {
       newErrors.email = 'El email es requerido';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -103,28 +80,6 @@ export default function LoginScreen({ navigation }) {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
-  const validatePhoneOnly = () => {
-    const phoneClean = phone.trim();
-    const nextErrors = { ...errors, phone: null };
-
-    if (!phoneClean) {
-      nextErrors.phone = 'El teléfono es requerido';
-    } else if (!/^\+?[\d\s\-()]{8,15}$/.test(phoneClean)) {
-      nextErrors.phone = 'Formato de teléfono inválido';
-    }
-
-    setErrors(nextErrors);
-    return !nextErrors.phone;
-  };
-
-  useEffect(() => {
-    if (resendSeconds <= 0) return;
-    const timer = setInterval(() => {
-      setResendSeconds((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [resendSeconds]);
 
   const handleLogin = async () => {
     if (!validateForm()) return;
@@ -171,42 +126,6 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  const handleSendOtp = async () => {
-    if (!validatePhoneOnly()) return;
-    try {
-      setOtpLoading(true);
-      const data = await requestSmsOtp({ phone: phone.trim() });
-      setOtpSent(true);
-      setResendSeconds(60);
-      if (data?.debugCode) {
-        setOtpCode(String(data.debugCode));
-      }
-    } catch (error) {
-      showErrorMessage(error.message || 'No se pudo enviar el código');
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (!validateForm()) return;
-    try {
-      setOtpVerifyLoading(true);
-      const result = await verifySmsOtp({
-        phone: phone.trim(),
-        code: otpCode.trim(),
-        name: otpName.trim() || undefined,
-      });
-      if (result?.success) {
-        showSuccessMessage('¡Bienvenido!', 'Sesión iniciada correctamente');
-        closeAfterAuthentication();
-      }
-    } catch (error) {
-      showErrorMessage(error.message || 'Código inválido');
-    } finally {
-      setOtpVerifyLoading(false);
-    }
-  };
 
   const handleGoogleLogin = async (idToken) => {
     try {
@@ -293,231 +212,102 @@ export default function LoginScreen({ navigation }) {
               <Ionicons name="heart" size={40} color={COLORS.primary} />
             </View>
             <Text style={styles.title}>Bienvenido a Jahatelo</Text>
-            <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
+            <Text style={styles.subtitle}>Ingresá para guardar favoritos y recibir novedades</Text>
           </View>
 
           {/* Formulario */}
           <View style={styles.form}>
-            <View style={styles.toggleContainer}>
-              <TouchableOpacity
-                style={[styles.toggleButton, loginMethod === 'email' && styles.toggleButtonActive]}
-                onPress={() => {
-                  setLoginMethod('email');
-                  setErrors({});
-                  setOtpSent(false);
-                  setOtpCode('');
-                  setOtpName('');
-                  setResendSeconds(0);
-                }}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: loginMethod === 'email' }}
-              >
-                <Text style={[styles.toggleText, loginMethod === 'email' && styles.toggleTextActive]}>
-                  Email
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.toggleButton, loginMethod === 'sms' && styles.toggleButtonActive]}
-                onPress={() => {
-                  setLoginMethod('sms');
-                  setErrors({});
-                  setEmail('');
-                  setPassword('');
-                  setOtpSent(false);
-                  setOtpCode('');
-                  setOtpName('');
-                  setResendSeconds(0);
-                }}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: loginMethod === 'sms' }}
-              >
-                <Text style={[styles.toggleText, loginMethod === 'sms' && styles.toggleTextActive]}>
-                  SMS
-                </Text>
-              </TouchableOpacity>
+            {/* Email */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Email</Text>
+              <View style={[styles.inputWrapper, errors.email && styles.inputError]}>
+                <Ionicons name="mail-outline" size={20} color={COLORS.gray} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="tu@email.com"
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    if (errors.email) setErrors({ ...errors, email: null });
+                  }}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoComplete="email"
+                  accessibilityLabel="Correo electrónico"
+                  accessibilityState={{ disabled: isLoading }}
+                  editable={!isLoading}
+                />
+              </View>
+              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
             </View>
 
-            {loginMethod === 'email' ? (
-              <>
-                {/* Email */}
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Email</Text>
-                  <View style={[styles.inputWrapper, errors.email && styles.inputError]}>
-                    <Ionicons name="mail-outline" size={20} color={COLORS.gray} style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="tu@email.com"
-                      value={email}
-                      onChangeText={(text) => {
-                        setEmail(text);
-                        if (errors.email) setErrors({ ...errors, email: null });
-                      }}
-                      autoCapitalize="none"
-                      keyboardType="email-address"
-                      autoComplete="email"
-                      accessibilityLabel="Correo electrónico"
-                      accessibilityState={{ disabled: isLoading }}
-                      editable={!isLoading}
-                    />
-                  </View>
-                  {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-                </View>
-
-                {/* Contraseña */}
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Contraseña</Text>
-                  <View style={[styles.inputWrapper, errors.password && styles.inputError]}>
-                    <Ionicons name="lock-closed-outline" size={20} color={COLORS.gray} style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="••••••••"
-                      value={password}
-                      onChangeText={(text) => {
-                        setPassword(text);
-                        if (errors.password) setErrors({ ...errors, password: null });
-                      }}
-                      secureTextEntry={!showPassword}
-                      autoComplete="password"
-                      accessibilityLabel="Contraseña"
-                      accessibilityState={{ disabled: isLoading }}
-                      editable={!isLoading}
-                    />
-                    <TouchableOpacity
-                      onPress={() => setShowPassword(!showPassword)}
-                      style={styles.eyeButton}
-                      accessibilityRole="button"
-                      accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                    >
-                      <Ionicons
-                        name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                        size={20}
-                        color={COLORS.gray}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
-                </View>
-
-                {/* Banner de email no verificado */}
-                {needsVerification && (
-                  <View style={styles.verificationBanner}>
-                    <Ionicons name="mail-outline" size={18} color="#B45309" />
-                    <Text style={styles.verificationBannerText}>
-                      Tu email no está verificado. Revisá tu bandeja de entrada.
-                    </Text>
-                    <TouchableOpacity
-                      onPress={handleResendVerification}
-                      disabled={resendVerifLoading}
-                      style={styles.resendVerifButton}
-                    >
-                      <Text style={styles.resendVerifText}>
-                        {resendVerifLoading ? 'Enviando...' : 'Reenviar'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {/* Botón de Login */}
+            {/* Contraseña */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Contraseña</Text>
+              <View style={[styles.inputWrapper, errors.password && styles.inputError]}>
+                <Ionicons name="lock-closed-outline" size={20} color={COLORS.gray} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="••••••••"
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (errors.password) setErrors({ ...errors, password: null });
+                  }}
+                  secureTextEntry={!showPassword}
+                  autoComplete="password"
+                  accessibilityLabel="Contraseña"
+                  accessibilityState={{ disabled: isLoading }}
+                  editable={!isLoading}
+                />
                 <TouchableOpacity
-                  style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
-                  onPress={handleLogin}
-                  disabled={isLoading}
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeButton}
                   accessibilityRole="button"
-                  accessibilityState={{ disabled: isLoading, busy: isLoading }}
+                  accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
-                  {isLoading ? (
-                    <ActivityIndicator size="small" color={COLORS.white} />
-                  ) : (
-                    <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
-                  )}
+                  <Ionicons
+                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                    size={20}
+                    color={COLORS.gray}
+                  />
                 </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                {/* Teléfono */}
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Número de teléfono</Text>
-                  <View style={[styles.inputWrapper, errors.phone && styles.inputError]}>
-                    <Ionicons name="call-outline" size={20} color={COLORS.gray} style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="+595981234567"
-                      value={phone}
-                      onChangeText={(text) => {
-                        setPhone(text);
-                        if (errors.phone) setErrors({ ...errors, phone: null });
-                      }}
-                      keyboardType="phone-pad"
-                      editable={!otpLoading && !otpVerifyLoading}
-                    />
-                  </View>
-                  {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
-                </View>
+              </View>
+              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+            </View>
 
-                {otpSent && (
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Código</Text>
-                    <View style={[styles.inputWrapper, errors.otpCode && styles.inputError]}>
-                      <Ionicons name="key-outline" size={20} color={COLORS.gray} style={styles.inputIcon} />
-                      <TextInput
-                        style={styles.input}
-                        placeholder="000000"
-                        value={otpCode}
-                        onChangeText={(text) => {
-                          setOtpCode(text);
-                          if (errors.otpCode) setErrors({ ...errors, otpCode: null });
-                        }}
-                        keyboardType="number-pad"
-                        editable={!otpVerifyLoading}
-                      />
-                    </View>
-                    {errors.otpCode && <Text style={styles.errorText}>{errors.otpCode}</Text>}
-                  </View>
-                )}
-
-                {otpSent && (
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Nombre (opcional)</Text>
-                    <View style={styles.inputWrapper}>
-                      <Ionicons name="person-outline" size={20} color={COLORS.gray} style={styles.inputIcon} />
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Tu nombre"
-                        value={otpName}
-                        onChangeText={setOtpName}
-                        editable={!otpVerifyLoading}
-                      />
-                    </View>
-                  </View>
-                )}
-
+            {/* Banner de email no verificado */}
+            {needsVerification && (
+              <View style={styles.verificationBanner}>
+                <Ionicons name="mail-outline" size={18} color="#B45309" />
+                <Text style={styles.verificationBannerText}>
+                  Tu email no está verificado. Revisá tu bandeja de entrada.
+                </Text>
                 <TouchableOpacity
-                  style={[styles.loginButton, (otpLoading || otpVerifyLoading) && styles.loginButtonDisabled]}
-                  onPress={otpSent ? handleVerifyOtp : handleSendOtp}
-                  disabled={otpLoading || otpVerifyLoading}
+                  onPress={handleResendVerification}
+                  disabled={resendVerifLoading}
+                  style={styles.resendVerifButton}
                 >
-                  {otpLoading || otpVerifyLoading ? (
-                    <ActivityIndicator size="small" color={COLORS.white} />
-                  ) : (
-                    <Text style={styles.loginButtonText}>
-                      {otpSent ? 'Verificar e ingresar' : 'Enviar código'}
-                    </Text>
-                  )}
+                  <Text style={styles.resendVerifText}>
+                    {resendVerifLoading ? 'Enviando...' : 'Reenviar'}
+                  </Text>
                 </TouchableOpacity>
-
-                {otpSent && (
-                  <TouchableOpacity
-                    style={styles.resendButton}
-                    onPress={handleSendOtp}
-                    disabled={resendSeconds > 0 || otpLoading}
-                  >
-                    <Text style={styles.resendText}>
-                      {resendSeconds > 0 ? `Reenviar en ${resendSeconds}s` : 'Reenviar código'}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </>
+              </View>
             )}
+
+            <TouchableOpacity
+              style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+              onPress={handleLogin}
+              disabled={isLoading}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isLoading, busy: isLoading }}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color={COLORS.white} />
+              ) : (
+                <Text style={styles.loginButtonText}>Iniciar sesión</Text>
+              )}
+            </TouchableOpacity>
 
             {/* Divider */}
             <View style={styles.divider}>
@@ -529,19 +319,21 @@ export default function LoginScreen({ navigation }) {
             {/* OAuth Buttons */}
             <View style={styles.oauthContainer}>
               <TouchableOpacity
-                style={[styles.oauthButton, !googleRequest && styles.oauthButtonDisabled]}
+                style={[styles.socialButton, !googleRequest && styles.oauthButtonDisabled]}
                 onPress={() => promptGoogleAsync()}
                 disabled={!googleRequest || isLoading}
               >
-                <Ionicons name="logo-google" size={24} color="#DB4437" />
+                <Ionicons name="logo-google" size={22} color="#DB4437" />
+                <Text style={styles.socialButtonText}>Continuar con Google</Text>
               </TouchableOpacity>
               {isFacebookConfigured() && (
                 <TouchableOpacity
-                  style={[styles.oauthButton, !facebookRequest && styles.oauthButtonDisabled]}
+                  style={[styles.socialButton, !facebookRequest && styles.oauthButtonDisabled]}
                   onPress={() => promptFacebookAsync()}
                   disabled={!facebookRequest || isLoading}
                 >
-                  <Ionicons name="logo-facebook" size={24} color="#1877F2" />
+                  <Ionicons name="logo-facebook" size={22} color="#1877F2" />
+                  <Text style={styles.socialButtonText}>Continuar con Facebook</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -610,29 +402,6 @@ const styles = StyleSheet.create({
   form: {
     flex: 1,
   },
-  toggleContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#F1F5F9',
-    borderRadius: 10,
-    padding: 4,
-    marginBottom: 20,
-  },
-  toggleButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  toggleButtonActive: {
-    backgroundColor: COLORS.white,
-  },
-  toggleText: {
-    color: COLORS.gray,
-    fontWeight: '600',
-  },
-  toggleTextActive: {
-    color: COLORS.text,
-  },
   inputContainer: {
     marginBottom: 20,
   },
@@ -686,20 +455,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  resendButton: {
-    minHeight: 48,
-    marginTop: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-  },
-  resendText: {
-    color: COLORS.primary,
-    fontSize: 15,
-    fontWeight: '700',
-  },
   verificationBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -745,20 +500,24 @@ const styles = StyleSheet.create({
     color: COLORS.gray,
   },
   oauthContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
+    gap: 12,
     marginBottom: 24,
   },
-  oauthButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  socialButton: {
+    minHeight: 52,
+    borderRadius: 14,
     backgroundColor: COLORS.white,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 10,
     borderWidth: 1,
     borderColor: COLORS.grayLight,
+  },
+  socialButtonText: {
+    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: '700',
   },
   oauthButtonDisabled: {
     opacity: 0.4,
