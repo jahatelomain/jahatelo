@@ -11,7 +11,7 @@ const discovery = {
 };
 
 export const useFacebookAuth = () => {
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'jahatelo', path: 'oauth/facebook' });
+  const redirectUri = 'https://www.jahatelo.com/auth/facebook-popup';
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     FACEBOOK_APP_ID
