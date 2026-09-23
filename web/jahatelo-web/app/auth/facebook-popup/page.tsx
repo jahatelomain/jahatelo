@@ -4,19 +4,29 @@ import { useEffect } from 'react';
 
 export default function FacebookPopupPage() {
   useEffect(() => {
-    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const rawHash = window.location.hash.replace(/^#/, '');
+    const hash = new URLSearchParams(rawHash);
     const accessToken = hash.get('access_token');
     const error = hash.get('error_description') || hash.get('error');
 
-    window.opener?.postMessage(
-      {
-        type: 'jahatelo-facebook-auth',
-        accessToken,
-        error,
-      },
-      window.location.origin
-    );
-    window.close();
+    if (window.opener) {
+      window.opener.postMessage(
+        {
+          type: 'jahatelo-facebook-auth',
+          accessToken,
+          error,
+        },
+        window.location.origin
+      );
+      window.close();
+      return;
+    }
+
+    const appCallbackUrl = rawHash
+      ? `jahatelo://oauth/facebook#${rawHash}`
+      : `jahatelo://oauth/facebook${window.location.search || ''}`;
+
+    window.location.replace(appCallbackUrl);
   }, []);
 
   return (

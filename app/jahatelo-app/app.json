@@ -2,7 +2,7 @@
   "expo": {
     "name": "Jahatelo",
     "slug": "jahatelo",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/app-icon-1024.png",
     "scheme": "jahatelo",
@@ -31,6 +31,16 @@
         "NSPhotoLibraryUsageDescription": "Accedemos a tus fotos para que puedas elegir una imagen de perfil.",
         "NSPhotoLibraryAddOnlyUsageDescription": "Guardamos imágenes en tu galería cuando lo solicitás.",
         "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "jahatelo"
+            ]
+          },
+          {
+            "CFBundleURLSchemes": [
+              "fb898132399437677"
+            ]
+          },
           {
             "CFBundleURLSchemes": [
               "com.googleusercontent.apps.538770919156-iguu9u41nf7fakboh06vvm09be25ip38"

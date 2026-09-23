@@ -1,7 +1,7 @@
 {
   "name": "jahatelo-app",
   "main": "index.js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "scripts": {
     "postinstall": "node scripts/patch-expo-constants-podspec.js",
     "start": "expo start",
