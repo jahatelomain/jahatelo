@@ -108,11 +108,12 @@ export const AuthProvider = ({ children }) => {
   /**
    * Login con OAuth
    */
-  const handleLoginWithOAuth = async ({ provider, idToken }) => {
+  const handleLoginWithOAuth = async ({ provider, idToken, accessToken }) => {
     try {
       const data = await authApi.loginWithOAuth({
         provider,
         idToken,
+        accessToken,
       });
 
       if (data.success && data.token && data.user) {

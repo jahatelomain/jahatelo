@@ -6,6 +6,7 @@ import { LoginSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
 import { GoogleAuthError, verifyGoogleIdToken } from '@/lib/googleAuth';
+import { FacebookAuthError, verifyFacebookAccessToken } from '@/lib/facebookAuth';
 import { enforceAuthRateLimit } from '@/lib/authRateLimit';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +15,7 @@ export const dynamic = 'force-dynamic';
  * POST /api/mobile/auth/login
  *
  * Login de usuarios
- * Body: { email, password } o { provider: 'google', idToken }
+ * Body: { email, password } o { provider: 'google', idToken } o { provider: 'facebook', accessToken }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
       // Verificar que tenga password (no sea OAuth)
       if (!user.passwordHash) {
         return NextResponse.json(
-          { error: 'Esta cuenta usa login social. Por favor usa Google/Apple' },
+          { error: 'Esta cuenta usa login social. Por favor usá Google o Facebook' },
           { status: 401 }
         );
       }
@@ -116,130 +117,136 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Solo Google tiene un verificador implementado.
-    if (provider !== 'google' || typeof body.idToken !== 'string' || !body.idToken) {
-      return NextResponse.json({ error: 'Token de Google requerido' }, { status: 401 });
+    if (!['google', 'facebook'].includes(String(provider))) {
+      return NextResponse.json({ error: 'Método de autenticación inválido' }, { status: 400 });
     }
 
-    if (provider === 'google') {
-      const rateLimitError = await enforceAuthRateLimit(request, 'mobile-google-login', body.idToken.slice(-32));
-      if (rateLimitError) return rateLimitError;
-      const { providerId, email, name } = await verifyGoogleIdToken(body.idToken, 'mobile');
+    const tokenForRateLimit = provider === 'google' ? body.idToken : body.accessToken;
+    if (typeof tokenForRateLimit !== 'string' || !tokenForRateLimit) {
+      return NextResponse.json({ error: provider === 'google' ? 'Token de Google requerido' : 'Token de Facebook requerido' }, { status: 401 });
+    }
 
-      const emailLower = email.toLowerCase().trim();
+    const rateLimitError = await enforceAuthRateLimit(
+      request,
+      provider === 'google' ? 'mobile-google-login' : 'mobile-facebook-login',
+      tokenForRateLimit.slice(-32)
+    );
+    if (rateLimitError) return rateLimitError;
 
-      let user = await prisma.user.findFirst({
-        where: {
+    const oauthIdentity = provider === 'google'
+      ? await verifyGoogleIdToken(body.idToken, 'mobile')
+      : await verifyFacebookAccessToken(body.accessToken);
+
+    const { providerId, email, name } = oauthIdentity;
+    const emailLower = email.toLowerCase().trim();
+
+    let user = await prisma.user.findFirst({
+      where: {
+        provider,
+        providerId,
+      },
+      include: {
+        notificationPreferences: true,
+      },
+    });
+
+    // Link a verified OAuth identity to an existing email.
+    if (!user) {
+      user = await prisma.user.findUnique({
+        where: { email: emailLower },
+        include: { notificationPreferences: true },
+      });
+    }
+
+    // Si no existe, crear cuenta nueva (auto-registro)
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email: emailLower,
+          name: name?.trim() || null,
           provider,
           providerId,
+          role: 'USER',
+          isEmailVerified: true, // OAuth users son verificados
+          isActive: true,
+          pushToken: pushToken || null,
+          deviceInfo: deviceInfo || null,
         },
         include: {
           notificationPreferences: true,
         },
       });
 
-      // Match the web callback: link a verified Google identity to an existing email.
-      if (!user) {
-        user = await prisma.user.findUnique({
-          where: { email: emailLower },
+      // Crear preferencias de notificaciones
+      if (!user.notificationPreferences) {
+        await prisma.userNotificationPreferences.create({
+          data: {
+            userId: user.id,
+          },
+        });
+      }
+    } else {
+      if (!user.isActive) {
+        return NextResponse.json({ error: 'Cuenta desactivada' }, { status: 403 });
+      }
+      if (user.provider === provider && user.providerId && user.providerId !== providerId) {
+        return NextResponse.json({ error: `Cuenta ${provider === 'google' ? 'Google' : 'Facebook'} ya vinculada` }, { status: 409 });
+      }
+      if (!user.providerId || user.provider !== provider) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { provider, providerId, isEmailVerified: true },
           include: { notificationPreferences: true },
         });
       }
-
-      // Si no existe, crear cuenta nueva (auto-registro)
-      if (!user) {
-        user = await prisma.user.create({
+      // Actualizar pushToken y deviceInfo
+      if (pushToken || deviceInfo) {
+        await prisma.user.update({
+          where: { id: user.id },
           data: {
-            email: emailLower,
-            name: name?.trim() || null,
-            provider,
-            providerId,
-            role: 'USER',
-            isEmailVerified: true, // OAuth users son verificados
-            isActive: true,
-            pushToken: pushToken || null,
-            deviceInfo: deviceInfo || null,
-          },
-          include: {
-            notificationPreferences: true,
+            pushToken: pushToken || user.pushToken,
+            deviceInfo: deviceInfo || user.deviceInfo,
           },
         });
-
-        // Crear preferencias de notificaciones
-        if (!user.notificationPreferences) {
-          await prisma.userNotificationPreferences.create({
-            data: {
-              userId: user.id,
-            },
-          });
-        }
-      } else {
-        if (!user.isActive) {
-          return NextResponse.json({ error: 'Cuenta desactivada' }, { status: 403 });
-        }
-        if (user.provider === 'google' && user.providerId && user.providerId !== providerId) {
-          return NextResponse.json({ error: 'Cuenta Google ya vinculada' }, { status: 409 });
-        }
-        if (!user.providerId || user.provider !== 'google') {
-          user = await prisma.user.update({
-            where: { id: user.id },
-            data: { provider: 'google', providerId, isEmailVerified: true },
-            include: { notificationPreferences: true },
-          });
-        }
-        // Actualizar pushToken y deviceInfo
-        if (pushToken || deviceInfo) {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              pushToken: pushToken || user.pushToken,
-              deviceInfo: deviceInfo || user.deviceInfo,
-            },
-          });
-        }
       }
-
-      // Verificar que la cuenta esté activa
-      if (!user.isActive) {
-        return NextResponse.json(
-          { error: 'Esta cuenta ha sido desactivada' },
-          { status: 403 }
-        );
-      }
-
-      // Generar token JWT
-      const token = await createToken({
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        name: user.name || undefined,
-        motelId: user.motelId || undefined,
-      });
-
-      return NextResponse.json({
-        success: true,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          phone: user.phone,
-          profilePhoto: user.profilePhoto,
-          provider: user.provider,
-          isEmailVerified: user.isEmailVerified,
-          createdAt: user.createdAt,
-          notificationPreferences: user.notificationPreferences,
-        },
-        token,
-      });
     }
 
-    return NextResponse.json(
-      { error: 'Método de autenticación inválido' },
-      { status: 400 }
-    );
+    // Verificar que la cuenta esté activa
+    if (!user.isActive) {
+      return NextResponse.json(
+        { error: 'Esta cuenta ha sido desactivada' },
+        { status: 403 }
+      );
+    }
+
+    // Generar token JWT
+    const token = await createToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name || undefined,
+      motelId: user.motelId || undefined,
+    });
+
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        profilePhoto: user.profilePhoto,
+        provider: user.provider,
+        isEmailVerified: user.isEmailVerified,
+        createdAt: user.createdAt,
+        notificationPreferences: user.notificationPreferences,
+      },
+      token,
+    });
+
 
   } catch (error) {
-    if (error instanceof GoogleAuthError) {
+    if (error instanceof GoogleAuthError || error instanceof FacebookAuthError) {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
     // Errores de validación Zod

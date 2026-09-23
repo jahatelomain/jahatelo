@@ -21,18 +21,14 @@ interface MotelFiltersProps {
 
 export default function MotelFilters({
   cities,
-  amenities,
   currentCity,
   currentSearch,
-  currentAmenities = [],
   currentPromos,
 }: MotelFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchValue, setSearchValue] = useState(currentSearch || '');
   const debouncedSearchValue = useDebounce(searchValue, 500);
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>(currentAmenities);
-  const [showAllAmenities, setShowAllAmenities] = useState(false);
 
   // Auto-search when debounced value changes
   useEffect(() => {
@@ -58,30 +54,12 @@ export default function MotelFilters({
     router.push('/search');
   };
 
-  const toggleAmenity = (amenityId: string) => {
-    const newSelectedAmenities = selectedAmenities.includes(amenityId)
-      ? selectedAmenities.filter(id => id !== amenityId)
-      : [...selectedAmenities, amenityId];
-
-    setSelectedAmenities(newSelectedAmenities);
-
-    const params = new URLSearchParams(searchParams.toString());
-    if (newSelectedAmenities.length > 0) {
-      params.set('amenities', newSelectedAmenities.join(','));
-    } else {
-      params.delete('amenities');
-    }
-    router.push(`/search?${params.toString()}`);
-  };
-
   const promosActive = currentPromos === '1';
   const hasFilters =
     currentCity ||
     currentSearch ||
-    selectedAmenities.length > 0 ||
     promosActive;
 
-  const displayedAmenities = showAllAmenities ? amenities : amenities.slice(0, 6);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-20">
@@ -131,42 +109,6 @@ export default function MotelFilters({
           ))}
         </select>
       </div>
-
-      {/* Amenities Filter */}
-      {amenities.length > 0 && (
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Amenidades
-          </label>
-          <div className="space-y-2">
-            {displayedAmenities.map((amenity) => (
-              <label
-                key={amenity.id}
-                className="flex items-center gap-2 cursor-pointer group"
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedAmenities.includes(amenity.id)}
-                  onChange={() => toggleAmenity(amenity.id)}
-                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-600"
-                />
-                <span className="text-sm text-gray-700 group-hover:text-purple-600 transition-colors">
-                  {amenity.name}
-                </span>
-              </label>
-            ))}
-          </div>
-
-          {amenities.length > 6 && (
-            <button
-              onClick={() => setShowAllAmenities(!showAllAmenities)}
-              className="mt-3 text-sm text-purple-600 hover:text-purple-700 font-medium"
-            >
-              {showAllAmenities ? 'Ver menos' : `Ver todas (${amenities.length})`}
-            </button>
-          )}
-        </div>
-      )}
 
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-3">

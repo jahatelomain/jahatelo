@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  InteractionManager,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,9 +18,11 @@ import { requestSmsOtp, verifySmsOtp } from '../services/authApi';
 import { COLORS, STATUS_COLORS } from '../constants/theme';
 import { showMessage } from '../utils/appFeedback';
 import { trackVisitor } from '../services/analyticsService';
+import { useGoogleAuth } from '../services/googleAuthService';
+import { useFacebookAuth, isFacebookConfigured } from '../services/facebookAuthService';
 
 export default function RegisterScreen({ navigation }) {
-  const { register } = useAuth();
+  const { register, loginWithOAuth } = useAuth();
   const [registerMethod, setRegisterMethod] = useState('sms'); // sms | email
   const [formData, setFormData] = useState({
     name: '',
@@ -37,6 +40,30 @@ export default function RegisterScreen({ navigation }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const { request: googleRequest, response: googleResponse, promptAsync: promptGoogleAsync } = useGoogleAuth();
+  const { request: facebookRequest, response: facebookResponse, promptAsync: promptFacebookAsync } = useFacebookAuth();
+
+  const closeAfterAuthentication = () => {
+    InteractionManager.runAfterInteractions(() => {
+      if (navigation.isFocused()) navigation.goBack();
+    });
+  };
+
+  React.useEffect(() => {
+    if (googleResponse?.type === 'success') {
+      handleGoogleRegister(googleResponse.authentication?.idToken || googleResponse.params?.id_token);
+    } else if (googleResponse?.type === 'error') {
+      showMessage('Error', `No se pudo continuar con Google: ${googleResponse.error?.message || googleResponse.error}`);
+    }
+  }, [googleResponse]);
+
+  React.useEffect(() => {
+    if (facebookResponse?.type === 'success') {
+      handleFacebookRegister(facebookResponse.authentication?.accessToken || facebookResponse.params?.access_token);
+    } else if (facebookResponse?.type === 'error') {
+      showMessage('Error', `No se pudo continuar con Facebook: ${facebookResponse.error?.message || facebookResponse.error}`);
+    }
+  }, [facebookResponse]);
 
   const updateField = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -84,6 +111,20 @@ export default function RegisterScreen({ navigation }) {
     return Object.keys(newErrors).length === 0;
   };
 
+  const validatePhoneOnly = () => {
+    const phoneClean = phone.trim();
+    const nextErrors = { ...errors, phone: null };
+
+    if (!phoneClean) {
+      nextErrors.phone = 'El teléfono es requerido';
+    } else if (!/^\+?[\d\s\-()]{8,15}$/.test(phoneClean)) {
+      nextErrors.phone = 'Formato de teléfono inválido';
+    }
+
+    setErrors(nextErrors);
+    return !nextErrors.phone;
+  };
+
   React.useEffect(() => {
     if (resendSeconds <= 0) return;
     const timer = setInterval(() => {
@@ -93,7 +134,7 @@ export default function RegisterScreen({ navigation }) {
   }, [resendSeconds]);
 
   const handleSendOtp = async () => {
-    if (!validateForm()) return;
+    if (!validatePhoneOnly()) return;
     try {
       setOtpLoading(true);
       const data = await requestSmsOtp({ phone: phone.trim() });
@@ -138,6 +179,50 @@ export default function RegisterScreen({ navigation }) {
       showMessage('Error', error.message || 'Error al crear cuenta');
     } finally {
       setOtpVerifyLoading(false);
+    }
+  };
+
+  const handleGoogleRegister = async (idToken) => {
+    try {
+      setIsLoading(true);
+      if (!idToken) {
+        showMessage('Error', 'Google no devolvió una credencial válida');
+        return;
+      }
+      const result = await loginWithOAuth({ provider: 'google', idToken });
+      if (result.success) {
+        trackVisitor('register_complete', 'Register', { method: 'google' });
+        showMessage('¡Bienvenido!', 'Sesión iniciada correctamente');
+        closeAfterAuthentication();
+      } else {
+        showMessage('Error', result.error || 'Error al continuar con Google');
+      }
+    } catch (error) {
+      showMessage('Error', error.message || 'Error al continuar con Google');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFacebookRegister = async (accessToken) => {
+    try {
+      setIsLoading(true);
+      if (!accessToken) {
+        showMessage('Error', 'Facebook no devolvió una credencial válida');
+        return;
+      }
+      const result = await loginWithOAuth({ provider: 'facebook', accessToken });
+      if (result.success) {
+        trackVisitor('register_complete', 'Register', { method: 'facebook' });
+        showMessage('¡Bienvenido!', 'Sesión iniciada correctamente');
+        closeAfterAuthentication();
+      } else {
+        showMessage('Error', result.error || 'Error al continuar con Facebook');
+      }
+    } catch (error) {
+      showMessage('Error', error.message || 'Error al continuar con Facebook');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -445,9 +530,22 @@ export default function RegisterScreen({ navigation }) {
 
             {/* OAuth Buttons */}
             <View style={styles.oauthContainer}>
-              <TouchableOpacity style={styles.oauthButton}>
+              <TouchableOpacity
+                style={[styles.oauthButton, !googleRequest && styles.oauthButtonDisabled]}
+                onPress={() => promptGoogleAsync()}
+                disabled={!googleRequest || isLoading}
+              >
                 <Ionicons name="logo-google" size={24} color={STATUS_COLORS.google} />
               </TouchableOpacity>
+              {isFacebookConfigured() && (
+                <TouchableOpacity
+                  style={[styles.oauthButton, !facebookRequest && styles.oauthButtonDisabled]}
+                  onPress={() => promptFacebookAsync()}
+                  disabled={!facebookRequest || isLoading}
+                >
+                  <Ionicons name="logo-facebook" size={24} color="#1877F2" />
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* Login */}
@@ -593,12 +691,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   resendButton: {
+    minHeight: 48,
     marginTop: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
   },
   resendText: {
     color: COLORS.primary,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
   },
   termsText: {
     fontSize: 12,
@@ -641,6 +745,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.grayLight,
+  },
+  oauthButtonDisabled: {
+    opacity: 0.4,
   },
   loginContainer: {
     flexDirection: 'row',

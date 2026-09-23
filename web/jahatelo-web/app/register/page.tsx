@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import GoogleLoginButton from '@/components/GoogleLoginButton';
+import FacebookLoginButton from '@/components/FacebookLoginButton';
 import { trackVisitor } from '@/lib/analytics';
 
 function RegisterForm() {
@@ -376,6 +378,39 @@ function RegisterForm() {
               </button>
             )}
           </form>
+
+          {/* Social Login */}
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-3 text-slate-400">o continuá con</span>
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              <GoogleLoginButton
+                onSuccess={async () => {
+                  await refreshUser();
+                  const target = redirect || '/';
+                  router.push(target);
+                  router.refresh();
+                }}
+                onError={(msg) => setError(msg)}
+              />
+              <FacebookLoginButton
+                onSuccess={async () => {
+                  await refreshUser();
+                  const target = redirect || '/';
+                  router.push(target);
+                  router.refresh();
+                }}
+                onError={(msg) => setError(msg)}
+              />
+            </div>
+          </div>
+
 
           {/* Footer */}
           <div className="mt-8 space-y-4 text-center">

@@ -79,8 +79,9 @@ export async function POST(request: NextRequest) {
     const sendResult = await sendSmsOtp(phone, code);
     if (!sendResult.ok) {
       await prisma.whatsappOtp.delete({ where: { id: otpRecord.id } });
+      logger.error({ message: 'Error sending SMS OTP', error: sendResult.error || 'Unknown SMS provider error' });
       return NextResponse.json(
-        { error: sendResult.error || 'No se pudo enviar el OTP' },
+        { error: 'No se pudo enviar el código. Intentá nuevamente en unos minutos.' },
         { status: 502 }
       );
     }
