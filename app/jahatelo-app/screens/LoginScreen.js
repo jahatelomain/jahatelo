@@ -61,6 +61,8 @@ export default function LoginScreen({ navigation }) {
     } else if (facebookResponse?.type === 'error') {
       console.error('Facebook OAuth Error:', facebookResponse.error);
       showErrorMessage(`Error al iniciar sesión con Facebook: ${facebookResponse.error?.message || facebookResponse.error}`);
+    } else if (facebookResponse?.type === 'locked') {
+      showErrorMessage('Ya hay una ventana de Facebook abierta. Cerrala e intentá nuevamente.');
     }
   }, [facebookResponse]);
 
@@ -181,6 +183,24 @@ export default function LoginScreen({ navigation }) {
       showErrorMessage(error.message || 'Error al iniciar sesión con Facebook');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const startFacebookLogin = async () => {
+    if (!facebookRequest || isLoading) return;
+
+    try {
+      const result = await promptFacebookAsync();
+      if (result?.type === 'locked') {
+        showErrorMessage('Ya hay una ventana de Facebook abierta. Cerrala e intentá nuevamente.');
+      } else if (result?.type === 'dismiss' || result?.type === 'cancel') {
+        console.log('Facebook login dismissed:', result.type);
+      } else if (result?.type === 'error') {
+        showErrorMessage(result.error?.message || 'No se pudo abrir Facebook');
+      }
+    } catch (error) {
+      console.error('Error opening Facebook login:', error);
+      showErrorMessage(error.message || 'No se pudo abrir Facebook');
     }
   };
 
@@ -329,7 +349,7 @@ export default function LoginScreen({ navigation }) {
               {isFacebookConfigured() && (
                 <TouchableOpacity
                   style={[styles.socialButton, !facebookRequest && styles.oauthButtonDisabled]}
-                  onPress={() => promptFacebookAsync()}
+                  onPress={startFacebookLogin}
                   disabled={!facebookRequest || isLoading}
                 >
                   <Ionicons name="logo-facebook" size={22} color="#1877F2" />

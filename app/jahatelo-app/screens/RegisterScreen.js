@@ -54,6 +54,8 @@ export default function RegisterScreen({ navigation }) {
       handleFacebookRegister(facebookResponse.authentication?.accessToken || facebookResponse.params?.access_token);
     } else if (facebookResponse?.type === 'error') {
       showMessage('Error', `No se pudo continuar con Facebook: ${facebookResponse.error?.message || facebookResponse.error}`);
+    } else if (facebookResponse?.type === 'locked') {
+      showMessage('Error', 'Ya hay una ventana de Facebook abierta. Cerrala e intentá nuevamente.');
     }
   }, [facebookResponse]);
 
@@ -130,6 +132,24 @@ export default function RegisterScreen({ navigation }) {
       showMessage('Error', error.message || 'Error al continuar con Facebook');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const startFacebookRegister = async () => {
+    if (!facebookRequest || isLoading) return;
+
+    try {
+      const result = await promptFacebookAsync();
+      if (result?.type === 'locked') {
+        showMessage('Error', 'Ya hay una ventana de Facebook abierta. Cerrala e intentá nuevamente.');
+      } else if (result?.type === 'dismiss' || result?.type === 'cancel') {
+        console.log('Facebook register dismissed:', result.type);
+      } else if (result?.type === 'error') {
+        showMessage('Error', result.error?.message || 'No se pudo abrir Facebook');
+      }
+    } catch (error) {
+      console.error('Error opening Facebook register:', error);
+      showMessage('Error', error.message || 'No se pudo abrir Facebook');
     }
   };
 
@@ -337,7 +357,7 @@ export default function RegisterScreen({ navigation }) {
               {isFacebookConfigured() && (
                 <TouchableOpacity
                   style={[styles.socialButton, !facebookRequest && styles.oauthButtonDisabled]}
-                  onPress={() => promptFacebookAsync()}
+                  onPress={startFacebookRegister}
                   disabled={!facebookRequest || isLoading}
                 >
                   <Ionicons name="logo-facebook" size={22} color="#1877F2" />
