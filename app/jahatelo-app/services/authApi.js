@@ -113,15 +113,16 @@ export async function login({ email, password, pushToken, deviceInfo }) {
 }
 
 /**
- * Login con OAuth (Google, Apple)
+ * Login con OAuth (Google, Facebook, Apple)
  */
-export async function loginWithOAuth({ provider, idToken, pushToken, deviceInfo }) {
+export async function loginWithOAuth({ provider, idToken, accessToken, pushToken, deviceInfo }) {
   try {
     const data = await fetchWithTimeout(`${API_URL}/api/mobile/auth/login`, {
       method: 'POST',
       body: JSON.stringify({
         provider,
         idToken,
+        accessToken,
         pushToken,
         deviceInfo,
       }),

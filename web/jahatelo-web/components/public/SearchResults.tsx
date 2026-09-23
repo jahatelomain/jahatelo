@@ -43,8 +43,6 @@ interface Motel extends PublicMotelListItem {
 }
 
 
-type QuickAmenity = { id: string; name: string };
-
 export default function SearchResults({ initialParams }: SearchResultsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,11 +52,8 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
   const [selectedCity, setSelectedCity] = useState(initialParams.city || '');
   const [onlyPromos, setOnlyPromos] = useState(initialParams.promos === '1');
   const [onlyFeatured, setOnlyFeatured] = useState(initialParams.featured === '1');
-  const [selectedAmenity, setSelectedAmenity] = useState(initialParams.amenities || '');
   const [cities, setCities] = useState<string[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
-  const [quickAmenities, setQuickAmenities] = useState<QuickAmenity[]>([]);
-  const [quickAmenitiesLoading, setQuickAmenitiesLoading] = useState(false);
   const [recommendationOpen, setRecommendationOpen] = useState(false);
   const [recommendationName, setRecommendationName] = useState(initialParams.q || '');
   const [recommendationCity, setRecommendationCity] = useState(initialParams.city || '');
@@ -94,25 +89,6 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     fetchCities();
   }, []);
 
-  useEffect(() => {
-    const fetchQuickAmenities = async () => {
-      setQuickAmenitiesLoading(true);
-      try {
-        const response = await fetch('/api/amenities/active?limit=5');
-        const data = await response.json();
-        const list: QuickAmenity[] = Array.isArray(data?.data) ? data.data : [];
-        setQuickAmenities(list);
-      } catch (error) {
-        console.error('Error fetching amenities:', error);
-        setQuickAmenities([]);
-      } finally {
-        setQuickAmenitiesLoading(false);
-      }
-    };
-
-    fetchQuickAmenities();
-  }, []);
-
   // Fetch motels when search params change
   useEffect(() => {
     const controller = new AbortController();
@@ -124,7 +100,6 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
         if (selectedCity) params.set('city', selectedCity);
         if (onlyPromos) params.set('promos', 'true');
         if (onlyFeatured) params.set('featured', 'true');
-        if (selectedAmenity) params.set('amenity', selectedAmenity);
         params.set('limit', '50');
 
         const response = await fetch(`/api/mobile/motels?${params.toString()}`, {
@@ -144,7 +119,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
 
     fetchMotels();
     return () => controller.abort();
-  }, [debouncedSearchQuery, selectedCity, onlyPromos, onlyFeatured, selectedAmenity]);
+  }, [debouncedSearchQuery, selectedCity, onlyPromos, onlyFeatured]);
 
   // Update URL when search params change
   useEffect(() => {
@@ -169,21 +144,15 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     } else {
       params.delete('featured');
     }
-    if (selectedAmenity) {
-      params.set('amenities', selectedAmenity);
-    } else {
-      params.delete('amenities');
-    }
     router.push(`/search?${params.toString()}`, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchQuery, selectedCity, onlyPromos, onlyFeatured, selectedAmenity]);
+  }, [debouncedSearchQuery, selectedCity, onlyPromos, onlyFeatured]);
 
   const clearSearch = () => {
     setSearchQuery('');
     setSelectedCity('');
     setOnlyPromos(false);
     setOnlyFeatured(false);
-    setSelectedAmenity('');
     setNearbyEnabled(false);
   };
 
@@ -246,14 +215,6 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     }];
   }), [displayedMotels]);
 
-  const toggleAmenity = (amenityValue: string) => {
-    if (selectedAmenity === amenityValue) {
-      setSelectedAmenity('');
-    } else {
-      setSelectedAmenity(amenityValue);
-    }
-  };
-
   const openRecommendation = () => {
     setRecommendationName(searchQuery.trim());
     setRecommendationCity(selectedCity);
@@ -297,7 +258,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
           <input
             type="text"
             aria-label="Buscar moteles"
-            placeholder="Buscar por motel, ciudad o amenidad"
+            placeholder="Buscar por motel o ciudad"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full rounded-xl border-2 border-gray-300 px-4 py-3 pr-12 text-base text-gray-900 transition-all focus:border-purple-600 focus:ring-2 focus:ring-purple-600 md:rounded-2xl md:px-6 md:py-4 md:text-lg"
@@ -323,30 +284,6 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
 
       {/* Filters Section */}
       <div className="mx-auto mb-6 max-w-5xl space-y-4 md:space-y-5">
-        {/* Quick Amenity Filters */}
-        {quickAmenities.length > 0 && (
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-2">
-              {quickAmenitiesLoading ? 'Cargando amenities...' : 'Filtros rápidos:'}
-            </h3>
-            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] md:flex-wrap">
-              {quickAmenities.map((amenity) => (
-                <button
-                  key={amenity.id}
-                  onClick={() => toggleAmenity(amenity.id)}
-                  className={`shrink-0 rounded-full border-2 px-3 py-1.5 text-sm font-medium transition-all md:px-4 md:py-2 md:text-base ${
-                    selectedAmenity === amenity.id
-                      ? 'bg-purple-600 text-white border-purple-600 shadow-md'
-                      : 'bg-white text-gray-700 border-gray-200 hover:border-purple-300'
-                  }`}
-                >
-                  {amenity.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* City and Toggle Filters */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4 items-center">
           <div>
@@ -443,7 +380,7 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
       </div>
 
       {/* Active Filters */}
-      {(searchQuery || selectedCity || onlyPromos || onlyFeatured || selectedAmenity || nearbyEnabled) && (
+      {(searchQuery || selectedCity || onlyPromos || onlyFeatured || nearbyEnabled) && (
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <span className="text-sm font-medium text-gray-700">Filtros activos:</span>
           {searchQuery && (
@@ -460,18 +397,6 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
               <span>{selectedCity}</span>
               <button type="button" onClick={() => setSelectedCity('')} aria-label={`Quitar filtro de ciudad ${selectedCity}`} className="hover:text-purple-900">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          )}
-          {selectedAmenity && (
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
-              <span>
-                {quickAmenities.find((a) => a.id === selectedAmenity)?.name || selectedAmenity}
-              </span>
-              <button type="button" onClick={() => setSelectedAmenity('')} aria-label="Quitar filtro de amenidad" className="hover:text-purple-900">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>

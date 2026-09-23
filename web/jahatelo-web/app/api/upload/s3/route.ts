@@ -72,18 +72,24 @@ export async function POST(request: Request) {
       );
     }
 
-    const formats: Record<string, string> = {
-      'image/jpeg': 'jpeg', 'image/png': 'png', 'image/webp': 'webp',
-      'image/heic': 'heif', 'image/heif': 'heif',
-    };
-    const expectedFormat = formats[file.type.toLowerCase()];
-    if (!expectedFormat) {
+    const supportedMimeTypes = new Set([
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp',
+      'image/heic',
+      'image/heif',
+    ]);
+    const declaredMimeType = file.type.toLowerCase();
+    if (!supportedMimeTypes.has(declaredMimeType)) {
       return NextResponse.json({ error: 'Solo se permiten fotos JPG, PNG, WebP o HEIC.' }, { status: 400 });
     }
     const originalBuffer = Buffer.from(await file.arrayBuffer());
     try {
       const metadata = await sharp(originalBuffer, { animated: false }).metadata();
-      if (metadata.format !== expectedFormat || !metadata.width || !metadata.height) {
+      const decodedFormat = metadata.format?.toLowerCase();
+      const supportedDecodedFormats = new Set(['jpeg', 'jpg', 'png', 'webp', 'heif']);
+      if (!decodedFormat || !supportedDecodedFormats.has(decodedFormat) || !metadata.width || !metadata.height) {
         return NextResponse.json({ error: 'Formato de imagen inválido.' }, { status: 400 });
       }
     } catch {

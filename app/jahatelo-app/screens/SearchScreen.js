@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,7 +12,7 @@ import Animated, {
   withSequence,
   cancelAnimation,
 } from '../utils/reanimatedCompat';
-import { fetchPopularAmenities, searchAndFilterMotels } from '../services/motelsApi';
+import { searchAndFilterMotels } from '../services/motelsApi';
 import { getApiRoot } from '../services/apiBaseUrl';
 import MotelCard from '../components/MotelCard';
 import MotelCardSkeleton from '../components/MotelCardSkeleton';
@@ -28,8 +28,6 @@ export default function SearchScreen({ route }) {
   const navigation = useNavigation();
   const initialQuery = route?.params?.initialQuery ?? '';
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [selectedAmenity, setSelectedAmenity] = useState('');
-  const [quickAmenities, setQuickAmenities] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,18 +42,6 @@ export default function SearchScreen({ route }) {
   const suggestionsTimerRef = useRef(null);
   const resultsAbortRef = useRef(null);
   const suggestionsAbortRef = useRef(null);
-
-  useEffect(() => {
-    let active = true;
-    fetchPopularAmenities(5)
-      .then((amenities) => {
-        if (active) setQuickAmenities(amenities);
-      })
-      .catch(() => {
-        if (active) setQuickAmenities([]);
-      });
-    return () => { active = false; };
-  }, []);
 
   // Cargar anuncios de lista
   const { ads: listAds, trackAdEvent } = useAdvertisements('LIST_INLINE');
@@ -95,17 +81,17 @@ export default function SearchScreen({ route }) {
   }, [emptyIconOpacity, emptyIconScale]);
 
   // Función para cargar resultados
-  const loadResults = async (query, amenity) => {
+  const loadResults = async (query) => {
     resultsAbortRef.current?.abort();
     const controller = new AbortController();
     resultsAbortRef.current = controller;
     try {
       setLoading(true);
       setError(null);
-      const data = await searchAndFilterMotels(query, amenity, { signal: controller.signal });
+      const data = await searchAndFilterMotels(query, '', { signal: controller.signal });
       if (controller.signal.aborted) return;
       setResults(data);
-      if (query?.trim() || amenity) trackSearch(query?.trim() || `amenity:${amenity}`);
+      if (query?.trim()) trackSearch(query.trim());
 
       // Precargar solo imágenes. Descargar detalles de cada resultado agotaba
       // la cuota sin que el usuario hubiera abierto esas fichas.
@@ -127,11 +113,11 @@ export default function SearchScreen({ route }) {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await loadResults(searchQuery, selectedAmenity);
+      await loadResults(searchQuery);
     } finally {
       setRefreshing(false);
     }
-  }, [searchQuery, selectedAmenity]);
+  }, [searchQuery]);
 
   useEffect(() => {
     if (route?.params?.initialQuery !== undefined) {
@@ -181,7 +167,7 @@ export default function SearchScreen({ route }) {
 
     // Configurar nuevo timer con debounce de 500ms
     debounceTimerRef.current = setTimeout(() => {
-      loadResults(searchQuery, selectedAmenity);
+      loadResults(searchQuery);
     }, 500);
 
     // Cleanup
@@ -191,7 +177,7 @@ export default function SearchScreen({ route }) {
       }
       resultsAbortRef.current?.abort();
     };
-  }, [searchQuery, selectedAmenity]);
+  }, [searchQuery]);
 
   // Mezclar resultados con anuncios
   const mixedItems = useMemo(() => {
@@ -217,18 +203,8 @@ export default function SearchScreen({ route }) {
     trackAdEvent(ad.id, 'VIEW');
   };
 
-  const handleAmenityPress = (amenity) => {
-    // Si ya está seleccionado, deseleccionar; sino, seleccionar
-    if (selectedAmenity === amenity) {
-      setSelectedAmenity('');
-    } else {
-      setSelectedAmenity(amenity);
-    }
-  };
-
   const handleClearFilters = () => {
     setSearchQuery('');
-    setSelectedAmenity('');
   };
 
   const handleSuggestionPress = useCallback((suggestion) => {
@@ -316,7 +292,7 @@ export default function SearchScreen({ route }) {
     );
   };
 
-  const hasActiveFilters = searchQuery.trim() !== '' || selectedAmenity !== '';
+  const hasActiveFilters = searchQuery.trim() !== '';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -326,7 +302,7 @@ export default function SearchScreen({ route }) {
           <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Buscar por motel, ciudad o amenidad"
+            placeholder="Buscar por motel o ciudad"
             value={searchQuery}
             onChangeText={setSearchQuery}
             onFocus={handleSearchFocus}
@@ -366,37 +342,8 @@ export default function SearchScreen({ route }) {
         )}
       </View>
 
-      {/* Filtros rápidos por amenity */}
-      <View style={styles.filtersSection}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filtersScrollContent}
-        >
-          {quickAmenities.map((amenity) => (
-            <TouchableOpacity
-              key={amenity.id}
-              style={[
-                styles.filterChip,
-                selectedAmenity === amenity.id && styles.filterChipActive,
-              ]}
-              onPress={() => handleAmenityPress(amenity.id)}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  selectedAmenity === amenity.id && styles.filterChipTextActive,
-                ]}
-              >
-                {amenity.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Botón para limpiar filtros */}
-        {hasActiveFilters && (
+      {hasActiveFilters && (
+        <View style={styles.filtersSection}>
           <TouchableOpacity
             style={styles.clearButton}
             onPress={handleClearFilters}
@@ -404,8 +351,8 @@ export default function SearchScreen({ route }) {
           >
             <Text style={styles.clearButtonText}>Limpiar filtros</Text>
           </TouchableOpacity>
-        )}
-      </View>
+        </View>
+      )}
 
       {/* Resultados */}
       <View style={styles.resultsSection}>
@@ -537,31 +484,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
-  },
-  filtersScrollContent: {
-    paddingHorizontal: 16,
-  },
-  filterChip: {
-    backgroundColor: '#F0E6F6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: '#F0E6F6',
-  },
-  filterChipActive: {
-    backgroundColor: '#FF2E93',
-    borderColor: '#FF2E93',
-  },
-  filterChipText: {
-    fontSize: 14,
-    color: '#2A0038',
-    fontWeight: '500',
-  },
-  filterChipTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
   },
   clearButton: {
     alignSelf: 'center',
