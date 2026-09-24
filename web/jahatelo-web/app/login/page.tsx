@@ -6,7 +6,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import GoogleLoginButton from '@/components/GoogleLoginButton';
-import FacebookLoginButton from '@/components/FacebookLoginButton';
 
 function LoginForm() {
   const router = useRouter();
@@ -117,7 +116,7 @@ function LoginForm() {
               Iniciar sesión
             </h1>
             <p className="text-sm text-slate-600 md:text-base">
-              Ingresá con email, Google o Facebook
+              Ingresá con email o Google
             </p>
           </div>
 
@@ -211,14 +210,6 @@ function LoginForm() {
             </div>
             <div className="mt-4 space-y-3">
               <GoogleLoginButton
-                onSuccess={() => {
-                  const target = redirect || '/';
-                  router.push(target);
-                  router.refresh();
-                }}
-                onError={(msg) => setError(msg)}
-              />
-              <FacebookLoginButton
                 onSuccess={() => {
                   const target = redirect || '/';
                   router.push(target);

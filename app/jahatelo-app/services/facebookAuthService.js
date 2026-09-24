@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 WebBrowser.maybeCompleteAuthSession();
 
 const FACEBOOK_APP_ID = Constants.expoConfig?.extra?.facebookAppId || null;
+const FACEBOOK_LOGIN_ENABLED = false;
 
 export const useFacebookAuth = () => {
   const [request, response, promptAsync] = Facebook.useAuthRequest(
@@ -27,3 +28,4 @@ export const useFacebookAuth = () => {
 };
 
 export const isFacebookConfigured = () => Boolean(FACEBOOK_APP_ID);
+export const isFacebookLoginEnabled = () => FACEBOOK_LOGIN_ENABLED && Boolean(FACEBOOK_APP_ID);
