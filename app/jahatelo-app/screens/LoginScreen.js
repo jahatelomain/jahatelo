@@ -17,7 +17,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getApiRoot } from '../services/apiBaseUrl';
 import { COLORS } from '../constants/theme';
 import { useGoogleAuth, isGoogleConfigured } from '../services/googleAuthService';
-import { useFacebookAuth, isFacebookConfigured } from '../services/facebookAuthService';
+import { useFacebookAuth, isFacebookLoginEnabled } from '../services/facebookAuthService';
 import { showErrorMessage, showSuccessMessage } from '../utils/appFeedback';
 
 export default function LoginScreen({ navigation }) {
@@ -346,7 +346,7 @@ export default function LoginScreen({ navigation }) {
                 <Ionicons name="logo-google" size={22} color="#DB4437" />
                 <Text style={styles.socialButtonText}>Continuar con Google</Text>
               </TouchableOpacity>
-              {isFacebookConfigured() && (
+              {isFacebookLoginEnabled() && (
                 <TouchableOpacity
                   style={[styles.socialButton, !facebookRequest && styles.oauthButtonDisabled]}
                   onPress={startFacebookLogin}

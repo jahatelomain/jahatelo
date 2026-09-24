@@ -6,7 +6,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import GoogleLoginButton from '@/components/GoogleLoginButton';
-import FacebookLoginButton from '@/components/FacebookLoginButton';
 import { trackVisitor } from '@/lib/analytics';
 
 function RegisterForm() {
@@ -85,7 +84,7 @@ function RegisterForm() {
               Crear cuenta
             </h1>
             <p className="text-sm text-slate-600 md:text-base">
-              Creá tu cuenta con email, Google o Facebook
+              Creá tu cuenta con email o Google
             </p>
           </div>
 
@@ -200,15 +199,6 @@ function RegisterForm() {
             </div>
             <div className="mt-4 space-y-3">
               <GoogleLoginButton
-                onSuccess={async () => {
-                  await refreshUser();
-                  const target = redirect || '/';
-                  router.push(target);
-                  router.refresh();
-                }}
-                onError={(msg) => setError(msg)}
-              />
-              <FacebookLoginButton
                 onSuccess={async () => {
                   await refreshUser();
                   const target = redirect || '/';
