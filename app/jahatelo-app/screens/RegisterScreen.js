@@ -18,7 +18,7 @@ import { COLORS, STATUS_COLORS } from '../constants/theme';
 import { showMessage } from '../utils/appFeedback';
 import { trackVisitor } from '../services/analyticsService';
 import { useGoogleAuth } from '../services/googleAuthService';
-import { useFacebookAuth, isFacebookConfigured } from '../services/facebookAuthService';
+import { useFacebookAuth, isFacebookLoginEnabled } from '../services/facebookAuthService';
 
 export default function RegisterScreen({ navigation }) {
   const { register, loginWithOAuth } = useAuth();
@@ -354,7 +354,7 @@ export default function RegisterScreen({ navigation }) {
                 <Ionicons name="logo-google" size={22} color={STATUS_COLORS.google} />
                 <Text style={styles.socialButtonText}>Continuar con Google</Text>
               </TouchableOpacity>
-              {isFacebookConfigured() && (
+              {isFacebookLoginEnabled() && (
                 <TouchableOpacity
                   style={[styles.socialButton, !facebookRequest && styles.oauthButtonDisabled]}
                   onPress={startFacebookRegister}
