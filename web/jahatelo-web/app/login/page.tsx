@@ -21,6 +21,13 @@ function LoginForm() {
   const [resendLoading, setResendLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // WhatsApp OTP state
+  const [waPhone, setWaPhone] = useState('');
+  const [waCode, setWaCode] = useState('');
+  const [waStep, setWaStep] = useState<'phone' | 'code'>('phone');
+  const [waLoading, setWaLoading] = useState(false);
+  const [waCooldown, setWaCooldown] = useState(0);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +84,71 @@ function LoginForm() {
     }
   };
 
+  // WhatsApp OTP handlers
+  const handleWaSendOtp = async () => {
+    if (!waPhone.trim()) {
+      setError('Ingresá tu número de teléfono con código de país (ej: +595981...)');
+      return;
+    }
+    setWaLoading(true);
+    setError('');
+    setInfoMessage('');
+    try {
+      const res = await fetch('/api/auth/whatsapp/request-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: waPhone }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setWaStep('code');
+        setInfoMessage('Código enviado a tu WhatsApp. Revisá el chat.');
+        setWaCooldown(60);
+      } else {
+        setError(data.error || 'No se pudo enviar el código');
+      }
+    } catch {
+      setError('Error al conectar con el servidor');
+    } finally {
+      setWaLoading(false);
+    }
+  };
+
+  const handleWaVerifyOtp = async () => {
+    if (!waCode.trim() || waCode.length < 4) {
+      setError('Ingresá el código recibido por WhatsApp');
+      return;
+    }
+    setWaLoading(true);
+    setError('');
+    setInfoMessage('');
+    try {
+      const res = await fetch('/api/auth/whatsapp/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: waPhone, code: waCode }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const target = redirect || '/';
+        router.push(target);
+        router.refresh();
+      } else {
+        setError(data.error || 'Código inválido');
+      }
+    } catch {
+      setError('Error al conectar con el servidor');
+    } finally {
+      setWaLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (waCooldown <= 0) return;
+    const timer = setInterval(() => setWaCooldown((c) => c - 1), 1000);
+    return () => clearInterval(timer);
+  }, [waCooldown]);
+
   useEffect(() => {
     const verified = searchParams.get('verified');
     const sent = searchParams.get('sent');
@@ -116,7 +188,7 @@ function LoginForm() {
               Iniciar sesión
             </h1>
             <p className="text-sm text-slate-600 md:text-base">
-              Ingresá con email o Google
+              Ingresá con email, Google o WhatsApp
             </p>
           </div>
 
@@ -217,6 +289,79 @@ function LoginForm() {
                 }}
                 onError={(msg) => setError(msg)}
               />
+            </div>
+          </div>
+
+          {/* WhatsApp OTP Login */}
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-3 text-slate-400">o con WhatsApp</span>
+              </div>
+            </div>
+            <div className="mt-4 space-y-4">
+              {waStep === 'phone' ? (
+                <>
+                  <div>
+                    <label htmlFor="wa-phone" className="block text-sm font-medium text-slate-700 mb-2">
+                      Número de WhatsApp
+                    </label>
+                    <input
+                      id="wa-phone"
+                      type="tel"
+                      autoComplete="tel"
+                      value={waPhone}
+                      onChange={(e) => setWaPhone(e.target.value)}
+                      placeholder="+595 981 123 456"
+                      className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleWaSendOtp}
+                    disabled={waLoading || waCooldown > 0}
+                    className="w-full rounded-xl bg-green-600 px-4 py-3.5 font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 md:rounded-lg md:py-3 md:font-medium"
+                  >
+                    {waLoading ? 'Enviando...' : waCooldown > 0 ? `Esperá ${waCooldown}s` : 'Enviar código por WhatsApp'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label htmlFor="wa-code" className="block text-sm font-medium text-slate-700 mb-2">
+                      Código recibido
+                    </label>
+                    <input
+                      id="wa-code"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={waCode}
+                      onChange={(e) => setWaCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="123456"
+                      className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-center text-2xl tracking-widest text-gray-900 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-600 md:rounded-lg md:py-3"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleWaVerifyOtp}
+                    disabled={waLoading}
+                    className="w-full rounded-xl bg-green-600 px-4 py-3.5 font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 md:rounded-lg md:py-3 md:font-medium"
+                  >
+                    {waLoading ? 'Verificando...' : 'Verificar código'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setWaStep('phone'); setWaCode(''); setError(''); setInfoMessage(''); }}
+                    className="w-full text-sm text-slate-500 hover:text-slate-700 font-medium"
+                  >
+                    ← Cambiar número
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
