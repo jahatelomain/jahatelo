@@ -50,6 +50,15 @@ export function middleware(request: NextRequest) {
     response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
   }
 
+  // Mobile API: explicit CORS for app requests (fixes CSRF-like rejections from proxies/WAFs)
+  if (pathname.startsWith('/api/mobile/')) {
+    const origin = request.headers.get('origin') || '*';
+    response.headers.set('Access-Control-Allow-Origin', origin);
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+  }
+
   return response;
 }
 
