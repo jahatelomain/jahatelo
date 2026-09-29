@@ -6,6 +6,7 @@ import JsonLd from '@/components/JsonLd';
 import { generateCityCollectionSchema, generateBreadcrumbSchema } from '@/lib/seo';
 import { getStartingRoomPrice, getStartingRoomPricesByDay } from '@/lib/domain/motels/pricing';
 import MobilePageHeader from '@/components/public/MobilePageHeader';
+import SkeletonCard, { SkeletonMobileRow } from '@/components/public/SkeletonCard';
 
 type Props = {
   params: Promise<{ ciudad: string }>;

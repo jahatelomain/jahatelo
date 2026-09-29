@@ -59,6 +59,7 @@
 ## En pausa
 
 - [ ] **JH-002 — Observabilidad externa:** Sentry fue retirado por completo de web y apps mientras no exista presupuesto ni operación real. Reconsiderar una herramienta externa solo con proveedor, costos, responsable, privacidad y alertas definidos; decisión registrada en `DT-002`.
+- [ ] **JH-079 — Facebook Login:** opción ocultada en web, iOS y Android para no publicar un acceso roto. Retomar únicamente cuando exista una app Meta apta para autenticación de usuarios finales, con el producto/permisos correctos, dominios, bundle/package y revisión/verificación completados; la app Meta actual deriva al flujo de Business y devuelve errores genéricos de Facebook.
 
 ## Completados
 
