@@ -1,68 +1,62 @@
-import * as Google from 'expo-auth-session/providers/google';
-import * as AuthSession from 'expo-auth-session';
-import * as WebBrowser from 'expo-web-browser';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import Constants from 'expo-constants';
-import { Platform } from 'react-native';
 
-// Necesario para cerrar el browser y capturar la respuesta del redirect
-WebBrowser.maybeCompleteAuthSession();
-
-const EXPO_CLIENT_ID = Constants.expoConfig?.extra?.googleClientIdExpo || null;
-const IOS_CLIENT_ID = Constants.expoConfig?.extra?.googleClientIdIos || null;
-const ANDROID_CLIENT_ID = Constants.expoConfig?.extra?.googleClientIdAndroid || null;
 const WEB_CLIENT_ID = Constants.expoConfig?.extra?.googleClientIdWeb || null;
 
-// Detecta si estamos corriendo en Expo Go (vs build compilado)
-const isExpoGo = Constants.appOwnership === 'expo';
+// Configurar Google Sign-In una sola vez al cargar el módulo
+if (WEB_CLIENT_ID) {
+  GoogleSignin.configure({
+    webClientId: WEB_CLIENT_ID,
+    scopes: ['profile', 'email'],
+    offlineAccess: false,
+    forceCodeForRefreshToken: false,
+  });
+}
 
 /**
  * Hook personalizado para manejar Google Sign-In
- * Usa expo-auth-session para manejar el flujo OAuth
+ * Usa @react-native-google-signin (SDK nativo) en lugar de expo-auth-session
+ * Esto evita problemas con redirect URIs personalizadas en Google Console
  */
 export const useGoogleAuth = () => {
-  // En Expo Go: Desktop app client (sin proxy)
-  // En build nativo: usar el Client ID específico de la plataforma
-  const clientId = isExpoGo
-    ? EXPO_CLIENT_ID
-    : Platform.OS === 'ios'
-      ? IOS_CLIENT_ID
-      : ANDROID_CLIENT_ID;
+  const promptAsync = async () => {
+    try {
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo.data?.idToken || userInfo.idToken;
 
-  // makeRedirectUri genera automáticamente el formato correcto según el entorno:
-  // - Expo Go (simulador): exp://127.0.0.1:8081 (Desktop app client, sin proxy)
-  // - Build nativo: jahatelo://oauth/google (con scheme)
-  const redirectUri = AuthSession.makeRedirectUri(
-    isExpoGo
-      ? {} // Desktop app client - sin proxy
-      : { scheme: 'jahatelo', path: 'oauth/google' }
-  );
+      if (!idToken) {
+        return { type: 'error', error: { message: 'No se obtuvo idToken de Google' } };
+      }
 
-  // En Expo Go: clientId genérico + redirectUri manual (Desktop app client)
-  // Native: code + PKCE, auto-exchanged to authentication.idToken by Expo.
-  // Web: ID-token response in params.id_token. No client secret belongs here.
-  // The installed Expo version defaults native redirects to applicationId:/oauthredirect;
-  // validate registered schemes/Google Console for each standalone build.
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest(
-    isExpoGo
-      ? { clientId, scopes: ['profile', 'email'], redirectUri }
-      : {
-          webClientId: WEB_CLIENT_ID,
-          iosClientId: IOS_CLIENT_ID,
-          androidClientId: ANDROID_CLIENT_ID,
-          scopes: ['profile', 'email'],
-        }
-  );
+      return {
+        type: 'success',
+        authentication: { idToken },
+        params: { id_token: idToken },
+      };
+    } catch (error) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        return { type: 'dismiss' };
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        return { type: 'error', error: { message: 'Login ya en progreso' } };
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        return { type: 'error', error: { message: 'Google Play Services no disponible' } };
+      } else {
+        console.error('Google Sign-In Error:', error);
+        return { type: 'error', error: { message: error.message || 'Error desconocido' } };
+      }
+    }
+  };
+
+  // Compatibilidad con la interfaz anterior de expo-auth-session
+  const request = WEB_CLIENT_ID ? { url: 'native-sdk' } : null;
+  const response = null; // El SDK nativo maneja todo internamente
 
   if (__DEV__) {
-    console.log('Google Auth Config:', {
-      clientId,
-      platform: Platform.OS,
-      isExpoGo,
-      redirectUri,
+    console.log('Google Auth Config (Native SDK):', {
+      webClientId: WEB_CLIENT_ID,
+      configured: Boolean(WEB_CLIENT_ID),
     });
-    if (request) {
-      console.log('Google Auth Request URL:', request.url);
-    }
   }
 
   return { request, response, promptAsync };
@@ -104,5 +98,5 @@ export const getGoogleUserInfo = async (accessToken) => {
  * @returns {boolean} true si hay credenciales reales configuradas
  */
 export const isGoogleConfigured = () => {
-  return Boolean(WEB_CLIENT_ID || IOS_CLIENT_ID || ANDROID_CLIENT_ID);
+  return Boolean(WEB_CLIENT_ID);
 };
