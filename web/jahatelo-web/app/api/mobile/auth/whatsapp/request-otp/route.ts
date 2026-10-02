@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { WhatsappOtpRequestSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { generateOtpCode, hashOtp, isValidPhone, normalizePhone } from '@/lib/otp';
-import { sendSmsOtp } from '@/lib/sms';
+import { sendWhatsappOtp } from '@/lib/twilioWhatsapp';
 import { z } from 'zod';
 import { enforceAuthRateLimit } from '@/lib/authRateLimit';
 
@@ -75,12 +75,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const sendResult = await sendSmsOtp(phone, code);
+    const sendResult = await sendWhatsappOtp(phone, code);
     if (!sendResult.ok) {
       await prisma.whatsappOtp.delete({ where: { id: otpRecord.id } });
-      console.error('Error sending SMS OTP:', sendResult.error || 'Unknown SMS provider error');
+      console.error('Error sending WhatsApp OTP:', sendResult.error || 'Unknown WhatsApp provider error');
       return NextResponse.json(
-        { error: 'No se pudo enviar el código. Intentá nuevamente en unos minutos.' },
+        { error: 'No se pudo enviar el código por WhatsApp. Intentá nuevamente en unos minutos.' },
         { status: 502 }
       );
     }
