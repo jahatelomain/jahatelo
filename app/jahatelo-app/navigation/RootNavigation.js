@@ -21,6 +21,7 @@ import NotificationsScreen from '../screens/NotificationsScreen';
 import PromoHistoryScreen from '../screens/PromoHistoryScreen';
 import RecommendMotelScreen from '../screens/RecommendMotelScreen';
 import ReportMotelScreen from '../screens/ReportMotelScreen';
+import WhatsappOtpScreen from '../screens/WhatsappOtpScreen';
 
 // iOS 26 + Fabric puede abortar al reciclar una pantalla nativa después del
 // login (RNSScreenStackView prepareForRecycle). Conservamos la Nueva
@@ -55,6 +56,7 @@ export default function RootNavigation() {
       <Stack.Screen name="Contact" component={ContactScreen} />
       <Stack.Screen name="CitySelector" component={CitySelectorScreen} />
       <Stack.Screen name="CityMotels" component={CityMotelsScreen} />
+      <Stack.Screen name="WhatsappOtp" component={WhatsappOtpScreen} />
     </Stack.Navigator>
   );
 }

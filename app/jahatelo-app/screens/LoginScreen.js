@@ -43,7 +43,7 @@ export default function LoginScreen({ navigation }) {
   const { request: googleRequest, response: googleResponse, promptAsync: promptGoogleAsync } = useGoogleAuth();
   const { request: facebookRequest, response: facebookResponse, promptAsync: promptFacebookAsync } = useFacebookAuth();
 
-  // Manejar respuesta de Google OAuth
+  // Manejar respuesta de Google OAuth (soporta expo-auth-session y @react-native-google-signin)
   useEffect(() => {
     if (googleResponse?.type === 'success') {
       handleGoogleLogin(googleResponse.authentication?.idToken || googleResponse.params?.id_token);
@@ -54,6 +54,30 @@ export default function LoginScreen({ navigation }) {
       console.log('User dismissed login');
     }
   }, [googleResponse]);
+
+  // Wrapper para Google Sign-In nativo (resuelve promesa directamente)
+  const startGoogleLogin = async () => {
+    if (!googleRequest || isLoading) return;
+    try {
+      const result = await promptGoogleAsync();
+      if (result?.type === 'success') {
+        const idToken = result.authentication?.idToken || result.params?.id_token;
+        if (idToken) {
+          handleGoogleLogin(idToken);
+        } else {
+          showErrorMessage('Google no devolvió una credencial válida');
+        }
+      } else if (result?.type === 'error') {
+        console.error('Google Sign-In Error:', result.error);
+        showErrorMessage(`Error al iniciar sesión con Google: ${result.error?.message || result.error}`);
+      } else if (result?.type === 'dismiss') {
+        console.log('Google login dismissed');
+      }
+    } catch (error) {
+      console.error('Error in startGoogleLogin:', error);
+      showErrorMessage(error.message || 'Error al iniciar sesión con Google');
+    }
+  };
 
   useEffect(() => {
     if (facebookResponse?.type === 'success') {
@@ -340,7 +364,7 @@ export default function LoginScreen({ navigation }) {
             <View style={styles.oauthContainer}>
               <TouchableOpacity
                 style={[styles.socialButton, !googleRequest && styles.oauthButtonDisabled]}
-                onPress={() => promptGoogleAsync()}
+                onPress={startGoogleLogin}
                 disabled={!googleRequest || isLoading}
               >
                 <Ionicons name="logo-google" size={22} color="#DB4437" />
@@ -356,6 +380,14 @@ export default function LoginScreen({ navigation }) {
                   <Text style={styles.socialButtonText}>Continuar con Facebook</Text>
                 </TouchableOpacity>
               )}
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={() => navigation.navigate('WhatsappOtp')}
+                disabled={isLoading}
+              >
+                <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
+                <Text style={styles.socialButtonText}>Continuar con WhatsApp</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Registro */}
