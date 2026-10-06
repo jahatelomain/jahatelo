@@ -1,18 +1,10 @@
 {
-  "buildCommand": "prisma migrate deploy && prisma generate && next build",
+  "buildCommand": "prisma generate && next build",
   "installCommand": "npm install",
   "crons": [
     {
       "path": "/api/cron/process-notifications",
       "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron/cleanup-data",
-      "schedule": "0 4 * * *"
-    },
-    {
-      "path": "/api/cron/cleanup-promo-codes",
-      "schedule": "0 5 * * *"
     }
   ]
 }
