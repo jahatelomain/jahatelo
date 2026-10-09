@@ -385,8 +385,8 @@ export default function LoginScreen({ navigation }) {
                 onPress={() => navigation.navigate('WhatsappOtp')}
                 disabled={isLoading}
               >
-                <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
-                <Text style={styles.socialButtonText}>Continuar con WhatsApp</Text>
+                <Ionicons name="chatbubble-ellipses-outline" size={22} color="#4CAF50" />
+                <Text style={styles.socialButtonText}>Continuar con SMS</Text>
               </TouchableOpacity>
             </View>
 

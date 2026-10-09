@@ -11,6 +11,7 @@ const AuthContext = createContext({
   isLoading: true,
   isAuthenticated: false,
   login: async () => {},
+  loginWithSms: async () => {},
   loginWithOAuth: async () => {},
   register: async () => {},
   logout: async () => {},
@@ -106,6 +107,20 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
+   * Login con SMS OTP (token ya verificado por WhatsappOtpScreen)
+   */
+  const handleLoginWithSms = async ({ token, user }) => {
+    try {
+      await authApi.saveAuthData(token, user);
+      setToken(token);
+      setUser(user);
+      return { success: true, user };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  /**
    * Login con OAuth
    */
   const handleLoginWithOAuth = async ({ provider, idToken, accessToken }) => {
@@ -184,6 +199,7 @@ export const AuthProvider = ({ children }) => {
     isLoading,
     isAuthenticated: !!user && !!token,
     login: handleLogin,
+    loginWithSms: handleLoginWithSms,
     loginWithOAuth: handleLoginWithOAuth,
     register: handleRegister,
     logout: handleLogout,
