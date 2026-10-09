@@ -8,7 +8,7 @@ if (WEB_CLIENT_ID) {
   GoogleSignin.configure({
     webClientId: WEB_CLIENT_ID,
     scopes: ['profile', 'email'],
-    offlineAccess: false,
+    offlineAccess: true,
     forceCodeForRefreshToken: false,
   });
 }
