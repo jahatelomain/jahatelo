@@ -11,7 +11,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
-  const { login } = useAuth();
+  const { login, refreshUser } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -282,7 +282,8 @@ function LoginForm() {
             </div>
             <div className="mt-4 space-y-3">
               <GoogleLoginButton
-                onSuccess={() => {
+                onSuccess={async () => {
+                  await refreshUser();
                   const target = redirect || '/';
                   router.push(target);
                   router.refresh();
