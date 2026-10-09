@@ -14,6 +14,9 @@ export default ({ config }) => ({
   plugins: [...(config.plugins || []), './plugins/withGoogleMapsIos'],
   extra: {
     ...config.extra,
+    googleClientIdWeb:
+      process.env.GOOGLE_CLIENT_ID_WEB ||
+      '538770919156-pioslijk4die35brv5njd5pk4k5fcfbe.apps.googleusercontent.com',
     eas: {
       projectId:
         process.env.EXPO_PUBLIC_EAS_PROJECT_ID ||
