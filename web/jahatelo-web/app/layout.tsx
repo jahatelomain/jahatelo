@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Lato } from "next/font/google";
 import "./globals.css";
-import "lenis/dist/lenis.css";
 import PwaRegistrar from "@/components/public/PwaRegistrar";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -9,7 +8,6 @@ import AgeGate from "@/components/public/AgeGate";
 import AnalyticsProvider from "@/components/AnalyticsProvider";
 import GoogleAuthProvider from "@/components/GoogleAuthProvider";
 import PublicMobileShell from "@/components/public/PublicMobileShell";
-import SmoothScroll from "@/components/SmoothScroll";
 
 const lato = Lato({
   weight: ['400', '700'],
@@ -104,9 +102,7 @@ export default function RootLayout({
               <AgeGate />
               <PwaRegistrar />
               <AnalyticsProvider />
-              <SmoothScroll>
-                <PublicMobileShell>{children}</PublicMobileShell>
-              </SmoothScroll>
+              <PublicMobileShell>{children}</PublicMobileShell>
             </ToastProvider>
           </AuthProvider>
         </GoogleAuthProvider>
