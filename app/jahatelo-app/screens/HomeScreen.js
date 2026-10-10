@@ -84,29 +84,31 @@ export default function HomeScreen() {
     popupStarted.current = true;
     if (!popupAds.length) { setPopupSlides([]); return; }
     visitId.current ||= newHomeVisitId();
-    claimHomeRotation('POPUP_HOME', visitId.current)
-      .then((slides) => { if (isMounted.current) setPopupSlides(slides); })
+    const currentVisitId = visitId.current;
+    claimHomeRotation('POPUP_HOME', currentVisitId)
+      .then((slides) => { if (isMounted.current && visitId.current === currentVisitId) setPopupSlides(slides); })
       .catch((err) => {
         console.warn('Popup rotation unavailable:', err);
-        if (isMounted.current) setPopupSlides([...popupAds].sort((a, b) => a.id.localeCompare(b.id)).map((ad) => ({ kind: 'ad', id: ad.id })));
+        if (isMounted.current && visitId.current === currentVisitId) setPopupSlides([...popupAds].sort((a, b) => a.id.localeCompare(b.id)).map((ad) => ({ kind: 'ad', id: ad.id })));
       });
-  }, [loading, popupAdsLoading, popupAds]);
+  }, [loading, popupAdsLoading, popupAds, visitSequence]);
 
   useEffect(() => {
     if (loading || bannerAdsLoading || featuredStarted.current) return;
     featuredStarted.current = true;
     if (!featuredMotels.length && !bannerAds.length) { setFeaturedSlides([]); return; }
     visitId.current ||= newHomeVisitId();
-    claimHomeRotation('FEATURED_HOME', visitId.current)
-      .then((slides) => { if (isMounted.current) setFeaturedSlides(slides); })
+    const currentVisitId = visitId.current;
+    claimHomeRotation('FEATURED_HOME', currentVisitId)
+      .then((slides) => { if (isMounted.current && visitId.current === currentVisitId) setFeaturedSlides(slides); })
       .catch((err) => {
         console.warn('Featured rotation unavailable:', err);
-        if (isMounted.current) setFeaturedSlides([
+        if (isMounted.current && visitId.current === currentVisitId) setFeaturedSlides([
           ...featuredMotels.map((motel) => ({ kind: 'motel', id: motel.id })),
           ...(bannerAds[0] ? [{ kind: 'ad', id: bannerAds[0].id }] : []),
         ]);
       });
-  }, [loading, bannerAdsLoading, featuredMotels, bannerAds]);
+  }, [loading, bannerAdsLoading, featuredMotels, bannerAds, visitSequence]);
 
   const loadMotels = async (isRefreshing = false) => {
     try {
@@ -286,6 +288,7 @@ export default function HomeScreen() {
             {/* Mostrar carrusel de publicidades aunque no haya moteles */}
             {bannerAds.length > 0 && (
               <PromoCarousel
+                key={visitSequence}
                 promos={[]}
                 ads={bannerAds}
                 slides={featuredSlides}
@@ -318,6 +321,7 @@ export default function HomeScreen() {
           {/* Popup publicitario */}
           {orderedPopupAds.length > 0 && (
             <AdPopup
+              key={visitSequence}
               ads={orderedPopupAds}
               visible={showAdPopup}
               onClose={() => setShowAdPopup(false)}
@@ -373,6 +377,7 @@ export default function HomeScreen() {
           }
         >
           <PromoCarousel
+            key={visitSequence}
             promos={featuredMotels}
             ads={bannerAds}
             slides={featuredSlides}
@@ -390,6 +395,7 @@ export default function HomeScreen() {
         {/* Popup publicitario */}
         {orderedPopupAds.length > 0 && (
           <AdPopup
+            key={visitSequence}
             ads={orderedPopupAds}
             visible={showAdPopup}
             onClose={() => setShowAdPopup(false)}
