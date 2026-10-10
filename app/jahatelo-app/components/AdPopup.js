@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Modal,
+  PanResponder,
   View,
   Text,
   Image,
@@ -21,10 +22,21 @@ const POPUP_WIDTH = Math.min(SCREEN_WIDTH * 0.9, 400);
  * Componente AdPopup - Modal de anuncio publicitario
  * Se muestra al abrir la app si hay anuncios de tipo POPUP_HOME
  */
-export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClick }) {
+export default function AdPopup({ ads = [], visible, onClose, onTrackView, onTrackClick }) {
+  const [index, setIndex] = useState(0);
+  const viewed = useRef(new Set());
+  const ad = ads[index];
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [ready, setReady] = useState(false);
+  const panResponder = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_event, gesture) => ads.length > 1 && Math.abs(gesture.dx) > 15 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
+    onPanResponderRelease: (_event, gesture) => {
+      if (Math.abs(gesture.dx) > 45) {
+        setIndex((current) => (current + (gesture.dx < 0 ? 1 : ads.length - 1)) % ads.length);
+      }
+    },
+  }), [ads.length]);
 
   const imageUrl = ad?.largeImageUrlApp || ad?.largeImageUrl || ad?.imageUrl;
   const hasContent = Boolean(
@@ -51,8 +63,8 @@ export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClic
   }, [visible, ad, imageUrl]);
 
   useEffect(() => {
-    if (visible && ready && ad) {
-      // Registrar vista cuando el popup ya es visible
+    if (visible && ready && ad && !viewed.current.has(ad.id)) {
+      viewed.current.add(ad.id);
       onTrackView(ad.id);
     }
   }, [visible, ready, ad, onTrackView]);
@@ -88,7 +100,7 @@ export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClic
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={() => {}}
+      onRequestClose={onClose}
       statusBarTranslucent
     >
       <View style={styles.overlay}>
@@ -112,7 +124,7 @@ export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClic
           >
             {/* Imagen del anuncio */}
             {imageUrl && !imageError ? (
-              <View style={styles.imageContainer}>
+              <View style={styles.imageContainer} {...panResponder.panHandlers}>
                 <Image
                   source={{ uri: imageUrl }}
                   style={[
@@ -133,7 +145,7 @@ export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClic
                 )}
               </View>
             ) : (
-              <View style={[styles.imageContainer, styles.fallbackImage]}>
+              <View style={[styles.imageContainer, styles.fallbackImage]} {...panResponder.panHandlers}>
                 <Ionicons name="megaphone" size={36} color={COLORS.white} />
                 <Text style={styles.fallbackText}>Publicidad</Text>
               </View>
@@ -160,6 +172,17 @@ export default function AdPopup({ ad, visible, onClose, onTrackView, onTrackClic
                   <Text style={styles.ctaText}>Ver más</Text>
                   <Ionicons name="arrow-forward" size={16} color={COLORS.white} />
                 </TouchableOpacity>
+              )}
+              {ads.length > 1 && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, marginTop: 12 }}>
+                  <TouchableOpacity accessibilityLabel="Anuncio anterior" onPress={() => setIndex((current) => (current - 1 + ads.length) % ads.length)}>
+                    <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
+                  </TouchableOpacity>
+                  <Text accessibilityLiveRegion="polite" style={styles.description}>{index + 1} / {ads.length}</Text>
+                  <TouchableOpacity accessibilityLabel="Anuncio siguiente" onPress={() => setIndex((current) => (current + 1) % ads.length)}>
+                    <Ionicons name="chevron-forward" size={28} color={COLORS.primary} />
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
           </ScrollView>

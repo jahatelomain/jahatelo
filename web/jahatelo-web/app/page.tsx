@@ -11,6 +11,7 @@ import AdPopup from '@/components/public/AdPopup';
 import PromoListWithAds from '@/components/public/PromoListWithAds';
 import CityListWithAds from '@/components/public/CityListWithAds';
 import MobileHome from '@/components/public/MobileHome';
+import HomeFeaturedProvider from '@/components/public/HomeFeaturedProvider';
 import { headers } from 'next/headers';
 import type { PublicMotelListResponse } from '@/lib/domain/motels/publicListItem';
 
@@ -39,7 +40,16 @@ export default async function HomePage() {
   const promosPayload: PublicMotelListResponse = promosResponse.ok
     ? await promosResponse.json()
     : { data: [], meta: { page: 1, limit: 50, total: 0, latestUpdatedAt: 0 } };
-  const featuredMotels = featuredPayload.data.slice(0, 6);
+  const featuredMotels = [...featuredPayload.data];
+  // The shared counter includes every checked motel, so both Web layouts must
+  // load the same eligible set as the mobile app, not only page one.
+  for (let page = 2; featuredMotels.length < featuredPayload.meta.total; page += 1) {
+    const response = await fetch(`${baseUrl}/api/mobile/motels?featured=true&limit=50&page=${page}`, { cache: 'no-store' });
+    if (!response.ok) break;
+    const payload: PublicMotelListResponse = await response.json();
+    if (!payload.data.length) break;
+    featuredMotels.push(...payload.data);
+  }
   const promosMotels = promosPayload.data;
 
   const categories = [
@@ -49,7 +59,7 @@ export default async function HomePage() {
   ];
 
   return (
-    <>
+    <HomeFeaturedProvider motelIds={featuredMotels.map((motel) => motel.id)}>
       <AdPopup />
       <Navbar />
       <MobileHome featuredMotels={featuredMotels} cities={cities} />
@@ -87,12 +97,10 @@ export default async function HomePage() {
               <SearchBar />
             </div>
 
-            {/* Carousel destacados */}
-            {featuredMotels.length > 0 && (
-              <div className="relative z-10 animate-fade-up-delay-4 max-w-5xl mx-auto mb-12">
-                <FeaturedCarousel featuredMotels={featuredMotels} />
-              </div>
-            )}
+            {/* Carousel destacados / publicidades */}
+            <div className="relative z-10 animate-fade-up-delay-4 max-w-5xl mx-auto mb-12">
+              <FeaturedCarousel featuredMotels={featuredMotels} />
+            </div>
 
             {/* Cards de categorías */}
             <div className="max-w-5xl mx-auto">
@@ -101,7 +109,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {featuredMotels.length > 0 && <FeaturedMotels motels={featuredMotels} />}
+        {featuredMotels.length > 0 && <FeaturedMotels motels={featuredMotels.slice(0, 6)} />}
         {cities.length > 0 && (
           <SectionWrapper className="py-14">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -162,6 +170,6 @@ export default async function HomePage() {
         </section>
       </main>
       <Footer />
-    </>
+    </HomeFeaturedProvider>
   );
 }

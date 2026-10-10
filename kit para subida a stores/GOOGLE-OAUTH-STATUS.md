@@ -1,5 +1,8 @@
 # ✅ Google OAuth - Estado Final
 
+> [!WARNING]
+> **Documento histórico de 2025; NO usar para habilitar producción.** Verificado el 10-10-2026: Google Auth Platform de Jahatelo está en **Prueba**, con un solo usuario autorizado. Android Google Login funciona para ese tester tras registrar la firma de Play; el acceso público y la validación en iOS están pendientes. Gate actual: `PENDIENTES.md` **JH-081**. Las afirmaciones de abajo sobre «In Production», Expo Go y «100% listo» reflejan el estado declarado en 2025, no el actual.
+
 **Fecha:** 19-20 Enero 2025
 
 ---
@@ -31,7 +34,7 @@ Google OAuth está **completamente configurado y funcionando**.
 
 ### **Google Cloud Console:**
 - **Proyecto:** Jahatelo
-- **Estado:** In Production
+- **Estado declarado en 2025:** In Production (**obsoleto**). **Estado comprobado el 10-10-2026:** Prueba, un solo tester; ver JH-081.
 - **Scopes:** email, profile, openid
 
 ### **Client IDs:**
@@ -152,7 +155,7 @@ npx eas-cli build --platform ios --profile production
 ## ✅ CHECKLIST FINAL
 
 - [x] Proyecto creado en Google Cloud Console
-- [x] OAuth Consent Screen configurado y publicado
+- [ ] Publicar OAuth Consent Screen para usuarios generales y validar cuentas no tester: **pendiente JH-081** (la marca «publicado» de 2025 no refleja el estado actual).
 - [x] Google+ API habilitada
 - [x] Scopes agregados (email, profile, openid)
 - [x] Credencial Android creada con SHA-1 de producción
@@ -167,7 +170,7 @@ npx eas-cli build --platform ios --profile production
 
 ## 🎉 CONCLUSIÓN
 
-**Google OAuth está 100% configurado y listo para producción.**
+**Conclusión histórica de 2025 (obsoleta):** Google OAuth se consideraba listo para producción. **Estado actual:** pendiente JH-081; no publicar sin revisar el consentimiento y probar con cuentas no incluidas como testers.
 
 - ✅ Android funciona en desarrollo y funcionará en producción
 - ✅ iOS funcionará en producción (limitación temporal de Expo Go)

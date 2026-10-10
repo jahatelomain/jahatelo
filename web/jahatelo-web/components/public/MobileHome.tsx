@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useHomeFeatured } from '@/components/public/HomeFeaturedProvider';
+import { trackAdEvent, type Advertisement } from '@/hooks/useAdvertisements';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Bell, ChevronDown, LoaderCircle, Map, MapPin, Search, Tag } from 'lucide-react';
@@ -26,13 +28,13 @@ function QuickLink({ href, title, subtitle, icon: Icon, tone }: {
   };
 
   return (
-    <Link href={href} className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${themes[tone]} p-4 text-white shadow-[0_8px_18px_rgba(42,0,56,0.16)] transition duration-200 active:scale-[0.98]`}>
+    <Link href={href} className={`group relative block overflow-hidden rounded-2xl bg-gradient-to-br ${themes[tone]} p-4 text-white shadow-[0_8px_18px_rgba(42,0,56,0.16)] transition duration-200 active:scale-[0.98]`}>
       <div className="absolute -right-5 -top-5 h-24 w-24 rounded-full border border-white/15" />
       <div className="absolute -bottom-8 right-7 h-20 w-20 rounded-full bg-white/10 blur-sm" />
-      <div className="relative flex items-center gap-3">
-        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/18 ring-1 ring-white/25"><Icon size={22} /></span>
+      <div className={`relative flex ${tone === 'map' ? 'items-center gap-3' : 'flex-col items-start gap-2'}`}>
+        <span className={`inline-flex shrink-0 items-center justify-center rounded-xl bg-white/18 ring-1 ring-white/25 ${tone === 'map' ? 'h-11 w-11' : 'h-9 w-9'}`}><Icon size={22} /></span>
         <span className="min-w-0 flex-1"><span className="block font-bold">{title}</span><span className="mt-0.5 block text-xs text-white/75">{subtitle}</span></span>
-        <ArrowRight size={19} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+        <ArrowRight size={19} className={tone === 'map' ? 'transition-transform duration-200 group-hover:translate-x-0.5' : 'hidden'} />
       </div>
     </Link>
   );
@@ -43,27 +45,68 @@ export default function MobileHome({ featuredMotels, cities }: { featuredMotels:
   const [expandedCity, setExpandedCity] = useState<string | null>(null);
   const [motelsByCity, setMotelsByCity] = useState<Record<string, PublicMotelListItem[]>>({});
   const [loadingCity, setLoadingCity] = useState<string | null>(null);
+  const [cityErrors, setCityErrors] = useState<Record<string, boolean>>({});
+  const { slides, ads } = useHomeFeatured();
+  const featuredStrip = useRef<HTMLDivElement>(null);
+  const viewedAds = useRef(new Set<string>());
+  const featuredItems = useMemo(() => {
+    if (!slides) return [];
+    const motelById = new globalThis.Map(featuredMotels.map((motel) => [motel.id, motel]));
+    const adById = new globalThis.Map(ads.map((ad) => [ad.id, ad]));
+    const result: Array<{ kind: 'motel'; data: PublicMotelListItem } | { kind: 'ad'; data: Advertisement }> = [];
+    slides.forEach((slide) => {
+      if (slide.kind === 'ad') {
+        const ad = adById.get(slide.id);
+        if (ad) result.push({ kind: 'ad', data: ad });
+      } else {
+        const motel = motelById.get(slide.id);
+        if (motel) result.push({ kind: 'motel', data: motel });
+      }
+    });
+    return result;
+  }, [slides, featuredMotels, ads]);
+  useEffect(() => {
+    if (!featuredStrip.current || !slides) return;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const id = (entry.target as HTMLElement).dataset.rotatingAd;
+        if (!id || viewedAds.current.has(id)) return;
+        viewedAds.current.add(id);
+        void trackAdEvent({ advertisementId: id, eventType: 'VIEW', source: 'CAROUSEL' });
+      });
+    }, { threshold: 0.75 });
+    featuredStrip.current.querySelectorAll('[data-rotating-ad]').forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [slides, featuredItems]);
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     window.location.assign(`/search${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ''}`);
   };
 
-  const toggleCity = async (city: City) => {
+  const loadCity = async (city: City) => {
+    setLoadingCity(city.name);
+    setCityErrors((current) => ({ ...current, [city.name]: false }));
+    try {
+      const response = await fetch(`/api/mobile/motels?city=${encodeURIComponent(city.name)}&limit=50`);
+      if (!response.ok) throw new Error('No se pudieron cargar los moteles');
+      const payload = await response.json();
+      setMotelsByCity((current) => ({ ...current, [city.name]: payload.data || [] }));
+    } catch {
+      setCityErrors((current) => ({ ...current, [city.name]: true }));
+    } finally {
+      setLoadingCity(null);
+    }
+  };
+
+  const toggleCity = (city: City) => {
     if (expandedCity === city.name) {
       setExpandedCity(null);
       return;
     }
     setExpandedCity(city.name);
-    if (motelsByCity[city.name]) return;
-    setLoadingCity(city.name);
-    try {
-      const response = await fetch(`/api/mobile/motels?city=${encodeURIComponent(city.name)}&limit=50`);
-      const payload = response.ok ? await response.json() : { data: [] };
-      setMotelsByCity((current) => ({ ...current, [city.name]: payload.data || [] }));
-    } finally {
-      setLoadingCity(null);
-    }
+    if (!motelsByCity[city.name]) void loadCity(city);
   };
 
   return (
@@ -83,14 +126,20 @@ export default function MobileHome({ featuredMotels, cities }: { featuredMotels:
 
       <section className="px-4 pb-1 pt-4">
         <div className="mb-2 flex items-center justify-between"><h2 className="text-lg font-bold text-slate-900">Destacados</h2><Link href="/search?featured=1" className="text-sm font-semibold text-purple-600">Ver todos</Link></div>
-        <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
-          {featuredMotels.map((motel) => (
-            <Link key={motel.id} href={`/motels/${motel.slug}`} className="w-64 shrink-0 snap-start overflow-hidden rounded-2xl bg-white shadow-[0_6px_14px_rgba(42,0,56,0.1)] transition duration-200 active:scale-[0.98]">
-              <div className="relative h-32 bg-purple-100">{(motel.featuredPhotoWeb || motel.thumbnail) && <Image src={motel.featuredPhotoWeb || motel.thumbnail || ''} alt={motel.name} fill className="object-cover" sizes="256px" />}{motel.logoUrl && <MotelLogoHeart src={motel.logoUrl} alt={motel.name} className="absolute left-3 top-3 h-10 w-12" />}</div>
-              <div className="p-3"><p className="truncate font-bold text-slate-900">{motel.name}</p><p className="mt-1 truncate text-xs text-slate-500">{[motel.address, motel.city].filter(Boolean).join(', ')}</p><p className="mt-2 text-sm font-bold text-purple-600">{motel.startingPrice ? `Desde ${formatGuaranies(motel.startingPrice)}` : PRICE_UPDATING_MESSAGE}</p></div>
+        <div ref={featuredStrip} className="-mx-4 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
+          {!slides && <div className="h-52 w-64 shrink-0 animate-pulse rounded-2xl bg-purple-100" aria-label="Cargando destacados" />}
+          {featuredItems.map((item, index) => item.kind === 'motel' ? (
+            <Link key={`motel-${item.data.id}`} href={`/motels/${item.data.slug}`} className="w-64 shrink-0 snap-start overflow-hidden rounded-2xl bg-white shadow-[0_6px_14px_rgba(42,0,56,0.1)] transition duration-200 active:scale-[0.98]">
+              <div className="relative h-32 bg-purple-100">{(item.data.featuredPhotoWeb || item.data.thumbnail) && <Image src={item.data.featuredPhotoWeb || item.data.thumbnail || ''} alt={item.data.name} fill className="object-cover" sizes="256px" />}{item.data.logoUrl && <MotelLogoHeart src={item.data.logoUrl} alt={item.data.name} className="absolute left-3 top-3 h-10 w-12" />}</div>
+              <div className="p-3"><p className="truncate font-bold text-slate-900">{item.data.name}</p><p className="mt-1 truncate text-xs text-slate-500">{[item.data.address, item.data.city].filter(Boolean).join(', ')}</p><p className="mt-2 text-sm font-bold text-purple-600">{item.data.startingPrice ? `Desde ${formatGuaranies(item.data.startingPrice)}` : PRICE_UPDATING_MESSAGE}</p></div>
             </Link>
+          ) : (
+            <div key={`ad-${item.data.id}-${index}`} data-rotating-ad={item.data.id} className="w-64 shrink-0 snap-start overflow-hidden rounded-2xl bg-white shadow-[0_6px_14px_rgba(42,0,56,0.1)]">
+              <div className="relative h-32 bg-amber-50"><Image src={item.data.imageUrl || '/motel-placeholder.png'} alt={item.data.title} fill className="object-cover" sizes="256px" /></div>
+              <div className="p-3"><p className="text-xs font-bold text-amber-700">PUBLICIDAD</p><p className="truncate font-bold text-slate-900">{item.data.title}</p><p className="truncate text-xs text-slate-500">{item.data.advertiser}</p>{item.data.linkUrl && <a href={item.data.linkUrl} target="_blank" rel="noopener noreferrer" onClick={() => void trackAdEvent({ advertisementId: item.data.id, eventType: 'CLICK', source: 'CAROUSEL' })} className="mt-2 inline-block text-sm font-semibold text-purple-600">Ver más →</a>}</div>
+            </div>
           ))}
-          {featuredMotels.length === 0 && <p className="text-sm text-slate-500">No hay moteles destacados.</p>}
+          {slides && featuredItems.length === 0 && <p className="text-sm text-slate-500">No hay moteles destacados.</p>}
         </div>
       </section>
 
@@ -107,7 +156,7 @@ export default function MobileHome({ featuredMotels, cities }: { featuredMotels:
         <div className="space-y-2">{cities.slice(0, 5).map((city) => {
           const isExpanded = expandedCity === city.name;
           const motels = motelsByCity[city.name] || [];
-          return <section key={city.name} className="overflow-hidden rounded-2xl bg-white shadow-[0_4px_12px_rgba(42,0,56,0.07)]"><button type="button" onClick={() => void toggleCity(city)} aria-expanded={isExpanded} className="flex w-full items-center gap-3 p-3.5 text-left"><span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-purple-600"><MapPin size={18} /></span><span className="flex-1"><span className="block font-semibold text-slate-900">{city.name}</span><span className="mt-0.5 block text-xs text-slate-500">{city.total} {city.total === 1 ? 'motel' : 'moteles'}</span></span><ChevronDown className={`text-purple-600 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} size={20} /></button>{isExpanded && <div className="border-t border-slate-100 p-3">{loadingCity === city.name ? <div className="flex items-center justify-center gap-2 py-5 text-sm text-slate-500"><LoaderCircle className="animate-spin" size={17} />Cargando moteles…</div> : motels.length ? <div className="grid gap-3">{motels.map((motel) => <MotelCard key={motel.id} motel={motel} showFavoriteAction={false} />)}</div> : <p className="py-4 text-center text-sm text-slate-500">No hay moteles publicados en esta ciudad.</p>}</div>}</section>;
+          return <section key={city.name} className="overflow-hidden rounded-2xl bg-white shadow-[0_4px_12px_rgba(42,0,56,0.07)]"><button type="button" onClick={() => void toggleCity(city)} aria-expanded={isExpanded} className="flex w-full items-center gap-3 p-3.5 text-left"><span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-purple-600"><MapPin size={18} /></span><span className="flex-1"><span className="block font-semibold text-slate-900">{city.name}</span><span className="mt-0.5 block text-xs text-slate-500">{city.total} {city.total === 1 ? 'motel' : 'moteles'}</span></span><ChevronDown className={`text-purple-600 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} size={20} /></button>{isExpanded && <div className="border-t border-slate-100 p-3">{loadingCity === city.name ? <div className="flex items-center justify-center gap-2 py-5 text-sm text-slate-500"><LoaderCircle className="animate-spin" size={17} />Cargando moteles…</div> : cityErrors[city.name] ? <div role="alert" className="py-4 text-center text-sm text-slate-600"><p>No se pudieron cargar los moteles de esta ciudad.</p><button type="button" onClick={() => void loadCity(city)} className="mt-2 rounded-lg px-3 py-2 font-semibold text-purple-600">Intentar de nuevo</button></div> : motels.length ? <div className="grid gap-3">{motels.map((motel) => <MotelCard key={motel.id} motel={motel} showFavoriteAction={false} />)}</div> : <p className="py-4 text-center text-sm text-slate-500">No hay moteles publicados en esta ciudad.</p>}</div>}</section>;
         })}</div>
       </section>}
     </main>

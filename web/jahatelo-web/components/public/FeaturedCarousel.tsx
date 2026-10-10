@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useAdvertisements, trackAdEvent } from '@/hooks/useAdvertisements';
-import type { Advertisement } from '@/hooks/useAdvertisements';
+import { trackAdEvent, type Advertisement } from '@/hooks/useAdvertisements';
+import { useHomeFeatured } from '@/components/public/HomeFeaturedProvider';
 import { BLUR_DATA_URL } from '@/components/imagePlaceholders';
 import { MOTEL_PATTERN_STYLE } from '@/components/public/motelPattern';
 import type { PublicMotelListItem } from '@/lib/domain/motels/publicListItem';
@@ -23,39 +23,31 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const [isDragging, setIsDragging] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const { ads } = useAdvertisements('CAROUSEL');
+  const { slides, ads } = useHomeFeatured();
   const [selectedAd, setSelectedAd] = useState<Advertisement | null>(null);
   const [showAdModal, setShowAdModal] = useState(false);
   const trackedAdViews = useRef<Set<string>>(new Set());
+  const carouselRef = useRef<HTMLDivElement>(null);
   const dragStartX = useRef<number | null>(null);
   const dragDeltaX = useRef(0);
   const didDrag = useRef(false);
   const adPlaceholder = '/motel-placeholder.png';
-
   const mixedItems = useMemo(() => {
-    if (!ads.length) {
-      return featuredMotels.map((motel) => ({ type: 'motel' as const, data: motel }));
-    }
-
-    const result: Array<{ type: 'motel' | 'ad'; data: Motel | Advertisement }> = [];
-    const itemsPerAd = 5;
-
-    featuredMotels.forEach((motel, index) => {
-      result.push({ type: 'motel', data: motel });
-      if ((index + 1) % itemsPerAd === 0) {
-        const adIndex = Math.floor(index / itemsPerAd) % ads.length;
-        result.push({ type: 'ad', data: ads[adIndex] });
+    if (!slides) return [];
+    const motelsById = new Map(featuredMotels.map((motel) => [motel.id, motel]));
+    const adsById = new Map(ads.map((ad) => [ad.id, ad]));
+    const result: Array<{ type: 'ad'; data: Advertisement } | { type: 'motel'; data: Motel }> = [];
+    slides.forEach((slide) => {
+      if (slide.kind === 'ad') {
+        const ad = adsById.get(slide.id);
+        if (ad) result.push({ type: 'ad', data: ad });
+      } else {
+        const motel = motelsById.get(slide.id);
+        if (motel) result.push({ type: 'motel', data: motel });
       }
     });
-
-    // Siempre agregar al menos un ad si hay moteles, sin importar cuántos haya
-    if (featuredMotels.length % itemsPerAd !== 0 && ads.length > 0) {
-      const adIndex = Math.floor(featuredMotels.length / itemsPerAd) % ads.length;
-      result.push({ type: 'ad', data: ads[adIndex] });
-    }
-
     return result;
-  }, [featuredMotels, ads]);
+  }, [featuredMotels, ads, slides]);
 
   useEffect(() => {
     // Rota siempre que exista más de una tarjeta visible.
@@ -74,13 +66,17 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
 
   useEffect(() => {
     const currentItem = mixedItems[currentIndex];
-    if (currentItem?.type === 'ad') {
-      const ad = currentItem.data as Advertisement;
-      if (!trackedAdViews.current.has(ad.id)) {
-        trackedAdViews.current.add(ad.id);
-        trackAdEvent({ advertisementId: ad.id, eventType: 'VIEW', source: 'CAROUSEL' });
-      }
-    }
+    if (currentItem?.type !== 'ad' || !carouselRef.current) return;
+    const ad = currentItem.data;
+    if (trackedAdViews.current.has(ad.id)) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries[0]?.isIntersecting || trackedAdViews.current.has(ad.id)) return;
+      trackedAdViews.current.add(ad.id);
+      void trackAdEvent({ advertisementId: ad.id, eventType: 'VIEW', source: 'CAROUSEL' });
+      observer.disconnect();
+    }, { threshold: 0.75 });
+    observer.observe(carouselRef.current);
+    return () => observer.disconnect();
   }, [currentIndex, mixedItems]);
 
   if (mixedItems.length === 0) return null;
@@ -180,7 +176,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
   };
 
   return (
-    <div className="w-full mb-8">
+    <div ref={carouselRef} className="w-full mb-8">
       <div
         className={`group relative h-64 overflow-hidden select-none md:h-80 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         onPointerDown={handlePointerDown}
@@ -206,7 +202,7 @@ export default function FeaturedCarousel({ featuredMotels }: FeaturedCarouselPro
 
             return (
               <div
-                key={`ad-${ad.id}`}
+                key={`ad-${ad.id}-${index}`}
                 className={`absolute top-0 h-full overflow-hidden rounded-2xl shadow-xl transition-all duration-700 ease-out ${slideState.className}`}
                 onClickCapture={focusSlide}
                 style={{ pointerEvents: slideState.interactive ? 'auto' : 'none' }}
