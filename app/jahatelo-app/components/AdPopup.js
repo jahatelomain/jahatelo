@@ -48,18 +48,20 @@ export default function AdPopup({ ads = [], visible, onClose, onTrackView, onTra
   );
 
   useEffect(() => {
+    let active = true;
     if (visible && ad) {
       setImageLoaded(false);
       setImageError(false);
       setReady(false);
       if (imageUrl) {
         Image.prefetch(imageUrl)
-          .then(() => setReady(true))
-          .catch(() => setReady(true));
+          .then(() => { if (active) setReady(true); })
+          .catch(() => { if (active) setReady(true); });
       } else {
         setReady(true);
       }
     }
+    return () => { active = false; };
   }, [visible, ad, imageUrl]);
 
   useEffect(() => {
@@ -107,6 +109,8 @@ export default function AdPopup({ ads = [], visible, onClose, onTrackView, onTra
         <View style={styles.container}>
           {/* Botón cerrar */}
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar anuncio"
             style={styles.closeButton}
             onPress={onClose}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}

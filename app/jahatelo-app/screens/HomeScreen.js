@@ -29,8 +29,6 @@ import LoadingScreen from '../components/LoadingScreen';
 export default function HomeScreen() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
-  const isFocusedRef = useRef(isFocused);
-  useEffect(() => { isFocusedRef.current = isFocused; }, [isFocused]);
   const colors = COLORS;
   const [motels, setMotels] = useState([]);
   const [featuredMotels, setFeaturedMotels] = useState([]);
@@ -45,6 +43,7 @@ export default function HomeScreen() {
   const isMounted = useRef(false);
   const popupStarted = useRef(false);
   const featuredStarted = useRef(false);
+  const popupShownVisit = useRef(-1);
   const [selectedAd, setSelectedAd] = useState(null);
   const [showAdDetailModal, setShowAdDetailModal] = useState(false);
 
@@ -56,11 +55,13 @@ export default function HomeScreen() {
     return () => { isMounted.current = false; };
   }, []);
   // A retained Home tab is not remounted when the app returns from background.
-  // Treat that foreground transition as a new visit, only while Home is active.
+  // Claim a new turn on focus after that foreground transition.
   useEffect(() => {
-    let previousState = AppState.currentState;
+    let wasBackground = AppState.currentState === 'background';
     const subscription = AppState.addEventListener('change', (nextState) => {
-      if ((previousState === 'background' || previousState === 'inactive') && nextState === 'active' && isFocusedRef.current) {
+      if (nextState === 'background') wasBackground = true;
+      if (nextState === 'active' && wasBackground) {
+        wasBackground = false;
         visitId.current = newHomeVisitId();
         popupStarted.current = false;
         featuredStarted.current = false;
@@ -69,7 +70,6 @@ export default function HomeScreen() {
         setFeaturedSlides(null);
         setVisitSequence((current) => current + 1);
       }
-      previousState = nextState;
     });
     return () => subscription.remove();
   }, []);
@@ -80,7 +80,7 @@ export default function HomeScreen() {
   }, [popupSlides, popupAds]);
 
   useEffect(() => {
-    if (loading || popupAdsLoading || popupStarted.current) return;
+    if (!isFocused || loading || popupAdsLoading || popupStarted.current) return;
     popupStarted.current = true;
     if (!popupAds.length) { setPopupSlides([]); return; }
     visitId.current ||= newHomeVisitId();
@@ -91,10 +91,10 @@ export default function HomeScreen() {
         console.warn('Popup rotation unavailable:', err);
         if (isMounted.current && visitId.current === currentVisitId) setPopupSlides([...popupAds].sort((a, b) => a.id.localeCompare(b.id)).map((ad) => ({ kind: 'ad', id: ad.id })));
       });
-  }, [loading, popupAdsLoading, popupAds, visitSequence]);
+  }, [isFocused, loading, popupAdsLoading, popupAds, visitSequence]);
 
   useEffect(() => {
-    if (loading || bannerAdsLoading || featuredStarted.current) return;
+    if (!isFocused || loading || bannerAdsLoading || featuredStarted.current) return;
     featuredStarted.current = true;
     if (!featuredMotels.length && !bannerAds.length) { setFeaturedSlides([]); return; }
     visitId.current ||= newHomeVisitId();
@@ -108,7 +108,7 @@ export default function HomeScreen() {
           ...(bannerAds[0] ? [{ kind: 'ad', id: bannerAds[0].id }] : []),
         ]);
       });
-  }, [loading, bannerAdsLoading, featuredMotels, bannerAds, visitSequence]);
+  }, [isFocused, loading, bannerAdsLoading, featuredMotels, bannerAds, visitSequence]);
 
   const loadMotels = async (isRefreshing = false) => {
     try {
@@ -169,13 +169,20 @@ export default function HomeScreen() {
   }, [error]);
   useOnlineRetry(handleReconnect);
 
-  // Show the assigned popup once per Home visit, never on each re-render.
+  // Show the assigned popup at most once per app visit, when Home is visible.
   useEffect(() => {
-    if (orderedPopupAds.length > 0 && !loading) {
-      const timer = setTimeout(() => setShowAdPopup(true), 1000);
+    if (!isFocused) {
+      setShowAdPopup(false);
+      return;
+    }
+    if (orderedPopupAds.length > 0 && !loading && popupShownVisit.current !== visitSequence) {
+      const timer = setTimeout(() => {
+        popupShownVisit.current = visitSequence;
+        setShowAdPopup(true);
+      }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [orderedPopupAds.length, loading]);
+  }, [orderedPopupAds.length, loading, isFocused, visitSequence]);
 
   const handleRefresh = () => {
     setRefreshing(true);

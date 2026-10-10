@@ -388,7 +388,7 @@ export default function PromoCarousel({
         <Text style={styles.sectionTitle}>{title}</Text>
         <CarouselFlatList
           data={mixedItems}
-          extraData={Platform.OS === 'ios' ? activeIndex : undefined}
+          extraData={activeIndex}
           keyExtractor={(item, index) => `${item.type}-${item.data.id || 'unknown'}-${index}`}
           renderItem={renderItem}
           horizontal
