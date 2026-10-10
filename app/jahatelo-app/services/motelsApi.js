@@ -229,13 +229,16 @@ export const fetchMotels = async (params = {}, useCache = true, requestOptions =
   }
 };
 
-/**
- * Obtiene todos los moteles destacados (isFeatured=true) para el carrusel.
- * Usa limit:50 para no perder destacados que no caigan en el top-20 general.
- * @returns {Promise<Array>} Array de moteles destacados
- */
+// The Home carousel must include every approved motel with the Featured check,
+// not only the first page of the plan-ranked catalogue.
 export const fetchFeaturedMotels = async () => {
-  return fetchMotels({ featured: true, limit: 50 });
+  const all = [];
+  for (let page = 1; ; page += 1) {
+    const batch = await fetchMotels({ featured: true, limit: 50, page });
+    all.push(...batch);
+    if (batch.length < 50) break;
+  }
+  return all;
 };
 
 /**

@@ -909,6 +909,21 @@ model MotelAnalytics {
 // ADVERTISEMENTS
 // ============================================
 
+model HomeRotationCounter {
+  scope      String @id
+  nextTicket BigInt @default(0)
+}
+
+model HomeRotationClaim {
+  scope     String
+  visitId   String
+  ticket    BigInt?
+  createdAt DateTime @default(now())
+
+  @@id([scope, visitId])
+  @@index([createdAt])
+}
+
 model Advertisement {
   id               String      @id @default(cuid())
   title            String

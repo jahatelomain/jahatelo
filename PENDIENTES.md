@@ -22,6 +22,7 @@
 
 - [ ] **JH-001 — Android App Links:** completar el SHA256 del certificado Android de producción en `web/jahatelo-web/public/.well-known/assetlinks.json` y validarlo en un dispositivo físico.
 - [ ] **JH-003 — Enlaces universales:** validar universal links y app links contra los archivos publicados en producción, iOS y Android físicos. La navegación y los dominios ya están configurados.
+- [ ] **JH-081 — Google OAuth antes del lanzamiento público:** Android Google Login funciona para la cuenta de prueba tras registrar la firma de Google Play, pero Google Auth Platform del proyecto Jahatelo sigue en estado **Prueba** y tiene **un solo usuario de prueba**. Antes de salir a producción: revisar pantalla de consentimiento, dominios y scopes; completar la verificación que Google requiera; solicitar autorización explícita para publicar el consentimiento; y probar Google Login **y sesión persistente** con una cuenta no incluida como tester en Web, Android (instalación desde Play) e iOS (build distribuido). No confundir publicar OAuth con subir AAB o hacer deploy; no ejecutar ninguna de esas acciones sin autorización.
 
 ### SEO y adquisición
 

@@ -1,8 +1,8 @@
-import { useNavigation } from '@react-navigation/native';
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useOnlineRetry } from '../hooks/useOnlineRetry';
 import {
-  ActivityIndicator,
+  AppState,
   Platform,
   RefreshControl,
   ScrollView,
@@ -22,11 +22,15 @@ import PromoCarousel from '../components/PromoCarousel';
 import AdPopup from '../components/AdPopup';
 import AdDetailModal from '../components/AdDetailModal';
 import { useAdvertisements } from '../hooks/useAdvertisements';
+import { claimHomeRotation, newHomeVisitId } from '../services/homeRotationService';
 import { COLORS } from '../constants/theme';
 import LoadingScreen from '../components/LoadingScreen';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
+  const isFocused = useIsFocused();
+  const isFocusedRef = useRef(isFocused);
+  useEffect(() => { isFocusedRef.current = isFocused; }, [isFocused]);
   const colors = COLORS;
   const [motels, setMotels] = useState([]);
   const [featuredMotels, setFeaturedMotels] = useState([]);
@@ -34,12 +38,77 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [showAdPopup, setShowAdPopup] = useState(false);
+  const [popupSlides, setPopupSlides] = useState(null);
+  const [featuredSlides, setFeaturedSlides] = useState(null);
+  const [visitSequence, setVisitSequence] = useState(0);
+  const visitId = useRef(null);
+  const isMounted = useRef(false);
+  const popupStarted = useRef(false);
+  const featuredStarted = useRef(false);
   const [selectedAd, setSelectedAd] = useState(null);
   const [showAdDetailModal, setShowAdDetailModal] = useState(false);
 
   // Cargar anuncios
-  const { ads: popupAds, trackAdEvent: trackPopupEvent } = useAdvertisements('POPUP_HOME');
-  const { ads: bannerAds, trackAdEvent: trackBannerEvent } = useAdvertisements('CAROUSEL');
+  const { ads: popupAds, loading: popupAdsLoading, trackAdEvent: trackPopupEvent } = useAdvertisements('POPUP_HOME');
+  const { ads: bannerAds, loading: bannerAdsLoading, trackAdEvent: trackBannerEvent } = useAdvertisements('CAROUSEL');
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
+  // A retained Home tab is not remounted when the app returns from background.
+  // Treat that foreground transition as a new visit, only while Home is active.
+  useEffect(() => {
+    let previousState = AppState.currentState;
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if ((previousState === 'background' || previousState === 'inactive') && nextState === 'active' && isFocusedRef.current) {
+        visitId.current = newHomeVisitId();
+        popupStarted.current = false;
+        featuredStarted.current = false;
+        setShowAdPopup(false);
+        setPopupSlides(null);
+        setFeaturedSlides(null);
+        setVisitSequence((current) => current + 1);
+      }
+      previousState = nextState;
+    });
+    return () => subscription.remove();
+  }, []);
+  const orderedPopupAds = useMemo(() => {
+    if (!popupSlides) return [];
+    const byId = new Map(popupAds.map((ad) => [ad.id, ad]));
+    return popupSlides.map((slide) => byId.get(slide.id)).filter(Boolean);
+  }, [popupSlides, popupAds]);
+
+  useEffect(() => {
+    if (loading || popupAdsLoading || popupStarted.current) return;
+    popupStarted.current = true;
+    if (!popupAds.length) { setPopupSlides([]); return; }
+    visitId.current ||= newHomeVisitId();
+    const currentVisitId = visitId.current;
+    claimHomeRotation('POPUP_HOME', currentVisitId)
+      .then((slides) => { if (isMounted.current && visitId.current === currentVisitId) setPopupSlides(slides); })
+      .catch((err) => {
+        console.warn('Popup rotation unavailable:', err);
+        if (isMounted.current && visitId.current === currentVisitId) setPopupSlides([...popupAds].sort((a, b) => a.id.localeCompare(b.id)).map((ad) => ({ kind: 'ad', id: ad.id })));
+      });
+  }, [loading, popupAdsLoading, popupAds, visitSequence]);
+
+  useEffect(() => {
+    if (loading || bannerAdsLoading || featuredStarted.current) return;
+    featuredStarted.current = true;
+    if (!featuredMotels.length && !bannerAds.length) { setFeaturedSlides([]); return; }
+    visitId.current ||= newHomeVisitId();
+    const currentVisitId = visitId.current;
+    claimHomeRotation('FEATURED_HOME', currentVisitId)
+      .then((slides) => { if (isMounted.current && visitId.current === currentVisitId) setFeaturedSlides(slides); })
+      .catch((err) => {
+        console.warn('Featured rotation unavailable:', err);
+        if (isMounted.current && visitId.current === currentVisitId) setFeaturedSlides([
+          ...featuredMotels.map((motel) => ({ kind: 'motel', id: motel.id })),
+          ...(bannerAds[0] ? [{ kind: 'ad', id: bannerAds[0].id }] : []),
+        ]);
+      });
+  }, [loading, bannerAdsLoading, featuredMotels, bannerAds, visitSequence]);
 
   const loadMotels = async (isRefreshing = false) => {
     try {
@@ -100,16 +169,13 @@ export default function HomeScreen() {
   }, [error]);
   useOnlineRetry(handleReconnect);
 
-  // Mostrar popup de anuncio si hay disponibles (después de 1 segundo)
+  // Show the assigned popup once per Home visit, never on each re-render.
   useEffect(() => {
-    if (popupAds.length > 0 && !loading) {
-      const timer = setTimeout(() => {
-        setShowAdPopup(true);
-      }, 1000);
-
+    if (orderedPopupAds.length > 0 && !loading) {
+      const timer = setTimeout(() => setShowAdPopup(true), 1000);
       return () => clearTimeout(timer);
     }
-  }, [popupAds, loading]);
+  }, [orderedPopupAds.length, loading]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -222,11 +288,13 @@ export default function HomeScreen() {
             {/* Mostrar carrusel de publicidades aunque no haya moteles */}
             {bannerAds.length > 0 && (
               <PromoCarousel
+                key={visitSequence}
                 promos={[]}
                 ads={bannerAds}
+                slides={featuredSlides}
                 onPromoPress={handleMotelPress}
                 onAdClick={handleAdClick}
-                onAdView={trackBannerEvent}
+                onAdView={(id) => trackBannerEvent(id, 'VIEW')}
                 title="Anuncios"
                 badgeLabel=""
                 badgeIconName=""
@@ -251,13 +319,14 @@ export default function HomeScreen() {
           </ScrollView>
 
           {/* Popup publicitario */}
-          {popupAds.length > 0 && (
+          {orderedPopupAds.length > 0 && (
             <AdPopup
-              ad={popupAds[0]}
+              key={visitSequence}
+              ads={orderedPopupAds}
               visible={showAdPopup}
               onClose={() => setShowAdPopup(false)}
-              onTrackView={trackPopupEvent}
-              onTrackClick={trackPopupEvent}
+              onTrackView={(id) => trackPopupEvent(id, 'VIEW')}
+              onTrackClick={(id) => trackPopupEvent(id, 'CLICK')}
             />
           )}
 
@@ -308,11 +377,13 @@ export default function HomeScreen() {
           }
         >
           <PromoCarousel
+            key={visitSequence}
             promos={featuredMotels}
             ads={bannerAds}
+            slides={featuredSlides}
             onPromoPress={handleMotelPress}
             onAdClick={handleAdClick}
-            onAdView={trackBannerEvent}
+            onAdView={(id) => trackBannerEvent(id, 'VIEW')}
             title="Destacados"
             badgeLabel="DESTACADO"
             badgeIconName="star"
@@ -322,13 +393,14 @@ export default function HomeScreen() {
         </ScrollView>
 
         {/* Popup publicitario */}
-        {popupAds.length > 0 && (
+        {orderedPopupAds.length > 0 && (
           <AdPopup
-            ad={popupAds[0]}
+            key={visitSequence}
+            ads={orderedPopupAds}
             visible={showAdPopup}
             onClose={() => setShowAdPopup(false)}
-            onTrackView={trackPopupEvent}
-            onTrackClick={trackPopupEvent}
+            onTrackView={(id) => trackPopupEvent(id, 'VIEW')}
+            onTrackClick={(id) => trackPopupEvent(id, 'CLICK')}
           />
         )}
 

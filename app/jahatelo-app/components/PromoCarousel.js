@@ -13,6 +13,7 @@ import { getMotelPlanGlowTone, hasMotelPlanGlow } from '../constants/motelPlans'
 import MotelLogoHeart from './MotelLogoHeart';
 import { getMotelImageSource, hasRemoteMotelImage } from '../utils/mediaSource';
 import { PLAN_COLORS } from '../constants/theme';
+import { resolveHomeSlides } from '../utils/homeRotation';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.75;
@@ -183,12 +184,12 @@ const AdCard = ({ ad, onPress, index, scrollX, iosScrollX, activeIndex, onTrackV
   const viewTracked = useRef(false);
 
   useEffect(() => {
-    // Registrar vista solo una vez cuando el card se monta
-    if (ad && !viewTracked.current && onTrackView) {
+    // Virtualized cards mount before they are visible. Count only the active one.
+    if (ad && index === activeIndex && !viewTracked.current && onTrackView) {
       onTrackView(ad.id);
       viewTracked.current = true;
     }
-  }, [ad, onTrackView]);
+  }, [ad, index, activeIndex, onTrackView]);
 
   const image = ad.imageUrl || null;
   const imageSource = getMotelImageSource(image);
@@ -297,6 +298,7 @@ const CarouselAnimatedView = Platform.OS === 'ios' ? RNAnimated.View : Animated.
 export default function PromoCarousel({
   promos = [],
   ads = [],
+  slides = null,
   onPromoPress,
   onAdClick,
   onAdView,
@@ -315,32 +317,8 @@ export default function PromoCarousel({
     },
   });
 
-  // Mezclar promos con anuncios cada 5 items o al final si hay menos de 5
-  const mixedItems = React.useMemo(() => {
-    if (!ads || ads.length === 0) {
-      return promos.map(item => ({ type: 'promo', data: item }));
-    }
-
-    const result = [];
-    const itemsPerAd = 5;
-
-    promos.forEach((promo, index) => {
-      result.push({ type: 'promo', data: promo });
-
-      // Insertar anuncio cada 5 items
-      if ((index + 1) % itemsPerAd === 0 && ads.length > 0) {
-        const adIndex = Math.floor(index / itemsPerAd) % ads.length;
-        result.push({ type: 'ad', data: ads[adIndex] });
-      }
-    });
-
-    // Si no llegamos a 5 destacados, agregar anuncio al final
-    if (promos.length < itemsPerAd && ads.length > 0) {
-      result.push({ type: 'ad', data: ads[0] });
-    }
-
-    return result;
-  }, [promos, ads]);
+  // The server selects both the first card and the ad creative in each slot.
+  const mixedItems = React.useMemo(() => resolveHomeSlides(slides, promos, ads), [slides, promos, ads]);
 
   useEffect(() => {
     activeIndexRef.current = 0;
@@ -350,7 +328,6 @@ export default function PromoCarousel({
   if (!mixedItems.length) return null;
 
   const syncActiveIndexFromOffset = (offsetX) => {
-    if (Platform.OS !== 'ios') return;
     const nextIndex = Math.round(offsetX / (CARD_WIDTH + SPACING));
     const clampedIndex = Math.max(0, Math.min(nextIndex, mixedItems.length - 1));
     if (clampedIndex === activeIndexRef.current) return;
@@ -412,7 +389,7 @@ export default function PromoCarousel({
         <CarouselFlatList
           data={mixedItems}
           extraData={Platform.OS === 'ios' ? activeIndex : undefined}
-          keyExtractor={(item, index) => `${item.type}-${item.data.id || index}`}
+          keyExtractor={(item, index) => `${item.type}-${item.data.id || 'unknown'}-${index}`}
           renderItem={renderItem}
           horizontal
           style={styles.list}
