@@ -1,39 +1,30 @@
 /* global describe, expect, it, jest */
 import React from 'react';
-import { act, create } from 'react-test-renderer';
-import { Text } from 'react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import AdPopup from '../AdPopup';
 
 describe('AdPopup', () => {
-  it('shows the assigned first ad, navigates to the rest, and tracks only displayed ads', async () => {
+  it('shows the assigned first ad and tracks only displayed ads', async () => {
     const onTrackView = jest.fn();
     const onClose = jest.fn();
     const ads = [
       { id: 'ad-b', title: 'Segundo anuncio' },
       { id: 'ad-a', title: 'Primer anuncio' },
     ];
-    let tree;
-    await act(async () => {
-      tree = create(<AdPopup ads={ads} visible onClose={onClose} onTrackView={onTrackView} onTrackClick={jest.fn()} />);
-    });
-    const hasText = (text) => tree.root.findAllByType(Text).some((node) => node.props.children === text);
-    const press = async (label) => {
-      await act(async () => tree.root.findByProps({ accessibilityLabel: label }).props.onPress());
-    };
-
-    expect(hasText('Segundo anuncio')).toBe(true);
+    const screen = await render(<AdPopup ads={ads} visible onClose={onClose} onTrackView={onTrackView} onTrackClick={jest.fn()} />);
+    await waitFor(() => expect(onTrackView).toHaveBeenCalledWith('ad-b'));
     expect(onTrackView).toHaveBeenCalledTimes(1);
-    expect(onTrackView).toHaveBeenCalledWith('ad-b');
+    expect(screen.getByText('Segundo anuncio')).toBeTruthy();
 
-    await press('Anuncio siguiente');
-    expect(hasText('Primer anuncio')).toBe(true);
+    await fireEvent.press(screen.getByLabelText('Anuncio siguiente'));
+    await waitFor(() => expect(onTrackView).toHaveBeenCalledWith('ad-a'));
     expect(onTrackView).toHaveBeenCalledTimes(2);
-    expect(onTrackView).toHaveBeenCalledWith('ad-a');
+    expect(screen.getByText('Primer anuncio')).toBeTruthy();
 
-    await press('Anuncio anterior');
+    await fireEvent.press(screen.getByLabelText('Anuncio anterior'));
     expect(onTrackView).toHaveBeenCalledTimes(2);
-    await press('Cerrar anuncio');
+    await fireEvent.press(screen.getByLabelText('Cerrar anuncio'));
     expect(onClose).toHaveBeenCalledTimes(1);
-    await act(async () => tree.unmount());
+    await screen.unmount();
   });
 });
