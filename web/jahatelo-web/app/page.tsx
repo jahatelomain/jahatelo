@@ -64,7 +64,7 @@ export default async function HomePage() {
       <Navbar />
       <MobileHome featuredMotels={featuredMotels} cities={cities} />
       <main data-testid="homepage-main" className="hidden md:block">
-        {/* Hero */}
+        {/* Hero — fondo oscuro solo hasta debajo del buscador */}
         <section className="relative bg-gradient-to-br from-[#0f0f1a] via-[#161624] to-[#1a1530] overflow-hidden">
           {/* Glow decorativo flotante */}
           <div className="absolute top-0 left-1/2 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-3xl pointer-events-none animate-glow-float" />
@@ -93,21 +93,21 @@ export default async function HomePage() {
             </div>
 
             {/* Buscador */}
-            <div className="relative z-[70] animate-fade-up-delay-3 max-w-2xl mx-auto mb-12">
+            <div className="relative z-[70] animate-fade-up-delay-3 max-w-2xl mx-auto">
               <SearchBar />
-            </div>
-
-            {/* Carousel destacados / publicidades */}
-            <div className="relative z-10 animate-fade-up-delay-4 max-w-5xl mx-auto mb-12">
-              <FeaturedCarousel featuredMotels={featuredMotels} />
-            </div>
-
-            {/* Cards de categorías */}
-            <div className="max-w-5xl mx-auto">
-              <CategoriesGrid categories={categories} />
             </div>
           </div>
         </section>
+
+        {/* Carousel y categorías sobre fondo blanco */}
+        <div className="bg-white py-12">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+            <FeaturedCarousel featuredMotels={featuredMotels} />
+          </div>
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <CategoriesGrid categories={categories} />
+          </div>
+        </div>
 
         {featuredMotels.length > 0 && <FeaturedMotels motels={featuredMotels.slice(0, 6)} />}
         {cities.length > 0 && (
