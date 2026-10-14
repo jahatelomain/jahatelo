@@ -222,8 +222,8 @@ export default function MotelCard({ motel, compact = false, showFavoriteAction =
             ) : null}
           </div>
 
-          {/* Amenities */}
-          <div className={`${compact ? 'mb-2 min-h-0' : 'mb-3 min-h-8'} flex flex-wrap gap-2 overflow-hidden`}>
+          {/* Amenities — altura fija para igualar tarjetas con/sin amenities */}
+          <div className={`${compact ? 'mb-2' : 'mb-3'} h-8 flex flex-wrap gap-2 overflow-hidden`}>
             {topAmenities.map((amenity, idx) => {
                 const label = amenity.name;
                 const IconComponent = amenity.icon ? iconLibrary[amenity.icon] : undefined;
