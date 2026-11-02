@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { geocodeMultipleAddresses } from '@/lib/geocoding';
+import { findOfficialGooglePlace } from '@/lib/googlePlaces';
 import { requireAdminAccess } from '@/lib/adminAccess';
 import { logAuditEvent } from '@/lib/audit';
 import { EmptySchema } from '@/lib/validations/schemas';
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
         address: true,
         city: true,
         country: true,
+        mapUrl: true,
       },
     });
 
@@ -53,13 +55,38 @@ export async function POST(request: Request) {
     // Geocode all addresses with rate limiting (200ms delay between requests)
     const results = await geocodeMultipleAddresses(addresses, 200);
 
-    // Update motels with coordinates
-    const updates = [];
+    // Update motels with coordinates. Prefer the official Google place when a
+    // map URL is present; this resolves short maps.app.goo.gl links that do not
+    // contain coordinates themselves. Fall back to address geocoding.
+    const updates: Array<{
+      id: string;
+      name: string;
+      latitude: number;
+      longitude: number;
+      googlePlaceId?: string;
+      mapUrl?: string;
+    }> = [];
     const failed = [];
 
     for (let i = 0; i < motels.length; i++) {
       const motel = motels[i];
-      const result = results[i];
+      let result = results[i];
+      let googlePlaceId: string | undefined;
+      let canonicalMapUrl: string | undefined;
+
+      if (motel.mapUrl) {
+        const place = await findOfficialGooglePlace({
+          name: motel.name,
+          address: motel.address,
+          city: motel.city,
+          country: motel.country || 'Paraguay',
+        });
+        if (place) {
+          result = { lat: place.latitude, lng: place.longitude };
+          googlePlaceId = place.id;
+          canonicalMapUrl = place.googleMapsUri || undefined;
+        }
+      }
 
       if (result) {
         updates.push({
@@ -67,6 +94,8 @@ export async function POST(request: Request) {
           name: motel.name,
           latitude: result.lat,
           longitude: result.lng,
+          googlePlaceId,
+          mapUrl: canonicalMapUrl,
         });
       } else {
         failed.push({
@@ -86,6 +115,8 @@ export async function POST(request: Request) {
           data: {
             latitude: update.latitude,
             longitude: update.longitude,
+            ...(update.googlePlaceId ? { googlePlaceId: update.googlePlaceId } : {}),
+            ...(update.mapUrl ? { mapUrl: update.mapUrl } : {}),
           },
         });
       }
