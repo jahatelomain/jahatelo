@@ -359,14 +359,28 @@ export default function MobileHome({ featuredMotels, cities }: { featuredMotels:
       </section>
 
       {/* ═══════ CIUDADES EXPANDIBLES ═══════ */}
-      {cities.length > 0 && (
-        <section id="cities" className="px-4 py-2">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-extrabold text-[#2E0338]">Explorar por ciudad</h2>
-            <Link href="/search" className="text-[12px] font-extrabold text-[#8E2DE2]">
-              Ver todas
-            </Link>
+      <section id="cities" className="px-4 py-2">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-extrabold text-[#2E0338]">Explorar por ciudad</h2>
+          <Link href="/search" className="text-[12px] font-extrabold text-[#8E2DE2]">
+            Ver todas
+          </Link>
+        </div>
+        {/* Skeleton de ciudades mientras no hay datos */}
+        {cities.length === 0 && (
+          <div className="space-y-2" aria-busy="true" aria-label="Cargando ciudades">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-3 rounded-2xl border border-[#ECE4F4] bg-white p-3.5 shadow-[0_4px_12px_rgba(42,0,56,0.06)]">
+                <span className="inline-flex h-9 w-9 animate-pulse items-center justify-center rounded-xl bg-[#ECE4F4]" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-2/3 animate-pulse rounded bg-[#ECE4F4]" />
+                  <div className="h-3 w-1/3 animate-pulse rounded bg-[#ECE4F4]" />
+                </div>
+              </div>
+            ))}
           </div>
+        )}
+        {cities.length > 0 && (
           <div className="space-y-2">
             {cities.slice(0, 5).map((city) => {
               const isExpanded = expandedCity === city.name;
@@ -431,8 +445,8 @@ export default function MobileHome({ featuredMotels, cities }: { featuredMotels:
               );
             })}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* ═══════ REDES SOCIALES ═══════ */}
       <section className="px-4 pb-4 pt-6 text-center">

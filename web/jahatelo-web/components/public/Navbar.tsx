@@ -8,11 +8,11 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
 
   const isActive = (path: string) => pathname === path;
+  const activeAria = (path: string) => (isActive(path) ? { 'aria-current': 'page' as const } : {});
 
   const handleLogout = async () => {
     if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
@@ -42,6 +42,7 @@ export default function Navbar() {
           <div className="hidden md:flex flex-1 items-center justify-center gap-14">
             <Link
               href="/"
+              {...activeAria('/')}
               className={`font-medium transition-colors ${
                 isActive('/')
                   ? 'text-purple-600'
@@ -52,6 +53,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="/search"
+              {...activeAria('/search')}
               className={`font-medium transition-colors ${
                 isActive('/search')
                   ? 'text-purple-600'
@@ -62,6 +64,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="/nearby"
+              {...activeAria('/nearby')}
               className={`font-medium transition-colors ${
                 isActive('/nearby')
                   ? 'text-purple-600'
@@ -72,6 +75,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="/mapa"
+              {...activeAria('/mapa')}
               className={`font-medium transition-colors ${
                 isActive('/mapa')
                   ? 'text-purple-600'
@@ -82,6 +86,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="/contacto"
+              {...activeAria('/contacto')}
               className={`font-medium transition-colors ${
                 isActive('/contacto')
                   ? 'text-purple-600'
@@ -159,133 +164,17 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile: la navegación principal vive en la barra inferior, como en iOS. */}
+          {/* Mobile: la navegación principal vive en PublicMobileShell / barra inferior tipo iOS. */}
           <div className="md:hidden flex items-center gap-3">
-            <Link href={isAuthenticated ? '/perfil' : '/login'} aria-label={isAuthenticated ? 'Ir a mi perfil' : 'Iniciar sesión'} className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-purple-600 text-sm font-bold text-white shadow-sm">
+            <Link
+              href={isAuthenticated ? '/perfil' : '/login'}
+              aria-label={isAuthenticated ? 'Ir a mi perfil' : 'Iniciar sesión'}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-purple-600 text-sm font-bold text-white shadow-sm"
+            >
               {isAuthenticated ? (user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U') : '↗'}
             </Link>
           </div>
         </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 py-4">
-            <div className="flex flex-col gap-4">
-              <Link
-                href="/"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`font-medium transition-colors ${
-                  isActive('/')
-                    ? 'text-purple-600'
-                    : 'text-gray-600 hover:text-purple-600'
-                }`}
-              >
-                Inicio
-              </Link>
-              <Link
-                href="/search"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`font-medium transition-colors ${
-                  isActive('/search')
-                    ? 'text-purple-600'
-                    : 'text-gray-600 hover:text-purple-600'
-                }`}
-              >
-                Buscar Moteles
-              </Link>
-              <Link
-                href="/nearby"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`font-medium transition-colors ${
-                  isActive('/nearby')
-                    ? 'text-purple-600'
-                    : 'text-gray-600 hover:text-purple-600'
-                }`}
-              >
-                Cerca de mí
-              </Link>
-              <Link
-                href="/mapa"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`font-medium transition-colors ${
-                  isActive('/mapa')
-                    ? 'text-purple-600'
-                    : 'text-gray-600 hover:text-purple-600'
-                }`}
-              >
-                Mapa
-              </Link>
-              <Link
-                href="/contacto"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`font-medium transition-colors ${
-                  isActive('/contacto')
-                    ? 'text-purple-600'
-                    : 'text-gray-600 hover:text-purple-600'
-                }`}
-              >
-                Contactanos
-              </Link>
-
-              {/* Mobile Auth Section */}
-              {isAuthenticated ? (
-                <>
-                  <div className="border-t border-gray-200 pt-4 mt-2">
-                    <div className="flex items-center gap-3 mb-4 px-2">
-                      <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-medium">
-                        {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{user?.name || 'Usuario'}</p>
-                        <p className="text-xs text-gray-500">{user?.email}</p>
-                      </div>
-                    </div>
-                    <Link
-                      href="/perfil"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block font-medium text-gray-600 hover:text-purple-600 transition-colors mb-3"
-                    >
-                      Mi Perfil
-                    </Link>
-                    <Link
-                      href="/mis-favoritos"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block font-medium text-gray-600 hover:text-purple-600 transition-colors mb-3"
-                    >
-                      Mis Favoritos
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        handleLogout();
-                      }}
-                      className="w-full text-left font-medium text-red-600 hover:text-red-700 transition-colors"
-                    >
-                      Cerrar Sesión
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="border-t border-gray-200 pt-4 mt-2 flex flex-col gap-3">
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="font-medium text-center py-2 text-purple-600 border border-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
-                  >
-                    Iniciar sesión
-                  </Link>
-                  <Link
-                    href="/register"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="font-medium text-center py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                  >
-                    Registrarse
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </nav>
   );

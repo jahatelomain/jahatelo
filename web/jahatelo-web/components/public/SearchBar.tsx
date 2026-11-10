@@ -139,8 +139,12 @@ export default function SearchBar() {
           className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl z-[90] overflow-hidden max-h-80 overflow-y-auto"
         >
           {loading && (
-            <li aria-live="polite" className="px-4 py-3 text-sm text-slate-500">
-              Cargando sugerencias...
+            <li aria-live="polite" aria-busy="true" className="px-4 py-3">
+              <div className="flex items-center gap-3">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-purple-200 border-t-purple-600" />
+                <span className="h-4 w-2/3 animate-pulse rounded bg-slate-100" />
+              </div>
+              <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-slate-100" />
             </li>
           )}
           {!loading && noResults && (

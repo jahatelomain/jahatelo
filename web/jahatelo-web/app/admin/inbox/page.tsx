@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { usePersistentAdminFilters } from '@/hooks/usePersistentAdminFilters';
 
 interface ContactMessage {
   id: string;
@@ -27,7 +28,7 @@ export default function InboxPage() {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const [filter, setFilter] = usePersistentAdminFilters<'all' | 'unread' | 'read'>('inbox-filter', 'all');
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [summary, setSummary] = useState<{ readCount: number; unreadCount: number }>({
