@@ -1,11 +1,8 @@
-import Navbar from '@/components/public/Navbar';
-import Footer from '@/components/public/Footer';
 import MobilePageHeader from '@/components/public/MobilePageHeader';
 
 export default function SupportPage() {
   return (
     <>
-      <Navbar />
       <MobilePageHeader title="Soporte" />
       <div className="min-h-screen bg-slate-50">
         <div className="bg-gradient-to-br from-purple-600 to-purple-800">
@@ -114,7 +111,6 @@ export default function SupportPage() {
           </div>
         </div>
       </div>
-      <Footer />
-    </>
-  );
-}
+       </>
+       );
+      }

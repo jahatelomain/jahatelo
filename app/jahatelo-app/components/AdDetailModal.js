@@ -19,7 +19,7 @@ import Animated, {
   withTiming,
 } from '../utils/reanimatedCompat';
 import * as Haptics from 'expo-haptics';
-import { COLORS } from '../constants/theme';
+import { COLORS, TOUCH_TARGET } from '../constants/theme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MODAL_HEIGHT = SCREEN_HEIGHT * 0.7;
@@ -101,6 +101,8 @@ export default function AdDetailModal({ visible, ad, onClose, onTrackClick }) {
             style={StyleSheet.absoluteFillObject}
             activeOpacity={1}
             onPress={handleClose}
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar anuncio"
           />
         </Animated.View>
 
@@ -137,6 +139,8 @@ export default function AdDetailModal({ visible, ad, onClose, onTrackClick }) {
               style={styles.closeButton}
               onPress={handleClose}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Cerrar anuncio"
             >
               <Ionicons name="close" size={28} color={COLORS.white} />
             </TouchableOpacity>
@@ -250,9 +254,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 16,
     right: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: TOUCH_TARGET,
+    height: TOUCH_TARGET,
+    borderRadius: TOUCH_TARGET / 2,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',

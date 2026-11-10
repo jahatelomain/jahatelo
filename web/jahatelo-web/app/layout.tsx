@@ -4,8 +4,7 @@ import "./globals.css";
 import PwaRegistrar from "@/components/public/PwaRegistrar";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import AgeGate from "@/components/public/AgeGate";
-import AnalyticsProvider from "@/components/AnalyticsProvider";
+
 import GoogleAuthProvider from "@/components/GoogleAuthProvider";
 import PublicMobileShell from "@/components/public/PublicMobileShell";
 
@@ -14,6 +13,13 @@ const lato = Lato({
   variable: "--font-lato",
   subsets: ["latin"],
 });
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jahatelo.com';
+
+if (process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_APP_URL) {
+  // eslint-disable-next-line no-console
+  console.warn('[layout] NEXT_PUBLIC_APP_URL no está definida; usando fallback:', APP_URL);
+}
 
 export const viewport: Viewport = {
   themeColor: '#822DE2',
@@ -99,9 +105,7 @@ export default function RootLayout({
         <GoogleAuthProvider>
           <AuthProvider>
             <ToastProvider>
-              <AgeGate />
               <PwaRegistrar />
-              <AnalyticsProvider />
               <PublicMobileShell>{children}</PublicMobileShell>
             </ToastProvider>
           </AuthProvider>

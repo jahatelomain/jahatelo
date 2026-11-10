@@ -23,13 +23,14 @@ import AdPopup from '../components/AdPopup';
 import AdDetailModal from '../components/AdDetailModal';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { claimHomeRotation, newHomeVisitId } from '../services/homeRotationService';
-import { COLORS } from '../constants/theme';
+import useTheme from '../hooks/useTheme';
+import AppStateView from '../components/AppStateView';
 import LoadingScreen from '../components/LoadingScreen';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
-  const colors = COLORS;
+  const { colors } = useTheme();
   const [motels, setMotels] = useState([]);
   const [featuredMotels, setFeaturedMotels] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -113,7 +114,9 @@ export default function HomeScreen() {
   const loadMotels = async (isRefreshing = false) => {
     try {
       if (!isRefreshing) setLoading(true);
-      setError(null);
+      // No limpiar error inmediatamente: preservarlo hasta que la carga tenga éxito real.
+      // Esto evita que el banner de error desaparezca antes de que el usuario pueda leerlo
+      // durante reintentos automáticos silenciosos (useOnlineRetry).
       // Cargar en paralelo y tolerar fallo parcial de destacados.
       const [motelsResult, featuredResult] = await Promise.allSettled([
         fetchMotels(),
@@ -132,6 +135,8 @@ export default function HomeScreen() {
 
       setMotels(data);
       setFeaturedMotels(featured);
+      // Solo limpiar error DESPUÉS de confirmar que los datos cargaron correctamente
+      setError(null);
     } catch (err) {
       console.error('Error al cargar moteles:', err);
       const errorMessage = err.message || 'Error al cargar moteles';
@@ -234,30 +239,13 @@ export default function HomeScreen() {
 
   if (error && !refreshing) {
     return (
-      <>
-        <StatusBar
-          barStyle="light-content"
-          backgroundColor={colors.primary}
-          translucent={Platform.OS === 'android'}
-        />
-        <View style={[styles.screen, { backgroundColor: colors.background }]}>
-          <View style={[styles.centerContainer, { backgroundColor: colors.primary, padding: 24 }]}>
-            <Text style={[styles.errorIcon, { color: colors.white }]}>⚠️</Text>
-            <Text style={[styles.errorTitle, { color: colors.white }]}>Error de conexión</Text>
-            <Text style={[styles.errorMessage, { color: colors.white, opacity: 0.9 }]}>{error}</Text>
-            <Text style={[styles.errorHint, { color: colors.white, opacity: 0.7 }]}>
-              Verifica tu conexión a internet o las credenciales de staging
-            </Text>
-            <TouchableOpacity
-              style={[styles.retryButton, { backgroundColor: colors.white }]}
-              onPress={() => loadMotels(false)}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.retryButtonText, { color: colors.primary }]}>🔄 Reintentar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </>
+      <AppStateView
+        type="error"
+        title="Error de conexión"
+        message={`${error}. Verifica tu conexión a internet o las credenciales de staging.`}
+        actionLabel="Reintentar"
+        onAction={() => loadMotels(false)}
+      />
     );
   }
 

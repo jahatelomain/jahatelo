@@ -2,15 +2,29 @@ import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-si
 import Constants from 'expo-constants';
 
 const WEB_CLIENT_ID = Constants.expoConfig?.extra?.googleClientIdWeb || null;
+const IOS_CLIENT_ID = Constants.expoConfig?.extra?.googleClientIdIos || null;
 
-// Configurar Google Sign-In una sola vez al cargar el módulo
-if (WEB_CLIENT_ID) {
-  GoogleSignin.configure({
-    webClientId: WEB_CLIENT_ID,
-    scopes: ['profile', 'email'],
-    offlineAccess: true,
-    forceCodeForRefreshToken: false,
-  });
+let _configured = false;
+
+/**
+ * Configura Google Sign-In de forma lazy (solo una vez, dentro del hook).
+ * Evita el crash nativo RNGoogleSignin configure cuando se llama en el
+ * scope del módulo antes de que el bridge esté listo.
+ */
+function ensureConfigured() {
+  if (_configured || !WEB_CLIENT_ID) return;
+  try {
+    GoogleSignin.configure({
+      webClientId: WEB_CLIENT_ID,
+      iosClientId: IOS_CLIENT_ID || undefined,
+      scopes: ['profile', 'email'],
+      offlineAccess: true,
+      forceCodeForRefreshToken: false,
+    });
+    _configured = true;
+  } catch (e) {
+    console.error('[GoogleSignin] configure failed:', e);
+  }
 }
 
 /**
@@ -19,6 +33,9 @@ if (WEB_CLIENT_ID) {
  * Esto evita problemas con redirect URIs personalizadas en Google Console
  */
 export const useGoogleAuth = () => {
+  // Configurar lazy antes de cualquier uso del SDK nativo
+  ensureConfigured();
+
   const promptAsync = async () => {
     try {
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });

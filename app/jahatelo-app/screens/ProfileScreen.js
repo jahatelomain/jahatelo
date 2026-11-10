@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity,  ActivityIndicato
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, STATUS_COLORS } from '../constants/theme';
+import useTheme from '../hooks/useTheme';
 import { APP_BUILD_LABEL } from '../constants/appBuild';
 import { showMessage } from '../utils/appFeedback';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,9 +16,11 @@ import {
   getRecentViews,
 } from '../services/cacheService';
 import LoadingScreen from '../components/LoadingScreen';
+import { useOnlineRetry } from '../hooks/useOnlineRetry';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
+  const { colors } = useTheme();
   const { user, isAuthenticated, logout, isLoading: authLoading } = useAuth();
   const [cacheSize, setCacheSize] = useState('0 Bytes');
   const [recentViewsCount, setRecentViewsCount] = useState(0);
@@ -58,6 +60,14 @@ export default function ProfileScreen() {
       setRefreshing(false);
     }
   }, []);
+
+  // Retry automático al reconectar a internet (patrón HomeScreen)
+  // ProfileScreen no tiene estado de error de red propio, pero el hook
+  // garantiza que si el usuario vuelve online tras un fallo silencioso de
+  // cacheService, la info se refresca automáticamente.
+  useOnlineRetry(useCallback(() => {
+    loadCacheInfo();
+  }, []));
 
   const handleRegisterMotel = () => {
     navigation.navigate('RegisterMotel');
@@ -149,15 +159,15 @@ export default function ProfileScreen() {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} />}
       >
         {/* Header Section */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             {isAuthenticated && user?.profilePhoto ? (
-              <Image source={{ uri: user.profilePhoto }} style={styles.avatar} />
+              <Image source={{ uri: user.profilePhoto }} style={styles.avatar} cachePolicy="memory-disk" />
             ) : (
-              <Ionicons name="person" size={40} color={COLORS.white} />
+              <Ionicons name="person" size={40} color={colors.white} />
             )}
           </View>
 
@@ -170,13 +180,13 @@ export default function ProfileScreen() {
               {user?.stats && (
                 <View style={styles.statsContainer}>
                   <View style={styles.statItem}>
-                    <Ionicons name="heart" size={24} color={COLORS.primary} />
+                    <Ionicons name="heart" size={24} color={colors.primary} />
                     <Text style={styles.statValue}>{user.stats.favoritesCount || 0}</Text>
                     <Text style={styles.statLabel}>Favoritos</Text>
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statItem}>
-                    <Ionicons name="star" size={24} color={COLORS.primary} />
+                    <Ionicons name="star" size={24} color={colors.primary} />
                     <Text style={styles.statValue}>{user.stats.reviewsCount || 0}</Text>
                     <Text style={styles.statLabel}>Reseñas</Text>
                   </View>
@@ -193,15 +203,19 @@ export default function ProfileScreen() {
               {/* Login/Register buttons for guest */}
               <View style={styles.authButtonsContainer}>
                 <TouchableOpacity
-                  style={styles.loginButton}
-                  onPress={() => navigation.navigate('Login')}
-                >
+                 style={styles.loginButton}
+                 onPress={() => navigation.navigate('Login')}
+                 accessibilityRole="button"
+                 accessibilityLabel="Iniciar sesión"
+                 >
                   <Text style={styles.loginButtonText}>Iniciar sesión</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   style={styles.registerButton}
                   onPress={() => navigation.navigate('Register')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Crear cuenta"
                 >
                   <Text style={styles.registerButtonText}>Crear cuenta</Text>
                 </TouchableOpacity>
@@ -250,10 +264,10 @@ export default function ProfileScreen() {
               accessibilityLabel="Datos y almacenamiento"
             >
               <View style={styles.optionLeft}>
-                <Ionicons name="archive-outline" size={24} color={COLORS.primary} />
+                <Ionicons name="archive-outline" size={24} color={colors.primary} />
                 <Text style={styles.optionTitle}>Datos y almacenamiento</Text>
               </View>
-              <Ionicons name={showDataTools ? 'chevron-up' : 'chevron-down'} size={20} color={COLORS.gray} />
+              <Ionicons name={showDataTools ? 'chevron-up' : 'chevron-down'} size={20} color={colors.gray} />
             </TouchableOpacity>
 
             {showDataTools && (
@@ -261,7 +275,7 @@ export default function ProfileScreen() {
             {/* Info Row - Cache Size */}
             <View style={styles.infoRow}>
               <View style={styles.optionLeft}>
-                <Ionicons name="archive-outline" size={24} color={COLORS.primary} />
+                <Ionicons name="archive-outline" size={24} color={colors.primary} />
                 <View style={styles.infoContent}>
                   <Text style={styles.optionTitle}>Datos guardados</Text>
                   <Text style={styles.infoSubtitle}>{cacheSize}</Text>
@@ -272,7 +286,7 @@ export default function ProfileScreen() {
             {/* Info Row - Recent Views */}
             <View style={styles.infoRow}>
               <View style={styles.optionLeft}>
-                <Ionicons name="time-outline" size={24} color={COLORS.primary} />
+                <Ionicons name="time-outline" size={24} color={colors.primary} />
                 <View style={styles.infoContent}>
                   <Text style={styles.optionTitle}>Vistos recientemente</Text>
                   <Text style={styles.infoSubtitle}>
@@ -286,7 +300,7 @@ export default function ProfileScreen() {
             {lastSyncDate && (
               <View style={styles.infoRow}>
                 <View style={styles.optionLeft}>
-                  <Ionicons name="sync-outline" size={24} color={COLORS.primary} />
+                  <Ionicons name="sync-outline" size={24} color={colors.primary} />
                   <View style={styles.infoContent}>
                     <Text style={styles.optionTitle}>Última sincronización</Text>
                     <Text style={styles.infoSubtitle}>
@@ -317,15 +331,15 @@ export default function ProfileScreen() {
               activeOpacity={0.7}
             >
               <View style={styles.optionLeft}>
-                <Ionicons name="trash-outline" size={24} color={STATUS_COLORS.dangerSoft} />
-                <Text style={[styles.optionTitle, { color: STATUS_COLORS.dangerSoft }]}>
+                <Ionicons name="trash-outline" size={24} color={STATUS_colors.dangerSoft} />
+                <Text style={[styles.optionTitle, { color: STATUS_colors.dangerSoft }]}>
                   Limpiar todos los datos guardados
                 </Text>
               </View>
               {loading ? (
-                <ActivityIndicator size="small" color={STATUS_COLORS.dangerSoft} />
+                <ActivityIndicator size="small" color={STATUS_colors.dangerSoft} />
               ) : (
-                <Ionicons name="chevron-forward" size={20} color={COLORS.gray} />
+                <Ionicons name="chevron-forward" size={20} color={colors.gray} />
               )}
             </TouchableOpacity>
               </>
@@ -389,7 +403,7 @@ export default function ProfileScreen() {
             />
           </View>
           <View style={styles.buildInfo}>
-            <Ionicons name="code-slash-outline" size={15} color={COLORS.gray} />
+            <Ionicons name="code-slash-outline" size={15} color={colors.gray} />
             <Text style={styles.buildInfoText}>Versión instalada: {APP_BUILD_LABEL}</Text>
           </View>
         </View>
@@ -398,10 +412,15 @@ export default function ProfileScreen() {
         {isAuthenticated && (
           <View style={styles.section}>
             <View style={styles.optionsContainer}>
-              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <Ionicons name="log-out-outline" size={24} color={STATUS_COLORS.dangerSoft} />
-                <Text style={styles.logoutText}>Cerrar sesión</Text>
-              </TouchableOpacity>
+              <TouchableOpacity
+               style={styles.logoutButton}
+               onPress={handleLogout}
+               accessibilityRole="button"
+               accessibilityLabel="Cerrar sesión"
+               >
+               <Ionicons name="log-out-outline" size={24} color={STATUS_colors.dangerSoft} />
+               <Text style={styles.logoutText}>Cerrar sesión</Text>
+               </TouchableOpacity>
             </View>
           </View>
         )}
@@ -422,10 +441,10 @@ function OptionRow({ icon, title, onPress }) {
       activeOpacity={0.7}
     >
       <View style={styles.optionLeft}>
-        <Ionicons name={icon} size={24} color={COLORS.primary} />
+        <Ionicons name={icon} size={24} color={colors.primary} />
         <Text style={styles.optionTitle}>{title}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color={COLORS.gray} />
+      <Ionicons name="chevron-forward" size={20} color={colors.gray} />
     </TouchableOpacity>
   );
 }
@@ -433,7 +452,7 @@ function OptionRow({ icon, title, onPress }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.backgroundDark,
+    backgroundColor: colors.backgroundDark,
   },
   loadingContainer: {
     flex: 1,
@@ -444,18 +463,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.white,
     alignItems: 'center',
     paddingVertical: 32,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   avatarContainer: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -469,12 +488,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: 8,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: COLORS.textLight,
+    color: colors.textLight,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -484,26 +503,26 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loginButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
   },
   loginButtonText: {
-    color: COLORS.white,
+    color: colors.white,
     fontSize: 16,
     fontWeight: '600',
   },
   registerButton: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.white,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
   },
   registerButtonText: {
-    color: COLORS.primary,
+    color: colors.primary,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -521,17 +540,17 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 40,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
   },
   statValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.text,
+    color: colors.text,
     marginTop: 8,
   },
   statLabel: {
     fontSize: 12,
-    color: COLORS.textLight,
+    color: colors.textLight,
     marginTop: 4,
   },
   section: {
@@ -540,12 +559,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: 12,
     paddingHorizontal: 16,
   },
   optionsContainer: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.white,
     marginHorizontal: 16,
     borderRadius: 8,
     overflow: 'hidden',
@@ -556,7 +575,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.divider,
+    borderBottomColor: colors.divider,
   },
   buildInfo: {
     flexDirection: 'row',
@@ -566,7 +585,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   buildInfoText: {
-    color: COLORS.gray,
+    color: colors.gray,
     fontSize: 12,
     fontWeight: '500',
   },
@@ -577,7 +596,7 @@ const styles = StyleSheet.create({
   },
   optionTitle: {
     fontSize: 16,
-    color: COLORS.text,
+    color: colors.text,
     marginLeft: 12,
   },
   infoRow: {
@@ -586,7 +605,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.divider,
+    borderBottomColor: colors.divider,
   },
   infoContent: {
     marginLeft: 12,
@@ -594,7 +613,7 @@ const styles = StyleSheet.create({
   },
   infoSubtitle: {
     fontSize: 14,
-    color: COLORS.textLight,
+    color: colors.textLight,
     marginTop: 2,
   },
   logoutButton: {
@@ -606,7 +625,7 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: 16,
-    color: STATUS_COLORS.dangerSoft,
+    color: STATUS_colors.dangerSoft,
     fontWeight: '600',
   },
   footer: {

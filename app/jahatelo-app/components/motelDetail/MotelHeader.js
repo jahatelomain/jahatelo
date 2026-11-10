@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp } from '../../utils/reanimatedCompat';
-import { COLORS } from '../../constants/theme';
+import { COLORS, TOUCH_TARGET } from '../../constants/theme';
 
 export default function MotelHeader({ motel, onCall, onWhatsApp, onShare }) {
   const phone = motel.contact?.phone;
@@ -21,6 +21,8 @@ export default function MotelHeader({ motel, onCall, onWhatsApp, onShare }) {
           onPress={phone ? () => onCall(phone) : undefined}
           activeOpacity={0.7}
           disabled={!phone}
+          accessibilityRole="button"
+          accessibilityLabel={phone ? "Llamar al motel" : "Teléfono no disponible"}
         >
           <Ionicons
             name="call"
@@ -34,12 +36,20 @@ export default function MotelHeader({ motel, onCall, onWhatsApp, onShare }) {
             style={styles.contactButton}
             onPress={() => onWhatsApp(whatsapp)}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Contactar por WhatsApp"
           >
             <Ionicons name="logo-whatsapp" size={16} color="#25D366" />
           </TouchableOpacity>
         ) : null}
 
-        <TouchableOpacity style={styles.contactButton} onPress={onShare} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.contactButton}
+          onPress={onShare}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Compartir motel"
+        >
           <Ionicons name="share-social-outline" size={16} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
@@ -76,9 +86,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   contactButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: TOUCH_TARGET,
+    height: TOUCH_TARGET,
+    borderRadius: TOUCH_TARGET / 2,
     backgroundColor: '#F5F5F5',
     alignItems: 'center',
     justifyContent: 'center',

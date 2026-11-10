@@ -6,13 +6,14 @@ import {
   TouchableOpacity,
   StatusBar,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import LoadingScreen from '../components/LoadingScreen';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../constants/theme';
+import useTheme from '../hooks/useTheme';
 import { normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
 import { useNavigation } from '@react-navigation/native';
 import { getApiRoot } from '../services/apiBaseUrl';
@@ -112,13 +113,15 @@ let cachedMapData = null;
 let cacheTimestamp = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
-export default function MapScreen({ route }) {
-  const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
+export default function MapScreen() {
+ const navigation = useNavigation();
+ const { colors } = useTheme();
+ const insets = useSafeAreaInsets();
   const [motels, setMotels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [initialRegion, setInitialRegion] = useState({
     latitude: -25.2637,
     longitude: -57.5759,
@@ -158,6 +161,15 @@ export default function MapScreen({ route }) {
       cachedMapData = { ...sourceData, motels: hydratedMotels };
       if (mountedRef.current) setMotels(hydratedMotels);
     });
+  }, []);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchMapData();
+    } finally {
+      setRefreshing(false);
+    }
   }, []);
 
   // Retry automático al reconectar a internet
@@ -294,7 +306,7 @@ export default function MapScreen({ route }) {
   if (error) {
     return (
       <>
-        <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+        <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
         <View style={styles.errorContainer}>
           <AppStateView type="error" title="No pudimos cargar el mapa" message={error} actionLabel="Reintentar" onAction={fetchMapData} />
           <TouchableOpacity
@@ -314,7 +326,7 @@ export default function MapScreen({ route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: headerPaddingTop }]}>
@@ -324,7 +336,7 @@ export default function MapScreen({ route }) {
           accessibilityRole="button"
           accessibilityLabel="Volver"
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{resultIdSet ? 'Resultados en el mapa' : 'Mapa de moteles'}</Text>
         <View style={{ width: 40 }} />
@@ -340,6 +352,14 @@ export default function MapScreen({ route }) {
             initialRegion={initialRegion}
             showsUserLocation={!!userLocation}
             showsMyLocationButton={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={colors.primary}
+                colors={[colors.primary]}
+              />
+            }
           >
           {sortedMotels.map((motel) => (
             <CustomMarker
@@ -357,7 +377,7 @@ export default function MapScreen({ route }) {
             <Marker
               coordinate={userLocation}
               title="Tu ubicación"
-              pinColor="#D32F2F"
+              pinColor={colors.error}
               zIndex={1200}
               tracksViewChanges={false}
             />
@@ -374,7 +394,7 @@ export default function MapScreen({ route }) {
         accessibilityLabel="Centrar mapa en mi ubicación"
         accessibilityHint="Solicita permiso de ubicación si todavía no fue concedido"
       >
-        <Ionicons name="locate" size={24} color={COLORS.white} />
+        <Ionicons name="locate" size={24} color={colors.white} />
         <Text style={styles.centerButtonText}>Centrar en mí</Text>
       </TouchableOpacity>
 
@@ -391,7 +411,7 @@ export default function MapScreen({ route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.white,
   },
   header: {
     flexDirection: 'row',
@@ -399,22 +419,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.grayLight,
+    borderBottomColor: colors.grayLight,
   },
   backIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.white,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.text,
+    color: colors.text,
   },
   mapContainer: {
     flex: 1,
@@ -424,21 +444,21 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 80,
     right: 16,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 24,
     elevation: 5,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     zIndex: 999,
   },
   centerButtonText: {
-    color: COLORS.white,
+    color: colors.white,
     fontWeight: '600',
     marginLeft: 8,
   },
@@ -446,19 +466,19 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     alignSelf: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.white,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
     zIndex: 999,
   },
   infoBadgeText: {
-    color: COLORS.text,
+    color: colors.text,
     fontWeight: '600',
     fontSize: 13,
   },
@@ -466,36 +486,36 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.white,
   },
   loadingText: {
     marginTop: 12,
-    color: COLORS.text,
+    color: colors.text,
     fontSize: 16,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.white,
     paddingHorizontal: 32,
   },
   errorTitle: {
     marginTop: 16,
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.text,
+    color: colors.text,
     textAlign: 'center',
   },
   retryButton: {
     marginTop: 24,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
   retryButtonText: {
-    color: COLORS.white,
+    color: colors.white,
     fontWeight: '600',
     fontSize: 16,
   },
@@ -504,7 +524,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   backButtonText: {
-    color: COLORS.primary,
+    color: colors.primary,
     fontWeight: '600',
     fontSize: 14,
   },

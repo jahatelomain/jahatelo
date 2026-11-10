@@ -59,7 +59,7 @@ export default function MotelCardSmall({ motel, onPress }) {
       accessibilityHint="Abre los detalles del motel"
     >
       <View style={styles.imageContainer}>
-        <Image source={imageSource} style={[styles.image, isPlaceholder && styles.placeholderImage]} />
+        <Image source={imageSource} style={[styles.image, isPlaceholder && styles.placeholderImage]} cachePolicy="memory-disk" />
         {motel.logoUrl && (
           <View style={styles.logoBadge} pointerEvents="none">
             <MotelLogoHeart uri={motel.logoUrl} size={36} />

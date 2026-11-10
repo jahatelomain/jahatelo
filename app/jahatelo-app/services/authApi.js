@@ -1,11 +1,21 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApiRoot } from './apiBaseUrl';
 import { fetchWithTimeout } from '../utils/fetchWithTimeout';
+import { isUnauthorized } from '../utils/fetchHelpers';
 
 const API_URL = getApiRoot();
 
 const TOKEN_KEY = '@jahatelo_auth_token';
 const USER_KEY = '@jahatelo_user';
+
+/**
+ * Logger condicional: solo emite en __DEV__ para evitar ruido en producción.
+ */
+function logError(label, error) {
+  if (__DEV__) {
+    console.error(label, error);
+  }
+}
 
 /**
  * Guarda el token y usuario en AsyncStorage
@@ -15,7 +25,7 @@ export async function saveAuthData(token, user) {
     await AsyncStorage.setItem(TOKEN_KEY, token);
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
   } catch (error) {
-    console.error('Error saving auth data:', error);
+    logError('[authApi] Error saving auth data:', error);
   }
 }
 
@@ -26,7 +36,7 @@ export async function getStoredToken() {
   try {
     return await AsyncStorage.getItem(TOKEN_KEY);
   } catch (error) {
-    console.error('Error getting stored token:', error);
+    logError('[authApi] Error getting stored token:', error);
     return null;
   }
 }
@@ -39,7 +49,7 @@ export async function getStoredUser() {
     const userJson = await AsyncStorage.getItem(USER_KEY);
     return userJson ? JSON.parse(userJson) : null;
   } catch (error) {
-    console.error('Error getting stored user:', error);
+    logError('[authApi] Error getting stored user:', error);
     return null;
   }
 }
@@ -51,7 +61,7 @@ export async function clearAuthData() {
   try {
     await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
   } catch (error) {
-    console.error('Error clearing auth data:', error);
+    logError('[authApi] Error clearing auth data:', error);
   }
 }
 
@@ -77,7 +87,7 @@ export async function register({ email, password, name, phone }) {
 
     return data;
   } catch (error) {
-    console.error('Error in register:', error);
+    logError('[authApi] Error in register:', error);
     throw error;
   }
 }
@@ -107,7 +117,7 @@ export async function login({ email, password, pushToken, deviceInfo }) {
     if (error.status === 403 && error.body?.needsVerification) {
       return { success: false, error: error.body.error || 'Email no verificado', needsVerification: true };
     }
-    console.error('Error in login:', error);
+    logError('[authApi] Error in login:', error);
     throw error;
   }
 }
@@ -134,7 +144,7 @@ export async function loginWithOAuth({ provider, idToken, accessToken, pushToken
 
     return data;
   } catch (error) {
-    console.error('Error in loginWithOAuth:', error);
+    logError('[authApi] Error in loginWithOAuth:', error);
     throw error;
   }
 }
@@ -151,7 +161,7 @@ export async function requestSmsOtp({ phone }) {
 
     return data;
   } catch (error) {
-    console.error('Error in requestSmsOtp:', error);
+    logError('[authApi] Error in requestSmsOtp:', error);
     throw error;
   }
 }
@@ -172,7 +182,7 @@ export async function verifySmsOtp({ phone, code, name }) {
 
     return data;
   } catch (error) {
-    console.error('Error in verifySmsOtp:', error);
+    logError('[authApi] Error in verifySmsOtp:', error);
     throw error;
   }
 }
@@ -201,11 +211,11 @@ export async function getProfile() {
 
     return data;
   } catch (error) {
-    // Si el token es inválido, limpiar datos
-    if (error.message?.includes('401')) {
+    // Si el token es inválido, limpiar datos usando helper unificado
+    if (isUnauthorized(error)) {
       await clearAuthData();
     }
-    console.error('Error in getProfile:', error);
+    logError('[authApi] Error in getProfile:', error);
     throw error;
   }
 }
@@ -241,7 +251,7 @@ export async function updateProfile({ name, phone, profilePhoto, pushToken, devi
 
     return data;
   } catch (error) {
-    console.error('Error in updateProfile:', error);
+    logError('[authApi] Error in updateProfile:', error);
     throw error;
   }
 }
@@ -253,7 +263,7 @@ export async function logout() {
   try {
     await clearAuthData();
   } catch (error) {
-    console.error('Error in logout:', error);
+    logError('[authApi] Error in logout:', error);
     throw error;
   }
 }

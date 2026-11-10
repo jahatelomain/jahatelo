@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useCallback, useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import MotelCard from './MotelCard';
 import GoogleMapComponent from './GoogleMapComponent';
 import type { PublicMotelListItem, PublicMotelListResponse } from '@/lib/domain/motels/publicListItem';
@@ -48,7 +49,10 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(initialParams.q || '');
   const [motels, setMotels] = useState<Motel[]>([]);
+  const [totalMotels, setTotalMotels] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [selectedCity, setSelectedCity] = useState(initialParams.city || '');
   const [onlyPromos, setOnlyPromos] = useState(initialParams.promos === '1');
   const [onlyFeatured, setOnlyFeatured] = useState(initialParams.featured === '1');
@@ -89,18 +93,20 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     fetchCities();
   }, []);
 
-  // Fetch motels when search params change
   useEffect(() => {
     const controller = new AbortController();
     const fetchMotels = async () => {
       setLoading(true);
+      setLoadingMore(false);
+      setCurrentPage(1);
       try {
         const params = new URLSearchParams();
         if (debouncedSearchQuery) params.set('search', debouncedSearchQuery);
         if (selectedCity) params.set('city', selectedCity);
         if (onlyPromos) params.set('promos', 'true');
         if (onlyFeatured) params.set('featured', 'true');
-        params.set('limit', '50');
+        params.set('page', '1');
+        params.set('limit', '20');
 
         const response = await fetch(`/api/mobile/motels?${params.toString()}`, {
           signal: controller.signal,
@@ -108,10 +114,12 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
         if (!response.ok) throw new Error('No se pudieron cargar los moteles');
         const data: PublicMotelListResponse = await response.json();
         setMotels(data.data || []);
+        setTotalMotels(data.meta?.total ?? data.data?.length ?? 0);
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return;
         console.error('Error fetching motels:', error);
         setMotels([]);
+        setTotalMotels(0);
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -120,6 +128,42 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
     fetchMotels();
     return () => controller.abort();
   }, [debouncedSearchQuery, selectedCity, onlyPromos, onlyFeatured]);
+
+  const hasMoreMotels = motels.length < totalMotels;
+  const loadMoreMotels = useCallback(async () => {
+    if (loading || loadingMore || !hasMoreMotels) return;
+    const nextPage = currentPage + 1;
+    setLoadingMore(true);
+    try {
+      const params = new URLSearchParams();
+      if (debouncedSearchQuery) params.set('search', debouncedSearchQuery);
+      if (selectedCity) params.set('city', selectedCity);
+      if (onlyPromos) params.set('promos', 'true');
+      if (onlyFeatured) params.set('featured', 'true');
+      params.set('page', String(nextPage));
+      params.set('limit', '20');
+
+      const response = await fetch(`/api/mobile/motels?${params.toString()}`);
+      if (!response.ok) throw new Error('No se pudieron cargar más moteles');
+      const data: PublicMotelListResponse = await response.json();
+      setMotels((current) => {
+        const existingIds = new Set(current.map((motel) => motel.id));
+        return [...current, ...(data.data || []).filter((motel) => !existingIds.has(motel.id))];
+      });
+      setTotalMotels(data.meta?.total ?? totalMotels);
+      setCurrentPage(nextPage);
+    } catch (error) {
+      console.error('Error loading more motels:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [currentPage, debouncedSearchQuery, hasMoreMotels, loading, loadingMore, onlyFeatured, onlyPromos, selectedCity, totalMotels]);
+
+  const { sentinelRef } = useInfiniteScroll({
+    loading: loading || loadingMore,
+    hasMore: hasMoreMotels,
+    onLoadMore: loadMoreMotels,
+  });
 
   // Update URL when search params change
   useEffect(() => {
@@ -523,6 +567,13 @@ export default function SearchResults({ initialParams }: SearchResultsProps) {
             </section>
           )}
         </>
+      )}
+      {hasMoreMotels && !loading && (
+        <div ref={sentinelRef} className="mt-8 flex min-h-12 items-center justify-center" aria-live="polite">
+          {loadingMore && (
+            <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-purple-600 border-r-transparent" aria-label="Cargando más moteles" />
+          )}
+        </div>
       )}
       {loading && (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3" role="status" aria-live="polite" aria-label="Buscando moteles">

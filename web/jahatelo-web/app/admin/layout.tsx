@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { UserPayload } from '@/lib/auth';
 import { hasModuleAccess } from '@/lib/adminModules';
+import AccessDenied from '@/components/admin/AccessDenied';
 import { getMotelAnalyticsAccess } from '@/lib/domain/motels/planPresentation';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { Toaster } from 'sonner';
@@ -45,6 +46,8 @@ export default function AdminLayout({
     'Configuración': false,
   });
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const hamburgerRef = useRef<HTMLButtonElement | null>(null);
+  const sidebarRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (isLoginPage) {
@@ -123,6 +126,76 @@ export default function AdminLayout({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [menuOpen]);
 
+  // Focus trap + restaurar foco al cerrar sidebar mobile
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const sidebar = sidebarRef.current;
+    if (!sidebar) return;
+
+    const focusableSelector =
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    const getFocusable = () =>
+      Array.from(sidebar.querySelectorAll<HTMLElement>(focusableSelector)).filter(
+        (el) => !el.hasAttribute('aria-hidden') && el.offsetParent !== null,
+      );
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setMobileMenuOpen(false);
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const focusable = getFocusable();
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey) {
+        if (document.activeElement === first || !sidebar.contains(document.activeElement)) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last || !sidebar.contains(document.activeElement)) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Enfocar primer elemento al abrir
+    requestAnimationFrame(() => {
+      const focusable = getFocusable();
+      if (focusable.length > 0) {
+        focusable[0].focus();
+      } else {
+        sidebar.focus();
+      }
+    });
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [mobileMenuOpen]);
+
+  // Restaurar foco al botón hamburger cuando se cierra el sidebar
+  useEffect(() => {
+    if (!mobileMenuOpen && hamburgerRef.current) {
+      hamburgerRef.current.focus();
+    }
+  }, [mobileMenuOpen]);
+
   const exactActivePaths = new Set(['/admin/analytics']);
 
   const isActive = (path: string) => {
@@ -144,25 +217,86 @@ export default function AdminLayout({
     }));
   };
 
-  const getBreadcrumb = () => {
-    if (pathname === '/admin') return 'Inicio';
-    if (pathname.startsWith('/admin/motels')) return 'Moteles';
-    if (pathname.startsWith('/admin/amenities')) return 'Amenities';
-    if (pathname.startsWith('/admin/users')) return 'Usuarios';
-    if (pathname.startsWith('/admin/roles')) return 'Perfiles de acceso';
-    if (pathname.startsWith('/admin/prospects')) return 'Prospectos';
-    if (pathname.startsWith('/admin/financiero')) return 'Financiero';
-    if (pathname.startsWith('/admin/analytics')) return 'Analítica';
-    if (pathname.startsWith('/admin/seo')) return 'SEO y Search Console';
-    if (pathname.startsWith('/admin/canjear-codigo')) return 'Canjear código';
-    if (pathname.startsWith('/admin/notifications')) return 'Notificaciones';
-    if (pathname.startsWith('/admin/banners')) return 'Anuncios destacados';
-    if (pathname.startsWith('/admin/audit')) return 'Auditoría';
-    if (pathname.startsWith('/admin/inbox')) return 'Mensajes';
-    if (pathname.startsWith('/admin/reports')) return 'Reportes';
-    if (pathname.startsWith('/admin/operations')) return 'Bandeja operativa';
-    if (pathname.startsWith('/admin/configuracion')) return 'Configuración';
-    return 'Admin';
+  type BreadcrumbSegment = { label: string; href?: string };
+
+  const getBreadcrumbSegments = (): BreadcrumbSegment[] => {
+    if (pathname === '/admin') return [{ label: 'Inicio' }];
+
+    // Detectar sub-rutas específicas antes que las genéricas
+    if (pathname.startsWith('/admin/analytics/visitors')) {
+      return [
+        { label: 'Comercial', href: undefined },
+        { label: 'Analítica', href: '/admin/analytics' },
+        { label: 'Visitantes' },
+      ];
+    }
+    if (pathname.startsWith('/admin/analytics')) {
+      return [
+        { label: 'Comercial', href: undefined },
+        { label: 'Analítica' },
+      ];
+    }
+    if (pathname.startsWith('/admin/seo')) {
+      return [
+        { label: 'Comercial', href: undefined },
+        { label: 'SEO y Search Console' },
+      ];
+    }
+    if (pathname.startsWith('/admin/prospects')) {
+      return [
+        { label: 'Comercial', href: undefined },
+        { label: 'Prospectos' },
+      ];
+    }
+    if (pathname.startsWith('/admin/motels')) return [{ label: 'Gestión de moteles', href: undefined }, { label: 'Moteles' }];
+    if (pathname.startsWith('/admin/amenities')) return [{ label: 'Gestión de moteles', href: undefined }, { label: 'Amenities' }];
+    if (pathname.startsWith('/admin/promos')) return [{ label: 'Gestión de moteles', href: undefined }, { label: 'Promos' }];
+    if (pathname.startsWith('/admin/notifications')) return [{ label: 'Publicidad', href: undefined }, { label: 'Notificaciones' }];
+    if (pathname.startsWith('/admin/banners')) return [{ label: 'Publicidad', href: undefined }, { label: 'Anuncios destacados' }];
+    if (pathname.startsWith('/admin/operations')) return [{ label: 'Operación', href: undefined }, { label: 'Tareas pendientes' }];
+    if (pathname.startsWith('/admin/inbox')) return [{ label: 'Operación', href: undefined }, { label: 'Mensajes' }];
+    if (pathname.startsWith('/admin/reports')) return [{ label: 'Operación', href: undefined }, { label: 'Reportes' }];
+    if (pathname.startsWith('/admin/users')) return [{ label: 'Configuración', href: undefined }, { label: 'Usuarios' }];
+    if (pathname.startsWith('/admin/roles')) return [{ label: 'Configuración', href: undefined }, { label: 'Perfiles de acceso' }];
+    if (pathname.startsWith('/admin/audit')) return [{ label: 'Configuración', href: undefined }, { label: 'Auditoría' }];
+    if (pathname.startsWith('/admin/configuracion')) return [{ label: 'Configuración', href: undefined }, { label: 'Configuración' }];
+    if (pathname.startsWith('/admin/financiero')) return [{ label: 'Financiero' }];
+    if (pathname.startsWith('/admin/canjear-codigo')) return [{ label: 'Canjear código' }];
+    return [{ label: 'Admin' }];
+  };
+
+  const renderBreadcrumb = () => {
+    const segments = getBreadcrumbSegments();
+    return (
+      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm">
+        <Link href="/admin" className="text-slate-400 hover:text-violet-600 transition-colors font-medium">
+          Inicio
+        </Link>
+        {segments.map((segment, idx) => {
+          const isLast = idx === segments.length - 1;
+          return (
+            <span key={idx} className="flex items-center gap-2">
+              <span className="text-slate-300 select-none">/</span>
+              {isLast || !segment.href ? (
+                <span
+                  className={`font-semibold ${isLast ? 'text-slate-700' : 'text-slate-500'}`}
+                  aria-current={isLast ? 'page' : undefined}
+                >
+                  {segment.label}
+                </span>
+              ) : (
+                <Link
+                  href={segment.href}
+                  className="text-violet-600 hover:text-violet-800 hover:underline underline-offset-2 transition-colors font-medium"
+                >
+                  {segment.label}
+                </Link>
+              )}
+            </span>
+          );
+        })}
+      </nav>
+    );
   };
 
   type NavItem = {
@@ -304,7 +438,11 @@ export default function AdminLayout({
 
   const currentModule = getModuleFromPath(pathname);
   if (!loading && !isLoginPage && currentModule && !hasModuleAccess(user, currentModule)) {
-    return null;
+    return (
+      <div className="min-h-screen bg-slate-100">
+        <AccessDenied module={currentModule} requiredRole={user?.role} />
+      </div>
+    );
   }
 
   const profileInitials = user?.name
@@ -436,8 +574,12 @@ export default function AdminLayout({
             {/* Left: Logo + breadcrumb */}
             <div className="flex items-center gap-4">
               <button
+                ref={hamburgerRef}
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden text-slate-600 hover:text-slate-900 p-2"
+                aria-expanded={mobileMenuOpen}
+                aria-controls="admin-mobile-sidebar"
+                aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {mobileMenuOpen ? (
@@ -458,9 +600,8 @@ export default function AdminLayout({
                 <span className="text-sm font-bold text-slate-800 leading-tight">Jahatelo</span>
                 <span className="text-sm text-purple-600 font-semibold leading-tight">Admin Panel</span>
               </div>
-              <div className="hidden md:flex items-center gap-2 ml-4 pl-4 border-l border-slate-200">
-                <span className="text-sm text-slate-400">/</span>
-                <span className="text-sm font-semibold text-slate-700">{getBreadcrumb()}</span>
+              <div className="hidden md:flex items-center ml-4 pl-4 border-l border-slate-200">
+                {renderBreadcrumb()}
               </div>
             </div>
 
@@ -509,6 +650,11 @@ export default function AdminLayout({
 
       {/* Mobile Menu Sidebar */}
       <aside
+        id="admin-mobile-sidebar"
+        ref={sidebarRef}
+        role="dialog"
+        aria-modal={mobileMenuOpen ? 'true' : undefined}
+        aria-label="Menú de navegación"
         className={`fixed top-[88px] left-0 bottom-0 w-64 border-r border-violet-100 bg-gradient-to-b from-white via-violet-50/70 to-rose-50/60 shadow-[18px_0_48px_rgba(112,72,173,0.16)] z-40 transform transition-transform duration-300 md:hidden ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}

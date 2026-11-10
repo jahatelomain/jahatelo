@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
 
@@ -21,6 +21,8 @@ export default function SearchBar() {
   const [noResults, setNoResults] = useState(false);
   const debouncedQuery = useDebounce(query, 300);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listboxId = useId();
 
   useEffect(() => {
     if (!debouncedQuery || debouncedQuery.length < 2) {
@@ -98,6 +100,12 @@ export default function SearchBar() {
     }
   };
 
+  const showDropdown = open && (suggestions.length > 0 || loading || noResults);
+  const activeDescendant =
+    open && activeIndex >= 0 && suggestions[activeIndex]
+      ? `${listboxId}-option-${activeIndex}`
+      : undefined;
+
   return (
     <div className="relative z-[80]" ref={containerRef}>
       <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
@@ -106,6 +114,13 @@ export default function SearchBar() {
         </svg>
       </div>
       <input
+        ref={inputRef}
+        role="combobox"
+        aria-expanded={showDropdown}
+        aria-controls={listboxId}
+        aria-activedescendant={activeDescendant}
+        aria-autocomplete="list"
+        aria-haspopup="listbox"
         value={query}
         onChange={(event) => {
           setQuery(event.target.value);
@@ -117,29 +132,48 @@ export default function SearchBar() {
         className="search-pulse w-full rounded-2xl border-0 bg-white/95 backdrop-blur-sm pl-12 pr-4 py-4 text-gray-900 caret-purple-600 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-xl text-base"
       />
 
-      {open && suggestions.length > 0 && (
-        <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl z-[90] overflow-hidden">
-          {suggestions.map((item, index) => (
-            <button
-              key={`${item.type}-${item.label}-${index}`}
-              onClick={() => handleSelect(item)}
-              className={`w-full text-left px-4 py-3 text-sm ${index === activeIndex ? 'bg-purple-50' : 'bg-white'} hover:bg-purple-50`}
-            >
-              <div className="font-medium text-slate-900">{item.label}</div>
-              {item.subtitle && <div className="text-xs text-slate-500">{item.subtitle}</div>}
-            </button>
-          ))}
-        </div>
-      )}
-      {open && loading && (
-        <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl z-[90] overflow-hidden">
-          <div className="px-4 py-3 text-sm text-slate-500">Cargando...</div>
-        </div>
-      )}
-      {open && !loading && noResults && (
-        <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl z-[90] overflow-hidden">
-          <div className="px-4 py-3 text-sm text-slate-500">Sin resultados</div>
-        </div>
+      {showDropdown && (
+        <ul
+          id={listboxId}
+          role="listbox"
+          className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl z-[90] overflow-hidden max-h-80 overflow-y-auto"
+        >
+          {loading && (
+            <li aria-live="polite" aria-busy="true" className="px-4 py-3">
+              <div className="flex items-center gap-3">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-purple-200 border-t-purple-600" />
+                <span className="h-4 w-2/3 animate-pulse rounded bg-slate-100" />
+              </div>
+              <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-slate-100" />
+            </li>
+          )}
+          {!loading && noResults && (
+            <li aria-live="polite" className="px-4 py-3 text-sm text-slate-500">
+              Sin resultados para "{query}"
+            </li>
+          )}
+          {!loading &&
+            suggestions.map((item, index) => {
+              const optionId = `${listboxId}-option-${index}`;
+              const isActive = index === activeIndex;
+              return (
+                <li
+                  key={`${item.type}-${item.label}-${index}`}
+                  id={optionId}
+                  role="option"
+                  aria-selected={isActive}
+                  onClick={() => handleSelect(item)}
+                  onMouseEnter={() => setActiveIndex(index)}
+                  className={`w-full text-left px-4 py-3 text-sm cursor-pointer ${
+                    isActive ? 'bg-purple-50' : 'bg-white'
+                  } hover:bg-purple-50`}
+                >
+                  <div className="font-medium text-slate-900">{item.label}</div>
+                  {item.subtitle && <div className="text-xs text-slate-500">{item.subtitle}</div>}
+                </li>
+              );
+            })}
+        </ul>
       )}
     </div>
   );

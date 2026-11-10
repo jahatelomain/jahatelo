@@ -9,7 +9,11 @@ import { getRequestBaseUrl, normalizeMediaFields, normalizeMediaUrlForStorage } 
 
 export const dynamic = 'force-dynamic';
 
-// GET /api/admin/advertisements/[id]
+/**
+ * GET /api/admin/advertisements/[id]
+ * Obtiene un anuncio/banner por ID con URLs de media normalizadas.
+ * Requiere rol SUPERADMIN con permiso 'banners'.
+ */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const access = await requireAdminAccess(request, ['SUPERADMIN'], 'banners');
@@ -42,7 +46,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-// PATCH /api/admin/advertisements/[id]
+/**
+ * PATCH /api/admin/advertisements/[id]
+ * Actualiza un anuncio/banner existente con normalización de URLs de media y registro en auditoría.
+ * Requiere rol SUPERADMIN con permiso 'banners'.
+ */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const access = await requireAdminAccess(request, ['SUPERADMIN'], 'banners');
@@ -103,7 +111,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 }
 
-// DELETE /api/admin/advertisements/[id]
+/**
+ * DELETE /api/admin/advertisements/[id]
+ * Elimina un anuncio/banner por ID con registro en log de auditoría.
+ * Requiere rol SUPERADMIN con permiso 'banners'.
+ */
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const access = await requireAdminAccess(request, ['SUPERADMIN'], 'banners');

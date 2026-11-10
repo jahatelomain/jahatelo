@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { usePersistentAdminFilters } from '@/hooks/usePersistentAdminFilters';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 type AuditLog = {
@@ -35,10 +36,10 @@ export default function AuditPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [actionFilter, setActionFilter] = useState('');
-  const [entityFilter, setEntityFilter] = useState('');
-  const [userFilter, setUserFilter] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [actionFilter, setActionFilter] = usePersistentAdminFilters('audit-action', '');
+  const [entityFilter, setEntityFilter] = usePersistentAdminFilters('audit-entity', '');
+  const [userFilter, setUserFilter] = usePersistentAdminFilters('audit-user', '');
+  const [searchQuery, setSearchQuery] = usePersistentAdminFilters('audit-search', '');
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const pageSize = 20;

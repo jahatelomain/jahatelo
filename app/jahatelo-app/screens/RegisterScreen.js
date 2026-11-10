@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
-import { COLORS, STATUS_COLORS } from '../constants/theme';
+import { COLORS, STATUS_COLORS, TOUCH_TARGET } from '../constants/theme';
 import { showMessage } from '../utils/appFeedback';
 import { trackVisitor } from '../services/analyticsService';
 import { useGoogleAuth } from '../services/googleAuthService';
@@ -322,6 +322,9 @@ export default function RegisterScreen({ navigation }) {
               style={[styles.registerButton, isLoading && styles.registerButtonDisabled]}
               onPress={handleRegister}
               disabled={isLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Crear cuenta"
+              accessibilityState={{ disabled: isLoading, busy: isLoading }}
             >
               {isLoading ? (
                 <ActivityIndicator size="small" color={COLORS.white} />
@@ -350,6 +353,8 @@ export default function RegisterScreen({ navigation }) {
                 style={[styles.socialButton, !googleRequest && styles.oauthButtonDisabled]}
                 onPress={() => promptGoogleAsync()}
                 disabled={!googleRequest || isLoading}
+                accessibilityRole="button"
+                accessibilityLabel="Continuar con Google"
               >
                 <Ionicons name="logo-google" size={22} color={STATUS_COLORS.google} />
                 <Text style={styles.socialButtonText}>Continuar con Google</Text>
@@ -359,6 +364,8 @@ export default function RegisterScreen({ navigation }) {
                   style={[styles.socialButton, !facebookRequest && styles.oauthButtonDisabled]}
                   onPress={startFacebookRegister}
                   disabled={!facebookRequest || isLoading}
+                  accessibilityRole="button"
+                  accessibilityLabel="Continuar con Facebook"
                 >
                   <Ionicons name="logo-facebook" size={22} color="#1877F2" />
                   <Text style={styles.socialButtonText}>Continuar con Facebook</Text>
@@ -369,7 +376,11 @@ export default function RegisterScreen({ navigation }) {
             {/* Login */}
             <View style={styles.loginContainer}>
               <Text style={styles.loginText}>¿Ya tienes cuenta? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Login')}
+                accessibilityRole="button"
+                accessibilityLabel="Ir a iniciar sesión"
+              >
                 <Text style={styles.loginLink}>Inicia Sesión</Text>
               </TouchableOpacity>
             </View>

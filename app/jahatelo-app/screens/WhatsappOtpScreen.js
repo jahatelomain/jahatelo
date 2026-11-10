@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import * as authApi from '../services/authApi';
-import { COLORS } from '../constants/theme';
+import { COLORS, TOUCH_TARGET } from '../constants/theme';
 import { Modal } from 'react-native';
 
 /**
@@ -282,18 +282,24 @@ export default function WhatsappOtpScreen({ navigation }) {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.resendButton}
-                  onPress={handleSendOtp}
-                  disabled={countdown > 0 || isLoading}
-                >
+                 style={styles.resendButton}
+                 onPress={handleSendOtp}
+                 disabled={countdown > 0 || isLoading}
+                 accessibilityRole="button"
+                 accessibilityLabel={countdown > 0 ? `Reenviar código en ${countdown} segundos` : "Reenviar código de verificación"}
+                 >
                   <Text style={[styles.resendText, countdown > 0 && styles.resendDisabled]}>
                     {countdown > 0 ? `Reenviar en ${countdown}s` : 'Reenviar código'}
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => { setStep('phone'); setCode(''); }}>
-                  <Text style={styles.changePhoneText}>Cambiar número</Text>
-                </TouchableOpacity>
+                <TouchableOpacity
+                 onPress={() => { setStep('phone'); setCode(''); }}
+                 accessibilityRole="button"
+                 accessibilityLabel="Cambiar número de teléfono"
+                 >
+                 <Text style={styles.changePhoneText}>Cambiar número</Text>
+                 </TouchableOpacity>
               </>
             )}
           </View>
@@ -333,10 +339,12 @@ export default function WhatsappOtpScreen({ navigation }) {
               <Text style={styles.modalError}>{inlineMessage.text}</Text>
             )}
             <TouchableOpacity
-              style={[styles.modalPrimaryButton, isLoading && styles.buttonDisabled]}
-              onPress={handleSubmitName}
-              disabled={isLoading}
-            >
+             style={[styles.modalPrimaryButton, isLoading && styles.buttonDisabled]}
+             onPress={handleSubmitName}
+             disabled={isLoading}
+             accessibilityRole="button"
+             accessibilityLabel="Guardar nombre y continuar"
+             >
               {isLoading ? (
                 <ActivityIndicator size="small" color={COLORS.white} />
               ) : (
@@ -344,10 +352,12 @@ export default function WhatsappOtpScreen({ navigation }) {
               )}
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.modalSkipButton}
-              onPress={handleSkipName}
-              disabled={isLoading}
-            >
+             style={styles.modalSkipButton}
+             onPress={handleSkipName}
+             disabled={isLoading}
+             accessibilityRole="button"
+             accessibilityLabel="Saltar y usar mi número como nombre"
+             >
               <Text style={styles.modalSkipText}>Prefiero usar mi número</Text>
             </TouchableOpacity>
           </View>
@@ -363,7 +373,7 @@ const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1, paddingHorizontal: 24 },
   header: { paddingTop: 8, paddingBottom: 16 },
   backButton: {
-    width: 40, height: 40, borderRadius: 20,
+    width: TOUCH_TARGET, height: TOUCH_TARGET, borderRadius: TOUCH_TARGET / 2,
     backgroundColor: COLORS.grayLight, justifyContent: 'center', alignItems: 'center',
   },
   logoContainer: { alignItems: 'center', paddingVertical: 32 },

@@ -142,7 +142,7 @@ export default function PromosTab({ route, refreshing, onRefresh, embedded = fal
           return (
             <View key={promo.id} style={styles.card}>
               {promo.imageUrl ? (
-                <Image source={{ uri: promo.imageUrl }} style={styles.image} />
+                <Image source={{ uri: promo.imageUrl }} style={styles.image} cachePolicy="memory-disk" />
               ) : (
                 <View style={[styles.image, styles.imagePlaceholder]}>
                   <Text style={styles.imagePlaceholderText}>Promo</Text>

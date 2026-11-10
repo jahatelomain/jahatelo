@@ -1,4 +1,4 @@
-import { Audio } from 'expo-av';
+import { AudioPlayer } from 'expo-audio';
 import { getSoundEffectsEnabled } from './preferencesService';
 
 const sounds = {
@@ -12,15 +12,19 @@ const sounds = {
   },
 };
 
-async function loadSound(key) {
+function getOrCreatePlayer(key) {
   const soundEntry = sounds[key];
-  if (!soundEntry || soundEntry.instance) return soundEntry?.instance || null;
+  if (!soundEntry) return null;
 
-  const { sound } = await Audio.Sound.createAsync(soundEntry.source, {
-    shouldPlay: false,
-  });
-  soundEntry.instance = sound;
-  return sound;
+  if (!soundEntry.instance) {
+    // expo-audio: AudioPlayer acepta un asset ID directamente (require()).
+    // keepAudioSessionActive evita interrumpir otro audio al reproducir efectos cortos.
+    soundEntry.instance = new AudioPlayer(soundEntry.source, {
+      keepAudioSessionActive: true,
+    });
+  }
+
+  return soundEntry.instance;
 }
 
 export async function playFavoriteSound(type) {
@@ -28,10 +32,13 @@ export async function playFavoriteSound(type) {
   if (!enabled) return;
 
   try {
-    const sound = await loadSound(type);
-    if (!sound) return;
-    await sound.replayAsync();
-  } catch (error) {
-    // Ignore audio errors to avoid blocking UI actions.
+    const player = getOrCreatePlayer(type);
+    if (!player) return;
+
+    // Reiniciar reproducción desde el inicio para efectos de sonido cortos.
+    player.seekTo(0);
+    player.play();
+  } catch (_error) {
+    // Ignorar errores de audio para no bloquear acciones de UI.
   }
 }
