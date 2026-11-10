@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import Navbar from '@/components/public/Navbar';
-import Footer from '@/components/public/Footer';
 import MobilePageHeader from '@/components/public/MobilePageHeader';
 
 export const metadata: Metadata = {
@@ -19,10 +17,9 @@ const dataBody = encodeURIComponent(
 );
 
 export default function AccountDeletionPage() {
-  return (
-    <>
-      <Navbar />
-      <MobilePageHeader title="Eliminar cuenta y datos" />
+ return (
+ <>
+ <MobilePageHeader title="Eliminar cuenta y datos" />
       <main className="min-h-screen bg-slate-50 px-4 py-6 md:py-12">
         <article className="mx-auto max-w-4xl rounded-2xl bg-white p-5 shadow-sm md:p-10">
           <p className="text-sm font-semibold uppercase tracking-wider text-purple-600">Jahatelo</p>
@@ -95,7 +92,6 @@ export default function AccountDeletionPage() {
           </p>
         </article>
       </main>
-      <Footer />
-    </>
-  );
-}
+       </>
+       );
+      }

@@ -153,7 +153,7 @@ export default async function HomePage() {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">Todavía no hay moteles publicados</h3>
-              <p className="text-purple-300/70">Estamos trabajando para traerte los mejores moteles pronto.</p>
+              <p className="text-purple-200">Estamos trabajando para traerte los mejores moteles pronto.</p>
               <Link
                 href="/registrar-motel"
                 className="inline-block mt-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold px-8 py-3 rounded-xl transition-all shadow-lg hover:shadow-purple-900/40"

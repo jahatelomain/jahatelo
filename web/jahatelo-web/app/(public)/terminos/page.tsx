@@ -1,11 +1,8 @@
-import Navbar from '@/components/public/Navbar';
-import Footer from '@/components/public/Footer';
 import MobilePageHeader from '@/components/public/MobilePageHeader';
 
 export default function TermsPage() {
   return (
     <>
-      <Navbar />
       <MobilePageHeader title="Términos y condiciones" />
       <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-0 md:py-12">
         <div className="container mx-auto px-4 max-w-4xl">
@@ -213,7 +210,6 @@ export default function TermsPage() {
           </div>
         </div>
       </div>
-      <Footer />
-    </>
-  );
-}
+       </>
+       );
+      }
