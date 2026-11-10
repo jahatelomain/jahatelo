@@ -36,6 +36,21 @@
   --font-family: var(--font-lato), 'Lato', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+.dark {
+  --background: #0f0f1a;
+  --foreground: #e8dff0;
+
+  --surface: #1a1530;
+  --surface-soft: #161624;
+  --text-primary: #f0eaf8;
+  --text-secondary: #b8a9c9;
+  --border-subtle: #2d2640;
+  --focus-ring: rgba(168, 85, 247, 0.5);
+  --shadow-card: 0 14px 36px rgba(0, 0, 0, 0.3);
+
+  --gradient-brand: linear-gradient(135deg, #F56565 0%, #D53F8C 50%, #9b4ddb 100%);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

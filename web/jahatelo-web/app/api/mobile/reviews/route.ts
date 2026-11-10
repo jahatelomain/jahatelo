@@ -5,6 +5,7 @@ import { getTokenFromRequest, verifyToken } from '@/lib/auth';
 import { ReviewSchema } from '@/lib/validations/schemas';
 import { sanitizeText } from '@/lib/sanitize';
 import { z } from 'zod';
+import { UNAUTHORIZED_MESSAGE } from '@/lib/authHelpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest) {
     const token = await getTokenFromRequest(request);
     if (!token) {
       return NextResponse.json(
-        { error: 'Debes iniciar sesión para dejar una reseña' },
+        { error: UNAUTHORIZED_MESSAGE },
         { status: 401 }
       );
     }
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
     const payload = await verifyToken(token);
     if (!payload) {
       return NextResponse.json(
-        { error: 'Token inválido' },
+        { error: UNAUTHORIZED_MESSAGE },
         { status: 401 }
       );
     }
@@ -291,7 +292,7 @@ export async function DELETE(request: NextRequest) {
     const token = await getTokenFromRequest(request);
     if (!token) {
       return NextResponse.json(
-        { error: 'No autenticado' },
+        { error: UNAUTHORIZED_MESSAGE },
         { status: 401 }
       );
     }
@@ -300,7 +301,7 @@ export async function DELETE(request: NextRequest) {
     const payload = await verifyToken(token);
     if (!payload) {
       return NextResponse.json(
-        { error: 'Token inválido' },
+        { error: UNAUTHORIZED_MESSAGE },
         { status: 401 }
       );
     }

@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 
 import GoogleAuthProvider from "@/components/GoogleAuthProvider";
 import PublicMobileShell from "@/components/public/PublicMobileShell";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 const lato = Lato({
   weight: ['400', '700'],
@@ -86,6 +87,12 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${lato.variable} antialiased bg-white text-slate-900`}>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-purple-600 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:outline-none focus:ring-2 focus:ring-white"
+        >
+          Saltar al contenido principal
+        </a>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -102,14 +109,16 @@ export default function RootLayout({
             }),
           }}
         />
-        <GoogleAuthProvider>
-          <AuthProvider>
-            <ToastProvider>
-              <PwaRegistrar />
-              <PublicMobileShell>{children}</PublicMobileShell>
-            </ToastProvider>
-          </AuthProvider>
-        </GoogleAuthProvider>
+<ThemeProvider>
+          <GoogleAuthProvider>
+            <AuthProvider>
+              <ToastProvider>
+                <PwaRegistrar />
+                <PublicMobileShell>{children}</PublicMobileShell>
+              </ToastProvider>
+            </AuthProvider>
+          </GoogleAuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

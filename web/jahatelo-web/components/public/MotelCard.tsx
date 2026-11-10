@@ -107,18 +107,18 @@ export default function MotelCard({ motel, compact = false, showFavoriteAction =
   // la información al costado. El formato de card con foto se conserva en web
   // de escritorio y en los carruseles destacados.
   const mobileListCard = (
-    <article className={`flex gap-3 border-b border-slate-100 py-3 last:border-b-0 ${isDisabled ? 'opacity-40' : ''}`}>
+    <article className={`flex gap-3 border-b border-[var(--border-subtle)] py-3 last:border-b-0 ${isDisabled ? 'opacity-40' : ''}`}>
       {motel.logoUrl ? (
-        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50">
+        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-soft)]">
           <Image src={motel.logoUrl} alt={`Logo de ${motel.name}`} fill sizes="96px" className="object-contain" />
         </div>
       ) : null}
       <div className="min-w-0 flex-1 py-0.5">
         <div className="flex items-start gap-2">
-          <h3 className="min-w-0 flex-1 truncate text-base font-bold text-slate-900">{motel.name}</h3>
+          <h3 className="min-w-0 flex-1 truncate text-base font-bold text-[var(--text-primary)]">{motel.name}</h3>
           {showFavoriteAction ? <span className="shrink-0"><FavoriteButtonClient motelId={motel.id} source="LIST" size="small" /></span> : null}
         </div>
-        <p className="mt-1 truncate text-xs text-slate-500">{locationLabel}</p>
+        <p className="mt-1 truncate text-xs text-[var(--text-secondary)]">{locationLabel}</p>
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           {(isCanonical ? motel.tienePromo : false) ? <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-800">PROMO</span> : null}
           {isDiamond ? <span className="rounded-full bg-cyan-950 px-2 py-0.5 text-[10px] font-bold text-cyan-200">DIAMOND</span> : null}
@@ -137,7 +137,7 @@ export default function MotelCard({ motel, compact = false, showFavoriteAction =
 
   const cardInner = (
     <div
-      className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${compact ? 'h-[270px]' : 'min-h-[360px]'} h-full flex flex-col ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-pointer' : 'cursor-pointer'} ${hasPlanGlow ? 'border-transparent' : ''}`}
+      className={`public-card bg-[var(--surface)] rounded-xl shadow-sm border border-[var(--border-subtle)] overflow-hidden ${compact ? 'h-[270px]' : 'min-h-[360px]'} h-full flex flex-col ${!isDisabled ? 'hover:shadow-lg' : ''} transition-shadow group ${isDisabled ? 'opacity-40 cursor-pointer' : 'cursor-pointer'} ${hasPlanGlow ? 'border-transparent' : ''}`}
     >
         {/* Image */}
         <div
@@ -187,10 +187,10 @@ export default function MotelCard({ motel, compact = false, showFavoriteAction =
 
         {/* Content */}
         <div className={`${compact ? 'p-4' : 'p-5'} flex-1 flex min-h-0 flex-col`}>
-          <h3 className={`font-bold text-gray-900 mb-1 group-hover:text-purple-600 transition-colors ${compact ? 'text-base' : 'text-lg'}`}>
+          <h3 className={`font-bold text-[var(--text-primary)] mb-1 group-hover:text-purple-600 transition-colors ${compact ? 'text-base' : 'text-lg'}`}>
             {motel.name}
           </h3>
-          <p className={`text-gray-500 ${compact ? 'mb-2 h-10 overflow-hidden text-xs leading-5' : 'mb-3 text-sm'}`}>
+          <p className={`text-[var(--text-secondary)] ${compact ? 'mb-2 h-10 overflow-hidden text-xs leading-5' : 'mb-3 text-sm'}`}>
             {locationLabel}
             {showInlineDistance && motel.distanceKm !== undefined && (
               <span className="ml-2 inline-flex items-center gap-1 text-purple-600 font-medium">
@@ -211,11 +211,11 @@ export default function MotelCard({ motel, compact = false, showFavoriteAction =
                   <svg className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
                     <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                   </svg>
-                  <span className="ml-1 text-sm font-medium text-gray-700">
+                  <span className="ml-1 text-sm font-medium text-[var(--text-primary)]">
                     {safeRating.toFixed(1)}
                   </span>
                 </div>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-[var(--text-secondary)]">
                   ({ratingCount} {ratingCount === 1 ? 'reseña' : 'reseñas'})
                 </span>
               </>
@@ -241,21 +241,21 @@ export default function MotelCard({ motel, compact = false, showFavoriteAction =
           </div>
 
           {/* Price */}
-          <div className={`${compact ? 'pt-3' : 'pt-4'} mt-auto border-t border-gray-100`}>
+          <div className={`${compact ? 'pt-3' : 'pt-4'} mt-auto border-t border-[var(--border-subtle)]`}>
             {hasDayPriceVariation ? (
               <p className={`${compact ? 'text-xs' : 'text-sm'} whitespace-nowrap font-bold text-purple-600`}>
-                <span className="text-xs font-medium text-slate-500">S–J </span>
+                <span className="text-xs font-medium text-[var(--text-secondary)]">S–J </span>
                 {formatGuaranies(weekdayPrice)}
                 <span className="mx-1.5 text-purple-300">·</span>
-                <span className="text-xs font-medium text-slate-500">V–S </span>
+                <span className="text-xs font-medium text-[var(--text-secondary)]">V–S </span>
                 {formatGuaranies(weekendPrice)}
               </p>
             ) : minPrice !== null && minPrice > 0 ? (
               <p className={`${compact ? 'text-lg' : 'text-xl'} font-bold text-purple-600`}>
-                <span className={`mr-1 font-medium text-slate-500 ${compact ? 'text-xs' : 'text-sm'}`}>Desde</span>
+                <span className={`mr-1 font-medium text-[var(--text-secondary)] ${compact ? 'text-xs' : 'text-sm'}`}>Desde</span>
                 {formatGuaranies(minPrice)}
               </p>
-            ) : <p className="text-sm font-semibold leading-5 text-slate-500">{PRICE_UPDATING_MESSAGE}</p>}
+            ) : <p className="text-sm font-semibold leading-5 text-[var(--text-secondary)]">{PRICE_UPDATING_MESSAGE}</p>}
           </div>
         </div>
       </div>

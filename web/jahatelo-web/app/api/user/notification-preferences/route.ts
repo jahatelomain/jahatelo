@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { sanitizeObject } from '@/lib/sanitize';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
 import type { Prisma } from '@prisma/client';
+import { UNAUTHORIZED_MESSAGE, FORBIDDEN_MESSAGE } from '@/lib/authHelpers';
 
 const UserIdSchema = z.string().min(1).max(100);
 
@@ -17,12 +18,12 @@ export async function GET(request: NextRequest) {
   try {
     const token = await getTokenFromRequest(request);
     if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      return NextResponse.json({ error: UNAUTHORIZED_MESSAGE }, { status: 401 });
     }
 
     const authUser = await verifyToken(token);
     if (!authUser) {
-      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+      return NextResponse.json({ error: UNAUTHORIZED_MESSAGE }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
     }
     const { data: validUserId } = parsed;
     if (authUser.role !== 'SUPERADMIN' && validUserId !== authUser.id) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+      return NextResponse.json({ error: FORBIDDEN_MESSAGE }, { status: 403 });
     }
 
     // Buscar preferencias existentes o crear con valores por defecto
@@ -74,12 +75,12 @@ export async function PUT(request: NextRequest) {
   try {
     const token = await getTokenFromRequest(request);
     if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      return NextResponse.json({ error: UNAUTHORIZED_MESSAGE }, { status: 401 });
     }
 
     const authUser = await verifyToken(token);
     if (!authUser) {
-      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+      return NextResponse.json({ error: UNAUTHORIZED_MESSAGE }, { status: 401 });
     }
 
     const body = await request.json();
@@ -95,7 +96,7 @@ export async function PUT(request: NextRequest) {
     }
     const { data: validUserId } = parsed;
     if (authUser.role !== 'SUPERADMIN' && validUserId !== authUser.id) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+      return NextResponse.json({ error: FORBIDDEN_MESSAGE }, { status: 403 });
     }
 
     // Validar que el usuario existe
@@ -169,12 +170,12 @@ export async function POST(request: NextRequest) {
   try {
     const token = await getTokenFromRequest(request);
     if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      return NextResponse.json({ error: UNAUTHORIZED_MESSAGE }, { status: 401 });
     }
 
     const authUser = await verifyToken(token);
     if (!authUser) {
-      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+      return NextResponse.json({ error: UNAUTHORIZED_MESSAGE }, { status: 401 });
     }
 
     const body = await request.json();
@@ -190,7 +191,7 @@ export async function POST(request: NextRequest) {
     }
     const { data: validUserId } = parsed;
     if (authUser.role !== 'SUPERADMIN' && validUserId !== authUser.id) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+      return NextResponse.json({ error: FORBIDDEN_MESSAGE }, { status: 403 });
     }
 
     // Validar que el usuario existe
