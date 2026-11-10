@@ -152,7 +152,15 @@
           }
         }
       ],
-      "./plugins/withAndroidTransparentSplashIcon"
+      "./plugins/withFixXcodeSpaces",
+      "./plugins/withAndroidTransparentSplashIcon",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.538770919156-iguu9u41nf7fakboh06vvm09be25ip38",
+          "iosClientId": "538770919156-iguu9u41nf7fakboh06vvm09be25ip38.apps.googleusercontent.com"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

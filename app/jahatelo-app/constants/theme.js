@@ -5,13 +5,13 @@
  * consistencia visual en toda la aplicación.
  */
 
-// COLORES MODO CLARO
+// COLORES MODO CLARO (DARK_SURFACES definido en línea 143 pero NO consumido aún — pendiente implementar useTheme hook)
 export const COLORS = {
   // Color principal de la marca (lila del splash)
   primary: '#8E2DE2',
 
   // Variantes del color principal
-  primaryLight: '#B27CFF',
+  primaryLight: '#7C3AED',
   primaryDark: '#6A1FB5',
 
   // Colores de fondo
@@ -30,18 +30,18 @@ export const COLORS = {
   // Colores de texto
   text: '#2E0338',
   textLight: '#6A5E6E',
-  textMuted: '#9CA3AF',
-  muted: '#9CA3AF',
+  textMuted: '#6B7280',
+  muted: '#6B7280',
 
   // Colores de acento
   accent: '#8E2DE2',
   accentLight: '#F0E4FF',
   accentLighter: '#F3E8FF',
 
-  // Colores semánticos
-  success: '#10B981',
-  warning: '#F59E0B',
-  error: '#EF4444',
+  // Colores semánticos (variantes oscuras para texto sobre fondo blanco ≥4.5:1)
+  success: '#047857',
+  warning: '#B45309',
+  error: '#B91C1C',
   info: '#3B82F6',
 
   // Colores neutros
@@ -141,10 +141,66 @@ export const PLAN_COLORS = {
 };
 
 export const DARK_SURFACES = {
+  // Color principal de la marca (lila más vibrante para contraste en dark)
+  primary: '#A855F7',
+  primaryLight: '#C084FC',
+  primaryDark: '#7C3AED',
+
+  // Fondos oscuros
+  background: '#0F0A14',
+  backgroundDark: '#0A0610',
+  backgroundSoft: '#1A1025',
+
+  // Tarjetas y superficies
   card: '#1F0F2E',
+  cardBorder: '#2D1B3D',
+  cardBorderSoft: '#3D2650',
+  inputBorder: '#3D2650',
+  inputBackground: '#1A1025',
+  skeleton: '#2D1B3D',
+
+  // Textos
   text: '#FFFFFF',
-  muted: '#C5C5C5',
+  textLight: '#D4C5E0',
+  textMuted: '#9B8DB0',
+  muted: '#9B8DB0',
+
+  // Acento
   accent: '#FF2E93',
+  accentLight: '#3D1530',
+  accentLighter: '#2D1025',
+
+  // Semánticos (ligeramente ajustados para contraste en fondo oscuro)
+  success: '#34D399',
+  warning: '#FBBF24',
+  error: '#F87171',
+  info: '#60A5FA',
+
+  // Neutros
+  white: '#FFFFFF',
+  black: '#000000',
+  gray: '#9B8DB0',
+  grayLight: '#2D1B3D',
+  grayDark: '#D4C5E0',
+
+  // Overlays y sombras
+  overlay: 'rgba(0, 0, 0, 0.7)',
+  shadow: '#000000',
+
+  // Bordes y divisores
+  border: '#2D1B3D',
+  divider: '#2D1B3D',
+  disabled: '#3D2650',
+  surfaceMuted: '#1A1025',
+  surfaceSubtle: '#150D1E',
+  surfaceRaised: '#251535',
+  borderMuted: '#2D1B3D',
+  borderBrandSoft: '#3D2650',
+  textBrandDark: '#E9D5FF',
+  textSecondary: '#D4C5E0',
+  textTertiary: '#9B8DB0',
+  brandSoft: '#2D1535',
+  brandHighlight: '#3D1530',
 };
 
 export default {

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import * as authApi from '../services/authApi';
+import { isUnauthorized } from '../utils/fetchHelpers';
 
 const debugLog = (...args) => {
   if (__DEV__) console.log(...args);
@@ -53,7 +54,7 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
           // Una caída de red no invalida la sesión local. Solo una respuesta
           // explícita de autenticación puede expulsar al usuario.
-          if (error?.status === 401 || error?.status === 403) {
+          if (isUnauthorized(error)) {
             debugLog('Token inválido o expirado, limpiando datos...');
             await handleLogout();
           } else {

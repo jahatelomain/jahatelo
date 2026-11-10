@@ -172,6 +172,8 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
             style={styles.writeReviewButton}
             onPress={() => setShowReviewForm(true)}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Escribir una reseña"
           >
             <Ionicons name="create-outline" size={20} color={COLORS.white} />
             <Text style={styles.writeReviewButtonText}>Escribir una reseña</Text>
@@ -192,6 +194,8 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
             style={styles.loginPromptButton}
             onPress={() => navigation.navigate('Login')}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Iniciar sesión para dejar una reseña"
           >
             <Ionicons name="person-outline" size={20} color={COLORS.primary} />
             <Text style={styles.loginPromptButtonText}>Inicia sesión para dejar una reseña</Text>
@@ -253,6 +257,8 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
                   setIsAnonymous(false);
                 }}
                 disabled={submitting}
+                accessibilityRole="button"
+                accessibilityLabel="Cancelar reseña"
               >
                 <Text style={styles.cancelButtonText}>Cancelar</Text>
               </TouchableOpacity>
@@ -261,6 +267,9 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
                 style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
                 onPress={handleSubmitReview}
                 disabled={submitting}
+                accessibilityRole="button"
+                accessibilityLabel="Publicar reseña"
+                accessibilityState={{ disabled: submitting, busy: submitting }}
               >
                 {submitting ? (
                   <ActivityIndicator size="small" color={COLORS.white} />
@@ -369,6 +378,9 @@ export default function ReviewsTab({ route, navigation, embedded = false }) {
                 onPress={handleLoadMore}
                 disabled={loadingMore}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`Cargar más reseñas, ${total - reviews.length} restantes`}
+                accessibilityState={{ disabled: loadingMore, busy: loadingMore }}
               >
                 {loadingMore ? (
                   <ActivityIndicator size="small" color={COLORS.primary} />

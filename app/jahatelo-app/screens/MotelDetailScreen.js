@@ -13,7 +13,7 @@ import Animated, {
   FadeInDown,
 } from '../utils/reanimatedCompat';
 import * as Haptics from 'expo-haptics';
-import { COLORS } from '../constants/theme';
+import useTheme from '../hooks/useTheme';
 import { getMotelImageSource, hasRemoteMotelImage } from '../utils/mediaSource';
 import { normalizeMotelPlan, MOTEL_PLANS } from '../constants/motelPlans';
 import PromosTab from './motelDetail/PromosTab';
@@ -25,11 +25,15 @@ import { trackMotelView, trackPhoneClick, trackWhatsAppClick } from '../services
 import { shareMotel } from '../utils/share';
 import MotelHeader from '../components/motelDetail/MotelHeader';
 import MotelTabBar from '../components/motelDetail/MotelTabBar';
+import AppStateView from '../components/AppStateView';
 import LoadingScreen from '../components/LoadingScreen';
+import { useOnlineRetry } from '../hooks/useOnlineRetry';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function MotelDetailScreen({ route, navigation }) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const { motelSlug, motelId } = route.params || {};
   const initialTab = route.params?.initialTab;
   const [motel, setMotel] = useState(null);
@@ -92,6 +96,12 @@ export default function MotelDetailScreen({ route, navigation }) {
       setRefreshing(false);
     }
   }, [loadMotel]);
+
+  // Retry automático al reconectar a internet
+  const handleReconnect = useCallback(() => {
+    if (error) loadMotel();
+  }, [error, loadMotel]);
+  useOnlineRetry(handleReconnect);
 
   // Handler para llamada telefónica con haptic
   const handleCall = (phoneNumber) => {
@@ -210,25 +220,21 @@ export default function MotelDetailScreen({ route, navigation }) {
   if (error || !motel) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={64} color="COLORS.primary" />
-          <Text style={styles.errorTitle}>Motel no encontrado</Text>
-          <Text style={styles.errorText}>
-            {error || 'No pudimos cargar la información de este motel.'}
-          </Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={loadMotel}
-          >
-            <Text style={styles.retryButtonText}>Reintentar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backButtonText}>Volver</Text>
-          </TouchableOpacity>
-        </View>
+        <AppStateView
+          type="error"
+          title="Motel no encontrado"
+          message={error || 'No pudimos cargar la información de este motel.'}
+          actionLabel="Reintentar"
+          onAction={loadMotel}
+        />
+        <TouchableOpacity
+          style={[styles.backButton, { marginTop: SPACING.md }]}
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Volver"
+        >
+          <Text style={styles.backButtonText}>Volver</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -270,19 +276,19 @@ export default function MotelDetailScreen({ route, navigation }) {
         <View style={[styles.badgesContainer, { top: insets.top + 70 }]}>
           {motel.hasPromo && (
             <View style={styles.promoBadge}>
-              <Ionicons name="pricetag" size={10} color="#FFFFFF" />
+              <Ionicons name="pricetag" size={10} color={colors.white} />
               <Text style={styles.badgeText}>PROMO</Text>
             </View>
           )}
           {plan === MOTEL_PLANS.DIAMOND && (
             <View style={styles.platinumBadge}>
-              <Ionicons name="diamond" size={10} color="#FFFFFF" />
+              <Ionicons name="diamond" size={10} color={colors.white} />
               <Text style={styles.badgeText}>DIAMOND</Text>
             </View>
           )}
           {plan === MOTEL_PLANS.GOLD && (
             <View style={styles.premiumBadge}>
-              <Ionicons name="star" size={10} color="#FFFFFF" />
+              <Ionicons name="star" size={10} color={colors.white} />
               <Text style={styles.badgeText}>GOLD</Text>
             </View>
           )}
@@ -295,7 +301,7 @@ export default function MotelDetailScreen({ route, navigation }) {
               style={styles.backIconButton}
               onPress={() => navigation.goBack()}
             >
-              <Ionicons name="arrow-back" size={19} color="#FFFFFF" />
+              <Ionicons name="arrow-back" size={19} color={colors.white} />
             </TouchableOpacity>
           </Animated.View>
           <Animated.View entering={FadeInDown.delay(250).duration(400)}>
@@ -307,7 +313,7 @@ export default function MotelDetailScreen({ route, navigation }) {
                 onPress={() => navigation.navigate('ReportMotel', { motelId: motel.id, motelName: motel.nombre })}
                 activeOpacity={0.7}
               >
-                <Ionicons name="warning-outline" size={21} color={COLORS.primary} />
+                <Ionicons name="warning-outline" size={21} color={colors.primary} />
               </TouchableOpacity>
               <TouchableOpacity
                 accessibilityRole="button"
@@ -320,7 +326,7 @@ export default function MotelDetailScreen({ route, navigation }) {
                   <Ionicons
                     name={isFavorite(motel.id) ? 'heart' : 'heart-outline'}
                     size={21}
-                    color={COLORS.primary}
+                    color={colors.primary}
                   />
                 </Animated.View>
               </TouchableOpacity>
@@ -350,7 +356,7 @@ export default function MotelDetailScreen({ route, navigation }) {
             showsVerticalScrollIndicator={false}
             onScroll={handleSectionsScroll}
             scrollEventThrottle={16}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} />}
           >
           {availableTabs.map((tab) => {
             const TabComponent = tab.component;
@@ -380,10 +386,10 @@ export default function MotelDetailScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
   },
   centerContainer: {
     flex: 1,
@@ -394,7 +400,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    color: colors.textLight,
   },
   photoContainer: {
     position: 'relative',
@@ -421,13 +427,13 @@ const styles = StyleSheet.create({
   promoBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 16,
     gap: 4,
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
@@ -435,13 +441,13 @@ const styles = StyleSheet.create({
   premiumBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F59E0B',
+    backgroundColor: colors.warning,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 16,
     gap: 4,
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
@@ -449,19 +455,19 @@ const styles = StyleSheet.create({
   platinumBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#7DD3FC',
+    backgroundColor: colors.info,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 16,
     gap: 4,
     elevation: 5,
-    shadowColor: '#7DD3FC',
+    shadowColor: colors.info,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.5,
     shadowRadius: 4,
   },
   badgeText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -470,7 +476,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: colors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -498,20 +504,20 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
   },
   tabContent: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
   },
   sectionsContent: {
     paddingBottom: 32,
   },
   sectionContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
   },
   sectionHeading: {
-    color: COLORS.text,
+    color: colors.text,
     fontSize: 14,
     fontWeight: '800',
     letterSpacing: 0.8,
@@ -520,7 +526,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   slogan: {
-    color: COLORS.textLight,
+    color: colors.textLight,
     fontSize: 16,
     fontStyle: 'italic',
     lineHeight: 23,
@@ -540,18 +546,18 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#2A0038',
+    color: colors.textBrandDark,
     marginTop: 16,
     marginBottom: 8,
   },
   errorText: {
     fontSize: 16,
-    color: '#666',
+    color: colors.textMuted,
     textAlign: 'center',
     marginBottom: 24,
   },
   retryButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 24,
@@ -560,10 +566,10 @@ const styles = StyleSheet.create({
   retryButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: colors.white,
   },
   backButton: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.surfaceMuted,
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 24,
@@ -571,6 +577,6 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2A0038',
+    color: colors.textBrandDark,
   },
 });

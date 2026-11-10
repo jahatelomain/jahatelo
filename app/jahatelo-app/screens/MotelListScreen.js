@@ -29,7 +29,7 @@ import AdListItem from '../components/AdListItem';
 import AdDetailModal from '../components/AdDetailModal';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { mixAdvertisements } from '../utils/mixAdvertisements';
-import { COLORS } from '../constants/theme';
+import { COLORS, TOUCH_TARGET } from '../constants/theme';
 import { filterMotelsByDistance } from '../utils/location';
 import { showMessage } from '../utils/appFeedback';
 
@@ -474,9 +474,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+   width: TOUCH_TARGET,
+   height: TOUCH_TARGET,
+   borderRadius: TOUCH_TARGET / 2,
     backgroundColor: COLORS.card,
     justifyContent: 'center',
     alignItems: 'center',

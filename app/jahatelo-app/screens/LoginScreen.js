@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { getApiRoot } from '../services/apiBaseUrl';
-import { COLORS } from '../constants/theme';
+import { COLORS, TOUCH_TARGET } from '../constants/theme';
 import { useGoogleAuth, isGoogleConfigured } from '../services/googleAuthService';
 import { useFacebookAuth, isFacebookLoginEnabled } from '../services/facebookAuthService';
 import { showErrorMessage, showSuccessMessage } from '../utils/appFeedback';
@@ -331,6 +331,8 @@ export default function LoginScreen({ navigation }) {
                   onPress={handleResendVerification}
                   disabled={resendVerifLoading}
                   style={styles.resendVerifButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Reenviar correo de verificación"
                 >
                   <Text style={styles.resendVerifText}>
                     {resendVerifLoading ? 'Enviando...' : 'Reenviar'}
@@ -366,6 +368,8 @@ export default function LoginScreen({ navigation }) {
                 style={[styles.socialButton, !googleRequest && styles.oauthButtonDisabled]}
                 onPress={startGoogleLogin}
                 disabled={!googleRequest || isLoading}
+                accessibilityRole="button"
+                accessibilityLabel="Continuar con Google"
               >
                 <Ionicons name="logo-google" size={22} color="#DB4437" />
                 <Text style={styles.socialButtonText}>Continuar con Google</Text>
@@ -375,6 +379,8 @@ export default function LoginScreen({ navigation }) {
                   style={[styles.socialButton, !facebookRequest && styles.oauthButtonDisabled]}
                   onPress={startFacebookLogin}
                   disabled={!facebookRequest || isLoading}
+                  accessibilityRole="button"
+                  accessibilityLabel="Continuar con Facebook"
                 >
                   <Ionicons name="logo-facebook" size={22} color="#1877F2" />
                   <Text style={styles.socialButtonText}>Continuar con Facebook</Text>
@@ -384,6 +390,8 @@ export default function LoginScreen({ navigation }) {
                 style={styles.socialButton}
                 onPress={() => navigation.navigate('WhatsappOtp')}
                 disabled={isLoading}
+                accessibilityRole="button"
+                accessibilityLabel="Continuar con SMS"
               >
                 <Ionicons name="chatbubble-ellipses-outline" size={22} color="#4CAF50" />
                 <Text style={styles.socialButtonText}>Continuar con SMS</Text>
@@ -393,7 +401,11 @@ export default function LoginScreen({ navigation }) {
             {/* Registro */}
             <View style={styles.registerContainer}>
               <Text style={styles.registerText}>¿No tienes cuenta? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Register')}
+                accessibilityRole="button"
+                accessibilityLabel="Ir a registrarse"
+              >
                 <Text style={styles.registerLink}>Regístrate</Text>
               </TouchableOpacity>
             </View>

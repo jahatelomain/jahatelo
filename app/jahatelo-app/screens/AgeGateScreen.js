@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { TOUCH_TARGET } from '../constants/theme';
 
 export default function AgeGateScreen({ navigation }) {
   const handleEnter = () => {
@@ -15,7 +16,12 @@ export default function AgeGateScreen({ navigation }) {
           Jahatelo es una app para mayores de 18 años. Entrando confirmás que sos mayor de edad.
         </Text>
 
-        <TouchableOpacity style={styles.buttonPrimary} onPress={handleEnter}>
+        <TouchableOpacity
+ style={styles.buttonPrimary}
+ onPress={handleEnter}
+ accessibilityRole="button"
+ accessibilityLabel="Confirmar que soy mayor de 18 años y entrar"
+ >
           <Text style={styles.buttonText}>Tengo +18, entrar</Text>
         </TouchableOpacity>
       </View>
@@ -48,11 +54,14 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   buttonPrimary: {
-    backgroundColor: '#FF2E93',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 999,
-  },
+   backgroundColor: '#FF2E93',
+   paddingVertical: 12,
+   paddingHorizontal: 24,
+   borderRadius: 999,
+   minHeight: TOUCH_TARGET,
+   alignItems: 'center',
+   justifyContent: 'center',
+   },
   buttonText: {
     color: '#FFFFFF',
     fontWeight: 'bold',

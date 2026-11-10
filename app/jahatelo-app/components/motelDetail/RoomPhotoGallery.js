@@ -38,7 +38,7 @@ export default function RoomPhotoGallery({
             accessibilityRole="button"
             accessibilityLabel={`Ampliar foto ${index + 1} de ${roomName}`}
           >
-            <Image source={{ uri: photo }} style={styles.photo} resizeMode="cover" />
+            <Image source={{ uri: photo }} style={styles.photo} resizeMode="cover" cachePolicy="memory-disk" />
           </TouchableOpacity>
         ))}
       </ScrollView>

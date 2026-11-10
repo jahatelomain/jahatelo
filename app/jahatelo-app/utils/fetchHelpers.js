@@ -77,6 +77,21 @@ export async function fetchJson(url, options = {}) {
  * @param {object} additionalHeaders - Headers adicionales
  * @returns {object} Headers object
  */
+/**
+ * Detecta de forma unificada si un error representa una sesión inválida (401/403).
+ * Usado tanto en authApi.js como en AuthContext.js para evitar lógica duplicada.
+ * @param {any} error - Error capturado de fetch o de parsing
+ * @returns {boolean}
+ */
+export function isUnauthorized(error) {
+  if (!error) return false;
+  // Respuesta estructurada con status code numérico (fetchWithTimeout / safeFetchJson)
+  if (error.status === 401 || error.status === 403) return true;
+  // Fallback: mensaje de error que incluye el código como string (legacy)
+  if (typeof error.message === 'string' && /(?:^|\s|:)401(?:\s|$|:)/.test(error.message)) return true;
+  return false;
+}
+
 export function buildAuthHeaders(token, additionalHeaders = {}) {
   const headers = {
     'Content-Type': 'application/json',

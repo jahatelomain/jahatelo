@@ -127,7 +127,13 @@ const PromoCard = ({ motel, onPress, index, scrollX, iosScrollX, activeIndex, ba
   });
 
   const card = (
-    <TouchableOpacity style={styles.cardClip} activeOpacity={0.9} onPress={() => onPress?.(motel)}>
+    <TouchableOpacity
+      style={styles.cardClip}
+      activeOpacity={0.9}
+      onPress={() => onPress?.(motel)}
+      accessibilityRole="button"
+      accessibilityLabel={`Ver promoción de ${motel?.nombre || 'motel'}`}
+    >
       <ImageBackground
         source={imageSource}
         style={styles.card}
@@ -253,7 +259,13 @@ const AdCard = ({ ad, onPress, index, scrollX, iosScrollX, activeIndex, onTrackV
 
   return (
     <CarouselAnimatedView style={[styles.cardWrapper, Platform.OS === 'ios' ? iosAnimatedStyle : animatedStyle]}>
-      <TouchableOpacity style={styles.cardClip} activeOpacity={0.9} onPress={handlePress}>
+      <TouchableOpacity
+        style={styles.cardClip}
+        activeOpacity={0.9}
+        onPress={handlePress}
+        accessibilityRole="button"
+        accessibilityLabel={`Ver anuncio: ${ad?.title || 'publicidad'}`}
+      >
         <ImageBackground
           source={imageSource}
           style={styles.card}
