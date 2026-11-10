@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import SectionWrapper from '@/components/public/SectionWrapper';
 import Navbar from '@/components/public/Navbar';
@@ -12,6 +13,13 @@ import PromoListWithAds from '@/components/public/PromoListWithAds';
 import CityListWithAds from '@/components/public/CityListWithAds';
 import MobileHome from '@/components/public/MobileHome';
 import HomeFeaturedProvider from '@/components/public/HomeFeaturedProvider';
+import HomeBreadcrumbs from '@/components/public/HomeBreadcrumbs';
+import {
+  FeaturedCarouselSkeleton,
+  CategoriesGridSkeleton,
+  CityListSkeleton,
+  PromoListSkeleton,
+} from '@/components/public/HeroSkeletons';
 import { headers } from 'next/headers';
 import type { PublicMotelListResponse } from '@/lib/domain/motels/publicListItem';
 
@@ -60,6 +68,7 @@ export default async function HomePage() {
 
   return (
     <HomeFeaturedProvider motelIds={featuredMotels.map((motel) => motel.id)}>
+      <HomeBreadcrumbs />
       <AdPopup />
       <Navbar />
       <MobileHome featuredMotels={featuredMotels} cities={cities} />
@@ -102,10 +111,14 @@ export default async function HomePage() {
         {/* Carousel y categorías sobre fondo blanco */}
         <div className="bg-white py-12">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
-            <FeaturedCarousel featuredMotels={featuredMotels} />
+            <Suspense fallback={<FeaturedCarouselSkeleton />}>
+              <FeaturedCarousel featuredMotels={featuredMotels} />
+            </Suspense>
           </div>
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <CategoriesGrid categories={categories} />
+            <Suspense fallback={<CategoriesGridSkeleton />}>
+              <CategoriesGrid categories={categories} />
+            </Suspense>
           </div>
         </div>
 
@@ -113,34 +126,38 @@ export default async function HomePage() {
         {cities.length > 0 && (
           <SectionWrapper className="py-14">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center gap-4 mb-8">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-purple-400 mb-1">Explorá por zona</p>
-                  <h2 className="text-2xl font-bold text-white">Moteles por ciudad</h2>
+              <Suspense fallback={<CityListSkeleton />}>
+                <div className="flex items-center gap-4 mb-8">
+                  <div>
+                    <p className="text-xs uppercase tracking-widest text-purple-400 mb-1">Explorá por zona</p>
+                    <h2 className="text-2xl font-bold text-white">Moteles por ciudad</h2>
+                  </div>
+                  <div className="h-px flex-1 bg-gradient-to-r from-purple-700/60 to-transparent" />
+                  <Link href="/search" className="text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors shrink-0">
+                    Ver todos →
+                  </Link>
                 </div>
-                <div className="h-px flex-1 bg-gradient-to-r from-purple-700/60 to-transparent" />
-                <Link href="/search" className="text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors shrink-0">
-                  Ver todos →
-                </Link>
-              </div>
-              <CityListWithAds cities={cities} />
+                <CityListWithAds cities={cities} />
+              </Suspense>
             </div>
           </SectionWrapper>
         )}
         {promosMotels.length > 0 && (
           <SectionWrapper className="py-14">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center gap-4 mb-8">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-pink-400 mb-1">Ofertas exclusivas</p>
-                  <h2 className="text-2xl font-bold text-white">Promos activas</h2>
+              <Suspense fallback={<PromoListSkeleton />}>
+                <div className="flex items-center gap-4 mb-8">
+                  <div>
+                    <p className="text-xs uppercase tracking-widest text-pink-400 mb-1">Ofertas exclusivas</p>
+                    <h2 className="text-2xl font-bold text-white">Promos activas</h2>
+                  </div>
+                  <div className="h-px flex-1 bg-gradient-to-r from-pink-700/60 to-transparent" />
+                  <Link href="/search?promos=1" className="text-sm font-semibold text-pink-400 hover:text-pink-300 transition-colors shrink-0">
+                    Ver todas →
+                  </Link>
                 </div>
-                <div className="h-px flex-1 bg-gradient-to-r from-pink-700/60 to-transparent" />
-                <Link href="/search?promos=1" className="text-sm font-semibold text-pink-400 hover:text-pink-300 transition-colors shrink-0">
-                  Ver todas →
-                </Link>
-              </div>
-              <PromoListWithAds motels={promosMotels} />
+                <PromoListWithAds motels={promosMotels} />
+              </Suspense>
             </div>
           </SectionWrapper>
         )}
