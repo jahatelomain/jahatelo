@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { UserPayload } from '@/lib/auth';
 import { hasModuleAccess } from '@/lib/adminModules';
+import AccessDenied from '@/components/admin/AccessDenied';
 import { getMotelAnalyticsAccess } from '@/lib/domain/motels/planPresentation';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { Toaster } from 'sonner';
@@ -304,7 +305,11 @@ export default function AdminLayout({
 
   const currentModule = getModuleFromPath(pathname);
   if (!loading && !isLoginPage && currentModule && !hasModuleAccess(user, currentModule)) {
-    return null;
+    return (
+      <div className="min-h-screen bg-slate-100">
+        <AccessDenied module={currentModule} requiredRole={user?.role} />
+      </div>
+    );
   }
 
   const profileInitials = user?.name
