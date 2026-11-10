@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Navbar() {
@@ -21,8 +21,17 @@ export default function Navbar() {
     }
   };
 
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setUserMenuOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [userMenuOpen]);
+
   return (
-    <nav className="sticky top-0 z-50 hidden bg-white/90 backdrop-blur-md md:block">
+    <nav className="sticky top-0 z-50 hidden bg-[var(--surface)]/90 backdrop-blur-md md:block border-b border-[var(--border-subtle)]">
       {/* Borde inferior animado con gradiente de marca */}
       <div className="navbar-gradient-border h-[2px] w-full absolute bottom-0 left-0" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,7 +55,7 @@ export default function Navbar() {
               className={`font-medium transition-colors ${
                 isActive('/')
                   ? 'text-purple-600'
-                  : 'text-gray-600 hover:text-purple-600'
+                  : 'text-[var(--text-secondary)] hover:text-purple-600'
               }`}
             >
               Inicio
@@ -57,7 +66,7 @@ export default function Navbar() {
               className={`font-medium transition-colors ${
                 isActive('/search')
                   ? 'text-purple-600'
-                  : 'text-gray-600 hover:text-purple-600'
+                  : 'text-[var(--text-secondary)] hover:text-purple-600'
               }`}
             >
               Buscar Moteles
@@ -67,8 +76,8 @@ export default function Navbar() {
               {...activeAria('/nearby')}
               className={`font-medium transition-colors ${
                 isActive('/nearby')
-                  ? 'text-purple-600'
-                  : 'text-gray-600 hover:text-purple-600'
+                 ? 'text-purple-600'
+                 : 'text-[var(--text-secondary)] hover:text-purple-600'
               }`}
             >
               Cerca de mí
@@ -78,8 +87,8 @@ export default function Navbar() {
               {...activeAria('/mapa')}
               className={`font-medium transition-colors ${
                 isActive('/mapa')
-                  ? 'text-purple-600'
-                  : 'text-gray-600 hover:text-purple-600'
+                 ? 'text-purple-600'
+                 : 'text-[var(--text-secondary)] hover:text-purple-600'
               }`}
             >
               Mapa
@@ -89,8 +98,8 @@ export default function Navbar() {
               {...activeAria('/contacto')}
               className={`font-medium transition-colors ${
                 isActive('/contacto')
-                  ? 'text-purple-600'
-                  : 'text-gray-600 hover:text-purple-600'
+                 ? 'text-purple-600'
+                 : 'text-[var(--text-secondary)] hover:text-purple-600'
               }`}
             >
               Contactanos
@@ -101,7 +110,10 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 text-gray-700 hover:text-purple-600 transition-colors"
+                  aria-expanded={userMenuOpen}
+                  aria-haspopup="true"
+                  aria-controls="user-menu"
+                  className="flex items-center gap-2 text-[var(--text-primary)] hover:text-purple-600 transition-colors"
                 >
                   <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white font-medium">
                     {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
@@ -117,28 +129,28 @@ export default function Navbar() {
                       className="fixed inset-0 z-10"
                       onClick={() => setUserMenuOpen(false)}
                     />
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                      <div className="px-4 py-3 border-b border-gray-200">
-                        <p className="text-sm font-medium text-gray-900">{user?.name || 'Usuario'}</p>
-                        <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                    <div id="user-menu" className="absolute right-0 mt-2 w-56 bg-[var(--surface)] rounded-lg shadow-lg border border-[var(--border-subtle)] py-1 z-20">
+                      <div className="px-4 py-3 border-b border-[var(--border-subtle)]">
+                        <p className="text-sm font-medium text-[var(--text-primary)]">{user?.name || 'Usuario'}</p>
+                        <p className="text-xs text-[var(--text-secondary)] truncate">{user?.email}</p>
                       </div>
                       <Link
                         href="/perfil"
                         onClick={() => setUserMenuOpen(false)}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="block px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-soft)] transition-colors"
                       >
                         Mi Perfil
                       </Link>
                       <Link
                         href="/mis-favoritos"
                         onClick={() => setUserMenuOpen(false)}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="block px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-soft)] transition-colors"
                       >
                         Mis Favoritos
                       </Link>
                       <button
                         onClick={handleLogout}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                       >
                         Cerrar Sesión
                       </button>
@@ -150,7 +162,7 @@ export default function Navbar() {
               <div className="flex items-center gap-3 shrink-0">
                 <Link
                   href="/login"
-                  className="font-medium text-gray-600 hover:text-purple-600 transition-colors"
+                  className="font-medium text-[var(--text-secondary)] hover:text-purple-600 transition-colors"
                 >
                   Iniciar sesión
                 </Link>

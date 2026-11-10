@@ -72,7 +72,7 @@ export default async function HomePage() {
       <AdPopup />
       <Navbar />
       <MobileHome featuredMotels={featuredMotels} cities={cities} />
-      <main data-testid="homepage-main" className="hidden md:block">
+      <main id="main-content" data-testid="homepage-main" className="hidden md:block">
         {/*
          * Hero desktop — alineado con brandguide/usage.txt:
          * "Keep backgrounds clean and white" y "Avoid extra borders or boxes behind the icon".
@@ -80,14 +80,14 @@ export default async function HomePage() {
          * con acentos sutiles (borde inferior y sombra suave) para mantener jerarquía visual
          * sin romper la identidad de Jahatelo. Contraste WCAG AA preservado con textos oscuros.
          */}
-        <section className="relative bg-white border-b border-gray-100 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.06)]">
+        <section aria-labelledby="hero-heading" className="relative bg-white border-b border-gray-100 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.06)]">
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
             {/* Título */}
             <div className="text-center max-w-3xl mx-auto mb-10">
               <span className="animate-fade-up inline-block mb-4 text-xs font-semibold uppercase tracking-widest text-purple-700 bg-purple-50 px-4 py-1.5 rounded-full">
                 La plataforma de moteles de Paraguay
               </span>
-              <h1 className="animate-fade-up-delay-1 text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 leading-tight text-gray-900">
+              <h1 id="hero-heading" className="animate-fade-up-delay-1 text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 leading-tight text-gray-900">
                 <span className="animated-gradient-text">
                   Encontrá tu motel ideal
                 </span>
@@ -121,9 +121,9 @@ export default async function HomePage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <Suspense fallback={<CityListSkeleton />}>
                 <div className="flex items-center gap-4 mb-8">
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-purple-400 mb-1">Explorá por zona</p>
-                    <h2 className="text-2xl font-bold text-white">Moteles por ciudad</h2>
+                 <div>
+                 <p id="cities-heading" className="text-xs uppercase tracking-widest text-purple-400 mb-1">Explorá por zona</p>
+                 <h2 aria-labelledby="cities-heading" className="text-2xl font-bold text-white">Moteles por ciudad</h2>
                   </div>
                   <div className="h-px flex-1 bg-gradient-to-r from-purple-700/60 to-transparent" />
                   <Link href="/search" className="text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors shrink-0">
@@ -140,9 +140,9 @@ export default async function HomePage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <Suspense fallback={<PromoListSkeleton />}>
                 <div className="flex items-center gap-4 mb-8">
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-pink-400 mb-1">Ofertas exclusivas</p>
-                    <h2 className="text-2xl font-bold text-white">Promos activas</h2>
+                 <div>
+                 <p id="promos-heading" className="text-xs uppercase tracking-widest text-pink-400 mb-1">Ofertas exclusivas</p>
+                 <h2 aria-labelledby="promos-heading" className="text-2xl font-bold text-white">Promos activas</h2>
                   </div>
                   <div className="h-px flex-1 bg-gradient-to-r from-pink-700/60 to-transparent" />
                   <Link href="/search?promos=1" className="text-sm font-semibold text-pink-400 hover:text-pink-300 transition-colors shrink-0">
@@ -173,9 +173,10 @@ export default async function HomePage() {
             </div>
           </SectionWrapper>
         )}
-        <section className="bg-white border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <SocialLinks />
+        <section aria-labelledby="social-heading" className="bg-white border-b border-gray-100">
+         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+         <h2 id="social-heading" className="sr-only">Redes sociales</h2>
+         <SocialLinks />
           </div>
         </section>
       </main>

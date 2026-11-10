@@ -4,41 +4,41 @@ export default function TermsPage() {
   return (
     <>
       <MobilePageHeader title="Términos y condiciones" />
-      <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-0 md:py-12">
+      <div className="public-page min-h-screen px-4 py-6 md:px-0 md:py-12">
         <div className="container mx-auto px-4 max-w-4xl">
-          <div className="rounded-xl bg-white p-5 shadow-sm md:p-12">
-            <h1 className="mb-2 text-2xl font-bold text-slate-900 md:text-3xl">Términos y Condiciones</h1>
-            <p className="text-sm text-slate-600 mb-8">Última actualización: {new Date().toLocaleDateString('es-PY')}</p>
+          <div className="public-card rounded-xl p-5 shadow-sm md:p-12">
+            <h1 className="mb-2 text-2xl font-bold text-[var(--text-primary)] md:text-3xl">Términos y Condiciones</h1>
+            <p className="text-sm text-[var(--text-secondary)] mb-8">Última actualización: {new Date().toLocaleDateString('es-PY')}</p>
 
-            <div className="prose prose-slate max-w-none space-y-6">
+            <div className="prose prose-slate dark:prose-invert max-w-none space-y-6">
             <section>
-              <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">1. Aceptación de los Términos</h2>
-              <p className="text-slate-700 leading-relaxed">
+              <h2 className="text-2xl font-semibold text-[var(--text-primary)] mt-8 mb-4">1. Aceptación de los Términos</h2>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 Al acceder y utilizar Jahatelo (&quot;la Plataforma&quot;), usted acepta estar sujeto a estos Términos y Condiciones.
                 Si no está de acuerdo con alguna parte de estos términos, no debe usar nuestros servicios.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">2. Descripción del Servicio</h2>
-              <p className="text-slate-700 leading-relaxed">
+              <h2 className="text-2xl font-semibold text-[var(--text-primary)] mt-8 mb-4">2. Descripción del Servicio</h2>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 Jahatelo es una plataforma digital que conecta a usuarios con moteles en Paraguay, facilitando la búsqueda,
                 consulta de información y servicios relacionados. No somos propietarios ni operadores de los establecimientos listados.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">3. Registro y Cuenta de Usuario</h2>
-              <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">3.1 Requisitos</h3>
-              <ul className="list-disc pl-6 text-slate-700 space-y-2">
+              <h2 className="text-2xl font-semibold text-[var(--text-primary)] mt-8 mb-4">3. Registro y Cuenta de Usuario</h2>
+              <h3 className="text-xl font-medium text-[var(--text-primary)] mt-4 mb-2">3.1 Requisitos</h3>
+              <ul className="list-disc pl-6 text-[var(--text-secondary)] space-y-2">
                 <li>Debe ser mayor de 18 años para crear una cuenta</li>
                 <li>Debe proporcionar información veraz y actualizada</li>
                 <li>Es responsable de mantener la confidencialidad de su contraseña</li>
                 <li>Es responsable de todas las actividades realizadas bajo su cuenta</li>
               </ul>
 
-              <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">3.2 Tipos de Cuenta</h3>
-              <ul className="list-disc pl-6 text-slate-700 space-y-2">
+              <h3 className="text-xl font-medium text-[var(--text-primary)] mt-4 mb-2">3.2 Tipos de Cuenta</h3>
+              <ul className="list-disc pl-6 text-[var(--text-secondary)] space-y-2">
                 <li><strong>Usuario:</strong> Acceso a búsqueda, favoritos, reseñas</li>
                 <li><strong>Motel Admin:</strong> Gestión de establecimiento registrado</li>
                 <li><strong>Super Admin:</strong> Administración de la plataforma</li>
@@ -46,9 +46,9 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">4. Uso Aceptable</h2>
-              <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">4.1 Usted se compromete a:</h3>
-              <ul className="list-disc pl-6 text-slate-700 space-y-2">
+              <h2 className="text-2xl font-semibold text-[var(--text-primary)] mt-8 mb-4">4. Uso Aceptable</h2>
+              <h3 className="text-xl font-medium text-[var(--text-primary)] mt-4 mb-2">4.1 Usted se compromete a:</h3>
+              <ul className="list-disc pl-6 text-[var(--text-secondary)] space-y-2">
                 <li>Utilizar la plataforma de forma legal y apropiada</li>
                 <li>No publicar contenido ofensivo, difamatorio o ilegal</li>
                 <li>Respetar los derechos de propiedad intelectual</li>
@@ -56,8 +56,8 @@ export default function TermsPage() {
                 <li>Proporcionar reseñas honestas basadas en experiencias reales</li>
               </ul>
 
-              <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">4.2 Prohibiciones:</h3>
-              <ul className="list-disc pl-6 text-slate-700 space-y-2">
+              <h3 className="text-xl font-medium text-[var(--text-primary)] mt-4 mb-2">4.2 Prohibiciones:</h3>
+              <ul className="list-disc pl-6 text-[var(--text-secondary)] space-y-2">
                 <li>Uso automatizado (bots, scrapers) sin autorización</li>
                 <li>Recopilación de datos de otros usuarios</li>
                 <li>Suplantación de identidad</li>
@@ -67,50 +67,50 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">5. Contenido del Usuario</h2>
-              <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">5.1 Reseñas y Comentarios</h3>
-              <p className="text-slate-700 leading-relaxed">
+              <h2 className="text-2xl font-semibold text-[var(--text-primary)] mt-8 mb-4">5. Contenido del Usuario</h2>
+              <h3 className="text-xl font-medium text-[var(--text-primary)] mt-4 mb-2">5.1 Reseñas y Comentarios</h3>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 Al publicar reseñas, comentarios o cualquier contenido en la plataforma, usted otorga a Jahatelo
                 una licencia no exclusiva, perpetua, irrevocable y libre de regalías para usar, reproducir,
                 modificar y distribuir dicho contenido.
               </p>
 
-              <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">5.2 Moderación</h3>
-              <p className="text-slate-700 leading-relaxed">
+              <h3 className="text-xl font-medium text-[var(--text-primary)] mt-4 mb-2">5.2 Moderación</h3>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 Nos reservamos el derecho de revisar, editar o eliminar cualquier contenido que viole estos
                 términos o que consideremos inapropiado, sin previo aviso.
               </p>
 
-              <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">5.3 Denuncias y normas de la comunidad</h3>
-              <p className="text-slate-700 leading-relaxed mb-4">
+              <h3 className="text-xl font-medium text-[var(--text-primary)] mt-4 mb-2">5.3 Denuncias y normas de la comunidad</h3>
+              <p className="text-[var(--text-secondary)] leading-relaxed mb-4">
                 Puede denunciar una reseña desde la propia publicación. No se permite contenido ilegal,
                 amenazante, discriminatorio, sexualmente explícito, engañoso, repetitivo, ajeno a la experiencia
                 reseñada ni contenido que exponga datos personales de terceros.
               </p>
-              <p className="text-slate-700 leading-relaxed">
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 El equipo administrador evaluará cada denuncia y podrá descartarla, eliminar la reseña o aplicar
                 medidas sobre la cuenta responsable. La denuncia no implica la eliminación automática del contenido.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">6. Registro de Moteles</h2>
-              <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">6.1 Proceso de Aprobación</h3>
-              <p className="text-slate-700 leading-relaxed">
+              <h2 className="text-2xl font-semibold text-[var(--text-primary)] mt-8 mb-4">6. Registro de Moteles</h2>
+              <h3 className="text-xl font-medium text-[var(--text-primary)] mt-4 mb-2">6.1 Proceso de Aprobación</h3>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 Los establecimientos que deseen registrarse deben completar el formulario de registro.
                 Jahatelo se reserva el derecho de aprobar o rechazar solicitudes a su discreción.
               </p>
 
-              <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">6.2 Responsabilidades del Motel</h3>
-              <ul className="list-disc pl-6 text-slate-700 space-y-2">
+              <h3 className="text-xl font-medium text-[var(--text-primary)] mt-4 mb-2">6.2 Responsabilidades del Motel</h3>
+              <ul className="list-disc pl-6 text-[var(--text-secondary)] space-y-2">
                 <li>Mantener información actualizada y precisa</li>
                 <li>Cumplir con todas las leyes y regulaciones locales</li>
                 <li>Responder a consultas de usuarios de forma oportuna</li>
                 <li>Pagar las tarifas acordadas según el plan seleccionado</li>
               </ul>
 
-              <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">6.3 Planes y Pagos</h3>
-              <ul className="list-disc pl-6 text-slate-700 space-y-2">
+              <h3 className="text-xl font-medium text-[var(--text-primary)] mt-4 mb-2">6.3 Planes y Pagos</h3>
+              <ul className="list-disc pl-6 text-[var(--text-secondary)] space-y-2">
                 <li><strong>BASIC (Gs. 330.000/mes):</strong> 1 foto por habitación, 1 promoción activa, visibilidad estándar, analíticas básicas</li>
                 <li><strong>GOLD (Gs. 660.000/mes):</strong> 3 fotos por habitación, hasta 3 promociones activas, visibilidad superior, analíticas avanzadas</li>
                 <li><strong>DIAMOND (Gs. 1.320.000/mes):</strong> Fotos ilimitadas, promociones ilimitadas, máxima visibilidad, analíticas avanzadas con exportación, soporte prioritario</li>
@@ -120,8 +120,8 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">7. Propiedad Intelectual</h2>
-              <p className="text-slate-700 leading-relaxed">
+              <h2 className="text-2xl font-semibold text-[var(--text-primary)] mt-8 mb-4">7. Propiedad Intelectual</h2>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 Todo el contenido de la plataforma, incluyendo pero no limitado a diseño, logos, texto, gráficos,
                 código fuente y funcionalidad, es propiedad de Jahatelo o sus licenciantes y está protegido por
                 las leyes de propiedad intelectual de Paraguay.
@@ -129,9 +129,9 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">8. Limitación de Responsabilidad</h2>
-              <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">8.1 Información de Terceros</h3>
-              <p className="text-slate-700 leading-relaxed">
+              <h2 className="text-2xl font-semibold text-[var(--text-primary)] mt-8 mb-4">8. Limitación de Responsabilidad</h2>
+              <h3 className="text-xl font-medium text-[var(--text-primary)] mt-4 mb-2">8.1 Información de Terceros</h3>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 Jahatelo procura mantener actualizada la información publicada, incluidos precios,
                 disponibilidad, fotografías, servicios y datos de contacto. Sin embargo, dicha información
                 es proporcionada y debe ser revisada, actualizada o corregida oportunamente por cada
@@ -139,24 +139,24 @@ export default function TermsPage() {
                 absoluta la exactitud, integridad o actualidad de la información, incluidos los precios.
               </p>
 
-              <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">8.2 Exclusión de Garantías</h3>
-              <p className="text-slate-700 leading-relaxed">
+              <h3 className="text-xl font-medium text-[var(--text-primary)] mt-4 mb-2">8.2 Exclusión de Garantías</h3>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 La plataforma se proporciona &quot;tal cual&quot; y &quot;según disponibilidad&quot;. No garantizamos que el servicio
                 será ininterrumpido, seguro o libre de errores.
               </p>
 
-              <h3 className="text-xl font-medium text-slate-800 mt-4 mb-2">8.3 Límite de Daños</h3>
-              <p className="text-slate-700 leading-relaxed">
+              <h3 className="text-xl font-medium text-[var(--text-primary)] mt-4 mb-2">8.3 Límite de Daños</h3>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 Jahatelo no será responsable por daños indirectos, incidentales, especiales, consecuentes o
                 punitivos relacionados con el uso de la plataforma.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">9. Privacidad y Datos Personales</h2>
-              <p className="text-slate-700 leading-relaxed">
+              <h2 className="text-2xl font-semibold text-[var(--text-primary)] mt-8 mb-4">9. Privacidad y Datos Personales</h2>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 El uso de sus datos personales se rige por nuestra{' '}
-                <a href="/privacidad" className="text-purple-600 hover:text-purple-700 underline">
+                <a href="/privacidad" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 underline">
                   Política de Privacidad
                 </a>
                 , que forma parte integral de estos términos.
@@ -164,16 +164,16 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">10. Suspensión y Terminación</h2>
-              <p className="text-slate-700 leading-relaxed">
+              <h2 className="text-2xl font-semibold text-[var(--text-primary)] mt-8 mb-4">10. Suspensión y Terminación</h2>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 Podemos suspender o terminar su acceso a la plataforma inmediatamente, sin previo aviso,
                 por cualquier motivo, incluyendo pero no limitado a violación de estos términos.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">11. Modificaciones</h2>
-              <p className="text-slate-700 leading-relaxed">
+              <h2 className="text-2xl font-semibold text-[var(--text-primary)] mt-8 mb-4">11. Modificaciones</h2>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 Nos reservamos el derecho de modificar estos términos en cualquier momento. Los cambios
                 serán efectivos inmediatamente después de su publicación. El uso continuado de la plataforma
                 después de los cambios constituye su aceptación de los nuevos términos.
@@ -181,27 +181,27 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">12. Ley Aplicable y Jurisdicción</h2>
-              <p className="text-slate-700 leading-relaxed">
+              <h2 className="text-2xl font-semibold text-[var(--text-primary)] mt-8 mb-4">12. Ley Aplicable y Jurisdicción</h2>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 Estos términos se rigen por las leyes de la República del Paraguay. Cualquier disputa será
                 resuelta en los tribunales competentes de Asunción, Paraguay.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">13. Contacto</h2>
-              <p className="text-slate-700 leading-relaxed">
+              <h2 className="text-2xl font-semibold text-[var(--text-primary)] mt-8 mb-4">13. Contacto</h2>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 Para preguntas sobre estos términos, contáctenos:
               </p>
-              <ul className="list-none pl-0 text-slate-700 space-y-2 mt-4">
+              <ul className="list-none pl-0 text-[var(--text-secondary)] space-y-2 mt-4">
                 <li><strong>Email:</strong> info@jahatelo.com</li>
                 <li><strong>Teléfono:</strong> +595 XXX XXX XXX</li>
                 <li><strong>Dirección:</strong> [Dirección física en Paraguay]</li>
               </ul>
             </section>
 
-            <section className="mt-12 pt-8 border-t border-slate-200">
-              <p className="text-sm text-slate-600">
+            <section className="mt-12 pt-8 border-t border-[var(--border-subtle)]">
+              <p className="text-sm text-[var(--text-secondary)]">
                 Al usar Jahatelo, usted reconoce que ha leído, entendido y acepta estar sujeto a estos
                 Términos y Condiciones.
               </p>

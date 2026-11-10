@@ -14,10 +14,10 @@ export default function GlobalError({ error, reset }: ErrorProps) {
   }, [error]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+    <div className="public-page min-h-screen flex items-center justify-center px-4">
       <div className="text-center max-w-md">
         <div className="mb-6">
-          <div className="w-20 h-20 mx-auto rounded-full bg-purple-100 flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto rounded-full bg-[var(--surface-soft)] flex items-center justify-center">
             <svg
               className="w-10 h-10 text-purple-600"
               fill="none"
@@ -34,10 +34,10 @@ export default function GlobalError({ error, reset }: ErrorProps) {
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
           Algo salió mal
         </h1>
-        <p className="text-slate-500 mb-8 text-sm leading-relaxed">
+        <p className="text-[var(--text-secondary)] mb-8 text-sm leading-relaxed">
           Ocurrió un error inesperado. Podés intentar de nuevo o volver al inicio.
         </p>
 
@@ -50,7 +50,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
           </button>
           <Link
             href="/"
-            className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+            className="public-card px-5 py-2.5 rounded-xl border border-[var(--border-subtle)] text-[var(--text-secondary)] text-sm font-medium hover:bg-[var(--surface-soft)] transition-colors"
           >
             Volver al inicio
           </Link>
