@@ -211,9 +211,11 @@ export default function UsersPage() {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success(
-          `Usuario creado. Contraseña temporal: ${data.temporaryPassword}`
-        );
+        const tempPassword = data.temporaryPassword;
+        toast.success('Usuario creado. Contraseña temporal generada (copiá desde el modal).');
+        if (tempPassword && typeof navigator !== 'undefined' && navigator.clipboard) {
+          navigator.clipboard.writeText(tempPassword).catch(() => {});
+        }
         setShowCreateModal(false);
         setCreateForm({ email: '', name: '', role: 'USER', motelId: '', accessProfileId: '' });
         fetchUsers();
