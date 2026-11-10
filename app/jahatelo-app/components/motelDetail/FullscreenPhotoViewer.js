@@ -43,9 +43,9 @@ export default function FullscreenPhotoViewer({
           showsHorizontalScrollIndicator={false}
           onTouchStart={onHorizontalGestureStart}
           removeClippedSubviews={false}
-          initialNumToRender={photos.length || 1}
-          maxToRenderPerBatch={photos.length || 1}
-          windowSize={Math.max(3, (photos.length || 1) * 2 + 1)}
+          initialNumToRender={3}
+          maxToRenderPerBatch={3}
+          windowSize={5}
           initialScrollIndex={initialIndex}
           getItemLayout={(_, index) => ({
             length: SCREEN_WIDTH,
@@ -59,7 +59,7 @@ export default function FullscreenPhotoViewer({
           }}
           renderItem={({ item }) => (
             <View style={styles.slide}>
-              <Image source={{ uri: item }} style={styles.image} resizeMode="contain" />
+              <Image source={{ uri: item }} style={styles.image} resizeMode="contain" cachePolicy="memory-disk" />
             </View>
           )}
         />

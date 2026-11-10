@@ -177,6 +177,8 @@ export default function PromoHistoryScreen({ navigation }) {
               style={styles.copyBtn}
               onPress={() => { handleCopy(selectedCode?.code); setSelectedCode(null); }}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Copiar código de promoción"
             >
               <Text style={styles.copyBtnText}>Copiar código</Text>
             </TouchableOpacity>
@@ -184,6 +186,8 @@ export default function PromoHistoryScreen({ navigation }) {
               style={styles.closeBtn}
               onPress={() => setSelectedCode(null)}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Cerrar detalle del código"
             >
               <Text style={styles.closeBtnText}>Cerrar</Text>
             </TouchableOpacity>

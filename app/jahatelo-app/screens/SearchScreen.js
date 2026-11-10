@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, RefreshControl, AccessibilityInfo } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,11 +21,14 @@ import AdDetailModal from '../components/AdDetailModal';
 import { prefetchThumbnails } from '../services/prefetchService';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { mixAdvertisements } from '../utils/mixAdvertisements';
-import { COLORS } from '../constants/theme';
+import useTheme from '../hooks/useTheme';
 import { trackSearch } from '../services/analyticsService';
+import { useOnlineRetry } from '../hooks/useOnlineRetry';
 
 export default function SearchScreen({ route }) {
   const navigation = useNavigation();
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const initialQuery = route?.params?.initialQuery ?? '';
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [results, setResults] = useState([]);
@@ -56,25 +59,29 @@ export default function SearchScreen({ route }) {
   const emptyIconOpacity = useSharedValue(0.5);
 
   useEffect(() => {
-    // Pulsating search icon animation
-    emptyIconScale.value = withRepeat(
-      withSequence(
-        withTiming(1.1, { duration: 1200 }),
-        withTiming(1, { duration: 1200 })
-      ),
-      -1,
-      false
-    );
-
-    emptyIconOpacity.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 1200 }),
-        withTiming(0.5, { duration: 1200 })
-      ),
-      -1,
-      false
-    );
+    // Pulsating search icon animation — respeta reduce motion
+    let cancelled = false;
+    AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (cancelled || enabled) return;
+      emptyIconScale.value = withRepeat(
+        withSequence(
+          withTiming(1.1, { duration: 1200 }),
+          withTiming(1, { duration: 1200 })
+        ),
+        -1,
+        false
+      );
+      emptyIconOpacity.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1200 }),
+          withTiming(0.5, { duration: 1200 })
+        ),
+        -1,
+        false
+      );
+    });
     return () => {
+      cancelled = true;
       cancelAnimation(emptyIconScale);
       cancelAnimation(emptyIconOpacity);
     };
@@ -118,6 +125,12 @@ export default function SearchScreen({ route }) {
       setRefreshing(false);
     }
   }, [searchQuery]);
+
+  // Retry automático al reconectar a internet
+  const handleReconnect = useCallback(() => {
+    if (error) loadResults(searchQuery);
+  }, [error, searchQuery]);
+  useOnlineRetry(handleReconnect);
 
   useEffect(() => {
     if (route?.params?.initialQuery !== undefined) {
@@ -239,7 +252,7 @@ export default function SearchScreen({ route }) {
     return {
       transform: [{ scale: searchBarScale.value }],
       borderWidth: searchBarBorderWidth.value,
-      borderColor: searchBarBorderWidth.value > 1 ? '#FF2E93' : '#E0E0E0',
+      borderColor: searchBarBorderWidth.value > 1 ? colors.accent : colors.borderMuted,
       shadowRadius: searchBarShadowRadius.value,
       shadowOpacity: searchBarShadowRadius.value > 4 ? 0.15 : 0.05,
     };
@@ -299,7 +312,7 @@ export default function SearchScreen({ route }) {
       {/* Barra de búsqueda */}
       <View style={styles.searchSection}>
         <Animated.View style={[styles.searchBar, animatedSearchBarStyle]}>
-          <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+          <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Buscar por motel o ciudad"
@@ -307,11 +320,11 @@ export default function SearchScreen({ route }) {
             onChangeText={setSearchQuery}
             onFocus={handleSearchFocus}
             onBlur={handleSearchBlur}
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.muted}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => { setSearchQuery(''); setSuggestions([]); setShowSuggestions(false); }}>
-              <Ionicons name="close-circle" size={20} color="#666" />
+              <Ionicons name="close-circle" size={20} color={colors.textMuted} />
             </TouchableOpacity>
           )}
         </Animated.View>
@@ -329,7 +342,7 @@ export default function SearchScreen({ route }) {
                 <Ionicons
                   name={s.type === 'motel' ? 'business-outline' : s.type === 'city' ? 'location-outline' : 'map-outline'}
                   size={16}
-                  color="#888"
+                  color={colors.textTertiary}
                   style={{ marginRight: 10 }}
                 />
                 <View style={{ flex: 1 }}>
@@ -361,7 +374,7 @@ export default function SearchScreen({ route }) {
             {results.length} {results.length === 1 ? 'resultado' : 'resultados'}
           </Text>
           <View style={styles.resultsHeaderActions}>
-            {loading && <ActivityIndicator size="small" color="#FF2E93" />}
+            {loading && <ActivityIndicator size="small" color={colors.accent} />}
             {results.length > 0 && (
               <TouchableOpacity
                 style={styles.mapViewButton}
@@ -369,7 +382,7 @@ export default function SearchScreen({ route }) {
                 accessibilityRole="button"
                 accessibilityLabel={`Ver ${results.length} resultados en el mapa`}
               >
-                <Ionicons name="map-outline" size={17} color={COLORS.primary} />
+                <Ionicons name="map-outline" size={17} color={colors.primary} />
                 <Text style={styles.mapViewButtonText}>Mapa</Text>
               </TouchableOpacity>
             )}
@@ -397,13 +410,13 @@ export default function SearchScreen({ route }) {
             initialNumToRender={10}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#FF2E93']} />}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.accent]} />}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig.current}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Animated.View style={animatedEmptyIconStyle}>
-                  <Ionicons name="search-outline" size={64} color="#CCC" />
+                  <Ionicons name="search-outline" size={64} color={colors.muted} />
                 </Animated.View>
                 <Text style={styles.emptyTitle}>No se encontraron moteles</Text>
                 <Text style={styles.emptyText}>
@@ -412,7 +425,7 @@ export default function SearchScreen({ route }) {
                 {searchQuery.trim().length > 1 && (
                   <View style={styles.recommendCard}>
                     <View style={styles.recommendIcon}>
-                      <Ionicons name="location-outline" size={26} color={COLORS.primary} />
+                      <Ionicons name="location-outline" size={26} color={colors.primary} />
                     </View>
                     <Text style={styles.recommendTitle}>¿No encontraste el motel?</Text>
                     <Text style={styles.recommendText}>
@@ -449,23 +462,23 @@ export default function SearchScreen({ route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.backgroundDark,
   },
   searchSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: colors.borderMuted,
     zIndex: 10,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -476,14 +489,14 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: colors.text,
     fontWeight: '600',
   },
   filtersSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: colors.borderMuted,
   },
   clearButton: {
     alignSelf: 'center',
@@ -493,7 +506,7 @@ const styles = StyleSheet.create({
   },
   clearButtonText: {
     fontSize: 14,
-    color: '#FF2E93',
+    color: colors.accent,
     fontWeight: '600',
   },
   resultsSection: {
@@ -510,12 +523,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
     borderRadius: 10,
     paddingHorizontal: 12,
   },
   mapViewButtonText: {
-    color: COLORS.primary,
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '700',
   },
@@ -528,19 +541,19 @@ const styles = StyleSheet.create({
   },
   resultsCount: {
     fontSize: 14,
-    color: '#666',
+    color: colors.textLight,
     fontWeight: '500',
   },
   errorBanner: {
-    backgroundColor: '#FFF3CD',
+    backgroundColor: colors.warningSurface || '#FFF3CD',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderLeftWidth: 3,
-    borderLeftColor: '#FF2E93',
+    borderLeftColor: colors.accent,
   },
   errorBannerText: {
     fontSize: 14,
-    color: '#856404',
+    color: colors.warningText || '#856404',
   },
   listContent: {
     paddingHorizontal: 16,
@@ -556,13 +569,13 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#666',
+    color: colors.textMuted,
     marginTop: 16,
     marginBottom: 8,
   },
   emptyText: {
     fontSize: 14,
-    color: '#999',
+    color: colors.muted,
     textAlign: 'center',
   },
   recommendCard: {
@@ -572,8 +585,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E8DDF3',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.borderBrandSoft,
+    backgroundColor: colors.card,
   },
   recommendIcon: {
     width: 50,
@@ -581,19 +594,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 25,
-    backgroundColor: COLORS.accentLight,
+    backgroundColor: colors.accentLight,
   },
   recommendTitle: {
     marginTop: 14,
     fontSize: 18,
     fontWeight: '800',
-    color: COLORS.text,
+    color: colors.text,
   },
   recommendText: {
     marginTop: 7,
     fontSize: 14,
     lineHeight: 20,
-    color: COLORS.textLight,
+    color: colors.textLight,
     textAlign: 'center',
   },
   recommendButton: {
@@ -603,10 +616,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   recommendButtonText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontSize: 15,
     fontWeight: '800',
   },
@@ -615,10 +628,10 @@ const styles = StyleSheet.create({
     top: '100%',
     left: 0,
     right: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 12,
     marginTop: 4,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
@@ -634,16 +647,16 @@ const styles = StyleSheet.create({
   },
   suggestionItemBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: colors.divider,
   },
   suggestionLabel: {
     fontSize: 14,
-    color: '#2A0038',
+    color: colors.textBrandDark,
     fontWeight: '500',
   },
   suggestionSubtitle: {
     fontSize: 12,
-    color: '#888',
+    color: colors.textTertiary,
     marginTop: 1,
   },
 });

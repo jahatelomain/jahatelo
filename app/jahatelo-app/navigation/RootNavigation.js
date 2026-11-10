@@ -24,9 +24,10 @@ import ReportMotelScreen from '../screens/ReportMotelScreen';
 import WhatsappOtpScreen from '../screens/WhatsappOtpScreen';
 
 // iOS 26 + Fabric puede abortar al reciclar una pantalla nativa después del
-// login (RNSScreenStackView prepareForRecycle). Conservamos la Nueva
-// Arquitectura para Reanimated, pero evitamos esa ruta nativa inestable.
-enableScreens(false);
+// React Native Screens habilitado con Nueva Arquitectura activa.
+// El workaround anterior (enableScreens(false)) ya no es necesario tras
+// las correcciones de compatibilidad en react-native-screens 4.x + Fabric.
+enableScreens(true);
 
 const Stack = createNativeStackNavigator();
 

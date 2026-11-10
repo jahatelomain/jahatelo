@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { TOUCH_TARGET } from '../constants/theme';
 
 export default function LegalScreen({ route, navigation }) {
   const { title = 'Información legal', content = 'Contenido no disponible.' } = route.params || {};
@@ -11,10 +12,12 @@ export default function LegalScreen({ route, navigation }) {
       {/* Header with back button */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.7}
-        >
+         style={styles.backButton}
+         onPress={() => navigation.goBack()}
+         activeOpacity={0.7}
+         accessibilityRole="button"
+         accessibilityLabel="Volver"
+         >
           <Ionicons name="arrow-back" size={24} color="#2A0038" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
@@ -60,8 +63,12 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E0E0E0',
   },
   backButton: {
-    padding: 4,
-  },
+   width: TOUCH_TARGET,
+   height: TOUCH_TARGET,
+   borderRadius: TOUCH_TARGET / 2,
+   justifyContent: 'center',
+   alignItems: 'center',
+   },
   headerTitle: {
     fontSize: 16,
     fontWeight: 'bold',

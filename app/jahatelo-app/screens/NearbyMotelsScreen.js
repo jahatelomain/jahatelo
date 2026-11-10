@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import MotelCard from '../components/MotelCard';
 import MotelCardSkeleton from '../components/MotelCardSkeleton';
-import { COLORS } from '../constants/theme';
+import { COLORS, TOUCH_TARGET } from '../constants/theme';
 import { fetchMotels } from '../services/motelsApi';
 import { filterMotelsByDistance } from '../utils/location';
 
@@ -169,9 +169,11 @@ export default function NearbyMotelsScreen({ navigation }) {
   const renderHeader = () => (
     <View style={[styles.header, { paddingTop: headerPaddingTop }]}>
       <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
+       style={styles.backButton}
+       onPress={() => navigation.goBack()}
+       accessibilityRole="button"
+       accessibilityLabel="Volver"
+       >
         <Ionicons name="arrow-back" size={24} color={COLORS.text} />
       </TouchableOpacity>
       <Text style={styles.headerTitle}>Moteles cerca mío</Text>
@@ -206,7 +208,12 @@ export default function NearbyMotelsScreen({ navigation }) {
         <View style={styles.centerContainer}>
           <Ionicons name="location-outline" size={64} color={COLORS.muted} />
           <Text style={styles.errorTitle}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={handleRetry}
+            accessibilityRole="button"
+            accessibilityLabel="Reintentar búsqueda de moteles cercanos"
+          >
             <Ionicons name="refresh" size={20} color={COLORS.white} />
             <Text style={styles.retryButtonText}>Reintentar</Text>
           </TouchableOpacity>
@@ -230,6 +237,8 @@ export default function NearbyMotelsScreen({ navigation }) {
               style={styles.locationBadge}
               onPress={() => setShowRadiusModal(true)}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={`Cambiar radio de búsqueda, actual ${selectedRadius === null ? 'Todos' : `${selectedRadius} km`}`}
             >
               <Ionicons name="navigate" size={12} color={COLORS.primary} />
               <Text style={styles.locationText}>
@@ -267,6 +276,8 @@ export default function NearbyMotelsScreen({ navigation }) {
                 style={styles.emptyAction}
                 onPress={() => setShowRadiusModal(true)}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Cambiar radio de búsqueda"
               >
                 <Ionicons name="options" size={18} color={COLORS.white} />
                 <Text style={styles.emptyActionText}>Cambiar radio</Text>
@@ -287,6 +298,8 @@ export default function NearbyMotelsScreen({ navigation }) {
           style={styles.modalOverlay}
           activeOpacity={1}
           onPress={() => setShowRadiusModal(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Cerrar selector de radio"
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
@@ -303,6 +316,9 @@ export default function NearbyMotelsScreen({ navigation }) {
                   setSelectedRadius(option.value);
                   setShowRadiusModal(false);
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={`Radio ${option.label}`}
+                accessibilityState={{ selected: selectedRadius === option.value }}
               >
                 <Text
                   style={[
@@ -340,9 +356,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: TOUCH_TARGET,
+    height: TOUCH_TARGET,
+    borderRadius: TOUCH_TARGET / 2,
     backgroundColor: COLORS.card,
     justifyContent: 'center',
     alignItems: 'center',

@@ -1,34 +1,22 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
-import {
-  Alert,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import OfflineIndicator from './components/OfflineIndicator';
 import AppUpdateModal from './components/AppUpdateModal';
+import StagingAuthGate from './components/StagingAuthGate';
+import ErrorBoundary from './components/ErrorBoundary';
 import { FavoritesProvider } from './hooks/useFavorites';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NavigationProvider, useNavigationContext } from './contexts/NavigationContext';
 import RootNavigation from './navigation/RootNavigation';
 import { initializeNotifications } from './services/notificationService';
 import { storeReceivedNotification } from './services/notificationInboxService';
-import {
-  clearStoredStagingCredentials,
-  installStagingFetchInterceptor,
-  isStagingEnvironment,
-  loadStoredStagingCredentials,
-  setStagingCredentials,
-} from './services/stagingAuthService';
 import { trackAppOpen, trackScreenView } from './services/analyticsService';
+
+// Prevenir que el splash nativo se oculte automáticamente
+SplashScreen.preventAutoHideAsync();
 
 const linking = {
   prefixes: ['jahatelo://', 'https://jahatelo.com', 'https://www.jahatelo.com'],
@@ -42,9 +30,6 @@ const linking = {
     },
   },
 };
-
-// Prevenir que el splash nativo se oculte automáticamente
-SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
   const { token, isLoading: authLoading } = useAuth();
@@ -64,18 +49,13 @@ function AppContent() {
     try {
       switch (data.type) {
         case 'contact_message':
-          // Navegar al inbox (web admin - solo para SUPERADMIN)
-          // En una app real, verificarías el rol del usuario
-          console.log('Navegando a inbox con messageId:', data.messageId);
           Alert.alert(
             '📨 Nuevo mensaje',
             'Tienes un nuevo mensaje de contacto. Ábrelo desde el panel de administración web.',
             [{ text: 'OK' }]
           );
           break;
-
         case 'promo':
-          // Navegar a la pantalla de detalle del motel con la promo
           if (data.motelId) {
             navigationRef.current.navigate('MotelDetail', {
               motelId: data.motelId,
@@ -84,9 +64,7 @@ function AppContent() {
             });
           }
           break;
-
         case 'motel_update':
-          // Navegar a detalle del motel actualizado
           if (data.motelId) {
             navigationRef.current.navigate('MotelDetail', {
               motelId: data.motelId,
@@ -94,7 +72,6 @@ function AppContent() {
             });
           }
           break;
-
         case 'review_reply':
         case 'review_like':
           if (data.motelId) {
@@ -105,15 +82,12 @@ function AppContent() {
             });
           }
           break;
-
         default:
-          console.log('Tipo de notificación no reconocido:', data.type);
+          if (__DEV__) console.log('Tipo de notificación no reconocido:', data.type);
       }
-
-      // Limpiar referencia después de navegar
       notificationDataRef.current = null;
     } catch (error) {
-      console.error('Error al navegar desde notificación:', error);
+      if (__DEV__) console.error('Error al navegar desde notificación:', error);
     }
   }, [navigationRef]);
 
@@ -127,68 +101,53 @@ function AppContent() {
 
   useEffect(() => {
     if (authLoading) return undefined;
-    // El splash nativo se oculta en SplashScreen.js cuando AnimatedSplash ya está montado,
-    // evitando el flash blanco entre el splash estático y la animación Lottie.
 
-    // Inicializar notificaciones push
     const setupNotifications = async () => {
       const { cleanup } = await initializeNotifications({
         authToken: token,
         onNotificationReceived: async (notification) => {
-          console.log('📬 Notificación recibida:', notification);
+          if (__DEV__) console.log('📬 Notificación recibida:', notification);
           await storeReceivedNotification(notification);
           const data = notification.request.content.data;
-
-          // Mostrar alerta in-app cuando la notificación llega con la app abierta
           if (data.type === 'contact_message') {
             Alert.alert(
               notification.request.content.title || '📨 Notificación',
               notification.request.content.body,
               [
                 { text: 'Cerrar', style: 'cancel' },
-                {
-                  text: 'Ver',
-                  onPress: () => handleNotificationNavigation(data),
-                },
+                { text: 'Ver', onPress: () => handleNotificationNavigation(data) },
               ]
             );
           }
         },
         onNotificationResponse: (response) => {
-          console.log('Usuario interactuó con notificación:', response);
+          if (__DEV__) console.log('Usuario interactuó con notificación:', response);
           storeReceivedNotification(response.notification).catch((error) => {
-            console.error('No se pudo guardar la notificación abierta:', error);
+            if (__DEV__) console.error('No se pudo guardar la notificación abierta:', error);
           });
           const data = response.notification.request.content.data;
           handleNotificationNavigation(data);
         },
       });
-
       cleanupRef.current = cleanup;
     };
 
     setupNotifications();
-
     return () => {
-      if (cleanupRef.current) {
-        cleanupRef.current();
-      }
+      if (cleanupRef.current) cleanupRef.current();
     };
   }, [authLoading, handleNotificationNavigation, token]);
 
-  // Effect para manejar navegación pendiente cuando el navegador esté listo
   useEffect(() => {
     if (!navigationRef.current || !notificationDataRef.current) return;
-
     const unsubscribe = navigationRef.current.addListener('state', () => {
       if (navigationRef.current?.isReady() && notificationDataRef.current) {
         const data = notificationDataRef.current;
-        notificationDataRef.current = null; // Limpiar ref para evitar re-disparo
+        notificationDataRef.current = null;
         performNavigation(data);
-        unsubscribe(); // Desuscribir inmediatamente después de navegar
+        unsubscribe();
       }
     });
-
     return unsubscribe;
   }, [navigationRef, performNavigation]);
 
@@ -207,261 +166,25 @@ function AppContent() {
 }
 
 export default function App() {
-  const [stagingAuthChecked, setStagingAuthChecked] = useState(false);
-  const [stagingAuthReady, setStagingAuthReady] = useState(!isStagingEnvironment());
-  const [stagingUser, setStagingUser] = useState('');
-  const [stagingPass, setStagingPass] = useState('');
-  const [showStagingPass, setShowStagingPass] = useState(false);
-  const [stagingLoading, setStagingLoading] = useState(false);
-  const [stagingError, setStagingError] = useState('');
-
-  useEffect(() => {
-    const initStagingAuth = async () => {
-      if (__DEV__) console.log('🚀 [APP] Inicializando autenticación staging...');
-
-      // CRÍTICO: instalar interceptor ANTES de cualquier request
-      installStagingFetchInterceptor();
-
-      if (!isStagingEnvironment()) {
-        if (__DEV__) console.log('✅ [APP] Entorno NO es staging, saltando auth');
-        setStagingAuthChecked(true);
-        return;
-      }
-
-      if (__DEV__) console.log('🔐 [APP] Entorno ES staging, cargando credenciales...');
-      const hasStoredCredentials = await loadStoredStagingCredentials();
-
-      if (hasStoredCredentials) {
-        if (__DEV__) console.log('✅ [APP] Credenciales cargadas, app lista para iniciar');
-      } else {
-        if (__DEV__) console.log('⚠️  [APP] NO hay credenciales guardadas, mostrar popup');
-      }
-
-      setStagingAuthReady(hasStoredCredentials);
-      setStagingAuthChecked(true);
-      if (__DEV__) console.log('🎯 [APP] Inicialización staging completa, authReady:', hasStoredCredentials);
-    };
-
-    initStagingAuth();
-  }, []);
-
-  useEffect(() => {
-    if (!stagingAuthChecked) return;
-
-    // En el flujo normal, AnimatedSplash oculta la pantalla nativa recién cuando
-    // su primer frame ya está dibujado. Solo la ocultamos aquí si staging necesita
-    // mostrar el formulario de acceso antes de montar la navegación principal.
-    if (isStagingEnvironment() && !stagingAuthReady) {
-      SplashScreen.hideAsync().catch(() => {});
-    }
-  }, [stagingAuthChecked, stagingAuthReady]);
-
-  const validateStagingCredentials = async () => {
-    if (!stagingUser.trim() || !stagingPass.trim()) {
-      setStagingError('Ingresá usuario y contraseña.');
-      return;
-    }
-
-    if (__DEV__) console.log('🔐 [APP] Usuario ingresó credenciales, guardando...');
-    setStagingLoading(true);
-    setStagingError('');
-    try {
-      await setStagingCredentials(stagingUser.trim(), stagingPass, true);
-      if (__DEV__) console.log('✅ [APP] Credenciales guardadas, habilitando app');
-      setStagingAuthReady(true);
-    } catch (error) {
-      console.error('❌ [APP] Error al guardar credenciales:', error);
-      await clearStoredStagingCredentials();
-      setStagingError('No se pudo guardar credenciales de staging.');
-    } finally {
-      setStagingLoading(false);
-    }
-  };
-
-  if (!stagingAuthChecked) {
-    return (
-      <View style={stylesStaging.root}>
-        <SafeAreaProvider>
-          <View style={stylesStaging.loadingContainer}>
-            <ActivityIndicator size="large" color="#822DE2" />
-            <Text style={stylesStaging.loadingText}>Inicializando app...</Text>
-          </View>
-        </SafeAreaProvider>
-      </View>
-    );
-  }
-
-  if (isStagingEnvironment() && !stagingAuthReady) {
-    return (
-      <View style={stylesStaging.root}>
-        <SafeAreaProvider>
-          <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={stylesStaging.screen}
-        >
-          <View style={stylesStaging.card}>
-            <Text style={stylesStaging.title}>Acceso Staging</Text>
-            <Text style={stylesStaging.subtitle}>Ingresá credenciales para continuar</Text>
-
-            <TextInput
-              autoCapitalize="none"
-              autoCorrect={false}
-              contextMenuHidden={false}
-              selectTextOnFocus
-              placeholder="Usuario"
-              placeholderTextColor="#9CA3AF"
-              style={stylesStaging.input}
-              value={stagingUser}
-              onChangeText={setStagingUser}
-            />
-            <View style={stylesStaging.passwordRow}>
-              <TextInput
-                autoCapitalize="none"
-                autoCorrect={false}
-                contextMenuHidden={false}
-                selectTextOnFocus
-                secureTextEntry={!showStagingPass}
-                placeholder="Contraseña"
-                placeholderTextColor="#9CA3AF"
-                style={stylesStaging.passwordInput}
-                value={stagingPass}
-                onChangeText={setStagingPass}
-                textContentType="password"
-                importantForAutofill="yes"
-                enablesReturnKeyAutomatically={false}
-              />
-              <TouchableOpacity
-                accessibilityRole="button"
-                style={stylesStaging.passwordToggle}
-                onPress={() => setShowStagingPass((prev) => !prev)}
-              >
-                <Text style={stylesStaging.passwordToggleText}>
-                  {showStagingPass ? 'Ocultar' : 'Mostrar'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {!!stagingError && <Text style={stylesStaging.error}>{stagingError}</Text>}
-
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={stylesStaging.button}
-              onPress={validateStagingCredentials}
-              disabled={stagingLoading}
-            >
-              {stagingLoading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={stylesStaging.buttonText}>Entrar</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-          </KeyboardAvoidingView>
-        </SafeAreaProvider>
-      </View>
-    );
-  }
-
   return (
-    <View style={stylesStaging.root}>
+    <View style={styles.root}>
       <SafeAreaProvider>
-        <AuthProvider>
-          <FavoritesProvider>
-            <NavigationProvider>
-              <AppContent />
-            </NavigationProvider>
-          </FavoritesProvider>
-        </AuthProvider>
+        <StagingAuthGate>
+          <ErrorBoundary>
+            <AuthProvider>
+              <FavoritesProvider>
+                <NavigationProvider>
+                  <AppContent />
+                </NavigationProvider>
+              </FavoritesProvider>
+            </AuthProvider>
+          </ErrorBoundary>
+        </StagingAuthGate>
       </SafeAreaProvider>
     </View>
   );
 }
 
-const stylesStaging = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: '#F4F4F5',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    gap: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    color: '#111827',
-  },
-  passwordRow: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingLeft: 12,
-    overflow: 'hidden',
-  },
-  passwordInput: {
-    flex: 1,
-    paddingVertical: 12,
-    color: '#111827',
-  },
-  passwordToggle: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    backgroundColor: '#F9FAFB',
-    borderLeftWidth: 1,
-    borderLeftColor: '#E5E7EB',
-  },
-  passwordToggleText: {
-    color: '#374151',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  button: {
-    marginTop: 6,
-    backgroundColor: '#822DE2',
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  error: {
-    color: '#DC2626',
-    fontSize: 13,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    gap: 10,
-  },
-  loadingText: {
-    color: '#6B7280',
-  },
+const styles = StyleSheet.create({
+  root: { flex: 1 },
 });

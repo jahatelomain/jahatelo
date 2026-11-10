@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../constants/theme';
+import { COLORS, TOUCH_TARGET } from '../constants/theme';
 
 export default function HomeHeader({ motels = [], onMotelPress, onSearch, navigation }) {
   const colors = COLORS;
@@ -32,9 +32,11 @@ export default function HomeHeader({ motels = [], onMotelPress, onSearch, naviga
     <View style={[styles.wrapper, { paddingTop, backgroundColor: colors.primary }]}>
       <View style={styles.topRow}>
         <TouchableOpacity
-          style={[styles.cityButton, { backgroundColor: colors.white }]}
-          activeOpacity={0.85}
-          onPress={handleNearbyPress}
+         style={[styles.cityButton, { backgroundColor: colors.white }]}
+         activeOpacity={0.85}
+         onPress={handleNearbyPress}
+         accessibilityRole="button"
+         accessibilityLabel="Moteles cercanos"
         >
           <Ionicons name="location" size={16} color={colors.text} style={{ marginRight: 6 }} />
           <Text style={[styles.cityText, { color: colors.text }]}>Cerca de mí</Text>
@@ -115,9 +117,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   iconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: TOUCH_TARGET,
+    height: TOUCH_TARGET,
+    borderRadius: TOUCH_TARGET / 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -135,9 +137,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   searchAction: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: TOUCH_TARGET,
+    height: TOUCH_TARGET,
+    borderRadius: TOUCH_TARGET / 2,
     justifyContent: 'center',
     alignItems: 'center',
   },

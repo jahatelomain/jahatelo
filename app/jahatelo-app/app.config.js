@@ -11,7 +11,7 @@ export default ({ config }) => ({
       },
     },
   },
-  plugins: [...(config.plugins || []), './plugins/withGoogleMapsIos'],
+  plugins: [...(config.plugins || []), './plugins/withGoogleMapsIos', 'expo-audio'],
   extra: {
     ...config.extra,
     googleClientIdWeb:
