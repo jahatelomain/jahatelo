@@ -73,28 +73,21 @@ export default async function HomePage() {
       <Navbar />
       <MobileHome featuredMotels={featuredMotels} cities={cities} />
       <main data-testid="homepage-main" className="hidden md:block">
-        {/* Hero — fondo oscuro solo hasta debajo del buscador */}
-        <section className="relative bg-gradient-to-br from-[#0f0f1a] via-[#161624] to-[#1a1530] overflow-hidden">
-          {/* Glow decorativo flotante */}
-          <div className="absolute top-0 left-1/2 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-3xl pointer-events-none animate-glow-float" />
-          <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-pink-600/10 rounded-full blur-3xl pointer-events-none" />
-
-          {/* Partículas flotantes */}
-          <div className="hero-particle w-2 h-2 top-[15%] left-[10%]" style={{animationDuration:'7s', animationDelay:'0s'}} />
-          <div className="hero-particle w-1.5 h-1.5 top-[30%] left-[20%]" style={{animationDuration:'9s', animationDelay:'1.5s', background:'rgba(245,101,101,0.45)'}} />
-          <div className="hero-particle w-2.5 h-2.5 top-[20%] right-[15%]" style={{animationDuration:'8s', animationDelay:'0.8s'}} />
-          <div className="hero-particle w-1.5 h-1.5 top-[55%] right-[10%]" style={{animationDuration:'6s', animationDelay:'2s', background:'rgba(213,63,140,0.4)'}} />
-          <div className="hero-particle w-2 h-2 top-[70%] left-[15%]" style={{animationDuration:'10s', animationDelay:'0.3s'}} />
-          <div className="hero-particle w-1 h-1 top-[45%] left-[35%]" style={{animationDuration:'8.5s', animationDelay:'3s', background:'rgba(245,101,101,0.35)'}} />
-          <div className="hero-particle w-3 h-3 top-[10%] right-[30%]" style={{animationDuration:'11s', animationDelay:'1s', background:'rgba(168,85,247,0.3)'}} />
-
+        {/*
+         * Hero desktop — alineado con brandguide/usage.txt:
+         * "Keep backgrounds clean and white" y "Avoid extra borders or boxes behind the icon".
+         * Se reemplazó el gradiente oscuro pesado y los glows decorativos por fondo blanco limpio
+         * con acentos sutiles (borde inferior y sombra suave) para mantener jerarquía visual
+         * sin romper la identidad de Jahatelo. Contraste WCAG AA preservado con textos oscuros.
+         */}
+        <section className="relative bg-white border-b border-gray-100 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.06)]">
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
             {/* Título */}
             <div className="text-center max-w-3xl mx-auto mb-10">
-              <span className="animate-fade-up inline-block mb-4 text-xs font-semibold uppercase tracking-widest text-purple-300 bg-purple-900/40 border border-purple-700/50 px-4 py-1.5 rounded-full">
+              <span className="animate-fade-up inline-block mb-4 text-xs font-semibold uppercase tracking-widest text-purple-700 bg-purple-50 px-4 py-1.5 rounded-full">
                 La plataforma de moteles de Paraguay
               </span>
-              <h1 className="animate-fade-up-delay-1 text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 leading-tight">
+              <h1 className="animate-fade-up-delay-1 text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 leading-tight text-gray-900">
                 <span className="animated-gradient-text">
                   Encontrá tu motel ideal
                 </span>
