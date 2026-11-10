@@ -754,7 +754,7 @@ export default function MotelsAdminPage() {
 
       {/* Vista Lista (Tabla) */}
       {viewMode === 'list' && (
-        <div className={`bg-white rounded-xl shadow-sm border border-slate-200 ${selectedMotels.size > 0 ? 'mb-24' : ''}`}>
+        <div className={`bg-white rounded-xl shadow-sm border border-slate-200 transition-[padding] duration-200 ${selectedMotels.size > 0 ? 'pb-28 mb-4' : ''}`}>
           <div className="overflow-x-auto">
             <table className="min-w-[980px] w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
