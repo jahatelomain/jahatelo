@@ -10,6 +10,7 @@ import { usePersistentAdminFilters } from '@/hooks/usePersistentAdminFilters';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import SearchableSelect from '@/components/admin/SearchableSelect';
 import { KeyRound, Pencil, Power, Trash2 } from 'lucide-react';
+import { RoleBadge } from '@/components/admin/Badges';
 
 type UserRole = 'SUPERADMIN' | 'MOTEL_ADMIN' | 'USER';
 
@@ -368,14 +369,7 @@ export default function UsersPage() {
     threshold: 200,
   });
 
-  const getRoleBadge = (role: UserRole) => {
-    const badges = {
-      SUPERADMIN: 'bg-purple-100 text-purple-700 border-purple-200',
-      MOTEL_ADMIN: 'bg-blue-100 text-blue-700 border-blue-200',
-      USER: 'bg-slate-100 text-slate-700 border-slate-200',
-    };
-    return badges[role];
-  };
+  
 
   useEffect(() => {
     if (!currentUser) return;
@@ -663,13 +657,7 @@ export default function UsersPage() {
                     </td>
                     <td className="px-4 py-3 text-slate-600 text-sm">{user.email}</td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium border ${getRoleBadge(
-                          user.role
-                        )}`}
-                      >
-                        {user.role}
-                      </span>
+                      <RoleBadge role={user.role} />
                     </td>
                     <td className="px-4 py-3 text-slate-600 text-sm">
                       {user.motel?.name || '-'}

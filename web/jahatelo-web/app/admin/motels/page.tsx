@@ -10,6 +10,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { usePersistentAdminFilters } from '@/hooks/usePersistentAdminFilters';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { StatusBadge, ActiveBadge } from '@/components/admin/Badges';
 
 type MotelStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -222,25 +223,7 @@ export default function MotelsAdminPage() {
     threshold: 200,
   });
 
-  const getStatusBadge = (status: MotelStatus) => {
-    const styles = {
-      PENDING: 'bg-yellow-100 text-yellow-700',
-      APPROVED: 'bg-green-100 text-green-700',
-      REJECTED: 'bg-red-100 text-red-700',
-    };
-
-    const labels = {
-      PENDING: 'Pendiente',
-      APPROVED: 'Aprobado',
-      REJECTED: 'Rechazado',
-    };
-
-    return (
-      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${styles[status]}`}>
-        {labels[status]}
-      </span>
-    );
-  };
+  
 
   const pendingCount = summary.statusCounts.PENDING ?? 0;
   const approvedCount = summary.statusCounts.APPROVED ?? 0;
@@ -844,7 +827,7 @@ export default function MotelsAdminPage() {
                     {motel.phone || motel.whatsapp || motel.contactPhone || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(motel.status)}
+                    <StatusBadge status={motel.status} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
