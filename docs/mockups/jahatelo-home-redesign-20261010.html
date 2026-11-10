@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jahatelo · Home Redesign</title>
+<style>
+:root{
+  --primary:#8E2DE2;
+  --primary-dark:#6A1FB5;
+  --text:#2E0338;
+  --muted:#6A5E6E;
+  --bg:#F8F5FC;
+  --card:#FFFFFF;
+  --line:#ECE4F4;
+  --accent:#FF6B6B;
+  --ad-accent:#FFA500;
+  --gold:#F59E0B;
+  --diamond:#22D3EE;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;background:#f0ecf3;color:var(--text);display:flex;justify-content:center;padding:32px 16px}
+
+.phone{
+  width:390px;min-height:844px;
+  background:var(--bg);
+  border-radius:44px;
+  border:10px solid #1a1020;
+  overflow:hidden;
+  position:relative;
+  box-shadow:0 30px 80px rgba(46,3,56,.18);
+}
+
+/* ── Header curvo (iOS real) ── */
+.header{
+  background:var(--primary);
+  padding:52px 20px 28px;
+  border-bottom-left-radius:36px;
+  border-bottom-right-radius:36px;
+  position:relative;
+}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.nearby-pill{
+  display:flex;align-items:center;gap:6px;
+  background:#fff;border-radius:14px;
+  padding:7px 14px;font-size:13px;font-weight:700;color:var(--text);
+}
+.nearby-pill svg{width:16px;height:16px;fill:var(--text)}
+.notif-btn{
+  width:34px;height:34px;border-radius:17px;
+  background:#fff;display:flex;align-items:center;justify-content:center;
+}
+.notif-btn svg{width:18px;height:18px;fill:var(--text)}
+.greeting h1{color:#fff;font-size:22px;font-weight:800;line-height:1.15;letter-spacing:-.03em}
+.greeting p{color:#D8B4FE;font-size:13px;margin-top:3px}
+
+.search-bar{
+  margin-top:16px;display:flex;align-items:center;gap:8px;
+  background:#fff;border-radius:14px;padding:10px 12px;
+}
+.search-bar svg{width:18px;height:18px;fill:#9CA3AF;flex-shrink:0}
+.search-bar span{flex:1;font-size:14px;color:#9CA3AF;font-weight:500}
+.search-go{
+  width:30px;height:30px;border-radius:15px;
+  background:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.search-go svg{width:14px;height:14px;fill:#fff}
+
+/* ── Carrusel Destacados ── */
+.carousel-section{padding:20px 0 8px}
+.section-title{font-size:22px;font-weight:800;padding:0 20px;margin-bottom:12px;letter-spacing:-.02em}
+.carousel-track{
+  display:flex;gap:16px;overflow-x:auto;padding:0 20px 16px;
+  scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+}
+.carousel-track::-webkit-scrollbar{display:none}
+
+.motel-card{
+  flex:0 0 75%;scroll-snap-align:start;
+  border-radius:20px;overflow:hidden;position:relative;
+  height:200px;background:#ddd;
+}
+.motel-card img{width:100%;height:100%;object-fit:cover;display:block}
+.motel-card .overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(0,0,0,.75) 0%,rgba(0,0,0,.25) 40%,transparent 70%);
+  display:flex;flex-direction:column;justify-content:flex-end;padding:16px;
+}
+.motel-card .name{color:#fff;font-size:18px;font-weight:800;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.motel-card .city{display:flex;align-items:center;gap:4px;color:rgba(255,255,255,.95);font-size:13px;margin-top:4px}
+.motel-card .city svg{width:14px;height:14px;fill:#fff}
+.badge-promo{
+  position:absolute;top:12px;right:12px;
+  background:var(--accent);color:#fff;
+  font-size:11px;font-weight:800;letter-spacing:.5px;
+  padding:6px 12px;border-radius:20px;
+  display:flex;align-items:center;gap:4px;
+}
+.badge-promo svg{width:14px;height:14px;fill:#fff}
+.badge-ad{background:var(--ad-accent)}
+.plan-glow-gold{box-shadow:0 0 0 2px var(--gold),0 8px 24px rgba(245,158,11,.25)}
+.plan-glow-diamond{box-shadow:0 0 0 2px var(--diamond),0 8px 24px rgba(34,211,238,.25)}
+.logo-heart{
+  position:absolute;top:12px;left:12px;
+  width:48px;height:48px;border-radius:24px;
+  background:rgba(255,255,255,.9);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+}
+
+/* ── Categorías ── */
+.categories{padding:8px 16px 0}
+.map-btn{
+  display:flex;align-items:center;gap:12px;
+  background:var(--card);border:1px solid var(--line);
+  border-radius:16px;padding:16px 18px;margin-bottom:10px;
+}
+.map-btn .icon-wrap{
+  width:44px;height:44px;border-radius:14px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.map-btn .icon-wrap svg{width:22px;height:22px;fill:#fff}
+.map-btn .label{font-size:15px;font-weight:700}
+.map-btn .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.map-btn .arrow{margin-left:auto;color:var(--primary)}
+.map-btn .arrow svg{width:18px;height:18px;fill:var(--primary)}
+
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cat-card{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:16px;padding:18px 16px;
+  display:flex;flex-direction:column;align-items:flex-start;gap:10px;
+}
+.cat-card .icon-wrap{
+  width:40px;height:40px;border-radius:12px;
+  background:var(--bg);display:flex;align-items:center;justify-content:center;
+}
+.cat-card .icon-wrap svg{width:20px;height:20px;fill:var(--primary)}
+.cat-card .label{font-size:14px;font-weight:700}
+
+/* ── Redes sociales ── */
+.social-section{padding:20px 16px 32px;text-align:center}
+.social-title{font-size:14px;font-weight:700;margin-bottom:12px}
+.social-row{display:flex;justify-content:center;gap:16px}
+.social-circle{
+  width:44px;height:44px;border-radius:22px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+.social-circle svg{width:22px;height:22px;fill:#fff}
+.social-ig{background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45)}
+.social-tt{background:#000}
+
+/* ── Bottom tab bar ── */
+.tab-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  background:#fff;border-top:1px solid var(--line);
+  display:flex;justify-content:space-around;
+  padding:10px 0 28px;
+}
+.tab-item{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:700;color:var(--muted)}
+.tab-item.active{color:var(--primary)}
+.tab-item svg{width:22px;height:22px}
+.tab-item.active svg{fill:var(--primary)}
+.tab-item:not(.active) svg{fill:var(--muted)}
+
+/* ── Nota de diseño ── */
+.note{
+  max-width:390px;margin:24px auto 0;padding:0 16px;
+  font-size:12px;color:#685e71;line-height:1.5;
+}
+.note b{color:#35233f}
+</style>
+</head>
+<body>
+
+<div>
+<div class="phone">
+
+  <!-- Header curvo -->
+  <div class="header">
+    <div class="header-top">
+      <div class="nearby-pill">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
+        Cerca de mí
+      </div>
+      <div class="notif-btn">
+        <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
+      </div>
+    </div>
+    <div class="greeting">
+      <h1>Encontrá el motel ideal para vos</h1>
+      <p>Cientos de opciones para que elijas dónde ir</p>
+    </div>
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      <span>Buscar por motel, ciudad o amenidad</span>
+      <div class="search-go">
+        <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Carrusel Destacados -->
+  <div class="carousel-section">
+    <div class="section-title">Destacados</div>
+    <div class="carousel-track">
+      <!-- Card 1: Gold plan -->
+      <div class="motel-card plan-glow-gold">
+        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=400&fit=crop" alt="Motel">
+        <div class="logo-heart">🏨</div>
+        <div class="badge-promo">
+          <svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+          DESTACADO
+        </div>
+        <div class="overlay">
+          <div class="name">Hotel Boutique Palermo</div>
+          <div class="city">
+            <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
+            Asunción
+          </div>
+        </div>
+      </div>
+      <!-- Card 2: Ad -->
+      <div class="motel-card">
+        <img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&h=400&fit=crop" alt="Ad">
+        <div class="badge-promo badge-ad">
+          <svg viewBox="0 0 24 24"><path d="M18 11v-1c0-3.07-1.64-5.64-4.5-6.32V3c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 4.36 6 6.92 6 10v1l-2 2v1h16v-1l-2-2z"/></svg>
+          PUBLICIDAD
+        </div>
+        <div class="overlay">
+          <div class="name">Promo Especial Finde</div>
+          <div class="city">
+            <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+            Ver más →
+          </div>
+        </div>
+      </div>
+      <!-- Card 3: Diamond plan -->
+      <div class="motel-card plan-glow-diamond">
+        <img src="https://images.unsplash.com/photo-1582719508461-905c673771fd?w=600&h=400&fit=crop" alt="Motel">
+        <div class="logo-heart">💎</div>
+        <div class="badge-promo">
+          <svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+          DESTACADO
+        </div>
+        <div class="overlay">
+          <div class="name">Resort & Spa Lujo</div>
+          <div class="city">
+            <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
+            San Bernardino
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Categorías -->
+  <div class="categories">
+    <!-- Mapa horizontal -->
+    <div class="map-btn">
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+      </div>
+      <div>
+        <div class="label">Ver mapa</div>
+        <div class="sub">Explorá moteles cerca tuyo</div>
+      </div>
+      <div class="arrow">
+        <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+      </div>
+    </div>
+
+    <!-- Grid 2 columnas -->
+    <div class="cat-grid">
+      <div class="cat-card">
+        <div class="icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
+        </div>
+        <div class="label">Moteles por ciudad</div>
+      </div>
+      <div class="cat-card">
+        <div class="icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+        </div>
+        <div class="label">Promos</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Redes sociales -->
+  <div class="social-section">
+    <div class="social-title">¡Encontranos!</div>
+    <div class="social-row">
+      <div class="social-circle social-ig">
+        <svg viewBox="0 0 24 24"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></svg>
+      </div>
+      <div class="social-circle social-tt">
+        <svg viewBox="0 0 24 24"><path d="M12.53.02C13.84 0 15.14.01 16.44.04c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.81 1.12-.01 2.24-.64 2.77-1.64.35-.59.5-1.28.5-1.95V.02z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <div class="tab-item active">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      Inicio
+    </div>
+    <div class="tab-item">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      Buscar
+    </div>
+    <div class="tab-item">
+      <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      Favoritos
+    </div>
+    <div class="tab-item">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      Perfil
+    </div>
+  </div>
+
+</div>
+
+<div class="note">
+  <b>Mejoras respecto al boceto anterior:</b><br>
+  • Header curvo real (borderBottomRadius: 36) como en iOS<br>
+  • Barra de búsqueda integrada dentro del header violeta<br>
+  • Carrusel con tarjetas al 75% del ancho + snap + glow por plan (Gold/Diamond)<br>
+  • Badge de logo del motel en esquina superior izquierda<br>
+  • Botón "Ver mapa" full-width separado del grid de categorías<br>
+  • Sección de redes sociales conservada del diseño actual<br>
+  • Tab bar inferior con estado activo en violeta<br>
+  • Paleta exacta del theme.js de la app (#8E2DE2, #2E0338, #F8F5FC)
+</div>
+</div>
+
+</body>
+</html>

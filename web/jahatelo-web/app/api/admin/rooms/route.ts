@@ -7,6 +7,12 @@ import { RoomAdminSchema } from '@/lib/validations/schemas';
 import { sanitizeObject } from '@/lib/sanitize';
 import { z } from 'zod';
 
+/**
+ * Verifica si existen reglas de precios por día de la semana duplicadas
+ * para una misma duración dentro de un conjunto de reglas.
+ * @param rules - Array de reglas con días de la semana y duración, o null/undefined
+ * @returns true si existe al menos una combinación día+duración repetida
+ */
 function hasDuplicatedWeekdayRates(rules: Array<{ weekdays: string[]; duration: string }> | null | undefined) {
   const seen = new Set<string>();
   for (const rule of rules ?? []) {
@@ -19,6 +25,12 @@ function hasDuplicatedWeekdayRates(rules: Array<{ weekdays: string[]; duration: 
   return false;
 }
 
+/**
+ * POST /api/admin/rooms
+ * Crea una nueva habitación para un motel con validación de precios por día/duración,
+ * asignación automática de orden y registro en log de auditoría.
+ * Requiere rol SUPERADMIN o MOTEL_ADMIN con permiso 'motels'.
+ */
 export async function POST(request: NextRequest) {
   try {
     const access = await requireAdminAccess(request, ['SUPERADMIN', 'MOTEL_ADMIN'], 'motels');
