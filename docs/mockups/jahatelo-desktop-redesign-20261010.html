@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jahatelo · Desktop Redesign Boceto</title>
+<style>
+:root{
+--primary:#8E2DE2;
+--primary-dark:#6A1FB5;
+--ink:#2E0338;
+--muted:#6A5E6E;
+--bg:#F8F5FC;
+--card:#FFFFFF;
+--line:#ECE4F4;
+--accent:#FF6B6B;
+--ad-accent:#FFA500;
+--gold:#F59E0B;
+--diamond:#22D3EE;
+--nav-bg:#1a0525;
+--nav-text:rgba(255,255,255,0.85);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;background:#f0ecf3;color:var(--ink)}
+
+/* ── NAVBAR ── */
+.navbar{background:var(--nav-bg);padding:0 48px;height:72px;display:flex;align-items:center;position:sticky;top:0;z-index:100}
+.nav-inner{max-width:1200px;width:100%;margin:auto;display:flex;align-items:center;gap:48px}
+.logo{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.04em;display:flex;align-items:center;gap:8px}
+.logo-mark{width:28px;height:28px;border-radius:8px 8px 8px 2px;background:var(--primary);transform:rotate(-10deg);display:inline-block}
+.nav-links{display:flex;gap:32px;flex:1;justify-content:center}
+.nav-links a{color:var(--nav-text);text-decoration:none;font-size:14px;font-weight:600;transition:color .2s}
+.nav-links a:hover,.nav-links a.active{color:#fff}
+.nav-auth{display:flex;align-items:center;gap:12px}
+.nav-auth a{color:var(--nav-text);text-decoration:none;font-size:13px;font-weight:600}
+.nav-auth .btn-register{background:var(--primary);color:#fff;padding:8px 18px;border-radius:10px;font-weight:700;font-size:13px;transition:background .2s}
+.nav-auth .btn-register:hover{background:var(--primary-dark)}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);padding:64px 48px 56px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-120px;left:50%;transform:translateX(-50%);width:700px;height:700px;background:radial-gradient(circle,rgba(255,255,255,0.08) 0%,transparent 70%);pointer-events:none}
+.hero-inner{max-width:800px;margin:auto;position:relative;z-index:1}
+.hero h1{color:#fff;font-size:48px;font-weight:900;letter-spacing:-.055em;line-height:1.1;margin-bottom:12px}
+.hero p{color:#D8B4FE;font-size:16px;line-height:1.5;margin-bottom:32px}
+
+/* ── SEARCH BAR INTEGRADA ── */
+.search-wrap{max-width:640px;margin:0 auto;position:relative}
+.search-bar{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.15);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2);border-radius:16px;padding:6px 6px 6px 18px;transition:background .2s,border-color .2s}
+.search-bar:focus-within{background:rgba(255,255,255,0.22);border-color:rgba(255,255,255,0.35)}
+.search-bar svg{width:20px;height:20px;fill:rgba(255,255,255,0.6);flex-shrink:0}
+.search-bar input{flex:1;background:none;border:none;outline:none;color:#fff;font-size:15px;font-weight:500;padding:12px 0}
+.search-bar input::placeholder{color:rgba(255,255,255,0.5)}
+.search-btn{width:44px;height:44px;border-radius:12px;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s}
+.search-btn:hover{transform:scale(1.05)}
+.search-btn svg{width:18px;height:18px;fill:var(--primary)}
+
+/* ── CAROUSEL DESTACADOS ── */
+.carousel-section{max-width:1200px;margin:48px auto 0;padding:0 48px}
+.section-header{display:flex;align-items:end;justify-content:space-between;margin-bottom:20px}
+.section-header h2{font-size:28px;font-weight:900;letter-spacing:-.03em;color:var(--ink)}
+.section-header a{color:var(--primary);text-decoration:none;font-size:13px;font-weight:800}
+.carousel-viewport{display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:16px;-webkit-overflow-scrolling:touch}
+.carousel-viewport::-webkit-scrollbar{height:6px}
+.carousel-viewport::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+.motel-card{flex:0 0 340px;scroll-snap-align:start;border-radius:20px;overflow:hidden;position:relative;height:260px;background:#ddd;cursor:pointer;transition:transform .2s}
+.motel-card:hover{transform:translateY(-4px)}
+.motel-card img{width:100%;height:100%;object-fit:cover;display:block}
+.motel-card .overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.75) 0%,rgba(0,0,0,.2) 40%,transparent 70%);display:flex;flex-direction:column;justify-content:flex-end;padding:20px}
+.motel-card .name{color:#fff;font-size:20px;font-weight:800;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.motel-card .city{display:flex;align-items:center;gap:4px;color:rgba(255,255,255,.95);font-size:13px;margin-top:6px}
+.motel-card .city svg{width:14px;height:14px;fill:#fff}
+.badge-promo{position:absolute;top:14px;right:14px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;letter-spacing:.5px;padding:6px 14px;border-radius:20px;display:flex;align-items:center;gap:5px}
+.badge-promo svg{width:14px;height:14px;fill:#fff}
+.badge-ad{background:var(--ad-accent)}
+.plan-glow-gold{box-shadow:0 0 0 2px var(--gold),0 8px 24px rgba(245,158,11,.25)}
+.plan-glow-diamond{box-shadow:0 0 0 2px var(--diamond),0 8px 24px rgba(34,211,238,.25)}
+.logo-heart{position:absolute;top:14px;left:14px;width:48px;height:48px;border-radius:24px;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:22px}
+
+/* ── CATEGORÍAS UNIFICADAS ── */
+.categories-section{max-width:1200px;margin:48px auto 0;padding:0 48px}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.cat-card{display:flex;align-items:center;gap:16px;padding:20px 24px;border-radius:18px;text-decoration:none;transition:transform .2s,box-shadow .2s;cursor:pointer}
+.cat-card:hover{transform:translateY(-3px)}
+.cat-card.map{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;grid-column:span 3}
+.cat-card.map .icon-wrap{background:rgba(255,255,255,.2)}
+.cat-card.map .icon-wrap svg{fill:#fff}
+.cat-card.map .label{color:#fff;font-size:17px}
+.cat-card.map .sub{color:rgba(255,255,255,.7)}
+.cat-card:not(.map){background:var(--card);border:1px solid var(--line);box-shadow:0 4px 12px rgba(42,0,56,.06)}
+.cat-card:not(.map):hover{box-shadow:0 8px 24px rgba(42,0,56,.1)}
+.icon-wrap{width:48px;height:48px;border-radius:14px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.icon-wrap svg{width:24px;height:24px;fill:var(--primary)}
+.cat-text .label{font-size:15px;font-weight:800;color:var(--ink)}
+.cat-text .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.cat-arrow{margin-left:auto;color:var(--primary)}
+.cat-arrow svg{width:18px;height:18px;fill:var(--primary)}
+
+/* ── FOOTER LIMPIO ── */
+.footer{background:var(--ink);padding:56px 48px 32px;margin-top:64px}
+.footer-inner{max-width:1200px;margin:auto;display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:48px}
+.footer h3{color:#fff;font-size:22px;font-weight:900;letter-spacing:-.04em;margin-bottom:12px}
+.footer p{color:#D8B4FE;font-size:13px;line-height:1.6;opacity:.7}
+.footer h4{color:#fff;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px}
+.footer ul{list-style:none}
+.footer ul li{margin-bottom:10px}
+.footer ul a{color:rgba(255,255,255,.6);text-decoration:none;font-size:13px;transition:color .2s}
+.footer ul a:hover{color:#fff}
+.footer-bottom{max-width:1200px;margin:32px auto 0;padding-top:24px;border-top:1px solid rgba(255,255,255,.1);text-align:center}
+.footer-bottom p{color:rgba(255,255,255,.3);font-size:11px}
+
+/* ── NOTA DE DISEÑO ── */
+.note{max-width:1200px;margin:32px auto;padding:0 48px;font-size:12px;color:var(--muted);line-height:1.6}
+.note b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<!-- ═══ NAVBAR VIOLETA OSCURO ═══ -->
+<nav class="navbar">
+<div class="nav-inner">
+<div class="logo"><span class="logo-mark"></span>Jahatelo</div>
+<div class="nav-links">
+<a href="#" class="active">Inicio</a>
+<a href="#">Buscar Moteles</a>
+<a href="#">Cerca de mí</a>
+<a href="#">Mapa</a>
+<a href="#">Contactanos</a>
+</div>
+<div class="nav-auth">
+<a href="#">Iniciar sesión</a>
+<a href="#" class="btn-register">Registrarse</a>
+</div>
+</div>
+</nav>
+
+<!-- ═══ HERO SIMPLIFICADO ═══ -->
+<section class="hero">
+<div class="hero-inner">
+<h1>Encontrá tu motel ideal</h1>
+<p>Compará opciones, mirá fotos reales y elegí dónde ir en minutos.<br>La plataforma más completa de moteles en Paraguay.</p>
+<!-- Search bar integrada en el hero -->
+<div class="search-wrap">
+<div class="search-bar">
+<svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+<input type="text" placeholder="Buscar por motel, ciudad o amenidad">
+<button class="search-btn" aria-label="Buscar">
+<svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+</button>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ═══ DESTACADOS CAROUSEL ═══ -->
+<section class="carousel-section">
+<div class="section-header">
+<h2>Destacados</h2>
+<a href="#">Ver todos →</a>
+</div>
+<div class="carousel-viewport">
+<!-- Card 1: Gold plan -->
+<div class="motel-card plan-glow-gold">
+<img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=400&fit=crop" alt="Motel">
+<div class="logo-heart">🏨</div>
+<div class="badge-promo">
+<svg viewBox="0 0 24 24"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+DESTACADO
+</div>
+<div class="overlay">
+<div class="name">Hotel Boutique Palermo</div>
+<div class="city">
+<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
+Asunción
+</div>
+</div>
+</div>
+<!-- Card 2: Ad -->
+<div class="motel-card">
+<img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&h=400&fit=crop" alt="Ad">
+<div class="badge-promo badge-ad">PUBLICIDAD</div>
+<div class="overlay">
+<div class="name">Promo Especial Finde</div>
+<div class="city">Ver más →</div>
+</div>
+</div>
+<!-- Card 3: Diamond plan -->
+<div class="motel-card plan-glow-diamond">
+<img src="https://images.unsplash.com/photo-1582719508461-905c673771fd?w=600&h=400&fit=crop" alt="Motel">
+<div class="logo-heart">💎</div>
+<div class="badge-promo">
+<svg viewBox="0 0 24 24"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+DESTACADO
+</div>
+<div class="overlay">
+<div class="name">Resort & Spa Lujo</div>
+<div class="city">
+<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
+San Bernardino
+</div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="motel-card">
+<img src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&h=400&fit=crop" alt="Motel">
+<div class="badge-promo">
+<svg viewBox="0 0 24 24"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+DESTACADO
+</div>
+<div class="overlay">
+<div class="name">Motel Garden Suites</div>
+<div class="city">
+<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
+Luque
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ═══ CATEGORÍAS UNIFICADAS ═══ -->
+<section class="categories-section">
+<div class="section-header">
+<h2>Explorá</h2>
+</div>
+<div class="cat-grid">
+<!-- Mapa full-width -->
+<a href="#" class="cat-card map">
+<div class="icon-wrap">
+<svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+</div>
+<div class="cat-text">
+<div class="label">Ver mapa interactivo</div>
+<div class="sub">Explorá moteles cerca tuyo con ubicación en tiempo real</div>
+</div>
+<div class="cat-arrow">
+<svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+</div>
+</a>
+<!-- Por ciudad -->
+<a href="#" class="cat-card">
+<div class="icon-wrap">
+<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
+</div>
+<div class="cat-text">
+<div class="label">Moteles por ciudad</div>
+<div class="sub">Elegí tu zona favorita</div>
+</div>
+<div class="cat-arrow">
+<svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+</div>
+</a>
+<!-- Promos -->
+<a href="#" class="cat-card">
+<div class="icon-wrap">
+<svg viewBox="0 0 24 24"><path d="M7 7h5l7 7-5 5-7-7V7z"/><circle cx="9.5" cy="9.5" r="1.5"/></svg>
+</div>
+<div class="cat-text">
+<div class="label">Promos activas</div>
+<div class="sub">Ofertas exclusivas hoy</div>
+</div>
+<div class="cat-arrow">
+<svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+</div>
+</a>
+</div>
+</section>
+
+<!-- ═══ FOOTER LIMPIO ═══ -->
+<footer class="footer">
+<div class="footer-inner">
+<div>
+<h3>Jahatelo</h3>
+<p>Encontrá tu motel ideal en minutos. La plataforma más completa para descubrir y comparar moteles en Paraguay.</p>
+</div>
+<div>
+<h4>Enlaces</h4>
+<ul>
+<li><a href="#">Inicio</a></li>
+<li><a href="#">Buscar moteles</a></li>
+<li><a href="#">Soporte</a></li>
+<li><a href="#">Privacidad</a></li>
+<li><a href="#">Términos</a></li>
+</ul>
+</div>
+<div>
+<h4>Contacto</h4>
+<p>¿Tenés un motel y querés aparecer en Jahatelo?</p>
+<ul style="margin-top:12px">
+<li><a href="#" style="color:#D8B4FE;font-weight:700">Registrá tu motel →</a></li>
+</ul>
+</div>
+</div>
+<div class="footer-bottom">
+<p>&copy; 2026 Jahatelo. Todos los derechos reservados.</p>
+</div>
+</footer>
+
+<div class="note">
+<b>Mejoras aplicadas respecto a la web actual:</b><br>
+• Navbar: fondo violeta oscuro (#1a0525) con textos blancos — coherente con la identidad de la app<br>
+• Hero: eliminadas partículas flotantes y glows decorativos; gradiente violeta sólido #8E2DE2 → #6A1FB5<br>
+• SearchBar: integrada dentro del hero con fondo glass (white/15 + backdrop-blur), placeholder blanco semitransparente<br>
+• Carousel: tarjetas de 340px × 260px con glow Gold/Diamond, logo heart y badges como en la app<br>
+• Categorías: paleta unificada — mapa con gradiente primary, ciudades/promos en card blanca con borde #ECE4F4<br>
+• Footer: fondo #2E0338 sólido sin glows decorativos, textos #D8B4FE, enlaces white/60<br>
+• Tipografía: headings extrabold tracking-tight, cuerpo semibold — igual que la app iOS
+</div>
+
+</body>
+</html>

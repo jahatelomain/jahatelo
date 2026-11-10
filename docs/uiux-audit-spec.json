@@ -1,0 +1,249 @@
+{
+  "title": "Análisis UI/UX Completo — Jahatelo",
+  "author": "Catherina, Asistente Ejecutiva",
+  "elements": [
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "Análisis UI/UX Completo — Jahatelo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Fecha: 9 de noviembre de 2026 | Alcance: Web Pública, Panel Administrativo, App Móvil"
+    },
+    {
+      "type": "pagebreak"
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "1. Web Pública"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Hallazgos Críticos"
+    },
+    {
+      "type": "paragraph",
+      "text": "• Doble experiencia sin paridad: MobileHome (mobile-first) y el <main> desktop en page.tsx son dos layouts completos con contenidos, jerarquías y CTAs distintos. No hay un layout público compartido (app/(public)/layout.tsx no existe), lo que duplica mantenimiento y genera inconsistencias futuras."
+    },
+    {
+      "type": "paragraph",
+      "text": "• SearchBar sin accesibilidad ARIA: el input carece de role=\"combobox\", aria-expanded, aria-controls, aria-activedescendant y los items del dropdown no tienen role=\"option\" ni id. El teclado funciona pero lectores de pantalla no pueden anunciar sugerencias."
+    },
+    {
+      "type": "paragraph",
+      "text": "• Navbar móvil inaccesible e incompleta: el menú hamburguesa se renderiza condicionalmente pero nunca hay botón para abrirlo (mobileMenuOpen solo se cierra). En mobile real la navegación depende de PublicMobileShell/tab bar externa; si falla, el usuario queda sin nav. Falta aria-label en el avatar/botón de perfil."
+    },
+    {
+      "type": "paragraph",
+      "text": "• AgeGate sin foco atrapado ni semántica: modal crítico sin role=\"dialog\", aria-modal=\"true\", ni focus trap. El botón \"No\" redirige a Google sin aviso. Accesible solo por mouse/touch; teclado puede escapar al contenido subyacente."
+    },
+    {
+      "type": "paragraph",
+      "text": "• Contraste insuficiente en hero/desktop: textos como text-purple-300/70 sobre fondo oscuro gradiente y text-white/75 en MobileHome no alcanzan WCAG AA (~4.5:1). Badges de plan/promo usan combinaciones pastel que fallan en modo claro."
+    },
+    {
+      "type": "paragraph",
+      "text": "• SEO técnico parcial: metadata base y OG están bien, pero falta JSON-LD de Organization/LocalBusiness, breadcrumbs estructurados y sitemap dinámico visible. El canonical usa env var con fallback hardcoded; si falta la var en prod, apunta a localhost."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Mejoras Recomendadas (por prioridad)"
+    },
+    {
+      "type": "paragraph",
+      "text": "P0 — Unificar layout público: crear app/(public)/layout.tsx que comparta Navbar/Footer/AgeGate y exponga slots; migrar home a usarlo. Elimina divergencia mobile/desktop y asegura consistencia."
+    },
+    {
+      "type": "paragraph",
+      "text": "P0 — SearchBar accesible: agregar role=\"combobox\", aria-expanded={open}, aria-controls=\"search-suggestions\", aria-activedescendant; cada sugerencia con id, role=\"option\", aria-selected. Anunciar carga/vacío con aria-live=\"polite\"."
+    },
+    {
+      "type": "paragraph",
+      "text": "P0 — AgeGate dialog: envolver en <dialog> o div con role=\"dialog\" aria-modal=\"true\", focus trap (primer/último elemento), restaurar foco al cerrar, y página de salida interna en vez de redirect externo."
+    },
+    {
+      "type": "paragraph",
+      "text": "P1 — Contraste y tokens: reemplazar opacidades /70 en texto sobre fondos oscuros por colores sólidos ≥4.5:1; definir tokens de color en tailwind.config alineados al brandguide (pink/purple primarios, blanco limpio) y aplicarlos sistemáticamente."
+    },
+    {
+      "type": "paragraph",
+      "text": "P1 — Navbar móvil: añadir botón hamburguesa visible con aria-expanded, o eliminar el bloque muerto si la tab bar es la única nav. Agregar aria-label al avatar de perfil y aria-current=\"page\" al link activo."
+    },
+    {
+      "type": "paragraph",
+      "text": "P1 — Skeletons y loading states: MobileHome tiene skeleton para destacados pero no para ciudades/expansión; SearchBar muestra texto plano \"Cargando...\" sin skeleton visual. Añadir skeletons consistentes y aria-busy durante fetch."
+    },
+    {
+      "type": "paragraph",
+      "text": "P2 — SEO estructurado: agregar JSON-LD Organization en root layout, breadcrumbs en páginas de búsqueda/detalle, y generar sitemap.xml dinámico con ciudades/moteles. Validar canonical en staging/prod."
+    },
+    {
+      "type": "paragraph",
+      "text": "P2 — Performance percibida desktop: el hero carga 3 fetchs secuenciales con paginación adicional para featured; considerar Promise.all ya usado + streaming/Suspense boundaries y loading.tsx para TTFB visual."
+    },
+    {
+      "type": "paragraph",
+      "text": "P2 — Consistencia brandguide: el brandguide pide fondos blancos limpios y evitar bordes/cajas extra tras el icono. El hero desktop usa gradientes pesados y glows decorativos; evaluar si esto contradice la guía o si la guía necesita actualización explícita para web."
+    },
+    {
+      "type": "paragraph",
+      "text": "P3 — Footer móvil: actualmente hidden md:block; mobile depende de PublicMobileShell. Verificar que enlaces legales (privacidad, términos, eliminar cuenta) sean accesibles en mobile vía shell o footer alternativo."
+    },
+    {
+      "type": "pagebreak"
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "2. Panel Administrativo"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Hallazgos Críticos"
+    },
+    {
+      "type": "paragraph",
+      "text": "• Acceso denegado sin feedback: layout.tsx:306-308 devuelve null cuando falta permiso, dejando pantalla en blanco. La página de usuarios muestra mensaje propio (users/page.tsx:429-436) pero el resto depende del layout; no hay estado vacío unificado ni redirección con toast."
+    },
+    {
+      "type": "paragraph",
+      "text": "• Validación de formularios solo nativa: Los modales de crear/editar usuario (users/page.tsx:728-926) dependen de required HTML y validación server-side; no hay errores inline por campo ni estados disabled durante submit más allá del botón de confirmar."
+    },
+    {
+      "type": "paragraph",
+      "text": "• Inconsistencia de carga inicial: Moteles y Usuarios renderizan skeletons manuales + TableSkeleton; Operations es server component sin skeleton; Inbox usa loading booleano sin skeleton dedicado. No hay patrón único de \"page shell\"."
+    },
+    {
+      "type": "paragraph",
+      "text": "• Filtros persistentes vs no persistentes: Moteles, Usuarios y Financiero usan usePersistentAdminFilters; Inbox usa useState local (inbox/page.tsx:30). Al volver a Inbox se pierde el filtro seleccionado."
+    },
+    {
+      "type": "paragraph",
+      "text": "• Iconos duplicados y SVGs inline: Layout importa lucide-react pero muchas páginas (motels, users) usan SVGs inline para acciones bulk y toggles. Hay mezcla de librería e iconos custom sin convención documentada."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Mejoras Recomendadas por Prioridad"
+    },
+    {
+      "type": "paragraph",
+      "text": "P0 — Unificar pantalla de acceso denegado en layout con componente <AccessDenied module={...} /> que muestre mensaje, rol requerido y botón volver al dashboard. Eliminar el return null."
+    },
+    {
+      "type": "paragraph",
+      "text": "P0 — Estandarizar validación inline en formularios admin: usar zod + react-hook-form o similar, mostrar error bajo cada campo con AdminField.error, deshabilitar submit mientras pending."
+    },
+    {
+      "type": "paragraph",
+      "text": "P0 — Normalizar loading states: crear <AdminPageSkeleton variant=\"table|cards|detail\" /> y usarlo en todas las páginas client-side; convertir Operations a client o añadir Suspense boundary con mismo skeleton."
+    },
+    {
+      "type": "paragraph",
+      "text": "P1 — Migrar todos los filtros a usePersistentAdminFilters incluyendo Inbox, Prospects, Banners, SEO, Audit. Documentar key naming convention (<module>-<filter>)."
+    },
+    {
+      "type": "paragraph",
+      "text": "P1 — Reemplazar SVGs inline por componentes lucide-react o wrapper <AdminIcon name=\"...\" /> para mantener tamaño/stroke consistente. Auditar con grep svg.*viewBox en app/admin."
+    },
+    {
+      "type": "paragraph",
+      "text": "P1 — Extraer tabla reutilizable <AdminDataTable columns data emptyMessage onRowClick /> que encapsule infinite scroll, sentinel, empty state, bulk toolbar y responsive horizontal scroll. Hoy cada página reimplementa 200+ líneas idénticas."
+    },
+    {
+      "type": "paragraph",
+      "text": "P1 — Consolidar badges de estado en components/admin/Badges.tsx: StatusBadge, ActiveBadge, RoleBadge con tokens de color centralizados. Hoy hay definiciones ad-hoc en cada módulo."
+    },
+    {
+      "type": "paragraph",
+      "text": "P2 — Añadir breadcrumbs navegables (no solo texto) usando la estructura existente en getBreadcrumb(). Clickable hasta padre."
+    },
+    {
+      "type": "paragraph",
+      "text": "P2 — Mobile: sidebar overlay cierra al navegar pero no hay focus trap ni restore focus al botón hamburger. Implementar dialog pattern accesible."
+    },
+    {
+      "type": "paragraph",
+      "text": "P2 — Bulk actions toolbar (motels/page.tsx:688-770) fixed bottom puede tapar contenido en mobile. Añadir padding-bottom dinámico al contenedor de tabla cuando toolbar visible."
+    },
+    {
+      "type": "paragraph",
+      "text": "P2 — Toasts de éxito muestran contraseñas temporales en texto plano (users/page.tsx:213-215). Ofrecer botón \"Copiar\" y nunca mostrar secreto completo en toast persistente."
+    },
+    {
+      "type": "paragraph",
+      "text": "P2 — Operaciones page es server component puro: no tiene loading state entre navigaciones. Envolver en Suspense con fallback consistente."
+    },
+    {
+      "type": "pagebreak"
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "3. App Móvil"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Hallazgos Críticos"
+    },
+    {
+      "type": "paragraph",
+      "text": "• Navegación y Estructura: RootNavigation.js define todas las pantallas (Login, Detail, Map, etc.) en un solo stack plano sobre BottomTabs. Esto simplifica la gestión pero pierde contexto visual al navegar profundo; no hay stacks anidados por tab. HomeTabs.js es un wrapper mínimo (SafeAreaView + HomeScreen) solo para aplicar el color primario al safe area top. enableScreens(false) en RootNavigation desactiva nativamente las screens para evitar crashes en iOS 26/Fabric."
+    },
+    {
+      "type": "paragraph",
+      "text": "• Pantalla Home (HomeScreen.js): Lógica robusta de rotación de ads (claimHomeRotation, visitId, visitSequence) para evitar repetir anuncios en la misma sesión. Maneja correctamente foreground/background transitions reseteando el estado de ads. Empty states diferenciados para Error (con retry), Empty (con refresh) y Loading. Refresh Control implementado en todos los estados."
+    },
+    {
+      "type": "paragraph",
+      "text": "• Detalle de Motel (MotelDetailScreen.js): Tabs dinámicas según el plan del motel (isFreePlan) y contenido disponible. Usa scroll spy (handleSectionsScroll) para sincronizar tab activa con posición del scroll. Animaciones de corazón favorito con spring/rotation via Reanimated. Haptics en todas las interacciones clave. Fallback chain robusto para foto principal. Cache por defecto con pull-to-refresh forzado."
+    },
+    {
+      "type": "paragraph",
+      "text": "• Ads UX: AdPopup con swipe gesture (PanResponder) para cambiar slides. Prefetch de imagen antes de mostrar. Tracking de view solo cuando ready+visible. PromoCarousel mixto (moteles + ads) con animaciones diferenciadas por plataforma. Popup aparece con delay de 1s y solo una vez por visita."
+    },
+    {
+      "type": "paragraph",
+      "text": "• Offline/Error UX: useOnlineRetry detecta transición offline->online y dispara callback. HomeScreen usa este hook para reintentar carga automáticamente. Detalle tiene botón manual de retry."
+    },
+    {
+      "type": "paragraph",
+      "text": "• Consistencia Visual y Theme: theme.js define COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, TOUCH_TARGET (44px). Separación clara entre brand, surface, text, status, plan colors. Dark mode prep existe (DARK_SURFACES) pero no hay toggle o uso activo; solo light mode implementado."
+    },
+    {
+      "type": "paragraph",
+      "text": "• Gestos y Microinteracciones: Swipe en AdPopup con PanResponder y threshold de 45px. Carousel snap con snapToInterval + decelerationRate=\"fast\". Haptics consistentes con expo-haptics en CTAs y favoritos."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Mejoras Recomendadas y Prioridades"
+    },
+    {
+      "type": "paragraph",
+      "text": "P0 — Dark Mode: Implementar toggle y aplicar DARK_SURFACES existentes. Muchos usuarios usan apps nocturnas. Impacto: Retención / Comfort."
+    },
+    {
+      "type": "paragraph",
+      "text": "P0 — Scroll Restoration: Actualmente se pierde scroll position en Home al volver desde Detail. Impacto: UX Fluida."
+    },
+    {
+      "type": "paragraph",
+      "text": "P1 — Unificar Animaciones: Actualmente usa dos sistemas de animación distintos (Reanimated Android, RN Animated iOS), duplica mantenimiento. Impacto: Code Quality."
+    },
+    {
+      "type": "paragraph",
+      "text": "P1 — Accesibilidad: Ya existe en tabs y botones principales pero falta cobertura completa. Impacto: Inclusión."
+    },
+    {
+      "type": "paragraph",
+      "text": "P2 — Performance: Optimizar carga de imágenes y reducir re-renders en listas largas. Impacto: Performance."
+    }
+  ]
+}
