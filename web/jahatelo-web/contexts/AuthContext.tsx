@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { isUnauthorized } from '@/lib/authHelpers';
 
 interface User {
   id: string;
@@ -45,12 +46,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
+      } else if (isUnauthorized(response)) {
+        setUser(null);
+        router.push('/login');
       } else {
         setUser(null);
       }
     } catch (error) {
       console.error('Error loading user:', error);
-      setUser(null);
+      if (isUnauthorized(error)) {
+        setUser(null);
+        router.push('/login');
+      } else {
+        setUser(null);
+      }
     } finally {
       setIsLoading(false);
     }

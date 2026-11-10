@@ -18,7 +18,7 @@ export default function Footer() {
             <h3 className="text-2xl font-extrabold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-3">
               Jahatelo
             </h3>
-            <p className="text-purple-200/60 text-sm leading-relaxed">
+            <p className="text-purple-100 text-sm leading-relaxed">
               Encontrá tu motel ideal en minutos. La plataforma más completa para descubrir y comparar moteles en Paraguay.
             </p>
           </div>
@@ -36,7 +36,7 @@ export default function Footer() {
                 { href: '/terminos', label: 'Términos' },
               ].map(({ href, label }) => (
                 <li key={href}>
-                  <Link href={href} className="text-purple-300/70 hover:text-purple-300 text-sm transition-colors hover:translate-x-1 inline-block">
+                  <Link href={href} className="text-purple-200 hover:text-white text-sm transition-colors hover:translate-x-1 inline-block">
                     {label}
                   </Link>
                 </li>
@@ -47,7 +47,7 @@ export default function Footer() {
           {/* Contact */}
           <div>
             <h4 className="font-semibold text-white mb-4 text-sm uppercase tracking-wider">Contacto</h4>
-            <p className="text-purple-200/60 text-sm">
+            <p className="text-purple-100 text-sm">
               ¿Tenés un motel y querés aparecer en Jahatelo?
             </p>
             <Link
@@ -60,9 +60,9 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 pt-8 border-t border-purple-900/40">
-          <p className="text-center text-purple-400/40 text-xs">
-            &copy; {currentYear} Jahatelo. Todos los derechos reservados.
-          </p>
+          <p className="text-center text-purple-200 text-xs">
+           &copy; {currentYear} Jahatelo. Todos los derechos reservados.
+           </p>
         </div>
       </div>
     </footer>

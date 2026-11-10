@@ -79,19 +79,19 @@ export default function RoomPhotoGallery({ images, roomName }: RoomPhotoGalleryP
           {hasMultipleImages && (
             <>
               <button
-                type="button"
-                onClick={(event) => { event.stopPropagation(); previous(); }}
-                className="absolute z-20 left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/75"
-                aria-label="Foto anterior"
-              >
-                <ChevronLeft size={22} />
-              </button>
-              <button
-                type="button"
-                onClick={(event) => { event.stopPropagation(); next(); }}
-                className="absolute z-20 right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/75"
-                aria-label="Foto siguiente"
-              >
+               type="button"
+               onClick={(event) => { event.stopPropagation(); previous(); }}
+               className="absolute z-20 left-2 top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/75"
+               aria-label="Foto anterior"
+               >
+               <ChevronLeft size={22} />
+               </button>
+               <button
+               type="button"
+               onClick={(event) => { event.stopPropagation(); next(); }}
+               className="absolute z-20 right-2 top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/75"
+               aria-label="Foto siguiente"
+               >
                 <ChevronRight size={22} />
               </button>
               <span className="absolute z-20 right-2 bottom-2 rounded-full bg-black/65 px-2.5 py-1 text-xs font-medium text-white">

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { UNAUTHORIZED_MESSAGE } from '@/lib/authHelpers';
 
 export function authorizeCron(request: Request): NextResponse | null {
   const secret = process.env.CRON_SECRET;
@@ -7,7 +8,7 @@ export function authorizeCron(request: Request): NextResponse | null {
     return NextResponse.json({ error: 'Cron no configurado' }, { status: 503 });
   }
   if (request.headers.get('authorization') !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: UNAUTHORIZED_MESSAGE }, { status: 401 });
   }
   return null;
 }

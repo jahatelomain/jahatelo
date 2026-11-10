@@ -3,6 +3,7 @@ import { getTokenFromRequest, verifyToken, hasRole } from '@/lib/auth';
 import { hasModuleAccess, AdminModule } from '@/lib/adminModules';
 import { prisma } from '@/lib/prisma';
 import { logAuditEvent } from '@/lib/audit';
+import { UNAUTHORIZED_MESSAGE, FORBIDDEN_MESSAGE } from '@/lib/authHelpers';
 
 type RequiredPermissionAction = 'VIEW' | 'CREATE' | 'UPDATE' | 'DELETE';
 
@@ -27,12 +28,12 @@ export async function requireAdminAccess(
 ) {
   const token = await getTokenFromRequest(request as never);
   if (!token) {
-    return { error: NextResponse.json({ error: 'No autorizado' }, { status: 401 }) };
+    return { error: NextResponse.json({ error: UNAUTHORIZED_MESSAGE }, { status: 401 }) };
   }
 
   const user = await verifyToken(token);
   if (!user) {
-    return { error: NextResponse.json({ error: 'Acceso denegado' }, { status: 403 }) };
+    return { error: NextResponse.json({ error: FORBIDDEN_MESSAGE }, { status: 403 }) };
   }
 
   const dbUser = await prisma.user.findUnique({
@@ -53,7 +54,7 @@ export async function requireAdminAccess(
   });
 
   if (!dbUser?.isActive) {
-    return { error: NextResponse.json({ error: 'Acceso denegado' }, { status: 403 }) };
+    return { error: NextResponse.json({ error: FORBIDDEN_MESSAGE }, { status: 403 }) };
   }
 
   // Un perfil activo es la fuente de permisos preferida. El arreglo legacy se
@@ -89,7 +90,7 @@ export async function requireAdminAccess(
 
   if (!hasRole(effectiveUser, roles)) {
     await auditAccess(403);
-    return { error: NextResponse.json({ error: 'Acceso denegado' }, { status: 403 }) };
+    return { error: NextResponse.json({ error: FORBIDDEN_MESSAGE }, { status: 403 }) };
   }
 
   const activeProfile = dbUser?.accessProfile?.isActive ? dbUser.accessProfile : null;
@@ -102,7 +103,7 @@ export async function requireAdminAccess(
   // aún no tengan perfil conservan exactamente el comportamiento legacy.
   if (activeProfile ? !profileAllowsAction : !hasModuleAccess(effectiveUser, module)) {
     await auditAccess(403);
-    return { error: NextResponse.json({ error: 'Acceso denegado' }, { status: 403 }) };
+    return { error: NextResponse.json({ error: FORBIDDEN_MESSAGE }, { status: 403 }) };
   }
 
   await auditAccess(200);

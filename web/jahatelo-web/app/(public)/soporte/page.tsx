@@ -4,7 +4,7 @@ export default function SupportPage() {
   return (
     <>
       <MobilePageHeader title="Soporte" />
-      <div className="min-h-screen bg-slate-50">
+      <div className="public-page min-h-screen">
         <div className="bg-gradient-to-br from-purple-600 to-purple-800">
           <div className="container mx-auto max-w-5xl px-4 py-8 text-white md:py-14">
             <p className="text-sm uppercase tracking-widest text-purple-200">Centro de ayuda</p>
@@ -22,42 +22,42 @@ export default function SupportPage() {
         <div className="container mx-auto max-w-5xl px-4 py-6 md:py-12">
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-8">
             <div className="space-y-5 lg:col-span-2 lg:space-y-8">
-              <section className="rounded-2xl bg-white p-5 shadow-sm md:p-8">
-                <h2 className="text-xl font-semibold text-slate-900">Preguntas frecuentes</h2>
+              <section className="public-card rounded-2xl p-5 shadow-sm md:p-8">
+                <h2 className="text-xl font-semibold text-[var(--text-primary)]">Preguntas frecuentes</h2>
                 <div className="mt-5 space-y-4">
-                  <div className="rounded-xl border border-slate-200 p-4">
-                    <p className="font-medium text-slate-900">No recibo el código SMS</p>
-                    <p className="text-sm text-slate-600 mt-1">
+                  <div className="rounded-xl border border-[var(--border-subtle)] p-4">
+                    <p className="font-medium text-[var(--text-primary)]">No recibo el código SMS</p>
+                    <p className="text-sm text-[var(--text-secondary)] mt-1">
                       Verificá la señal, esperá 60 segundos y solicitá el código nuevamente.
                     </p>
                   </div>
-                  <div className="rounded-xl border border-slate-200 p-4">
-                    <p className="font-medium text-slate-900">No encuentro moteles cercanos</p>
-                    <p className="text-sm text-slate-600 mt-1">
+                  <div className="rounded-xl border border-[var(--border-subtle)] p-4">
+                    <p className="font-medium text-[var(--text-primary)]">No encuentro moteles cercanos</p>
+                    <p className="text-sm text-[var(--text-secondary)] mt-1">
                       Asegurate de tener la ubicación activada y permisos habilitados en la app.
                     </p>
                   </div>
-                  <div className="rounded-xl border border-slate-200 p-4">
-                    <p className="font-medium text-slate-900">Quiero eliminar mi cuenta</p>
-                    <p className="text-sm text-slate-600 mt-1">
+                  <div className="rounded-xl border border-[var(--border-subtle)] p-4">
+                    <p className="font-medium text-[var(--text-primary)]">Quiero eliminar mi cuenta</p>
+                    <p className="text-sm text-[var(--text-secondary)] mt-1">
                       Consultá los pasos para solicitar la eliminación de tu cuenta y datos.
                     </p>
-                    <a href="/eliminar-cuenta" className="mt-2 inline-block text-sm font-medium text-purple-600 underline">
+                    <a href="/eliminar-cuenta" className="mt-2 inline-block text-sm font-medium text-purple-600 dark:text-purple-400 underline">
                       Ver instrucciones de eliminación
                     </a>
                   </div>
-                  <div className="rounded-xl border border-slate-200 p-4">
-                    <p className="font-medium text-slate-900">Problemas con favoritos</p>
-                    <p className="text-sm text-slate-600 mt-1">
+                  <div className="rounded-xl border border-[var(--border-subtle)] p-4">
+                    <p className="font-medium text-[var(--text-primary)]">Problemas con favoritos</p>
+                    <p className="text-sm text-[var(--text-secondary)] mt-1">
                       Cerrá sesión y volvé a iniciar. Si persiste, contactanos.
                     </p>
                   </div>
                 </div>
               </section>
 
-              <section className="rounded-2xl bg-white p-5 shadow-sm md:p-8">
-                <h2 className="text-xl font-semibold text-slate-900">Soporte directo</h2>
-                <p className="text-sm text-slate-600 mt-2">
+              <section className="public-card rounded-2xl p-5 shadow-sm md:p-8">
+                <h2 className="text-xl font-semibold text-[var(--text-primary)]">Soporte directo</h2>
+                <p className="text-sm text-[var(--text-secondary)] mt-2">
                   Respondemos a la brevedad posible. Incluí modelo de teléfono y versión de la app si podés.
                 </p>
                 <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -67,41 +67,41 @@ export default function SupportPage() {
                   >
                     Escribir a soporte
                   </a>
-                  <span className="text-sm text-slate-600">info@jahatelo.com</span>
+                  <span className="text-sm text-[var(--text-secondary)]">info@jahatelo.com</span>
                 </div>
               </section>
             </div>
 
             <aside className="space-y-6">
-              <div className="bg-white rounded-2xl shadow-sm p-6">
-                <h3 className="text-lg font-semibold text-slate-900">Atajos útiles</h3>
+              <div className="public-card rounded-2xl shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-[var(--text-primary)]">Atajos útiles</h3>
                 <ul className="mt-4 space-y-3 text-sm">
                   <li>
-                    <a href="/contacto" className="text-purple-600 hover:text-purple-700 underline">
+                    <a href="/contacto" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 underline">
                       Contacto comercial
                     </a>
                   </li>
                   <li>
-                    <a href="/terminos" className="text-purple-600 hover:text-purple-700 underline">
+                    <a href="/terminos" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 underline">
                       Términos y Condiciones
                     </a>
                   </li>
                   <li>
-                    <a href="/privacidad" className="text-purple-600 hover:text-purple-700 underline">
+                    <a href="/privacidad" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 underline">
                       Política de Privacidad
                     </a>
                   </li>
                   <li>
-                    <a href="/eliminar-cuenta" className="text-purple-600 hover:text-purple-700 underline">
+                    <a href="/eliminar-cuenta" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 underline">
                       Eliminar cuenta y datos
                     </a>
                   </li>
                 </ul>
               </div>
 
-              <div className="bg-white rounded-2xl shadow-sm p-6">
-                <h3 className="text-lg font-semibold text-slate-900">Recomendaciones</h3>
-                <ul className="mt-4 space-y-3 text-sm text-slate-600">
+              <div className="public-card rounded-2xl shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-[var(--text-primary)]">Recomendaciones</h3>
+                <ul className="mt-4 space-y-3 text-sm text-[var(--text-secondary)]">
                   <li>Actualizá la app a la última versión.</li>
                   <li>Probá con Wi‑Fi y datos móviles.</li>
                   <li>Si hay un error, enviá captura de pantalla.</li>
